@@ -16,6 +16,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { createApiTokenSchema, validateRequest } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { buildTokenScopes } from "@/lib/mcp/public-profile";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,12 @@ export async function POST(req: NextRequest): Promise<Response> {
     ? new Date(Date.now() + input.expires_in_days * 24 * 60 * 60 * 1000).toISOString()
     : null;
 
+  const tokenScopes = buildTokenScopes({
+    scopes: input.scopes,
+    allowedTools: input.allowed_tools,
+    capabilities: input.capabilities,
+  });
+
   const supabase = await createClient();
   const { data: created, error: insErr } = await supabase
     .from("api_tokens")
@@ -80,7 +87,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       prefix,
       // bytea: pass as `\x<hex>` literal so PostgREST encodes correctly.
       token_hash: `\\x${tokenHash.toString("hex")}`,
-      scopes: input.scopes,
+      scopes: tokenScopes,
       expires_at: expiresAt,
     })
     .select(SELECT_COLS)
@@ -95,7 +102,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     resourceType: "api_token",
     resourceId: created.id,
     requestId,
-    metadata: { name: input.name, prefix, scopes: input.scopes, expires_at: expiresAt },
+    metadata: { name: input.name, prefix, scopes: tokenScopes, expires_at: expiresAt },
   });
 
   return ok(

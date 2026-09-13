@@ -48,7 +48,7 @@ describe("auditMcpToolCall", () => {
     // usos" é indistinguível de "nunca usada".
     await auditMcpToolCall({
       ctx, toolName: "crm_move_lead_stage", args: {}, durationMs: 9,
-      success: false, errorMessage: "stage_not_found",
+      success: false, errorCode: "stage_not_found",
     });
     const e = auditSpy.mock.calls[0]![0];
     expect(e.action).toBe("mcp.tool_called");
@@ -57,13 +57,27 @@ describe("auditMcpToolCall", () => {
     expect(e.metadata.success).toBe(false);
   });
 
-  it("redige segredos nos argumentos", async () => {
+  it("registra somente ids técnicos e não persiste PII nem texto livre", async () => {
     await auditMcpToolCall({
-      ctx, toolName: "crm_get_contact", args: { cpf: "12345678900", query: "joana" },
+      ctx,
+      toolName: "crm_send_whatsapp_message",
+      args: {
+        conversation_id: "44444444-4444-4444-8444-444444444444",
+        query: "joana@example.com",
+        phone: "+5511999999999",
+        body: "texto privado do cliente",
+        cpf: "12345678900",
+        reason: "motivo que pode conter dado pessoal",
+      },
       durationMs: 3, success: true,
     });
     const e = auditSpy.mock.calls[0]![0];
-    expect(e.metadata.args.cpf).toBe("[redacted]");
-    expect(e.metadata.args.query).toBe("joana");
+    expect(e.metadata.args).toBeUndefined();
+    expect(e.metadata.resource_ids).toEqual({
+      conversation_id: "44444444-4444-4444-8444-444444444444",
+    });
+    expect(JSON.stringify(e.metadata)).not.toMatch(
+      /joana|551199|texto privado|12345678900|motivo que pode/i,
+    );
   });
 });

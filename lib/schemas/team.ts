@@ -7,6 +7,10 @@
  */
 import { z } from "zod";
 import { interfaceSettingsSchema, interfaceTemDestino } from "@/lib/navigation/interface";
+import {
+  MCP_PUBLIC_CAPABILITIES,
+  MCP_PUBLIC_TOOL_NAMES,
+} from "@/lib/mcp/public-profile";
 
 export const ROLES = ["viewer", "agent", "manager", "admin"] as const;
 export type Role = (typeof ROLES)[number];
@@ -40,9 +44,21 @@ export const changeRoleSchema = z.object({
 });
 export type ChangeRoleInput = z.infer<typeof changeRoleSchema>;
 
-export const createApiTokenSchema = z.object({
-  name: z.string().min(2).max(100),
-  scopes: z.array(z.string()).min(1),
-  expires_in_days: z.coerce.number().int().min(1).max(365).optional(),
-});
+export const createApiTokenSchema = z
+  .object({
+    name: z.string().min(2).max(100),
+    scopes: z.array(z.string()).default([]),
+    expires_in_days: z.coerce.number().int().min(1).max(365).optional(),
+    /** Presenca deste campo cria um token MCP publico, fechado por allowlist. */
+    allowed_tools: z
+      .array(z.string().refine((name) => MCP_PUBLIC_TOOL_NAMES.includes(name), "Tool não pública."))
+      .min(1)
+      .max(MCP_PUBLIC_TOOL_NAMES.length)
+      .optional(),
+    capabilities: z.array(z.enum(MCP_PUBLIC_CAPABILITIES)).max(2).optional(),
+  })
+  .refine((value) => value.scopes.length > 0 || Boolean(value.allowed_tools?.length), {
+    message: "Selecione ao menos um escopo ou uma tool pública.",
+    path: ["scopes"],
+  });
 export type CreateApiTokenInput = z.infer<typeof createApiTokenSchema>;

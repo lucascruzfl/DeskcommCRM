@@ -164,7 +164,7 @@ function wrapMcpTool(
             args: argsRecord,
             durationMs: Date.now() - startedAt,
             success: false,
-            errorMessage: `escopo_de_funil:${veredito.motivo}`,
+            errorCode: `escopo_de_funil:${veredito.motivo}`,
           });
           // Devolve TEXTO em vez de lançar: o modelo lê, entende por que foi
           // recusado e segue a conversa. Uma exceção viraria erro de execução e
@@ -191,13 +191,19 @@ function wrapMcpTool(
         return result;
       } catch (err) {
         const message = err instanceof Error ? err.message : "unknown_error";
+        const errorCode =
+          err && typeof err === "object" && "code" in err && typeof err.code === "string"
+            ? err.code
+            : err instanceof Error
+              ? err.name
+              : "unknown_error";
         void auditMcpToolCall({
           ctx: input.ctx,
           toolName: def.name,
           args: argsRecord,
           durationMs: Date.now() - startedAt,
           success: false,
-          errorMessage: message,
+          errorCode,
         });
         // Recusa por papel/scope NAO e erro de execucao — e defeito de
         // configuracao: o humano ligou a capacidade na tela e ela nao existe na

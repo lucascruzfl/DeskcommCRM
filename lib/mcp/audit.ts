@@ -16,46 +16,48 @@ interface AuditMcpToolCallInput {
   args: Record<string, unknown>;
   durationMs: number;
   success: boolean;
-  errorMessage?: string;
-  resultSummary?: string;
+  errorCode?: string;
 }
 
-const ARGS_REDACT_KEYS = new Set([
-  "authorization",
-  "api_key",
-  "token",
-  "password",
-  "cpf",
+// Lista positiva: nunca registrar busca, corpo, telefone, email, nome, motivo,
+// descricao, tags ou campos customizados. IDs tecnicos bastam para investigar.
+const TECHNICAL_ID_KEYS = new Set([
+  "contact_id",
+  "conversation_id",
+  "lead_id",
+  "pipeline_id",
+  "stage_id",
+  "after_stage_id",
+  "move_leads_to_stage_id",
+  "to_stage_id",
+  "target_id",
+  "to_user_id",
 ]);
 
-function redactArgs(args: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(args)) {
-    if (ARGS_REDACT_KEYS.has(k.toLowerCase())) {
-      out[k] = "[redacted]";
-    } else if (typeof v === "string" && v.length > 500) {
-      out[k] = `${v.slice(0, 500)}...[truncated]`;
-    } else {
-      out[k] = v;
+function technicalIds(args: Record<string, unknown>): Record<string, string | null> {
+  const out: Record<string, string | null> = {};
+  for (const [key, value] of Object.entries(args)) {
+    if (!TECHNICAL_ID_KEYS.has(key)) continue;
+    if (value === null || (typeof value === "string" && /^[0-9a-f-]{36}$/i.test(value))) {
+      out[key] = value;
     }
   }
   return out;
 }
 
 export async function auditMcpToolCall(input: AuditMcpToolCallInput): Promise<void> {
-  const { ctx, toolName, args, durationMs, success, errorMessage, resultSummary } = input;
+  const { ctx, toolName, args, durationMs, success, errorCode } = input;
 
   const metadata: Record<string, unknown> = {
     actor_type: ctx.actor.type,
     actor_id: ctx.actor.id,
     tool_name: toolName,
-    args: redactArgs(args),
+    resource_ids: technicalIds(args),
     duration_ms: durationMs,
     success,
   };
 
-  if (resultSummary) metadata.result_summary = resultSummary.slice(0, 280);
-  if (errorMessage) metadata.error = errorMessage.slice(0, 500);
+  if (errorCode) metadata.error_code = errorCode.slice(0, 120);
   if (ctx.actor.type === "ai_agent" && ctx.actor.api_token_id) {
     metadata.actor_api_token_id = ctx.actor.api_token_id;
   }

@@ -22,10 +22,11 @@ import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { allTools } from "@/lib/mcp/tools";
 import { TOOL_CATALOG } from "@/lib/mcp/tools/catalog";
 import { juntarCatalogoComHandlers } from "@/lib/mcp/tools/catalogo-servido";
+import { publicToolPolicy } from "@/lib/mcp/public-profile";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: NextRequest): Promise<Response> {
+export async function GET(req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
   const authUser = await loadAuthUser();
   if (!authUser) return fail("unauthenticated", "Auth required.", 401, { requestId });
@@ -47,12 +48,23 @@ export async function GET(_req: NextRequest): Promise<Response> {
   }
 
   const schemaPorNome = new Map(allTools.map((t) => [t.name, t.inputSchema]));
-  const tools = servidas.map((capacidade) => ({
-    ...capacidade,
-    input_schema: z.toJSONSchema(z.object(schemaPorNome.get(capacidade.id) ?? {}), {
-      target: "openapi-3.0",
-    }),
-  }));
+  const publicOnly = req.nextUrl.searchParams.get("profile") === "public";
+  const tools = servidas
+    .filter((capacidade) => !publicOnly || Boolean(publicToolPolicy(capacidade.id)))
+    .map((capacidade) => {
+      const policy = publicToolPolicy(capacidade.id);
+      return {
+        ...capacidade,
+        name: capacidade.id,
+        input_schema: z.toJSONSchema(z.object(schemaPorNome.get(capacidade.id) ?? {}), {
+          target: "openapi-3.0",
+        }),
+        public: Boolean(policy),
+        access: policy?.risk ?? null,
+        required_scopes: policy?.required_scopes ?? [capacidade.requires_scope],
+        required_capability: policy?.required_capability ?? null,
+      };
+    });
 
-  return ok({ tools }, { requestId });
+  return ok({ profile: publicOnly ? "public" : "internal", tools }, { requestId });
 }

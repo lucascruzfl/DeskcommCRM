@@ -255,7 +255,7 @@ async function main(): Promise<void> {
         args: {},
         durationMs: 42,
         success: ok,
-        errorMessage: ok ? undefined : "stage_not_found",
+        errorCode: ok ? undefined : "stage_not_found",
       });
     }
   }

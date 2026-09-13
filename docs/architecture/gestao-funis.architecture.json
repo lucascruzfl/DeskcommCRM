@@ -3,7 +3,7 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "Gestão de funis — quem cria, quem recusa e quem sabe o que quebraria",
-    "subtitle": "a tela do Kanban virou dona dos funis; as três dependências que o banco não defende sozinho",
+    "subtitle": "tela e MCP público compartilham as regras dos funis; as dependências que o banco não defende sozinho",
     "output": "gestao-funis.html",
     "quality_profile": "standard"
   },
@@ -14,7 +14,7 @@
     { "id": "dados", "label": "Banco" },
     { "id": "dependente", "label": "Quem depende do funil" }
   ],
-  "mainPath": ["lista", "hooks", "post", "regras", "pipelines"],
+  "mainPath": ["mcp", "operacoes", "regras", "pipelines"],
   "nodes": [
     { "id": "lista", "lane": "humano", "col": 1, "type": "frontend", "label": "/app/kanban (page)", "sublabel": "Server Component · filtra organization_id da org ATIVA" },
     { "id": "client", "lane": "humano", "col": 2, "type": "frontend", "label": "FunisClient", "sublabel": "criar · renomear · ↑↓ · padrão · arquivar" },
@@ -25,10 +25,13 @@
     { "id": "patch", "lane": "borda", "col": 3, "type": "api", "label": "PATCH /api/v1/pipelines/[id]", "sublabel": "nome · descrição · ordem · padrão" },
     { "id": "delete", "lane": "borda", "col": 4, "type": "api", "label": "DELETE /api/v1/pipelines/[id]", "sublabel": "arquiva; ?definitivo=1 só no caso limpo" },
     { "id": "funis", "lane": "borda", "col": 1, "type": "service", "label": "_funis.ts", "sublabel": "lerFunis · lerDependencias · corpo · conflitoDoBanco" },
+    { "id": "mcp", "lane": "borda", "col": 5, "type": "api", "label": "MCP público", "sublabel": "criar/editar funil · administrar etapas/campos · org vem do token" },
 
     { "id": "regras", "lane": "regra", "col": 2, "type": "service", "label": "pipeline-editing.ts", "sublabel": "as recusas, em português, citando o nome" },
     { "id": "slug", "lane": "regra", "col": 1, "type": "service", "label": "stage-editing (reuso)", "sublabel": "chaveDeNome dobra acento · slugDeNome" },
     { "id": "padrao", "lane": "regra", "col": 3, "type": "service", "label": "updatesDePadrao", "sublabel": "libera o anterior ANTES de marcar o novo" },
+    { "id": "operacoes", "lane": "regra", "col": 4, "type": "service", "label": "pipeline/stage operations", "sublabel": "mesma sequência para REST e MCP" },
+    { "id": "config", "lane": "regra", "col": 5, "type": "service", "label": "pipeline-config-operations", "sublabel": "settings.fields validado pelo schema existente" },
 
     { "id": "pipelines", "lane": "dados", "col": 2, "type": "database", "label": "crm_pipelines", "sublabel": "position numeric · is_archived · is_default" },
     { "id": "stages", "lane": "dados", "col": 3, "type": "database", "label": "crm_stages", "sublabel": "Novo · Em andamento · Ganho(won) · Perdido(lost)" },
@@ -69,7 +72,16 @@
     { "id": "e27", "from": "delete", "to": "pipelines", "label": "is_archived=true (ou delete no caso limpo)" },
     { "id": "e28", "from": "trigger", "to": "pipelines", "label": "toda org nova nasce com 'Pedidos' — a razão de a clínica precisar desta tela" },
     { "id": "e29", "from": "trigger", "to": "stages", "label": "8 etapas de e-commerce" },
-    { "id": "e30", "from": "board", "to": "stages", "label": "as colunas do quadro" }
+    { "id": "e30", "from": "board", "to": "stages", "label": "as colunas do quadro" },
+    { "id": "e31", "from": "mcp", "to": "operacoes", "label": "pipeline_id + operação; organization_id vem do token" },
+    { "id": "e32", "from": "post", "to": "operacoes", "label": "criação REST usa a mesma operação" },
+    { "id": "e33", "from": "patch", "to": "operacoes", "label": "edição REST usa a mesma operação" },
+    { "id": "e34", "from": "operacoes", "to": "pipelines", "label": "leituras e escritas com filtro explícito de organização" },
+    { "id": "e35", "from": "operacoes", "to": "stages", "label": "criação, ordem e arquivamento com salvaguardas reais" },
+    { "id": "e36", "from": "mcp", "to": "config", "label": "create/update/reorder/delete de fields" },
+    { "id": "e37", "from": "config", "to": "pipelines", "label": "merge não destrutivo de settings.fields" },
+    { "id": "e38", "from": "operacoes", "to": "audit", "label": "pipeline e stage mutations" },
+    { "id": "e39", "from": "config", "to": "audit", "label": "pipeline.config_updated sem payload livre" }
   ],
   "cards": [
     {

@@ -5,11 +5,12 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { audit } from "@/lib/audit";
 import {
   pipelineConfigPatchSchema,
   type PipelineConfigPatch,
 } from "@/lib/schemas/settings";
+import { atualizarConfiguracaoDoFunil } from "@/lib/pipelines/pipeline-config-operations";
+import { ApiError } from "@/lib/api/types";
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 
@@ -42,45 +43,21 @@ export async function updatePipelineConfig(
   const hdrs = await headers();
   const requestId = hdrs.get("x-request-id");
 
-  const { data: row, error: readErr } = await supabase
-    .from("crm_pipelines")
-    .select("vocabulary, settings, organization_id")
-    .eq("id", pipelineId)
-    .maybeSingle();
-  if (readErr) return { ok: false, error: readErr.message };
-  if (!row) return { ok: false, error: "not_found" };
-  if (row.organization_id !== activeOrg.orgId) {
-    return { ok: false, error: "forbidden_tenant" };
+  try {
+    await atualizarConfiguracaoDoFunil(
+      {
+        supabase,
+        organizationId: activeOrg.orgId,
+        actor: { type: "user", id: authUser.id },
+        requestId: requestId ?? "",
+      },
+      pipelineId,
+      parsed.data,
+    );
+  } catch (err) {
+    if (err instanceof ApiError) return { ok: false, error: err.code, details: err.details };
+    return { ok: false, error: err instanceof Error ? err.message : "internal_error" };
   }
-
-  const nextVocabulary = parsed.data.vocabulary
-    ? { ...((row.vocabulary as Record<string, unknown> | null) ?? {}), ...parsed.data.vocabulary }
-    : ((row.vocabulary as Record<string, unknown> | null) ?? {});
-
-  const currentSettings = (row.settings as Record<string, unknown> | null) ?? {};
-  const nextSettings: Record<string, unknown> = { ...currentSettings };
-  if (parsed.data.fields !== undefined) nextSettings.fields = parsed.data.fields;
-  if (parsed.data.lost_reasons !== undefined) nextSettings.lost_reasons = parsed.data.lost_reasons;
-
-  const { error } = await supabase
-    .from("crm_pipelines")
-    .update({ vocabulary: nextVocabulary, settings: nextSettings })
-    .eq("id", pipelineId);
-  if (error) return { ok: false, error: error.message };
-
-  await audit({
-    action: "pipeline.config_updated",
-    actorUserId: authUser.id,
-    organizationId: activeOrg.orgId,
-    resourceType: "pipeline",
-    resourceId: pipelineId,
-    requestId,
-    metadata: {
-      vocabulary_changed: !!parsed.data.vocabulary,
-      fields_count: parsed.data.fields?.length ?? null,
-      lost_reasons_count: parsed.data.lost_reasons?.length ?? null,
-    },
-  });
 
   revalidatePath("/app/settings/tenant/pipelines");
   return { ok: true };

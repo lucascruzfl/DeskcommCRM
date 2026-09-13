@@ -78,6 +78,8 @@ export interface PipelineRow {
   is_default: boolean;
   is_archived: boolean;
   organization_id: string;
+  settings?: Record<string, unknown> | null;
+  vocabulary?: Record<string, unknown> | null;
 }
 
 export function funilRow(over: Partial<PipelineRow> & { id: string; name: string }): PipelineRow {

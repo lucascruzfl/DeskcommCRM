@@ -20,9 +20,10 @@
 ## 0. Modelo mental (leia primeiro)
 
 O DeskcommCRM expõe um **servidor MCP org-scoped**. O agente externo se autentica
-com um bearer token que carrega **uma organização** e **um conjunto de scopes**
-(`mcp:read` / `mcp:write`) + um **role** (`viewer`<`agent`<`manager`<`admin`). A
-partir daí:
+com um bearer token que carrega **uma organização**, um **role**
+(`viewer`<`agent`<`manager`<`admin`) e scopes. Tokens públicos carregam
+`mcp:public`, uma allowlist `tool:<nome>` e os scopes amplos + de domínio exigidos
+pela tool. A partir daí:
 
 - **`organization_id` vem SEMPRE do contexto de autenticação (`ctx.organizationId`),
   NUNCA do input da tool.** As tools de governança carimbam isto explicitamente no
@@ -36,6 +37,31 @@ partir daí:
   `lib/mcp/tools/governance.ts:21-34`).
 - **Idempotência** é responsabilidade do contrato: comandos de atribuição são
   idempotentes sob replay e corrida (§3.1); envio aceita `idempotency_key`.
+
+### 0.1 Perfil público seguro
+
+A fonte executável é `lib/mcp/public-profile.ts`. A lista vigente é
+`MCP_PUBLIC_TOOL_NAMES` (não se repete uma contagem aqui) e falha fechado em
+quatro portas:
+
+1. o token precisa carregar `mcp:public`;
+2. cada tool precisa estar na allowlist individual `tool:<nome>`;
+3. a chamada precisa dos scopes amplo (`mcp:read` ou `mcp:write`) e de domínio
+   declarados na política;
+4. efeitos críticos exigem capability explícita:
+   `crm_send_whatsapp_message` → `capability:send_messages` e
+   `crm_request_human_handoff` → `capability:human_handoff`.
+
+O servidor registra somente as tools autorizadas, portanto uma tool fora da
+allowlist não aparece em `tools/list`. Tokens legados, sem `mcp:public`, mantêm o
+catálogo interno completo. O catálogo gerável do perfil é servido por
+`GET /api/v1/mcp/tools?profile=public`.
+
+O rate limit é por token e classe de risco: leitura 60/min, escrita 30/min e
+efeito crítico 10/min. A auditoria `mcp.tool_called` persiste apenas ator, tool,
+duração, sucesso, código de erro e UUIDs técnicos em lista positiva; busca,
+telefone, e-mail, nome, CPF, corpo, motivo, tags e texto livre não entram no
+registro.
 
 Quando o agente externo assume o dispatch de uma org (§5, `ai_dispatch_mode='external'`),
 o dispatcher **nativo** deste repo **para de tocar** os eventos daquela org — o
@@ -63,6 +89,10 @@ handler; nenhuma tool de governança do catálogo ficou de fora deste contrato.
 | `crm_list_leads` | read | L27 | `leads.ts:82` | **sim** (owner, stage, tags) | §3.6 |
 | `crm_get_lead` | read | L28 | `leads.ts:124` | **sim** | §3.6 |
 | `crm_list_pipelines` | read | L29 | `pipelines.ts` | não (metadados de pipeline) | fora do escopo |
+| `crm_create_pipeline` | write | catálogo | `pipelines.ts` | não (administração do funil) | fora do escopo |
+| `crm_update_pipeline` | write | catálogo | `pipelines.ts` | não (administração do funil) | fora do escopo |
+| `crm_manage_pipeline_stages` | write | catálogo | `pipelines.ts` | não (administração do funil) | fora do escopo |
+| `crm_manage_pipeline_fields` | write | catálogo | `pipelines.ts` | não (administração do funil) | fora do escopo |
 | `crm_create_lead` | write | L31 | `leads.ts:173` | não (CRUD de lead) | fora do escopo |
 | `crm_update_lead` | write | L32 | `leads.ts:227` | não (CRUD de lead) | fora do escopo |
 | `crm_move_lead_stage` | write | L33 | `leads.ts:263` | não (CRUD de lead) | fora do escopo |
@@ -400,9 +430,9 @@ O que o **Vendaval** precisa fazer do seu lado para consumir este contrato:
    intacto (`lib/ai/dispatcher/index.ts:143-151`). O Vendaval faz o claim/consumo do
    seu lado (a mesma tabela `event_log`, filtrando `event_type` +
    `status='pending'`). Deve marcar o evento como consumido para não reprocessar.
-3. **Autenticar org-scoped.** Um token MCP por org, com `role>=agent` e scopes
-   `mcp:read`+`mcp:write`. `organization_id` NUNCA vai no input das tools — é o token
-   que fixa a org.
+3. **Autenticar org-scoped.** Um token MCP público por org, com `role>=agent`,
+   `mcp:public`, allowlist por tool e os scopes de domínio necessários.
+   `organization_id` NUNCA vai no input das tools — é o token que fixa a org.
 4. **Ler `assignee_kind` antes de responder** (§3.5/§3.7): `'user'` ⇒ humano assumiu,
    não intervir; `'ai'`/`null` ⇒ pode agir.
 5. **Usar `crm_request_human_handoff` v2 para o fallback humano** (§3.4) — deixar o
@@ -413,7 +443,7 @@ O que o **Vendaval** precisa fazer do seu lado para consumir este contrato:
 7. **Respeitar as proibições §6:** não enviar a `is_blocked`; não intervir em
    conversa `assignee_kind='user'`; não reativar bot silenciado; nunca cross-org.
 8. **Idempotência no envio:** passar `idempotency_key` em `crm_send_whatsapp_message`
-   (TTL 24h, `messages.ts:26-31`) em retries.
+   (TTL 24h) em retries. Reutilizar a chave com outro payload é conflito.
 
 > **Fora do escopo deste contrato (decisões do FG do Vendaval):** o modelo de claim
 > do Vendaval sobre o `event_log` (visibilidade/lock do consumo externo) e o

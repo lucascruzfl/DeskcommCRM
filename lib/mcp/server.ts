@@ -16,21 +16,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { auditMcpToolCall } from "./audit";
 import { ensureRole, ensureScope, type McpAuthResult } from "./auth";
 import { allTools } from "./tools";
+import {
+  authorizeMcpTool,
+  publicToolPolicy,
+  toolsAuthorizedForToken,
+  type McpPublicRisk,
+} from "./public-profile";
+import { enforceMcpRateLimit } from "./rate-limit";
 import { higienizarUuidsDeAterro } from "./uuid-de-aterro";
 import type { McpContext } from "./types";
 
 const SERVER_NAME = "deskcomm-crm";
 const SERVER_VERSION = "0.1.0";
-
-function summarizeResult(result: unknown): string | undefined {
-  if (!result || typeof result !== "object") return undefined;
-  const r = result as Record<string, unknown>;
-  if (Array.isArray(r.contacts)) return `${r.contacts.length} contacts`;
-  if (Array.isArray(r.conversations)) return `${r.conversations.length} conversations`;
-  if (Array.isArray(r.messages)) return `${r.messages.length} messages`;
-  if (typeof r.id === "string") return `id=${r.id}`;
-  return undefined;
-}
 
 export function createMcpServer(auth: McpAuthResult, requestId: string): McpServer {
   const server = new McpServer({
@@ -40,7 +37,10 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
 
   const supabase = createAdminClient();
 
-  for (const tool of allTools) {
+  // O filtro acontece ANTES do registerTool: para token publico, uma tool sem
+  // allowlist nem sequer aparece em tools/list. Tokens legados e o runtime
+  // interno continuam vendo o catalogo completo.
+  for (const tool of toolsAuthorizedForToken(allTools, auth.scopes)) {
     server.registerTool(
       tool.name,
       {
@@ -70,8 +70,21 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
         };
 
         try {
+          const authorization = authorizeMcpTool(auth.scopes, tool.name);
+          if (!authorization.ok) {
+            throw new Error(
+              authorization.missing
+                ? `${authorization.reason}:${authorization.missing}`
+                : authorization.reason,
+            );
+          }
           ensureScope(auth.scopes, tool.requiresScope);
           ensureRole(auth.role, tool.requiresRole);
+
+          const publicPolicy = publicToolPolicy(tool.name);
+          const risk: McpPublicRisk =
+            publicPolicy?.risk ?? (tool.category === "read" ? "read" : "write");
+          await enforceMcpRateLimit(auth.apiTokenId, risk);
 
           const result = await tool.handler(args as never, ctx);
           const durationMs = Date.now() - startedAt;
@@ -82,7 +95,6 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
             args,
             durationMs,
             success: true,
-            resultSummary: summarizeResult(result),
           });
 
           return {
@@ -91,6 +103,12 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
           };
         } catch (err) {
           const message = err instanceof Error ? err.message : "unknown_error";
+          const errorCode =
+            err && typeof err === "object" && "code" in err && typeof err.code === "string"
+              ? err.code
+              : err instanceof Error
+                ? err.name
+                : "unknown_error";
           const durationMs = Date.now() - startedAt;
 
           await auditMcpToolCall({
@@ -99,12 +117,25 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
             args,
             durationMs,
             success: false,
-            errorMessage: message,
+            errorCode,
           });
+
+          const details =
+            err && typeof err === "object" && "details" in err && err.details && typeof err.details === "object"
+              ? err.details as Record<string, unknown>
+              : undefined;
+          const structuredError = {
+            error: {
+              code: errorCode,
+              message,
+              ...(details ? { details } : {}),
+            },
+          };
 
           return {
             isError: true,
-            content: [{ type: "text", text: message }],
+            content: [{ type: "text", text: JSON.stringify(structuredError) }],
+            structuredContent: structuredError,
           };
         }
       },

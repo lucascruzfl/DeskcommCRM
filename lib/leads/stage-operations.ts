@@ -183,7 +183,7 @@ async function funilOuNadaFeito(deps: DepsDeEtapa, pipelineId: string): Promise<
   // Funil de outra org morre AQUI, antes de qualquer escrita: responder 404
   // depois de gravar seria pior do que responder 200.
   if (!etapas) {
-    throw new ApiError(404, "not_found", undefined, deps.requestId, "Funil não encontrado.");
+    throw new ApiError(404, "pipeline_not_found", undefined, deps.requestId, "Funil não encontrado.");
   }
   return etapas;
 }
@@ -296,7 +296,7 @@ export async function atualizarEtapa(
   // organização), e a resposta é a mesma de uma etapa inexistente.
   const alvo = etapas.find((e) => e.id === stageId);
   if (!alvo) {
-    throw new ApiError(404, "not_found", undefined, deps.requestId, "Etapa não encontrada.");
+    throw new ApiError(404, "stage_not_found", undefined, deps.requestId, "Etapa não encontrada.");
   }
 
   // ⚠️ ARQUIVADA NÃO SE EDITA — e este é o caso perigoso, não um detalhe de
@@ -343,7 +343,7 @@ export async function atualizarEtapa(
     if (pedido.depois_de !== null && i < 0) {
       throw new ApiError(
         422,
-        "unprocessable_entity",
+        "invalid_stage_order",
         undefined,
         deps.requestId,
         "A etapa que você escolheu como vizinha não está mais no funil. Recarregue a página.",
@@ -357,7 +357,7 @@ export async function atualizarEtapa(
     if (!Number.isFinite(posicao)) {
       throw new ApiError(
         409,
-        "state_conflict",
+        "invalid_stage_order",
         undefined,
         deps.requestId,
         "As colunas deste funil estão empatadas na ordenação. Recarregue a página e mova a etapa para outro lugar.",
@@ -440,7 +440,7 @@ export async function arquivarEtapa(
   const etapas = await funilOuNadaFeito(deps, pipelineId);
   const alvo = etapas.find((e) => e.id === stageId);
   if (!alvo) {
-    throw new ApiError(404, "not_found", undefined, deps.requestId, "Etapa não encontrada.");
+    throw new ApiError(404, "stage_not_found", undefined, deps.requestId, "Etapa não encontrada.");
   }
 
   // Os negócios da etapa, com a contagem EXATA do banco no mesmo round-trip: a
