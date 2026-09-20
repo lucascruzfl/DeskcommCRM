@@ -3,7 +3,7 @@
 Atualizado em: 2026-09-20
 
 Branch: `feat/mcp-full-control`
-Estado deste checkpoint: Partes 1, 2, 3 e 4 concluídas; Parte 4 validada e incluída no commit desta entrega.
+Estado deste checkpoint: Partes 1, 2, 3, 4 e 5 concluídas; Parte 5 validada e pronta para o commit desta entrega.
 
 ## 1. Objetivo
 
@@ -16,9 +16,9 @@ A versão 1.41.0 é a base auditada, não um congelamento do MCP. A fonte de ver
 - Versão base: DeskcommCRM 1.41.0.
 - Arquitetura MCP original: endpoint Streamable HTTP em `app/api/mcp/route.ts`; autenticação Bearer `dsk_...` por hash; `McpServer` em `lib/mcp/server.ts`; handlers agregados em `lib/mcp/tools/index.ts`; contexto de organização/ator resolvido no servidor; Supabase service role com filtros explícitos; auditoria em `api_audit_log`.
 - Tools originais: 63.
-- Tools antes da Parte 4: **108**, calculadas diretamente por `MCP_REGISTRY.length` no commit da Parte 3.
-- Tools novas na Parte 4: **10**.
-- Tools atuais: **118**, calculadas diretamente por `MCP_TOOL_COUNT`/`MCP_REGISTRY.length` neste checkpoint.
+- Tools antes da Parte 5: **118**, calculadas diretamente por `MCP_REGISTRY.length` no commit da Parte 4.
+- Tools novas na Parte 5: **35** (9 agenda, 11 follow-up, 10 automações, 5 routing).
+- Tools atuais: **153**, calculadas diretamente por `MCP_TOOL_COUNT`/`MCP_REGISTRY.length` neste checkpoint.
 - Branch atual: `feat/mcp-full-control`.
 - Base anterior às implementações: `6eceb0e60`.
 
@@ -28,6 +28,8 @@ A versão 1.41.0 é a base auditada, não um congelamento do MCP. A fonte de ver
 - Parte 3: `44c9de0e3 feat(mcp): complete core CRM administration`.
 - Parte 1 foi uma auditoria documental e não possui commit de implementação MCP neste histórico.
 - Parte 4: `feat(mcp): complete conversations and messaging operations` (commit que contém este documento).
+- Merge da `origin/main` anterior à Parte 5: `8656c4066`.
+- Parte 5: `feat(mcp): complete scheduling automation and routing operations` (commit que conterá este documento).
 
 ## 4. Fases concluídas
 
@@ -56,6 +58,16 @@ Também completou tools preexistentes: filtros e paginação de conversas; hist�
 Envio e reply usam `sendMessageHandler`; início compõe `openSharedContactConversation` com esse handler. A `idempotency_key` é obrigatória nessas três operações e `comIdempotencia` reserva a chave antes do efeito, devolvendo conflito `idempotency_in_progress` em corrida. Mídia aceita somente `media_storage_path` da conversa, valida MIME/tamanho/tipo e ownership no fluxo oficial; URLs privadas e signed URLs não aparecem no retorno. Descoberta de canais usa projeção segura e retorna `human_action_required` para QR sem expor nome interno de sessão ou credencial.
 
 Testes finais desta fase: 10 arquivos focados/90 testes e regressão MCP de 23 arquivos/203 testes. Typecheck, lint dos arquivos alterados, `lint:channels`, diff-check e release check são registrados na seção de checkpoint final após a execução. Não houve WhatsApp real, mutação de conversa real, mudança de schema, UI ou packaging.
+
+### Parte 5 — agenda, follow-up, automações e routing
+
+Depois do merge da `origin/main`, a auditoria delta confirmou as fontes canônicas: agenda em `calendar_event_types`, `attendant_availability`, `calendar_availability_exceptions` e handlers de compromissos; follow-up em pointers/versions/graphs, enrollments e workers; automações em `automation_rules`, `event_log` e schemas do motor; routing em settings globais, políticas por canal e `decideRouting` nos modos `manual|round_robin`.
+
+Foram adicionadas 35 tools. Agenda ganhou administração de tipos completa (inclusive intervalo, preço e lembretes), disponibilidade tz-aware e exceções. Follow-up ganhou CRUD de flows, preflight/publish, ativação/desativação, list/detail de enrollments e pause/resume/snooze/skip/cancel. Automações ganharam discovery, CRUD inativo, preflight, simulação sem side effect e detalhe de run sanitizado. Routing ganhou leitura/escrita global, destinos reais, política atômica por canal via `fn_set_channel_routing` e simulação pelo engine oficial. Nenhum `queue_id` ou motor genérico foi criado.
+
+Segurança: `organization_id` vem apenas do contexto; referências são validadas no tenant; secrets são cifrados e removidos de respostas; publicação/ativação/destruição exigem capabilities; simulações não gravam nem entregam efeito externo. `crm_set_appointment_outcome` retorna `human_confirmation_required: true` quando a confirmação precisa ocorrer pela pessoa na Agenda.
+
+Validação da fase: 14 arquivos/168 testes focados; regressão MCP 26/230; catálogo/mapa 3/619; banco relevante 8/84; typecheck aprovado com heap 3584 MB; ESLint dos alterados, `lint:channels`, `lint:role-rank` e release check aprovados. O `test:db` global passou 253/254 arquivos e 2119 testes, com 5 falhas reproduzíveis somente em `prospecting-agent-setup.test.ts` por ausência de provider/modelo — domínio fora do diff. Nenhuma migration, UI ou mudança de packaging.
 
 ## 5. Decisões arquiteturais
 
@@ -136,7 +148,7 @@ No recorte atual também não foram criados loops paralelos para empresas comerc
 
 ## 12. Migrations do projeto MCP
 
-Até o fim da Parte 4, nenhuma migration nova foi criada pelo projeto MCP. As implementações reutilizaram schema, RPCs e mecanismos existentes, inclusive a reserva idempotente introduzida anteriormente pela migration 0321 do produto. Se uma fase futura mudar schema, a entrega obrigatória será a tripla: migration versionada, apêndice idempotente no `supabase/baseline.sql` e entrada em `supabase/migrations/MANIFEST.md`, seguida dos testes de banco relevantes.
+Até o fim da Parte 5, nenhuma migration nova foi criada pelo projeto MCP. As implementações reutilizaram schema, RPCs e mecanismos existentes, inclusive a reserva idempotente da migration 0321 e `fn_set_channel_routing`. Se uma fase futura mudar schema, a entrega obrigatória será a tripla: migration versionada, apêndice idempotente no `supabase/baseline.sql` e entrada em `supabase/migrations/MANIFEST.md`, seguida dos testes de banco relevantes.
 
 ## 13. Arquivos importantes
 
@@ -194,9 +206,33 @@ Posteriormente será criado o repositório `deskcomm-mcp-skill`, com suporte a C
 
 ## 16. Pendências e próxima fase
 
-Pendências deliberadas: pairing/conexão por QR ou OAuth continua humano; upload binário usa o endpoint bearer oficial em vez de uma tool MCP com base64; não existe entidade `queue_id`; não há edição de nota interna no produto, somente criação e exclusão autorizada. Agenda completa, follow-up completo, automações completas, routing administrativo completo, knowledge, produtos, webhooks/integrações administrativas, equipe administrativa completa e import/export genérico permanecem fora desta fase.
+Pendências deliberadas: pairing/conexão por QR ou OAuth continua humano; upload binário usa o endpoint bearer oficial em vez de uma tool MCP com base64; não existe entidade `queue_id`; não há edição de nota interna no produto, somente criação e exclusão autorizada. Knowledge, templates/produtos, webhooks/integrações administrativas, equipe administrativa completa e import/export genérico permanecem para fases futuras. O gate global de banco mantém a falha alheia documentada em `prospecting-agent-setup.test.ts`.
 
-Próxima fase: a fase definida pelo roteiro seguinte do projeto, começando por auditoria delta do domínio escolhido. Não iniciar automaticamente. Antes de ampliar o MCP, medir `tools/list`, reler serviços oficiais e executar testes de compatibilidade.
+Próxima fase: knowledge/templates/produtos ou a fase definida pelo roteiro seguinte, começando por auditoria delta do domínio escolhido. Não iniciar automaticamente. Antes de ampliar o MCP, medir `tools/list`, reler serviços oficiais e executar testes de compatibilidade.
+
+## 19. Living System Checklist — Parte 5
+
+1. Entrada: token MCP e `tools/list`, sem organização no payload.
+2. Saída: handlers de agenda, workers/enrollments, `event_log` e routing worker reais.
+3. Registro: audit actions canônicas mais eventos/timeline preservados pelos serviços.
+4. Tela: Agenda, Follow-up, Automações, Runs e Configurações › Routing existentes.
+5. Porta: registry/catálogo MCP e navegação já existente; nenhuma tela paralela.
+6. Anti-morte: horários/preflight, `next_eval_at`, estados terminais e requeue/backoff.
+7. Configuração: as mesmas superfícies que a UI lê e altera; ausência retorna erro acionável.
+8. Continuidade: confirmação humana explícita e simulações sem efeito irreversível.
+9. Laço: enrollment events, runs, audit, erros e decisões simuladas orientam a próxima ação.
+10. Mapa: `docs/architecture/mcp-fundacao-ia.architecture.json` contém a Parte 5 e suas arestas.
+
+## 20. Validação final da Parte 5
+
+- Foco: 14 arquivos/168 testes.
+- Regressão MCP: 26 arquivos/230 testes.
+- Catálogo e mapa: 3 arquivos/619 testes.
+- Banco relevante: 8 arquivos/84 testes.
+- Typecheck: aprovado com `NODE_OPTIONS=--max-old-space-size=3584`.
+- ESLint alterados, `lint:channels`, `lint:role-rank` e release check: aprovados.
+- `test:db` global: 253/254 arquivos; 5 falhas fora do diff em prospecting, reproduzidas isoladamente.
+- Migrations: nenhuma. E2E, `test:shell`, build e suíte unitária global não executados por escopo.
 
 ## 17. Living System Checklist — Parte 4
 

@@ -2,8 +2,8 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "MCP: fundação, IA, CRM e atendimento",
-    "subtitle": "Registry único, policy explícita, continuidade IA↔humano e envio pelo canal oficial",
+    "title": "MCP: fundação, IA, CRM, atendimento e operação",
+    "subtitle": "Registry único, policy explícita e serviços canônicos de agenda, follow-up, automação e routing",
     "output": "mcp-fundacao-ia.html",
     "quality_profile": "standard"
   },
@@ -101,6 +101,20 @@
       "label": "Handlers, RPCs, idempotência e histórico oficiais do Inbox"
     },
     {
+      "id": "toolsoperacao",
+      "lane": "mcp",
+      "col": 3,
+      "type": "backend",
+      "label": "Tools de agenda, disponibilidade, follow-up, automações e routing"
+    },
+    {
+      "id": "serviceoperacao",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "Agenda, flows/versionamento, event_log, workers e decideRouting oficiais"
+    },
+    {
       "id": "canal",
       "lane": "dominio",
       "col": 5,
@@ -154,6 +168,31 @@
       "from": "toolsatendimento",
       "to": "serviceatendimento",
       "label": "Compõe operações canônicas"
+    },
+    {
+      "from": "policy",
+      "to": "toolsoperacao",
+      "label": "Exige domínio e capabilities de ativação ou destruição"
+    },
+    {
+      "from": "toolsoperacao",
+      "to": "serviceoperacao",
+      "label": "Delega aos serviços, RPCs e regras oficiais"
+    },
+    {
+      "from": "serviceoperacao",
+      "to": "tenantdb",
+      "label": "Filtra toda referência por organização"
+    },
+    {
+      "from": "serviceoperacao",
+      "to": "audit",
+      "label": "Registra configuração, publicação e intervenção"
+    },
+    {
+      "from": "serviceoperacao",
+      "to": "serviceatendimento",
+      "label": "Workers entregam efeitos somente pelo canal oficial"
     },
     { "from": "serviceatendimento", "to": "canal", "label": "Envia somente pelo adapter oficial" },
     { "from": "canal", "to": "serviceatendimento", "label": "Entrega status, erro e recibos" },

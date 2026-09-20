@@ -9,11 +9,11 @@
  * verdade. Nenhuma dessas duas coisas volta atrás. Por isso a capacidade de
  * ligar/desligar é `critico` no catálogo — nunca entra por pacote.
  *
- * ⚠️ O QUE O AGENTE **NÃO** PODE FAZER, e é decisão, não omissão: criar regra,
- * editar o gatilho, editar as ações ou apagar. Ligar uma regra que um humano
- * escreveu e revisou é reversível por um clique na tela e o humano sabe o que
- * ela faz. Deixar o agente ESCREVER a ação seria deixá-lo escolher para qual
- * endereço externo a empresa manda dados — e aí o gate humano vira decorativo.
+ * ⚠️ O agente embutido NÃO recebe administração de regra: as tools de CRUD do
+ * MCP externo são `apenasHumano`, criam/alteram sempre sem ativar e cercam
+ * exclusão e ativação com capabilities separadas. Assim um cliente operacional
+ * pode preparar a configuração sem transformar o agente de atendimento em
+ * autor de uma ação externa.
  *
  * ⚠️ `actions` NUNCA SAI COM `config` CRU. A configuração de `call_webhook`
  * carrega `secret_enc` e a URL de destino. O que sai daqui é a LISTA DE TIPOS de

@@ -107,7 +107,10 @@ export const crmCreateStage: McpToolDefinition<typeof createStageShape> = {
   requiresRole: "manager",
   requiresScope: "mcp:write",
   domain: "pipelines",
-  auditResource: (_input, result) => ({ type: "crm_stage", id: (result as { stage_id?: string } | undefined)?.stage_id }),
+  auditResource: (_input, result) => ({
+    type: "crm_stage",
+    id: (result as { stage_id?: string } | undefined)?.stage_id,
+  }),
   handler: async (input, ctx) => {
     const { stageId, funil } = await criarEtapa(deps(ctx), {
       pipelineId: input.pipeline_id,
@@ -281,7 +284,9 @@ export const crmListWebhookSources: McpToolDefinition<typeof listSourcesShape> =
   requiresRole: "agent",
   requiresScope: "mcp:read",
   handler: async (input, ctx) => {
-    return { entradas: await listarEntradasAutomaticas(deps(ctx), { apenasAtivas: input.only_active }) };
+    return {
+      entradas: await listarEntradasAutomaticas(deps(ctx), { apenasAtivas: input.only_active }),
+    };
   },
 };
 
@@ -393,7 +398,9 @@ export const crmListAutomationRules: McpToolDefinition<typeof listRulesShape> = 
   requiresRole: "agent",
   requiresScope: "mcp:read",
   handler: async (input, ctx) => {
-    return { regras: await listarRegrasAutomaticas(deps(ctx), { apenasAtivas: input.only_active }) };
+    return {
+      regras: await listarRegrasAutomaticas(deps(ctx), { apenasAtivas: input.only_active }),
+    };
   },
 };
 
@@ -435,7 +442,7 @@ export const crmSetAutomationRuleActive: McpToolDefinition<typeof setRuleActiveS
     "Liga ou desliga uma regra automática. LIGAR faz a regra rodar sozinha em TODO evento que casar, indefinidamente, " +
     "sem ninguém assistindo — e as ações podem enviar mensagem ao cliente ou mandar dados para fora da empresa. " +
     "Confira as ações com crm_list_automation_rules antes, e confirme com um humano. " +
-    "Criar, editar e apagar regra não é possível por aqui, de propósito.",
+    "Criar e editar continuam inativos até esta operação separada; apagar exige capability destrutiva.",
   inputSchema: setRuleActiveShape,
   category: "write",
   requiresRole: "manager",
