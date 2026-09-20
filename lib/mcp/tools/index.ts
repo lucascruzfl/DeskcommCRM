@@ -1,13 +1,8 @@
 /**
  * Catalogo agregado de tools MCP.
  *
- *  Wave 3 (S-13.03): 5 read tools (contacts, conversations, messages history).
- *  Wave 4 (S-13.04): +3 read (leads list/get, pipelines list)
- *                    +4 write (create_lead, update_lead, move_lead_stage, send_whatsapp)
- *                    +1 handoff (request_human_handoff). Total 13 tools.
- *  +1 write (start_conversation_and_send): cold-start de conversa nova num
- *  canal escolhido, pra automação externa com chave (`requiresRole: manager`,
- *  `apenasHumano` no catálogo — nunca alcançável pelo agente publicado).
+ * A quantidade e a composição são derivadas deste registry; não mantenha um
+ * contador paralelo. `tools/list` filtra esta fonte única pela policy do token.
  */
 import type { McpToolDefinition } from "../types";
 import { TOOL_CATALOG, VALID_TOOL_IDS } from "./catalog";
@@ -87,6 +82,7 @@ import {
   crmCloseDemand,
   crmProposeReactivation,
 } from "./retencao";
+import { AI_MCP_TOOLS } from "./ia";
 
 // Cast via `unknown` porque McpToolDefinition<TInput> nao e covariante
 // em TInput (handler usa TInput em posicao contravariante). Coletar
@@ -94,6 +90,7 @@ import {
 // nivel do array — o server core ja recebe args como `Record<string,
 // unknown>` e cada handler valida no Zod do registerTool.
 export const allTools: ReadonlyArray<McpToolDefinition> = [
+  ...AI_MCP_TOOLS,
   // read
   crmListEventTypes,
   crmFindFreeSlots,

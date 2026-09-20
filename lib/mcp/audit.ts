@@ -17,7 +17,10 @@ interface AuditMcpToolCallInput {
   durationMs: number;
   success: boolean;
   errorMessage?: string;
+  errorCode?: string;
   resultSummary?: string;
+  resourceType?: string;
+  resourceId?: string | null;
   /**
    * Vazio DECLARADO pela tool ("não achei"), quando o `success: false` é isso e
    * não erro técnico. A tool diz qual vazio foi (`motivo`).
@@ -38,24 +41,37 @@ const ARGS_REDACT_KEYS = new Set([
   "token",
   "password",
   "cpf",
+  "secret",
+  "ciphertext",
+  "credential_value",
+  "client_secret",
+  "refresh_token",
+  "access_token",
+  "private_key",
 ]);
 
-function redactArgs(args: Record<string, unknown>): Record<string, unknown> {
+function redactValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redactValue);
+  if (value && typeof value === "object") return redactArgs(value as Record<string, unknown>);
+  if (typeof value === "string" && value.length > 500) return `${value.slice(0, 500)}...[truncated]`;
+  return value;
+}
+
+export function redactArgs(args: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(args)) {
     if (ARGS_REDACT_KEYS.has(k.toLowerCase())) {
       out[k] = "[redacted]";
-    } else if (typeof v === "string" && v.length > 500) {
-      out[k] = `${v.slice(0, 500)}...[truncated]`;
     } else {
-      out[k] = v;
+      out[k] = redactValue(v);
     }
   }
   return out;
 }
 
 export async function auditMcpToolCall(input: AuditMcpToolCallInput): Promise<void> {
-  const { ctx, toolName, args, durationMs, success, errorMessage, resultSummary, desfecho, motivo } =
+  const { ctx, toolName, args, durationMs, success, errorMessage, errorCode, resultSummary,
+    resourceType, resourceId, desfecho, motivo } =
     input;
 
   const metadata: Record<string, unknown> = {
@@ -69,6 +85,9 @@ export async function auditMcpToolCall(input: AuditMcpToolCallInput): Promise<vo
 
   if (resultSummary) metadata.result_summary = resultSummary.slice(0, 280);
   if (errorMessage) metadata.error = errorMessage.slice(0, 500);
+  if (errorCode) metadata.error_code = errorCode.slice(0, 100);
+  if (resourceType) metadata.resource_type = resourceType;
+  if (resourceId) metadata.resource_id = resourceId;
   if (desfecho) metadata.desfecho = desfecho;
   if (motivo) metadata.motivo = motivo.slice(0, 200);
   if (ctx.actor.type === "ai_agent" && ctx.actor.api_token_id) {
@@ -84,11 +103,11 @@ export async function auditMcpToolCall(input: AuditMcpToolCallInput): Promise<vo
     actorUserId: null,
     actorApiTokenId: ctx.apiTokenId,
     organizationId: ctx.organizationId,
-    resourceType: "mcp_tool",
+    resourceType: resourceType ?? "mcp_tool",
     // `resource_id` é uuid no banco; o nome da tool ia aqui como texto e o
     // insert morria com "invalid input syntax for type uuid: crm_create_lead".
     // O nome já viaja em metadata.tool_name, que é jsonb.
-    resourceId: null,
+    resourceId: resourceId ?? null,
     requestId: ctx.requestId,
     metadata,
   });

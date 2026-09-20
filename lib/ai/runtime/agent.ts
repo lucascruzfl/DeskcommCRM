@@ -35,6 +35,8 @@ import {
   OPENROUTER_ENDPOINT,
 } from "@/lib/agent-engine/edge/llm/providers";
 import { CredentialUnavailableError, loadCredential } from "@/lib/ai/credentials";
+import { chaveDePlataforma } from "@/lib/ai/platform-credential";
+export { chaveDePlataforma } from "@/lib/ai/platform-credential";
 import { decidirElegibilidadeDaConversaViaSupabase } from "@/lib/ai/elegibilidade/consulta-supabase";
 import { ttlDaAutorizacaoMs } from "@/lib/ai/elegibilidade/gate";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -155,15 +157,6 @@ function buildSentinelRegex(keywords: string[]): RegExp | null {
  * real também não tem ramo de fallback para ele, e prometer aqui um caminho que
  * lá não existe faria o ensaio passar e a mensagem real falhar.
  */
-export function chaveDePlataforma(provider: string): string | null {
-  const nome = { anthropic: "ANTHROPIC_API_KEY", openai: "OPENAI_API_KEY", openrouter: "OPENROUTER_API_KEY" }[
-    provider
-  ];
-  if (!nome) return null;
-  const v = (process.env[nome] ?? "").trim();
-  return v === "" ? null : v;
-}
-
 export function buildModel(provider: string, apiKey: string, modelId: string): LanguageModel {
   switch (provider) {
     case "anthropic":

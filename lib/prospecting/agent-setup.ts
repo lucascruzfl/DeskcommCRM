@@ -8,7 +8,7 @@ import { escolherModeloDoProvedor } from "@/lib/ai/agents/escolher-modelo";
 import { capacidadesPadraoDoOnboarding } from "@/lib/ai/agents/capacidades-padrao";
 import { versionCreateSchema } from "@/lib/ai/agents/validation";
 import { lockRouter, writeRouterMembers } from "@/lib/ai/agents/router-members";
-import { chaveDePlataforma } from "@/lib/ai/runtime/agent";
+import { chaveDePlataforma } from "@/lib/ai/platform-credential";
 import { PROVIDERS } from "@/lib/ai/agents/validation";
 import { capabilitiesOf } from "@/lib/channels/capabilities";
 import type { ChannelProvider } from "@/lib/channels/types";

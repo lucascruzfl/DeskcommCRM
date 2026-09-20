@@ -14,8 +14,10 @@ import type { z } from "zod";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { auditMcpToolCall } from "./audit";
-import { ensureRole, ensureScope, type McpAuthResult } from "./auth";
-import { allTools } from "./tools";
+import { ensureRole, type McpAuthResult } from "./auth";
+import { authorizeTool } from "./policy";
+import { toolsForAuth } from "./registry";
+import { McpToolError, mcpErrorPayload, sanitizeMcpPayload } from "./errors";
 import { higienizarUuidsDeAterro } from "./uuid-de-aterro";
 import type { McpContext } from "./types";
 
@@ -40,7 +42,7 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
 
   const supabase = createAdminClient();
 
-  for (const tool of allTools) {
+  for (const tool of toolsForAuth(auth)) {
     server.registerTool(
       tool.name,
       {
@@ -65,20 +67,23 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
           role: auth.role,
           actor: auth.actor,
           apiTokenId: auth.apiTokenId,
+          provisionedByUserId: auth.provisionedByUserId,
           requestId,
           supabase,
         };
 
         try {
-          ensureScope(auth.scopes, tool.requiresScope);
+          authorizeTool(auth, tool);
           ensureRole(auth.role, tool.requiresRole);
 
           const result = await tool.handler(args as never, ctx);
+          const safeResult = sanitizeMcpPayload(result);
           const durationMs = Date.now() - startedAt;
           // Mesma regra do ingresso do agente (`lib/ai/runtime/tools.ts`, #484):
           // o vazio que a tool declara não é sucesso. Sem isto, a mesma busca
           // sem achado era `success: true` por aqui e `false` por lá.
           const motivoDoVazio = tool.motivoDoVazio?.(result) ?? null;
+          const resource = tool.auditResource?.(args as never, result);
 
           await auditMcpToolCall({
             ctx,
@@ -87,14 +92,16 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
             durationMs,
             success: motivoDoVazio === null,
             resultSummary: summarizeResult(result),
+            resourceType: resource?.type,
+            resourceId: resource?.id,
             ...(motivoDoVazio === null
               ? {}
               : { desfecho: "sem_resultado" as const, motivo: motivoDoVazio }),
           });
 
           return {
-            content: [{ type: "text", text: JSON.stringify(result) }],
-            structuredContent: result as Record<string, unknown>,
+            content: [{ type: "text", text: JSON.stringify(safeResult) }],
+            structuredContent: safeResult as Record<string, unknown>,
           };
         } catch (err) {
           const message = err instanceof Error ? err.message : "unknown_error";
@@ -107,11 +114,14 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
             durationMs,
             success: false,
             errorMessage: message,
+            errorCode: err instanceof McpToolError ? err.code : undefined,
+            resourceType: tool.auditResource?.(args as never)?.type,
+            resourceId: tool.auditResource?.(args as never)?.id,
           });
 
           return {
             isError: true,
-            content: [{ type: "text", text: message }],
+            content: [{ type: "text", text: JSON.stringify(mcpErrorPayload(err)) }],
           };
         }
       },

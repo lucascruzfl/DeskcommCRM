@@ -25,6 +25,7 @@ export interface McpAuthResult {
   role: Role;
   actor: Actor;
   apiTokenId: string;
+  provisionedByUserId?: string;
   scopes: string[];
 }
 
@@ -192,6 +193,7 @@ export async function validateBearerToken(
     role,
     actor,
     apiTokenId: resolved.id,
+    provisionedByUserId: resolved.createdBy,
     scopes: resolved.scopes,
   };
 }

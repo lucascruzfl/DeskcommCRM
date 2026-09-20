@@ -1,8 +1,9 @@
-import { listSelectableChannels, type SelectableChannel } from "@/lib/channels/selectable";
-import { createAdminClient } from "@/lib/supabase/admin";
+import type { SelectableChannel } from "@/lib/channels/selectable";
+import { listSelectableChannels } from "@/lib/channels/selectable";
+import type { createAdminClient } from "@/lib/supabase/admin";
 import { capacidadesPadraoDoOnboarding } from "./capacidades-padrao";
 import { escolherModeloDoProvedor } from "./escolher-modelo";
-import { chaveDePlataforma } from "@/lib/ai/runtime/agent";
+import { chaveDePlataforma } from "@/lib/ai/platform-credential";
 import { publishAgentVersion } from "./publish";
 interface AgenteDoOnboarding {
   id: string;

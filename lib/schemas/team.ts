@@ -7,6 +7,7 @@
  */
 import { z } from "zod";
 import { interfaceSettingsSchema, interfaceTemDestino } from "@/lib/navigation/interface";
+import { isKnownApiTokenScope } from "@/lib/mcp/scopes";
 
 export const ROLES = ["viewer", "agent", "manager", "admin"] as const;
 export type Role = (typeof ROLES)[number];
@@ -42,7 +43,7 @@ export type ChangeRoleInput = z.infer<typeof changeRoleSchema>;
 
 export const createApiTokenSchema = z.object({
   name: z.string().min(2).max(100),
-  scopes: z.array(z.string()).min(1),
+  scopes: z.array(z.string().refine(isKnownApiTokenScope, "Escopo desconhecido.")).min(1),
   expires_in_days: z.coerce.number().int().min(1).max(365).optional(),
 });
 export type CreateApiTokenInput = z.infer<typeof createApiTokenSchema>;

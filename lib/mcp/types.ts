@@ -19,12 +19,41 @@ export interface McpContext {
   role: Role;
   actor: Actor;
   apiTokenId: string;
+  /** Usuário humano que provisionou o token; usado em FKs/auditoria, nunca como ator atual. */
+  provisionedByUserId?: string;
   requestId: string;
   /** Service-role admin client. Tools devem filtrar `organization_id` em toda query. */
   supabase: SupabaseClient;
 }
 
 export type McpToolCategory = "read" | "write" | "handoff";
+
+export type McpToolDomain =
+  | "agents"
+  | "ai"
+  | "appointments"
+  | "automations"
+  | "channels"
+  | "contacts"
+  | "conversations"
+  | "followups"
+  | "knowledge"
+  | "leads"
+  | "messages"
+  | "pipelines"
+  | "products"
+  | "routing"
+  | "team"
+  | "templates"
+  | "webhooks";
+
+export type McpCapability =
+  | "agent_activation"
+  | "agent_publication"
+  | "automation_activation"
+  | "destructive_operations"
+  | "human_handoff"
+  | "send_messages";
 
 export interface McpToolDefinition<TInput extends z.ZodRawShape = z.ZodRawShape> {
   name: string;
@@ -38,6 +67,16 @@ export interface McpToolDefinition<TInput extends z.ZodRawShape = z.ZodRawShape>
    * Ausência → -32002 forbidden.
    */
   requiresScope: "mcp:read" | "mcp:write";
+  /** Política operacional usada pelo perfil MCP externo. */
+  domain?: McpToolDomain;
+  capabilities?: ReadonlyArray<McpCapability>;
+  /** Ausente/true = aparece no perfil externo quando o token é autorizado. */
+  publicProfile?: boolean;
+  /** Recurso concreto para a linha de auditoria da mutação. */
+  auditResource?: (input: z.infer<z.ZodObject<TInput>>, result?: unknown) => {
+    type: string;
+    id?: string | null;
+  };
   /**
    * O que a tool DECLARA quando a resposta é um vazio que NÃO é sucesso.
    *

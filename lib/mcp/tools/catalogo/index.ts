@@ -22,12 +22,14 @@ import { TOOLS_FUNIL } from "./funil";
 import { TOOLS_GOVERNANCA } from "./governanca";
 import { TOOLS_OPERACAO } from "./operacao";
 import { TOOLS_RETENCAO } from "./retencao";
+import { TOOLS_IA } from "./ia";
 import type { McpToolCatalogEntry } from "./tipos";
 
 export type { McpToolCatalogEntry } from "./tipos";
 export { declararTools } from "./tipos";
 
 export const TOOL_CATALOG: ReadonlyArray<McpToolCatalogEntry> = [
+  ...TOOLS_IA,
   ...TOOLS_AGENDAMENTO,
   ...TOOLS_ATENDIMENTO,
   ...TOOLS_ESCALACAO,

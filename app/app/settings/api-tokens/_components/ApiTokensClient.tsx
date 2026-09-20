@@ -32,6 +32,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useT } from "@/hooks/i18n/useT";
+import { MCP_CAPABILITIES, MCP_DOMAINS, MCP_OPERATION_PRESET } from "@/lib/mcp/scopes";
 
 /**
  * `mcp:read`/`mcp:write` faltavam nesta lista, e sem eles NENHUMA ferramenta
@@ -56,6 +57,14 @@ const SCOPES: { id: string; label: string }[] = [
   { id: "messages:read", label: "Ler mensagens" },
   { id: "messages:write", label: "Enviar mensagens" },
   { id: "audit:read", label: "Ler o log de auditoria" },
+  ...MCP_DOMAINS.filter((domain) => !["contacts", "leads", "messages"].includes(domain)).flatMap((domain) => [
+    { id: `${domain}:read`, label: `Ler o domínio ${domain}` },
+    { id: `${domain}:write`, label: `Alterar o domínio ${domain}` },
+  ]),
+  ...MCP_CAPABILITIES.map((capability) => ({
+    id: `capability:${capability}`,
+    label: `Autorizar risco: ${capability}`,
+  })),
 ];
 
 export function ApiTokensClient() {
@@ -195,6 +204,17 @@ export function ApiTokensClient() {
             </div>
             <div className="space-y-2">
               <Label>{t("Escopos")}</Label>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setScopes([...MCP_OPERATION_PRESET])}
+              >
+                {t("Selecionar preset: Operação completa via MCP")}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                {t("O preset só é aplicado quando você o escolhe e inclui allowlist explícita de cada ferramenta.")}
+              </p>
               <div className="flex flex-wrap gap-2">
                 {SCOPES.map((s) => (
                   <button

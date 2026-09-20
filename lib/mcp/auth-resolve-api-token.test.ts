@@ -350,6 +350,7 @@ describe("validateBearerToken — a tradução para MCP não mudou", () => {
       // arquivo que guarda esta decisão e o motivo dela.
       actor: { type: "api_token", id: TOKEN_ID, role: "agent" },
       apiTokenId: TOKEN_ID,
+      provisionedByUserId: CRIADOR_ID,
       scopes: ["mcp:read", "mcp:write"],
     });
   });

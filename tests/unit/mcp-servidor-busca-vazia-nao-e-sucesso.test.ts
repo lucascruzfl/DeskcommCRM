@@ -27,6 +27,10 @@ vi.mock("@/lib/mcp/tools", () => ({
     },
   ],
 }));
+vi.mock("@/lib/mcp/registry", async () => {
+  const { allTools } = await import("@/lib/mcp/tools");
+  return { toolsForAuth: () => allTools };
+});
 
 const { createMcpServer } = await import("@/lib/mcp/server");
 

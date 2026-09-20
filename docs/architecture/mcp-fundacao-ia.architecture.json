@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "MCP: fundação de autorização e operação de IA",
+    "subtitle": "Registry único, policy explícita, serviço canônico e isolamento por organização",
+    "output": "mcp-fundacao-ia.html",
+    "quality_profile": "standard"
+  },
+  "lanes": [
+    { "id": "cliente", "label": "Cliente MCP" },
+    { "id": "mcp", "label": "Servidor MCP" },
+    { "id": "dominio", "label": "Domínio de IA" },
+    { "id": "dados", "label": "Dados e auditoria" }
+  ],
+  "mainPath": ["token", "registry", "policy", "toolsia", "serviceia", "tenantdb", "audit"],
+  "nodes": [
+    { "id": "token", "lane": "cliente", "col": 0, "type": "security", "label": "Token manager com scopes, allowlist e capabilities explícitas" },
+    { "id": "preset", "lane": "cliente", "col": 1, "type": "frontend", "label": "Preset Operação completa via MCP" },
+    { "id": "registry", "lane": "mcp", "col": 1, "type": "backend", "label": "Registry único e tools/list derivado" },
+    { "id": "policy", "lane": "mcp", "col": 2, "type": "security", "label": "Policy de role, scope, allowlist e risco real" },
+    { "id": "errors", "lane": "mcp", "col": 3, "type": "backend", "label": "Erros estáveis e respostas higienizadas" },
+    { "id": "toolsia", "lane": "mcp", "col": 3, "type": "backend", "label": "Tools de catálogo e administração de agentes" },
+    { "id": "serviceia", "lane": "dominio", "col": 4, "type": "backend", "label": "Serviço MCP de IA reutilizando validação e publicação reais" },
+    { "id": "platformkey", "lane": "dominio", "col": 3, "type": "security", "label": "Resolvedor interno de credencial da instalação" },
+    { "id": "tenantdb", "lane": "dados", "col": 5, "type": "database", "label": "Catálogo, credenciais seguras, agentes, versões e runs cercados por organização" },
+    { "id": "audit", "lane": "dados", "col": 4, "type": "database", "label": "Auditoria com recurso, resultado, request e redação recursiva" }
+  ],
+  "edges": [
+    { "from": "preset", "to": "token", "label": "Seleção humana explícita" },
+    { "from": "token", "to": "registry", "label": "Autentica contexto e organização" },
+    { "from": "registry", "to": "policy", "label": "Filtra perfil público" },
+    { "from": "policy", "to": "toolsia", "label": "Autoriza antes do handler" },
+    { "from": "policy", "to": "errors", "label": "Recusas tipadas" },
+    { "from": "toolsia", "to": "serviceia", "label": "Delega regra de negócio" },
+    { "from": "serviceia", "to": "platformkey", "label": "Consulta apenas disponibilidade" },
+    { "from": "serviceia", "to": "tenantdb", "label": "Filtra toda referência por organização" },
+    { "from": "toolsia", "to": "audit", "label": "Declara recurso mutado" },
+    { "from": "errors", "to": "audit", "label": "Registra código sem segredo" },
+    { "from": "audit", "to": "token", "label": "Atribui ator técnico" },
+    { "from": "tenantdb", "to": "toolsia", "label": "Retorna somente campos permitidos" },
+    { "from": "platformkey", "to": "registry", "label": "Sem expor valor no catálogo" }
+  ]
+}

@@ -63,6 +63,39 @@ describe('preview policy shares gates and contains side effects', () => {
     expect(p.result.proposals).toHaveLength(1);
     expect(p.result.candidates[0]?.body).toBe('Olá, posso ajudar?');
   });
+  it('keeps message, webhook, appointment, lead and handoff effects inside the sandbox', async () => {
+    const p = preview();
+    const executors = {
+      send_message: vi.fn(),
+      crm_create_webhook_source: vi.fn(),
+      crm_book_appointment: vi.fn(),
+      crm_update_lead: vi.fn(),
+      crm_request_human_handoff: vi.fn(),
+    };
+    const tools = applyPreviewPolicy(
+      Object.fromEntries(
+        Object.entries(executors).map(([name, executor]) => [name, definition(executor)]),
+      ),
+      p,
+      gate(),
+      () => [],
+    );
+
+    await execute(tools, 'send_message', { body: 'Mensagem apenas simulada' });
+    await execute(tools, 'crm_create_webhook_source', { name: 'não criar' });
+    await execute(tools, 'crm_book_appointment', { starts_at: '2026-09-21T10:00:00Z' });
+    await execute(tools, 'crm_update_lead', { lead_id: 'lead-real', stage: 'qualified' });
+    await execute(tools, 'crm_request_human_handoff', { reason: 'teste' });
+
+    for (const executor of Object.values(executors)) expect(executor).not.toHaveBeenCalled();
+    expect(p.result.candidates).toHaveLength(1);
+    expect(p.result.proposals.map((proposal) => proposal.tool)).toEqual([
+      'crm_create_webhook_source',
+      'crm_book_appointment',
+      'crm_update_lead',
+      'crm_request_human_handoff',
+    ]);
+  });
   it('uses exactly the real opt-out decision and prevents a simulated candidate too', async () => {
     const p = preview(),
       ctx = { ...gate(), optedOut: true },

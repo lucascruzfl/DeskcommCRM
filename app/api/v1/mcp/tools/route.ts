@@ -22,6 +22,7 @@ import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { allTools } from "@/lib/mcp/tools";
 import { TOOL_CATALOG } from "@/lib/mcp/tools/catalog";
 import { juntarCatalogoComHandlers } from "@/lib/mcp/tools/catalogo-servido";
+import { domainOf } from "@/lib/mcp/policy";
 
 export const dynamic = "force-dynamic";
 
@@ -47,8 +48,12 @@ export async function GET(_req: NextRequest): Promise<Response> {
   }
 
   const schemaPorNome = new Map(allTools.map((t) => [t.name, t.inputSchema]));
+  const handlerPorNome = new Map(allTools.map((tool) => [tool.name, tool]));
   const tools = servidas.map((capacidade) => ({
     ...capacidade,
+    domain: domainOf(handlerPorNome.get(capacidade.id)!),
+    capabilities: handlerPorNome.get(capacidade.id)?.capabilities ?? [],
+    public_profile: handlerPorNome.get(capacidade.id)?.publicProfile !== false,
     input_schema: z.toJSONSchema(z.object(schemaPorNome.get(capacidade.id) ?? {}), {
       target: "openapi-3.0",
     }),

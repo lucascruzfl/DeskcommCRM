@@ -66,4 +66,23 @@ describe("auditMcpToolCall", () => {
     expect(e.metadata.args.cpf).toBe("[redacted]");
     expect(e.metadata.args.query).toBe("joana");
   });
+
+  it("redige segredos aninhados e registra recurso e código sem trocar a organização", async () => {
+    await auditMcpToolCall({
+      ctx,
+      toolName: "crm_publish_ai_agent_version",
+      args: { credential: { api_key: "nao-pode-sair", access_token: "nem-este" } },
+      durationMs: 4,
+      success: false,
+      errorCode: "model_not_found",
+      resourceType: "ai_agent_version",
+      resourceId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    });
+    const e = auditSpy.mock.calls[0]![0];
+    expect(e.organizationId).toBe(ctx.organizationId);
+    expect(e.resourceType).toBe("ai_agent_version");
+    expect(e.resourceId).toBe("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    expect(e.metadata.error_code).toBe("model_not_found");
+    expect(e.metadata.args.credential).toEqual({ api_key: "[redacted]", access_token: "[redacted]" });
+  });
 });
