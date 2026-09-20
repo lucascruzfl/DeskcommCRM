@@ -232,6 +232,15 @@ const PROVA_PROPRIA: readonly Excecao[] = [
       "filtrando organization_id à mão (a tela `/app/settings/conversoes`).",
   },
   {
+    tabela: "ad_hierarchy_cache",
+    razao:
+      "tests/invariants/credencial-de-anuncios-e-server-side.test.ts — mesmo " +
+      "`describe.each` das três acima. Guarda o nome da campanha, do conjunto e " +
+      "do anúncio de quem anuncia: a estratégia de mídia, não um segredo de " +
+      "autenticação. Quem a lê é o servidor com o admin client filtrando " +
+      "organization_id à mão.",
+  },
+  {
     tabela: "google_ads_landing_pages",
     razao:
       "tests/invariants/google-ads-captura-e-server-side.test.ts — mesmo desenho " +

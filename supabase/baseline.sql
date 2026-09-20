@@ -35382,6 +35382,48 @@ begin
  return new;
 end;$$;
 revoke all on function public.fn_meet_delivery_enqueue() from public,anon,authenticated;
+-- ---- Cache da hierarquia do anúncio (migration 0380) ----
+-- Nome do anúncio, do conjunto e da campanha por id de anúncio. Existe porque a
+-- conta de anúncios opera em cota baixa e um único anúncio gera centenas de
+-- contatos: sem cache, cada ficha aberta repetiria a mesma pergunta. Mesmo
+-- desenho server-side-only de ad_insights_connections (0214); ver o cabeçalho da
+-- migration 0380 para o racional completo.
+
+create table if not exists public.ad_hierarchy_cache (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  platform text not null,
+  ad_id text not null,
+  ad_name text,
+  adset_id text,
+  adset_name text,
+  campaign_id text,
+  campaign_name text,
+  fetched_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint ad_hierarchy_cache_platform_conhecida
+    check (platform in ('meta_ads', 'google_ads'))
+);
+
+create unique index if not exists ad_hierarchy_cache_org_platform_ad_uk
+  on public.ad_hierarchy_cache (organization_id, platform, ad_id);
+
+comment on table public.ad_hierarchy_cache is
+  'Nome do anúncio, do conjunto e da campanha, guardados por id de anúncio. Existe porque a conta de anúncios opera em cota baixa e um único anúncio gera centenas de contatos: sem cache, cada ficha aberta gastaria uma chamada para repetir a mesma pergunta. Server-side only: RLS ligada sem policies e grants revogados de anon/authenticated.';
+comment on column public.ad_hierarchy_cache.ad_id is
+  'O identificador do anúncio na plataforma — o mesmo que a ingestão grava em contacts.source_metadata.ad_id. Sem FK: o anúncio é da plataforma e pode ser apagado lá sem aviso.';
+comment on column public.ad_hierarchy_cache.fetched_at is
+  'Quando a hierarquia foi lida da plataforma. A idade aceitável é decisão do código que lê, não do schema: ela muda com o degrau de cota da conta, e não com a forma do dado.';
+
+alter table public.ad_hierarchy_cache enable row level security;
+revoke all on public.ad_hierarchy_cache from anon, authenticated;
+grant select, insert, update, delete on public.ad_hierarchy_cache to service_role;
+
+drop trigger if exists trg_ad_hierarchy_cache_updated_at on public.ad_hierarchy_cache;
+create trigger trg_ad_hierarchy_cache_updated_at
+  before update on public.ad_hierarchy_cache
+  for each row execute function public.fn_set_updated_at();
 
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
