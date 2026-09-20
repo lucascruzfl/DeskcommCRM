@@ -1,0 +1,224 @@
+# DeskcommCRM 1.41.0 — MCP Full Control — implementação mestre
+
+Atualizado em: 2026-09-20
+
+Branch: `feat/mcp-full-control`
+Estado deste checkpoint: Partes 1, 2, 3 e 4 concluídas; Parte 4 validada e incluída no commit desta entrega.
+
+## 1. Objetivo
+
+Construir um MCP Full Control operacional para o DeskcommCRM sem criar uma API paralela nem um CRUD direto sobre tabelas. Cada tool deve descobrir e reutilizar o serviço, handler, RPC, worker ou fluxo oficial do produto; manter autorização, multi-tenancy, idempotência, auditoria, eventos e efeitos que a UI/API já preservam; e expor somente a autoridade necessária ao token.
+
+A versão 1.41.0 é a base auditada, não um congelamento do MCP. A fonte de verdade do catálogo executável é `MCP_REGISTRY`, servido ao cliente por `tools/list` após os filtros de autorização.
+
+## 2. Base e contagens
+
+- Versão base: DeskcommCRM 1.41.0.
+- Arquitetura MCP original: endpoint Streamable HTTP em `app/api/mcp/route.ts`; autenticação Bearer `dsk_...` por hash; `McpServer` em `lib/mcp/server.ts`; handlers agregados em `lib/mcp/tools/index.ts`; contexto de organização/ator resolvido no servidor; Supabase service role com filtros explícitos; auditoria em `api_audit_log`.
+- Tools originais: 63.
+- Tools antes da Parte 4: **108**, calculadas diretamente por `MCP_REGISTRY.length` no commit da Parte 3.
+- Tools novas na Parte 4: **10**.
+- Tools atuais: **118**, calculadas diretamente por `MCP_TOOL_COUNT`/`MCP_REGISTRY.length` neste checkpoint.
+- Branch atual: `feat/mcp-full-control`.
+- Base anterior às implementações: `6eceb0e60`.
+
+## 3. Commits implementados
+
+- Parte 2: `0a1fe1a97 feat(mcp): add authorization foundation and complete AI administration`.
+- Parte 3: `44c9de0e3 feat(mcp): complete core CRM administration`.
+- Parte 1 foi uma auditoria documental e não possui commit de implementação MCP neste histórico.
+- Parte 4: `feat(mcp): complete conversations and messaging operations` (commit que contém este documento).
+
+## 4. Fases concluídas
+
+### Parte 1 — auditoria
+
+A auditoria de 1.41.0 inventariou 63 tools originais, 338 rotas REST no recorte medido à época, domínios do produto, serviços reutilizáveis, gaps A/B/C, riscos de acesso direto e a estratégia de não espelhar toda rota como tool. O relatório de retomada está em `/root/DESKCOMM-141-MCP-AUDITORIA.md`.
+
+### Parte 2 — fundação e IA
+
+Adicionou 25 tools, elevando o registry de 63 para 88. Entregou registry e perfil público autorizados, domínios, scopes, allowlist por tool, capabilities, preset opt-in “Operação completa via MCP”, erros e sanitização centrais, auditoria sem payload sensível e administração completa de providers, modelos, credenciais seguras, agentes, drafts, versões, preflight, teste sandbox, publicação, ativação e runs.
+
+Testes: 24 arquivos focados, 468 testes aprovados; typecheck, lint dos arquivos alterados, diff-check e release check aprovados. Não foram executados nessa fase `test:db`, `test:e2e`, `test:shell`, build nem suíte global.
+
+### Parte 3 — CRM comercial
+
+Adicionou 20 tools, elevando o registry de 88 para 108. Entregou contatos, oportunidades/leads, pipelines, stages, campos personalizados em `pipeline.settings.fields`, tags, responsáveis, timeline, tarefas e movimentação oficial entre funis. Reutilizou handlers e extraiu operações canônicas para `lib/leads/mover-para-funil.ts`, `lib/pipelines/operations.ts`, `lib/tarefas/operations.ts` e validações compartilhadas, preservando eventos, automações, timeline e auditoria.
+
+Testes: 21 arquivos focados, 239 testes aprovados; typecheck, lint com 0 erros/0 warnings, diff-check e release check aprovados. Não foram executados por escopo `test:db`, `test:e2e`, `test:shell` nem a suíte global.
+
+### Parte 4 — atendimento completo
+
+Adicionou 10 tools, elevando o registry de 108 para 118: `crm_get_message`, `crm_reply_message`, `crm_close_conversation`, `crm_reopen_conversation`, `crm_mark_conversation_read`, `crm_list_internal_notes`, `crm_create_internal_note`, `crm_delete_internal_note`, `crm_list_messaging_channels` e `crm_list_handoff_history`.
+
+Também completou tools preexistentes: filtros e paginação de conversas; histórico seguro de mensagens; envio storage-first e templates; início de conversa; atribuição/transferência/liberação; solicitação de handoff; casos humanos e retomada da IA. O produto não possui uma entidade `queue_id`: fila é estado derivado de conversas `open|pending`, elegibilidade e posição. Por isso não foi inventado CRUD de fila; `crm_get_queue_status`, filtros de conversa, atribuição/liberação e handoff expõem o subsistema real.
+
+Envio e reply usam `sendMessageHandler`; início compõe `openSharedContactConversation` com esse handler. A `idempotency_key` é obrigatória nessas três operações e `comIdempotencia` reserva a chave antes do efeito, devolvendo conflito `idempotency_in_progress` em corrida. Mídia aceita somente `media_storage_path` da conversa, valida MIME/tamanho/tipo e ownership no fluxo oficial; URLs privadas e signed URLs não aparecem no retorno. Descoberta de canais usa projeção segura e retorna `human_action_required` para QR sem expor nome interno de sessão ou credencial.
+
+Testes finais desta fase: 10 arquivos focados/90 testes e regressão MCP de 23 arquivos/203 testes. Typecheck, lint dos arquivos alterados, `lint:channels`, diff-check e release check são registrados na seção de checkpoint final após a execução. Não houve WhatsApp real, mutação de conversa real, mudança de schema, UI ou packaging.
+
+## 5. Decisões arquiteturais
+
+- Não há tool universal de SQL, REST ou CRUD.
+- `organization_id`, role e identidade do ator nunca são inputs públicos; vêm do contexto autenticado.
+- Tools compõem ou extraem operações canônicas usadas também pela UI/API.
+- Efeitos externos e destrutivos recebem capabilities explícitas; role `manager` é suficiente quando o risco não exige `admin`.
+- Publicar agente não ativa automaticamente; testar versão usa sandbox sem efeito real.
+- Movimentação entre funis cria o sucessor e encerra a origem pelo fluxo oficial.
+- Descoberta e contratos são dinâmicos; números de tools são medidos, não codificados em documentação ou clientes.
+- Mensagem externa nunca é INSERT direto: passa pelo handler oficial, adapter do canal, delivery tracking, eventos e auditoria.
+- Fechar/reabrir usa `fn_service_status`; atribuir/transferir/liberar usa `fn_conversation_assign`; handoff e retomada usam os orquestradores de continuidade existentes.
+- Upload binário permanece no endpoint bearer oficial de mídia; o MCP consome somente o path privado resultante, evitando base64 e URL assinada no protocolo.
+- A fila desta versão é derivada, não uma tabela/entidade administrável; nenhuma `queue_id` fictícia foi criada.
+- Classes B exigem desenho adicional, confirmação ou interação humana. Classes C permanecem fora.
+
+## 6. Autorização, scopes e capabilities
+
+O servidor autentica o token, resolve organização, ator, role, token e usuário provisionador, filtra `tools/list` e repete a autorização na chamada. A decisão soma:
+
+1. role mínima (`viewer < agent < manager < admin`);
+2. scope legado `mcp:read` ou `mcp:write`;
+3. scope granular do domínio quando o token usa scopes granulares;
+4. allowlist `tool:<nome>` quando presente;
+5. capability exigida pela operação.
+
+Domínios atuais: `agents`, `ai`, `appointments`, `automations`, `channels`, `contacts`, `conversations`, `followups`, `knowledge`, `leads`, `messages`, `pipelines`, `products`, `routing`, `team`, `templates` e `webhooks`.
+
+Capabilities atuais: `agent_activation`, `agent_publication`, `automation_activation`, `destructive_operations`, `human_handoff` e `send_messages`. Envio externo exige `capability:send_messages`; handoff exige `capability:human_handoff`; destruição exige `capability:destructive_operations` somente onde há efeito destrutivo.
+
+No atendimento, as leituras e escritas granulares usam `conversations:read/write`, `messages:read/write`, `channels:read` e `team:read` conforme o domínio de cada tool. `manager` com scopes e `send_messages` pode enviar; `admin` não é exigido. Solicitar handoff e devolver para IA exigem `human_handoff`; apagar nota interna exige `destructive_operations` além da regra autor ou manager+.
+
+## 7. Multi-tenancy e secrets
+
+- Toda query por service role filtra `organization_id` do contexto.
+- Todo ID relacionado é validado no mesmo tenant antes de uso, inclusive referências de usuário/membership.
+- Inputs MCP não aceitam `organization_id`.
+- Credenciais, tokens, secrets, ciphertext, valores de credencial, refresh tokens e client secrets são sanitizados centralmente e também omitidos nas projeções específicas.
+- Plaintext de token é mostrado somente na criação pelo fluxo administrativo original, não pelas tools operacionais.
+- Auditoria nunca deve persistir conteúdo de mensagem, secret ou mídia privada quando identificadores e desfecho bastam.
+
+## 8. Auditoria e erros
+
+`lib/mcp/server.ts` audita toda chamada por `auditMcpToolCall()`, com tool, ator, organização, request, duração, sucesso/erro e recurso concreto declarado por `auditResource`. Mutações críticas podem emitir também o evento/auditoria do domínio canônico. Ausência esperada pode ser marcada como `sem_resultado` por `motivoDoVazio`; não é convertida em sucesso enganoso.
+
+Erros MCP passam por `McpToolError`, códigos estruturados e `mcpErrorPayload()`. `sanitizeMcpPayload()` protege tanto sucesso quanto erro. Erros brutos de provider/banco não devem virar contrato público nem carregar secrets.
+
+## 9. Registry e descoberta
+
+- `lib/mcp/tools/index.ts`: registry executável agregado.
+- `lib/mcp/registry.ts`: `MCP_REGISTRY`, contagem derivada e perfil público.
+- `lib/mcp/tools/catalogo/`: apresentação humana e risco/pacotes.
+- `lib/mcp/policy.ts`: domínio, scopes e capabilities.
+- `tools/list`: fonte de verdade para clientes MCP; devolve apenas tools visíveis e autorizadas.
+
+### Regra para a futura Skill Codex/Claude Code
+
+A futura Skill **não deve depender de uma lista fixa**, como “180 tools”, nem embutir uma enumeração congelada. Ela deve consultar `tools/list` como fonte de verdade e escolher entre as tools realmente descobertas. Assim novas tools, capabilities e domínios podem aparecer sem quebrar a Skill.
+
+## 10. Serviços canônicos reutilizados
+
+Entre os serviços já reutilizados estão handlers de contatos/leads/conversas/mensagens, runtime e serviços de IA, `moverLeadParaOutroFunil`, operações de pipeline e tarefas, validação de custom fields, `openSharedContactConversation`, `sendMessageHandler`, `comIdempotencia`, `getConversationHandler`, `markConversationReadHandler`, `fn_service_status`, `fn_conversation_assign`, `listSelectableChannels`, estado canônico de canal, fila/eligibilidade de roteamento, passagem/handoff/retomada oficiais, agenda, follow-up, conhecimento, memória, templates e webhooks existentes.
+
+Notas internas usam uma operação compartilhada em `lib/atendimento/notas-da-conversa.ts`, preservam autor e menções e auditam somente identificadores. Histórico de handoff lê `passagens_de_atendimento`; a timeline de transferência usa `registrarTrocaDeComando`. Nenhuma dessas operações grava mensagem externa por acesso direto à tabela.
+
+## 11. Itens deliberadamente fora do MCP
+
+- secrets existentes ou de saída;
+- billing, infraestrutura, deploy e administração da plataforma;
+- exclusão de tenant, impersonação e autoelevação/transferência de owner;
+- SQL arbitrário e bypass de guardrails/RLS;
+- conclusão automática de OAuth, QR/pairing ou consentimento humano;
+- desativação de controles fundamentais;
+- import/upload genérico sem prepare/preview/commit;
+- operações administrativas de alto risco sem desenho de aprovação.
+
+No recorte atual também não foram criados loops paralelos para empresas comerciais inexistentes, merge/bulk/import/export sem serviço seguro, CRUD de fila inexistente e tipos de mensagem que o produto não suporta. Pairing QR/OAuth continua sendo ação humana. Upload/import/export genérico e administração completa de canal/sessão permanecem fora.
+
+## 12. Migrations do projeto MCP
+
+Até o fim da Parte 4, nenhuma migration nova foi criada pelo projeto MCP. As implementações reutilizaram schema, RPCs e mecanismos existentes, inclusive a reserva idempotente introduzida anteriormente pela migration 0321 do produto. Se uma fase futura mudar schema, a entrega obrigatória será a tripla: migration versionada, apêndice idempotente no `supabase/baseline.sql` e entrada em `supabase/migrations/MANIFEST.md`, seguida dos testes de banco relevantes.
+
+## 13. Arquivos importantes
+
+- `/root/DESKCOMM-141-MCP-AUDITORIA.md`: auditoria original.
+- `/root/DESKCOMM-141-MCP-PROGRESSO.md`: checkpoint operacional entre sessões.
+- `/root/DESKCOMM-141-MCP-MASTER.md`: espelho de retomada deste documento.
+- `docs/mcp/IMPLEMENTATION-MASTER.md`: histórico versionado.
+- `lib/mcp/{auth,policy,registry,scopes,server,errors,audit,types}.ts`.
+- `lib/mcp/tools/index.ts`, `lib/mcp/tools/catalogo/` e handlers por domínio.
+- `docs/architecture/mcp-fundacao-ia.architecture.json`.
+- `.changes/mcp-full-control.md`.
+
+## 14. Compatibilidade com futuras versões do DeskcommCRM
+
+O MCP não está congelado na 1.41.0. O fluxo de manutenção é:
+
+```text
+upstream oficial
+→ fork do usuário
+→ merge/update oficial
+→ auditoria delta
+→ testes de compatibilidade MCP
+→ correções incrementais
+→ deploy
+```
+
+Atualizações futuras não devem reconstruir o MCP do zero. Devem comparar a versão anterior com a nova e produzir uma auditoria delta contendo, no mínimo:
+
+- VERSÃO ANTERIOR;
+- VERSÃO NOVA;
+- NOVOS DOMÍNIOS;
+- NOVAS FUNCIONALIDADES;
+- SERVIÇOS ALTERADOS;
+- TOOLS AFETADAS;
+- TOOLS NOVAS NECESSÁRIAS;
+- SCOPES NOVOS;
+- CAPABILITIES NOVAS;
+- MIGRATIONS;
+- TESTES QUEBRADOS.
+
+O delta identifica contratos afetados, executa regressão MCP e corrige somente o necessário. `tools/list`, os testes de registry e os testes dos serviços compartilhados detectam evolução sem transformar uma estimativa histórica em contrato.
+
+## 15. Documentação final futura
+
+Ao final do projeto serão produzidos, sem antecipar conteúdo ainda instável:
+
+- `docs/mcp/INSTALL-NEW-VPS.md`;
+- `docs/mcp/UPDATE-DESKCOMM.md`;
+- `docs/mcp/ARCHITECTURE.md`;
+- `docs/mcp/COMPATIBILITY.md`;
+- `docs/mcp/AUDIT-NEW-VERSION.md`;
+- `docs/mcp/TROUBLESHOOTING.md`.
+
+Posteriormente será criado o repositório `deskcomm-mcp-skill`, com suporte a Codex e Claude Code, instalação local/global, descoberta dinâmica via `tools/list` e verificação de conexão. **A Skill não será criada durante as Partes 1–4.**
+
+## 16. Pendências e próxima fase
+
+Pendências deliberadas: pairing/conexão por QR ou OAuth continua humano; upload binário usa o endpoint bearer oficial em vez de uma tool MCP com base64; não existe entidade `queue_id`; não há edição de nota interna no produto, somente criação e exclusão autorizada. Agenda completa, follow-up completo, automações completas, routing administrativo completo, knowledge, produtos, webhooks/integrações administrativas, equipe administrativa completa e import/export genérico permanecem fora desta fase.
+
+Próxima fase: a fase definida pelo roteiro seguinte do projeto, começando por auditoria delta do domínio escolhido. Não iniciar automaticamente. Antes de ampliar o MCP, medir `tools/list`, reler serviços oficiais e executar testes de compatibilidade.
+
+## 17. Living System Checklist — Parte 4
+
+1. Entrada: token MCP autenticado e `tools/list`; nenhuma tool aceita `organization_id`.
+2. Saída: handlers/RPCs oficiais alimentam Inbox, canal, delivery tracking, fila e histórico.
+3. Registro: envio, estado, transferência, handoff, retomada e notas têm auditoria/evento/timeline sem conteúdo sensível desnecessário.
+4. Tela: conversas, mensagens, notas, casos, canais e histórico continuam visíveis nas superfícies existentes; não surgiu tela paralela.
+5. Porta: registry e catálogo são a porta MCP; a navegação do produto não mudou.
+6. Anti-morte: fila, responsável, handoff, fechamento, erros de envio e próxima ação são estados observáveis.
+7. Configuração: disponibilidade, roteamento e canais continuam nas superfícies reais; o MCP apenas descobre o que está utilizável.
+8. Continuidade: passagem IA→humano carrega contexto e histórico; retomada humano→IA usa checkpoint e validações oficiais.
+9. Laço de retorno: status/erro/ack de mensagem, auditoria, timeline e respostas idempotentes fecham o resultado da ação.
+10. Mapa: `docs/architecture/mcp-fundacao-ia.architecture.json` inclui atendimento, canal e ação humana.
+
+## 18. Validação final da Parte 4
+
+- Foco da Parte 4: 10 arquivos, 90 testes aprovados.
+- Regressão MCP relevante: 23 arquivos, 203 testes aprovados.
+- Typecheck: aprovado.
+- ESLint somente nos arquivos TypeScript alterados: 0 erros e 0 warnings.
+- `lint:channels`: aprovado, sem dívida nova.
+- `git diff --check`: aprovado.
+- `pnpm release:conferir`: aprovado; próxima versão calculada 1.42.0, sem escrever arquivos.
+- Não executados por escopo: suíte global, `test:db`, `test:e2e`, `test:shell` e build. Não houve mudança de schema, UI ou packaging.
+- Não houve envio real, alteração de conversa real, push ou deploy.

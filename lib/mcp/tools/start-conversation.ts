@@ -29,12 +29,14 @@
  * `idempotency_keys`, TTL 24h) — a chave cobre o PAR abrir-conversa+enviar,
  * não só o envio, porque um retry não pode abrir uma segunda conversa.
  */
-import { createHash } from "node:crypto";
 import { z } from "zod";
 
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
+import { comIdempotencia } from "@/lib/api/idempotency";
 import { openSharedContactConversation } from "@/lib/messaging/open-shared-contact-conversation";
+import { validateOutboundMedia } from "@/lib/messaging/media/upload-validation";
 import { sendMessageSchema } from "@/lib/schemas/messaging";
+import { McpToolError } from "../errors";
 import type { McpToolDefinition } from "../types";
 
 const ENDPOINT_TAG = "mcp:crm_start_conversation_and_send";
@@ -44,33 +46,54 @@ const inputShape = {
   channel_session_id: z
     .string()
     .uuid()
-    .describe("Sessão de canal de onde a mensagem sai. Obrigatório — esta tool existe para deixar o chamador escolher, ao contrário da criação de contato pela tela, que pega qualquer canal WORKING."),
+    .describe(
+      "Sessão de canal de onde a mensagem sai. Obrigatório — esta tool existe para deixar o chamador escolher, ao contrário da criação de contato pela tela, que pega qualquer canal WORKING.",
+    ),
   contact_id: z.string().uuid().optional(),
   phone_number: z
     .string()
     .min(8)
     .max(32)
     .optional()
-    .describe("Usado para achar um contato existente pelas grafias do número, ou criar um novo se nenhum bater."),
-  name: z.string().trim().min(1).max(200).optional().describe("Nome do contato, usado só se um novo cadastro for criado."),
+    .describe(
+      "Usado para achar um contato existente pelas grafias do número, ou criar um novo se nenhum bater.",
+    ),
+  name: z
+    .string()
+    .trim()
+    .min(1)
+    .max(200)
+    .optional()
+    .describe("Nome do contato, usado só se um novo cadastro for criado."),
   body: z.string().min(1).max(4096).optional(),
-  media_url: z.string().url().optional(),
+  media_storage_path: z.string().min(1).max(500).optional(),
   media_mime: z.string().optional(),
+  media_size_bytes: z.number().int().positive().optional(),
   type: z
-    .enum(["text", "image", "audio", "document", "sticker", "video", "location", "contact"])
+    .enum([
+      "text",
+      "image",
+      "audio",
+      "document",
+      "sticker",
+      "video",
+      "location",
+      "contact",
+      "template",
+    ])
     .optional()
     .default("text"),
+  template_name: z.string().min(1).max(512).optional(),
+  template_language: z.string().min(2).max(16).optional(),
+  template_values: z.record(z.string(), z.string()).optional(),
   idempotency_key: z
     .string()
     .min(1)
     .max(200)
-    .optional()
-    .describe("Chave para deduplicação (24h TTL). Recomendado run_id+step."),
+    .describe(
+      "Chave estável obrigatória para reserva atômica do par abrir+enviar (24h). Use run_id+step.",
+    ),
 };
-
-function hashRequest(input: Record<string, unknown>): string {
-  return createHash("sha256").update(JSON.stringify(input)).digest("hex");
-}
 
 export const crmStartConversationAndSend: McpToolDefinition<typeof inputShape> = {
   name: "crm_start_conversation_and_send",
@@ -85,95 +108,103 @@ export const crmStartConversationAndSend: McpToolDefinition<typeof inputShape> =
   category: "write",
   requiresRole: "manager",
   requiresScope: "mcp:write",
+  domain: "messages",
+  capabilities: ["send_messages"],
+  publicProfile: true,
+  auditResource: (input, result) => ({
+    type: "conversation",
+    id: (result as { conversation_id?: string } | undefined)?.conversation_id ?? input.contact_id,
+  }),
   handler: async (input, ctx) => {
     if (!input.contact_id && !input.phone_number?.trim()) {
       throw new Error("Informe contact_id ou phone_number.");
     }
-
-    const requestHash = hashRequest({
-      channel_session_id: input.channel_session_id,
-      contact_id: input.contact_id,
-      phone_number: input.phone_number,
-      body: input.body,
-      media_url: input.media_url,
-      type: input.type,
-    });
-
-    if (input.idempotency_key) {
-      const { data: cached } = await ctx.supabase
-        .from("idempotency_keys")
-        .select("response_body")
-        .eq("organization_id", ctx.organizationId)
-        .eq("endpoint", ENDPOINT_TAG)
-        .eq("key", input.idempotency_key)
-        .maybeSingle();
-      if (cached) {
-        return {
-          ...(cached.response_body as Record<string, unknown>),
-          deduplicated: true,
-        };
+    if (input.media_storage_path) {
+      if (!input.media_mime || !input.media_size_bytes) {
+        throw new McpToolError("validation_error", "media_metadata_required");
+      }
+      const verdict = validateOutboundMedia(input.media_mime, input.media_size_bytes);
+      if (!verdict.ok) throw new McpToolError("validation_error", verdict.code);
+      const stickerValido =
+        input.type === "sticker" &&
+        verdict.kind === "image" &&
+        input.media_mime.split(";")[0]?.trim().toLowerCase() === "image/webp";
+      if (input.type !== verdict.kind && !stickerValido) {
+        throw new McpToolError("validation_error", "media_type_mismatch");
       }
     }
 
-    // Referencia a mesma origem autorizada que `open-with-contact` usa —
-    // fn_service_begin decide reaproveitar a conversa aberta ou criar uma.
-    const opened = await openSharedContactConversation(ctx.supabase, ctx.organizationId, {
+    const corpo = {
       channel_session_id: input.channel_session_id,
       contact_id: input.contact_id,
       phone_number: input.phone_number,
-      name: input.name,
-    });
-
-    const parsed = sendMessageSchema.parse({
-      conversation_id: opened.conversation_id,
-      type: input.type,
       body: input.body,
-      media_url: input.media_url,
+      media_storage_path: input.media_storage_path,
       media_mime: input.media_mime,
-    });
-
-    const message = await sendMessageHandler(
-      ctx.supabase,
-      {
-        organization_id: ctx.organizationId,
-        actor: ctx.actor,
-        requestId: ctx.requestId,
-      },
-      parsed,
-    );
-
-    const response = {
-      contact_id: opened.contact_id,
-      conversation_id: opened.conversation_id,
-      message_id: message.id,
-      status: message.status,
-      external_id: message.external_id,
-      sent_at: message.sent_at,
+      media_size_bytes: input.media_size_bytes,
+      type: input.type,
+      template_name: input.template_name,
+      template_language: input.template_language,
+      template_values: input.template_values,
+    };
+    const executar = async () => {
+      // A mesma origem autorizada de open-with-contact decide reuso/reabertura.
+      const opened = await openSharedContactConversation(ctx.supabase, ctx.organizationId, {
+        channel_session_id: input.channel_session_id,
+        contact_id: input.contact_id,
+        phone_number: input.phone_number,
+        name: input.name,
+      });
+      const parsed = sendMessageSchema.parse({
+        conversation_id: opened.conversation_id,
+        type: input.type,
+        body: input.body,
+        media_storage_path: input.media_storage_path,
+        media_mime: input.media_mime,
+        media_size_bytes: input.media_size_bytes,
+        template_name: input.template_name,
+        template_language: input.template_language,
+        template_values: input.template_values,
+      });
+      const message = await sendMessageHandler(
+        ctx.supabase,
+        { organization_id: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId },
+        parsed,
+      );
+      return {
+        resposta: {
+          contact_id: opened.contact_id,
+          conversation_id: opened.conversation_id,
+          message_id: message.id,
+          status: message.status,
+          external_id: message.external_id,
+          sent_at: message.sent_at,
+        },
+        status: 200,
+      };
     };
 
-    if (input.idempotency_key) {
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      await ctx.supabase
-        .from("idempotency_keys")
-        .insert({
-          organization_id: ctx.organizationId,
-          endpoint: ENDPOINT_TAG,
-          key: input.idempotency_key,
-          request_hash: requestHash,
-          response_body: response,
-          status_code: 200,
-          expires_at: expiresAt,
-        })
-        .then(({ error }) => {
-          if (error && error.code !== "23505") {
-            console.error(
-              "[mcp.start_conversation_and_send] idempotency cache failed",
-              error.message,
-            );
-          }
-        });
+    const outcome = await comIdempotencia({
+      db: ctx.supabase,
+      organizationId: ctx.organizationId,
+      endpoint: ENDPOINT_TAG,
+      chave: input.idempotency_key,
+      corpo,
+      executar,
+    });
+    if (outcome.tipo === "conflito") {
+      throw new McpToolError("conflict", "idempotency_conflict", {
+        idempotency_key: input.idempotency_key,
+      });
     }
-
-    return response;
+    if (outcome.tipo === "em_curso") {
+      throw new McpToolError("conflict", "idempotency_in_progress", {
+        idempotency_key: input.idempotency_key,
+        retryable: true,
+      });
+    }
+    return outcome.tipo === "replay"
+      ? { ...outcome.resposta, deduplicated: true }
+      : outcome.resposta;
   },
 };

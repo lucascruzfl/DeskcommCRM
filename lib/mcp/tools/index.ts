@@ -37,13 +37,10 @@ import {
   crmArchivePipeline,
   crmUpdatePipelineSchema,
 } from "./pipelines";
-import { crmSendWhatsappMessage } from "./messages";
+import { crmReplyMessage, crmSendWhatsappMessage } from "./messages";
 import { crmStartConversationAndSend } from "./start-conversation";
-import {
-  crmAssignConversation,
-  crmManageTags,
-  crmGetQueueStatus,
-} from "./governance";
+import { ATENDIMENTO_COMPLETO_MCP_TOOLS } from "./atendimento-completo";
+import { crmAssignConversation, crmManageTags, crmGetQueueStatus } from "./governance";
 import {
   crmListAvailableAttendants,
   crmListHumanCases,
@@ -151,6 +148,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmListAvailableAttendants,
   crmListHumanCases,
   crmGetHumanCase,
+  ...ATENDIMENTO_COMPLETO_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...CRM_TASK_TOOLS.filter((tool) => tool.category === "read"),
   ...CRM_TAG_TOOLS.filter((tool) => tool.category === "read"),
   // write
@@ -167,6 +165,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmMoveLeadStage,
   crmMoveLeadPipeline,
   crmSendWhatsappMessage,
+  crmReplyMessage,
   crmStartConversationAndSend,
   crmAssignConversation,
   crmManageTags,
@@ -195,6 +194,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmAddCaseNote,
   crmCloseHumanCase,
   crmResumeAiAttendance,
+  ...ATENDIMENTO_COMPLETO_MCP_TOOLS.filter((tool) => tool.category === "write"),
   // handoff (special)
   crmRequestHumanHandoff,
 ] as unknown as ReadonlyArray<McpToolDefinition>;

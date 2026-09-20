@@ -320,6 +320,10 @@ export const crmResumeAiAttendance: McpToolDefinition<typeof retomarInputShape> 
    */
   requiresRole: "agent",
   requiresScope: "mcp:write",
+  domain: "conversations",
+  capabilities: ["human_handoff"],
+  publicProfile: true,
+  auditResource: (input) => ({ type: "conversation", id: input.conversation_id }),
   handler: async (input, ctx) => {
     // REGRA DURA 2, dita em voz alta: quem devolve o atendimento é uma PESSOA.
     // O cliente pediu para falar com gente; o agente desfazer a própria passagem

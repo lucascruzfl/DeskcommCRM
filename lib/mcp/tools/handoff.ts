@@ -74,6 +74,10 @@ export const crmRequestHumanHandoff: McpToolDefinition<typeof inputShape> = {
   category: "handoff",
   requiresRole: "agent",
   requiresScope: "mcp:write",
+  domain: "conversations",
+  capabilities: ["human_handoff"],
+  publicProfile: true,
+  auditResource: (input) => ({ type: "conversation", id: input.conversation_id }),
   handler: async (input, ctx) => {
     // Conversation must belong to org (defense in depth — service role bypassa RLS).
     const { data: conv, error: convErr } = await ctx.supabase
@@ -87,8 +91,16 @@ export const crmRequestHumanHandoff: McpToolDefinition<typeof inputShape> = {
       throw new Error("conversation_not_found");
     }
 
-    const boundary = conv.contact_id ? await beginServiceAtOrigin(ctx.supabase, ctx.organizationId, conv.contact_id, conv.channel_session_id) : undefined;
-    if (boundary && boundary.conversation_id !== input.conversation_id) throw new Error("service_scope_mismatch");
+    const boundary = conv.contact_id
+      ? await beginServiceAtOrigin(
+          ctx.supabase,
+          ctx.organizationId,
+          conv.contact_id,
+          conv.channel_session_id,
+        )
+      : undefined;
+    if (boundary && boundary.conversation_id !== input.conversation_id)
+      throw new Error("service_scope_mismatch");
 
     // Try to find a lead linked to this contact (best effort for activity insert).
     let leadId: string | null = null;
@@ -143,7 +155,8 @@ export const crmRequestHumanHandoff: McpToolDefinition<typeof inputShape> = {
       const now = new Date();
       // INB-12: mesmos elegíveis do worker de roteamento (G5) — um algoritmo só.
       const eligibles = await loadEligibleAttendants(ctx.supabase, ctx.organizationId, now, {
-        kind: "conversation_channel", channelSessionId: conv.channel_session_id,
+        kind: "conversation_channel",
+        channelSessionId: conv.channel_session_id,
       });
       const picked =
         input.target_user_id && eligibles.some((e) => e.userId === input.target_user_id)
@@ -154,11 +167,18 @@ export const crmRequestHumanHandoff: McpToolDefinition<typeof inputShape> = {
         // G3-02: reassignment auditado — UPDATE (kind ai→'user') + evento
         // reason='handoff' na MESMA transação (fn_conversation_assign, 0031/0032).
         if (boundary) await assertServiceBoundarySupabase(ctx.supabase, boundary);
-        const { data: claimed, error: assignErr } = await ctx.supabase.rpc("fn_channel_routing_claim", {
-          p_org: ctx.organizationId, p_conversation: input.conversation_id,
-          p_channel: conv.channel_session_id, p_user: picked, p_reason: "handoff",
-          p_schedule: eligibles.find((candidate) => candidate.userId === picked)?.scheduleSnapshot ?? {},
-        });
+        const { data: claimed, error: assignErr } = await ctx.supabase.rpc(
+          "fn_channel_routing_claim",
+          {
+            p_org: ctx.organizationId,
+            p_conversation: input.conversation_id,
+            p_channel: conv.channel_session_id,
+            p_user: picked,
+            p_reason: "handoff",
+            p_schedule:
+              eligibles.find((candidate) => candidate.userId === picked)?.scheduleSnapshot ?? {},
+          },
+        );
         if (assignErr || claimed !== "assigned") {
           logger.warn("[mcp.handoff] assignment failed", {
             conversation_id: input.conversation_id,
@@ -172,30 +192,39 @@ export const crmRequestHumanHandoff: McpToolDefinition<typeof inputShape> = {
       if (!assignedUserId) {
         // CAS: não apaga o kind de um dono que venceu entre seleção e claim.
         const { data: queuedRows, error: kindErr } = await ctx.supabase
-          .from("conversations").update({ assignee_kind: null })
-          .eq("id", input.conversation_id).eq("organization_id", ctx.organizationId)
-          .is("assigned_to_user_id", null).in("status", ["open", "pending", "ai_handling"])
+          .from("conversations")
+          .update({ assignee_kind: null })
+          .eq("id", input.conversation_id)
+          .eq("organization_id", ctx.organizationId)
+          .is("assigned_to_user_id", null)
+          .in("status", ["open", "pending", "ai_handling"])
           .select("id");
         if (kindErr) throw new Error(kindErr.message);
         if (!queuedRows?.length) {
-          const { data: current, error } = await ctx.supabase.from("conversations")
-            .select("assigned_to_user_id").eq("id", input.conversation_id)
-            .eq("organization_id", ctx.organizationId).maybeSingle();
+          const { data: current, error } = await ctx.supabase
+            .from("conversations")
+            .select("assigned_to_user_id")
+            .eq("id", input.conversation_id)
+            .eq("organization_id", ctx.organizationId)
+            .maybeSingle();
           if (error) throw new Error(error.message);
           assignedUserId = current?.assigned_to_user_id ?? null;
         } else {
           const { error } = await ctx.supabase.rpc("fn_request_channel_routing", {
-            p_org: ctx.organizationId, p_conversation: input.conversation_id,
+            p_org: ctx.organizationId,
+            p_conversation: input.conversation_id,
           });
           if (error) throw new Error(error.message);
         }
         queued = Boolean(queuedRows?.length);
-        position = queued ? await getQueuePosition(
-          ctx.supabase,
-          ctx.organizationId,
-          conv.awaiting_since ?? null,
-          now,
-        ) : null;
+        position = queued
+          ? await getQueuePosition(
+              ctx.supabase,
+              ctx.organizationId,
+              conv.awaiting_since ?? null,
+              now,
+            )
+          : null;
       }
     }
 

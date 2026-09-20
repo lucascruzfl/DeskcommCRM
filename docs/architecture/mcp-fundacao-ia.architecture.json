@@ -2,8 +2,8 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "MCP: fundação, IA e núcleo comercial",
-    "subtitle": "Registry único, policy explícita, serviços canônicos e isolamento por organização",
+    "title": "MCP: fundação, IA, CRM e atendimento",
+    "subtitle": "Registry único, policy explícita, continuidade IA↔humano e envio pelo canal oficial",
     "output": "mcp-fundacao-ia.html",
     "quality_profile": "standard"
   },
@@ -13,20 +13,128 @@
     { "id": "dominio", "label": "Domínios de IA e CRM" },
     { "id": "dados", "label": "Dados e auditoria" }
   ],
-  "mainPath": ["token", "registry", "policy", "toolsia", "serviceia", "tenantdb", "audit"],
+  "mainPath": [
+    "token",
+    "registry",
+    "policy",
+    "toolsatendimento",
+    "serviceatendimento",
+    "tenantdb",
+    "audit"
+  ],
   "nodes": [
-    { "id": "token", "lane": "cliente", "col": 0, "type": "security", "label": "Token manager com scopes, allowlist e capabilities explícitas" },
-    { "id": "preset", "lane": "cliente", "col": 1, "type": "frontend", "label": "Preset Operação completa via MCP" },
-    { "id": "registry", "lane": "mcp", "col": 1, "type": "backend", "label": "Registry único e tools/list derivado" },
-    { "id": "policy", "lane": "mcp", "col": 2, "type": "security", "label": "Policy de role, scope, allowlist e risco real" },
-    { "id": "errors", "lane": "mcp", "col": 3, "type": "backend", "label": "Erros estáveis e respostas higienizadas" },
-    { "id": "toolsia", "lane": "mcp", "col": 3, "type": "backend", "label": "Tools de catálogo e administração de agentes" },
-    { "id": "serviceia", "lane": "dominio", "col": 4, "type": "backend", "label": "Serviço MCP de IA reutilizando validação e publicação reais" },
-    { "id": "toolscrm", "lane": "mcp", "col": 3, "type": "backend", "label": "Tools de contatos, oportunidades, funis, etapas, campos, tags e tarefas" },
-    { "id": "servicecrm", "lane": "dominio", "col": 4, "type": "backend", "label": "Handlers e serviços compartilhados pela UI/API e pelo MCP" },
-    { "id": "platformkey", "lane": "dominio", "col": 3, "type": "security", "label": "Resolvedor interno de credencial da instalação" },
-    { "id": "tenantdb", "lane": "dados", "col": 5, "type": "database", "label": "Catálogo, credenciais seguras, agentes, versões e runs cercados por organização" },
-    { "id": "audit", "lane": "dados", "col": 4, "type": "database", "label": "Auditoria com recurso, resultado, request e redação recursiva" }
+    {
+      "id": "token",
+      "lane": "cliente",
+      "col": 0,
+      "type": "security",
+      "label": "Token manager com scopes, allowlist e capabilities explícitas"
+    },
+    {
+      "id": "preset",
+      "lane": "cliente",
+      "col": 1,
+      "type": "frontend",
+      "label": "Preset Operação completa via MCP"
+    },
+    {
+      "id": "registry",
+      "lane": "mcp",
+      "col": 1,
+      "type": "backend",
+      "label": "Registry único e tools/list derivado"
+    },
+    {
+      "id": "policy",
+      "lane": "mcp",
+      "col": 2,
+      "type": "security",
+      "label": "Policy de role, scope, allowlist e risco real"
+    },
+    {
+      "id": "errors",
+      "lane": "mcp",
+      "col": 3,
+      "type": "backend",
+      "label": "Erros estáveis e respostas higienizadas"
+    },
+    {
+      "id": "toolsia",
+      "lane": "mcp",
+      "col": 3,
+      "type": "backend",
+      "label": "Tools de catálogo e administração de agentes"
+    },
+    {
+      "id": "serviceia",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "Serviço MCP de IA reutilizando validação e publicação reais"
+    },
+    {
+      "id": "toolscrm",
+      "lane": "mcp",
+      "col": 3,
+      "type": "backend",
+      "label": "Tools de contatos, oportunidades, funis, etapas, campos, tags e tarefas"
+    },
+    {
+      "id": "servicecrm",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "Handlers e serviços compartilhados pela UI/API e pelo MCP"
+    },
+    {
+      "id": "toolsatendimento",
+      "lane": "mcp",
+      "col": 3,
+      "type": "backend",
+      "label": "Tools de conversas, mensagens, fila, handoff e notas internas"
+    },
+    {
+      "id": "serviceatendimento",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "Handlers, RPCs, idempotência e histórico oficiais do Inbox"
+    },
+    {
+      "id": "canal",
+      "lane": "dominio",
+      "col": 5,
+      "type": "external",
+      "label": "Adapter do canal envia, responde e acompanha entrega"
+    },
+    {
+      "id": "humano",
+      "lane": "cliente",
+      "col": 5,
+      "type": "frontend",
+      "label": "Pessoa conclui QR/consentimento e assume ou devolve atendimento"
+    },
+    {
+      "id": "platformkey",
+      "lane": "dominio",
+      "col": 3,
+      "type": "security",
+      "label": "Resolvedor interno de credencial da instalação"
+    },
+    {
+      "id": "tenantdb",
+      "lane": "dados",
+      "col": 5,
+      "type": "database",
+      "label": "Catálogo, credenciais seguras, agentes, versões e runs cercados por organização"
+    },
+    {
+      "id": "audit",
+      "lane": "dados",
+      "col": 4,
+      "type": "database",
+      "label": "Auditoria com recurso, resultado, request e redação recursiva"
+    }
   ],
   "edges": [
     { "from": "preset", "to": "token", "label": "Seleção humana explícita" },
@@ -37,6 +145,30 @@
     { "from": "toolsia", "to": "serviceia", "label": "Delega regra de negócio" },
     { "from": "policy", "to": "toolscrm", "label": "Autoriza domínio e risco" },
     { "from": "toolscrm", "to": "servicecrm", "label": "Delega regra de negócio" },
+    {
+      "from": "policy",
+      "to": "toolsatendimento",
+      "label": "Exige send_messages, human_handoff ou destructive_operations"
+    },
+    {
+      "from": "toolsatendimento",
+      "to": "serviceatendimento",
+      "label": "Compõe operações canônicas"
+    },
+    { "from": "serviceatendimento", "to": "canal", "label": "Envia somente pelo adapter oficial" },
+    { "from": "canal", "to": "serviceatendimento", "label": "Entrega status, erro e recibos" },
+    {
+      "from": "serviceatendimento",
+      "to": "tenantdb",
+      "label": "Filtra conversa e referências por organização"
+    },
+    {
+      "from": "serviceatendimento",
+      "to": "audit",
+      "label": "Registra envio, transferência, estado e handoff"
+    },
+    { "from": "toolsatendimento", "to": "humano", "label": "Sinaliza human_action_required" },
+    { "from": "humano", "to": "serviceatendimento", "label": "Conclui conexão e continuidade" },
     { "from": "servicecrm", "to": "tenantdb", "label": "Filtra ids e referências por organização" },
     { "from": "servicecrm", "to": "audit", "label": "Registra mutação e ator técnico" },
     { "from": "tenantdb", "to": "toolscrm", "label": "Retorna histórico e estado paginados" },

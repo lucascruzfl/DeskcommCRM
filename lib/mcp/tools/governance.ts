@@ -13,9 +13,11 @@
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
+import { registrarTrocaDeComando } from "@/lib/inbox/atividade-de-comando";
 import { normalizarTags } from "@/lib/contacts/tag-normalizada";
 import { conversationTagSchema, conversationTagsSchema } from "@/lib/schemas/messaging";
 import { getQueueStatus } from "@/lib/routing/queue";
+import { logger } from "@/lib/logger";
 import type { McpContext } from "../types";
 import type { McpToolDefinition } from "../types";
 
@@ -63,13 +65,17 @@ export const crmAssignConversation: McpToolDefinition<typeof assignInputShape> =
   category: "write",
   requiresRole: "agent",
   requiresScope: "mcp:write",
+  domain: "routing",
+  capabilities: [],
+  publicProfile: true,
+  auditResource: (input) => ({ type: "conversation", id: input.conversation_id }),
   handler: async (input, ctx) => {
     const parsed = assignObject.parse(input);
 
     // Defesa em profundidade — service role bypassa RLS: a conversa TEM que ser da org.
     const { data: conv, error: convErr } = await ctx.supabase
       .from("conversations")
-      .select("id, organization_id, assigned_to_user_id")
+      .select("id, organization_id, contact_id, assigned_to_user_id")
       .eq("id", parsed.conversation_id)
       .eq("organization_id", ctx.organizationId)
       .maybeSingle();
@@ -136,7 +142,45 @@ export const crmAssignConversation: McpToolDefinition<typeof assignInputShape> =
       resourceType: "conversation",
       resourceId: parsed.conversation_id,
       requestId: ctx.requestId,
-      metadata: { ...a.metadataActor, to_user_id: parsed.to_user_id, reason: parsed.reason, via: "mcp" },
+      metadata: {
+        ...a.metadataActor,
+        to_user_id: parsed.to_user_id,
+        reason: parsed.reason,
+        via: "mcp",
+      },
+    });
+
+    const eventType =
+      parsed.reason === "release" ? "conversation.released" : "conversation.transferred";
+    const { error: eventError } = await ctx.supabase.rpc("emit_event", {
+      p_event_type: eventType,
+      p_entity_kind: "conversation",
+      p_entity_id: parsed.conversation_id,
+      p_payload: { assigned_to_user_id: parsed.to_user_id, via: "mcp" },
+      p_metadata: { request_id: ctx.requestId },
+      p_organization_id: ctx.organizationId,
+    });
+    if (eventError) {
+      logger.warn("[mcp.assign-conversation] evento complementar não emitido", {
+        conversation_id: parsed.conversation_id,
+        organization_id: ctx.organizationId,
+        request_id: ctx.requestId,
+        error: eventError.message,
+      });
+    }
+
+    await registrarTrocaDeComando({
+      supabase: ctx.supabase,
+      organizationId: ctx.organizationId,
+      conversationId: parsed.conversation_id,
+      contactId: (conv as { contact_id: string | null }).contact_id,
+      tipo: parsed.reason === "release" ? "conversation_released" : "conversation_transferred",
+      actor: ctx.actor,
+      motivo:
+        parsed.reason === "release"
+          ? "Liberou a conversa de volta para a fila"
+          : "Transferiu a conversa para outro atendente",
+      payload: { to_user_id: parsed.to_user_id, via: "mcp" },
     });
 
     return {

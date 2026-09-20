@@ -104,10 +104,12 @@ function makeCtx(resolve: Resolver, cap: Captures): McpContext {
 // ---------------------------------------------------------------------------
 
 describe("crm_assign_conversation", () => {
-  const convAssigned = (owner: string | null): Resolver => (q) =>
-    q.table === "conversations" && q.terminal === "maybeSingle"
-      ? { data: { id: CONV, organization_id: ORG, assigned_to_user_id: owner }, error: null }
-      : { data: null, error: null };
+  const convAssigned =
+    (owner: string | null): Resolver =>
+    (q) =>
+      q.table === "conversations" && q.terminal === "maybeSingle"
+        ? { data: { id: CONV, organization_id: ORG, assigned_to_user_id: owner }, error: null }
+        : { data: null, error: null };
 
   it("sucesso: transfere e chama fn_conversation_assign (evento na fn)", async () => {
     const cap = makeCap();
@@ -119,19 +121,18 @@ describe("crm_assign_conversation", () => {
     expect(res.assigned).toBe(true);
     expect(res.idempotent).toBe(false);
     expect(res.assigned_to_user_id).toBe(USER_A);
-    expect(cap.rpc).toEqual([
-      {
-        fn: "fn_conversation_assign",
-        args: {
-          p_organization_id: ORG,
-          p_conversation_id: CONV,
-          p_to_user_id: USER_A,
-          p_reason: "transfer",
-          p_expected_assignee: null,
-          p_enforce_expected: true,
-        },
+    expect(cap.rpc[0]).toEqual({
+      fn: "fn_conversation_assign",
+      args: {
+        p_organization_id: ORG,
+        p_conversation_id: CONV,
+        p_to_user_id: USER_A,
+        p_reason: "transfer",
+        p_expected_assignee: null,
+        p_enforce_expected: true,
       },
-    ]);
+    });
+    expect(cap.rpc.some((call) => call.fn === "emit_event")).toBe(true);
   });
 
   it("corrida: 2 assigns idênticos ⇒ optimistic lock deixa 1 evento (2º idempotente)", async () => {
@@ -141,7 +142,10 @@ describe("crm_assign_conversation", () => {
       if (q.table === "conversations" && q.terminal === "maybeSingle") {
         // fetch inicial lê dono antigo; recheck (select curto) lê o dono já aplicado.
         const owner = q.select === "assigned_to_user_id" ? USER_A : null;
-        return { data: { id: CONV, organization_id: ORG, assigned_to_user_id: owner }, error: null };
+        return {
+          data: { id: CONV, organization_id: ORG, assigned_to_user_id: owner },
+          error: null,
+        };
       }
       return { data: null, error: null };
     };
@@ -152,7 +156,7 @@ describe("crm_assign_conversation", () => {
       idempotent: boolean;
     };
     expect(first.idempotent).toBe(false);
-    expect(capWin.rpc).toHaveLength(1); // 1 chamada ⇒ 1 evento (na fn)
+    expect(capWin.rpc.filter((call) => call.fn === "fn_conversation_assign")).toHaveLength(1);
 
     const capLose = makeCap({ rpcResults: [{ data: [], error: null }] }); // perdeu o lock
     const second = (await crmAssignConversation.handler(input, makeCtx(raceResolve, capLose))) as {
@@ -212,10 +216,12 @@ describe("crm_assign_conversation", () => {
 // ---------------------------------------------------------------------------
 
 describe("crm_manage_tags", () => {
-  const withTags = (table: string, tags: string[] | null): Resolver => (q) =>
-    q.terminal === "maybeSingle" && q.table === table
-      ? { data: { id: CONV, tags }, error: null }
-      : { data: null, error: null };
+  const withTags =
+    (table: string, tags: string[] | null): Resolver =>
+    (q) =>
+      q.terminal === "maybeSingle" && q.table === table
+        ? { data: { id: CONV, tags }, error: null }
+        : { data: null, error: null };
 
   it("add/remove normaliza (lowercase) e persiste; audit action por kind", async () => {
     const cap = makeCap();
@@ -314,7 +320,11 @@ describe("crm_get_queue_status", () => {
     if (q.table === "user_organizations") {
       return { data: [{ user_id: USER_A }, { user_id: USER_B }], error: null };
     }
-    if (["channel_sessions", "channel_routing_policies", "channel_routing_responsibles"].includes(q.table)) {
+    if (
+      ["channel_sessions", "channel_routing_policies", "channel_routing_responsibles"].includes(
+        q.table,
+      )
+    ) {
       throw new Error("organization_summary must not resolve an individual channel policy");
     }
     if (q.table === "attendant_availability") {
@@ -341,27 +351,38 @@ describe("crm_get_queue_status", () => {
   });
 
   it("disponibilidade sem membership ativa não conta como elegível", async () => {
-    const onlyA: Resolver = (q) => q.table === "user_organizations"
-      ? { data: [{ user_id: USER_A }], error: null } : resolve(q);
+    const onlyA: Resolver = (q) =>
+      q.table === "user_organizations" ? { data: [{ user_id: USER_A }], error: null } : resolve(q);
     const res = await getQueueStatus(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      makeSupabase(onlyA, makeCap()) as any, ORG, now,
+      makeSupabase(onlyA, makeCap()) as any,
+      ORG,
+      now,
     );
     expect(res).toEqual({ queue_size: 3, avg_wait_seconds: 20, online_eligible_count: 1 });
   });
 
   it("erro ao ler membership não é publicado como zero elegíveis", async () => {
-    const failed: Resolver = (q) => q.table === "user_organizations"
-      ? { data: null, error: { message: "membership unavailable" } } : resolve(q);
-    await expect(getQueueStatus(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      makeSupabase(failed, makeCap()) as any, ORG, now,
-    )).rejects.toThrow("membership unavailable");
+    const failed: Resolver = (q) =>
+      q.table === "user_organizations"
+        ? { data: null, error: { message: "membership unavailable" } }
+        : resolve(q);
+    await expect(
+      getQueueStatus(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        makeSupabase(failed, makeCap()) as any,
+        ORG,
+        now,
+      ),
+    ).rejects.toThrow("membership unavailable");
   });
 
   it("tool handler retorna o shape documentado", async () => {
     const cap = makeCap();
-    const res = (await crmGetQueueStatus.handler({}, makeCtx(resolve, cap))) as Record<string, unknown>;
+    const res = (await crmGetQueueStatus.handler({}, makeCtx(resolve, cap))) as Record<
+      string,
+      unknown
+    >;
     expect(Object.keys(res).sort()).toEqual([
       "avg_wait_seconds",
       "online_eligible_count",

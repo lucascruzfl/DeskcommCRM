@@ -105,6 +105,46 @@ export const TOOLS_ATENDIMENTO = declararTools([
     pacotes: ["atender"],
   },
   {
+    name: "crm_get_message",
+    category: "read",
+    rotulo: "Ver uma mensagem e sua entrega",
+    explicacao:
+      "Mostra uma mensagem específica, se chegou, foi lida ou falhou e qual mensagem ela estava respondendo, sem expor endereço privado de arquivo.",
+    oQueToca: "Atendimento",
+    risco: "seguro",
+    pacotes: ["atender"],
+  },
+  {
+    name: "crm_list_internal_notes",
+    category: "read",
+    rotulo: "Ler anotações internas da conversa",
+    explicacao:
+      "Mostra as anotações que a equipe deixou dentro do atendimento e que nunca são enviadas para o cliente.",
+    oQueToca: "Atendimento interno",
+    risco: "seguro",
+    pacotes: ["atender", "escalar"],
+  },
+  {
+    name: "crm_list_handoff_history",
+    category: "read",
+    rotulo: "Ver as passagens entre automático e equipe",
+    explicacao:
+      "Mostra cada vez que o atendimento saiu do automático para uma pessoa ou voltou, com o contexto deixado para quem continuou.",
+    oQueToca: "Continuidade do atendimento",
+    risco: "seguro",
+    pacotes: ["atender", "escalar"],
+  },
+  {
+    name: "crm_list_messaging_channels",
+    category: "read",
+    rotulo: "Ver os números disponíveis para atender",
+    explicacao:
+      "Mostra quais conexões podem enviar mensagem agora e quais ainda precisam que uma pessoa conclua a conexão, sem revelar chaves.",
+    oQueToca: "Conexões de atendimento",
+    risco: "seguro",
+    pacotes: ["atender", "organizar"],
+  },
+  {
     name: "crm_send_whatsapp_message",
     category: "write",
     rotulo: "Enviar mensagem no WhatsApp",
@@ -113,6 +153,66 @@ export const TOOLS_ATENDIMENTO = declararTools([
     oQueToca: "Atendimento",
     risco: "critico",
     pacotes: ["atender"],
+  },
+  {
+    name: "crm_reply_message",
+    category: "write",
+    rotulo: "Responder uma mensagem específica",
+    explicacao:
+      "Envia uma resposta ligada à mensagem escolhida no histórico, para o cliente entender exatamente a que assunto a equipe respondeu.",
+    oQueToca: "Atendimento",
+    risco: "critico",
+    pacotes: ["atender"],
+  },
+  {
+    name: "crm_close_conversation",
+    category: "write",
+    rotulo: "Encerrar um atendimento",
+    explicacao:
+      "Fecha uma conversa pela regra oficial do atendimento e mantém no histórico o ponto exato em que aquele episódio terminou.",
+    oQueToca: "Atendimento",
+    risco: "atencao",
+    pacotes: ["atender"],
+  },
+  {
+    name: "crm_reopen_conversation",
+    category: "write",
+    rotulo: "Reabrir um atendimento",
+    explicacao:
+      "Abre um novo episódio de atendimento numa conversa encerrada, sem fingir que o encerramento anterior nunca aconteceu.",
+    oQueToca: "Atendimento",
+    risco: "atencao",
+    pacotes: ["atender"],
+  },
+  {
+    name: "crm_mark_conversation_read",
+    category: "write",
+    rotulo: "Marcar uma conversa como lida",
+    explicacao:
+      "Zera o aviso de mensagens novas para quem está cuidando da conversa, sem mandar confirmação de leitura para o celular do cliente.",
+    oQueToca: "Atendimento",
+    risco: "atencao",
+    pacotes: ["atender"],
+  },
+  {
+    name: "crm_create_internal_note",
+    category: "write",
+    rotulo: "Criar anotação interna no atendimento",
+    explicacao:
+      "Guarda uma observação para a equipe dentro da conversa; o texto não é enviado ao cliente e mantém registrado quem escreveu.",
+    oQueToca: "Atendimento interno",
+    risco: "atencao",
+    pacotes: ["atender", "escalar"],
+  },
+  {
+    name: "crm_delete_internal_note",
+    category: "write",
+    rotulo: "Apagar anotação interna",
+    explicacao:
+      "Apaga uma observação interna somente quando o token pertence ao autor ou a uma pessoa gestora; nada é enviado ao cliente.",
+    oQueToca: "Atendimento interno",
+    risco: "critico",
+    pacotes: ["atender", "escalar"],
   },
   {
     name: "crm_start_conversation_and_send",

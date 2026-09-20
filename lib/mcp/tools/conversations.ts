@@ -40,8 +40,14 @@ const listInputShape = {
   // `pending` entra: é o estado da conversa que o próprio agente escalou, e sem
   // ele a IA não conseguia listar o que ela mesma passou para uma pessoa.
   status: z
-    .enum(["open", "pending", "claimed", "ai_handling", "closed", "archived"])
+    .array(z.enum(["open", "pending", "resolved", "claimed", "ai_handling", "closed", "archived"]))
+    .max(7)
     .optional(),
+  channel_id: z.string().uuid().optional(),
+  assigned_to: z.union([z.string().uuid(), z.literal("unassigned")]).optional(),
+  unread_only: z.boolean().optional(),
+  exclude_finished: z.boolean().optional(),
+  search: z.string().trim().min(2).max(200).optional(),
   limit: z.number().int().min(1).max(50).default(10),
   cursor: z.string().optional(),
 };
@@ -65,20 +71,24 @@ export const crmListConversations: McpToolDefinition<typeof listInputShape> = {
       },
       {
         // O handler espera LISTA desde que o filtro passou a aceitar vários.
-        status: input.status ? [input.status] : undefined,
+        status: input.status,
         // `undefined` EXPLÍCITO: `.optional()` no Zod produz uma chave
         // OBRIGATÓRIA de tipo `X | undefined`, não uma chave opcional — omiti-la
         // é erro de tipo. A tool do MCP não expõe filtro por comando (quem
         // pergunta é a tela), então ela não filtra por ele.
         comando: undefined,
+        contact_id: input.contact_id,
+        channel_session_id: input.channel_id,
+        assigned_to: input.assigned_to,
+        unread: input.unread_only,
+        exclude_finished: input.exclude_finished,
+        search: input.search,
+        tag: undefined,
         limit: input.limit,
         cursor: input.cursor,
       },
     );
-    let conversations = result.conversations;
-    if (input.contact_id) {
-      conversations = conversations.filter((c) => c.contact_id === input.contact_id);
-    }
+    const conversations = result.conversations;
     // Nomes (dedupe) e posições de fila (1 query cada) — sem N+1 na listagem.
     const names = await resolveUserNames(
       ctx.supabase,
@@ -103,6 +113,9 @@ export const crmListConversations: McpToolDefinition<typeof listInputShape> = {
         last_message_preview: c.last_message_preview,
         last_message_at: c.last_message_at,
         unread_count: c.unread_count_for_assignee,
+        awaiting_since: c.awaiting_since,
+        service_revision: c.service_revision,
+        contact: (c as unknown as { contacts?: unknown }).contacts ?? null,
         is_group: c.is_group,
       })),
       cursor: result.cursor,
@@ -172,7 +185,7 @@ const historyInputShape = {
 export const crmGetConversationHistory: McpToolDefinition<typeof historyInputShape> = {
   name: "crm_get_conversation_history",
   description:
-    "Carrega historico de mensagens de uma conversa. Use para dar contexto ao agente sem inflar o system prompt.",
+    "Lista mensagens reais de uma conversa em ordem cronológica, com paginação para trás. Inclui direção, tipo, status de envio/entrega, erros e vínculo de resposta; não devolve URL privada ou signed URL de mídia. Use para dar contexto sem inflar o system prompt.",
   inputSchema: historyInputShape,
   category: "read",
   requiresRole: "agent",
@@ -194,10 +207,18 @@ export const crmGetConversationHistory: McpToolDefinition<typeof historyInputSha
         direction: m.direction,
         type: m.type,
         body: m.body,
-        media_url: m.media_url,
+        media_available: Boolean(m.media_storage_path || m.media_url),
+        media_mime: m.media_mime,
+        media_size_bytes: m.media_size_bytes,
         sent_via: m.sent_via,
         sent_at: m.sent_at,
         status: m.status,
+        ack: m.ack,
+        error_code: m.error_code,
+        error_message: m.error_message,
+        delivered_at: m.delivered_at,
+        read_at: m.read_at,
+        reply_to_message_id: m.reply_to_message_id,
       })),
       cursor: result.cursor,
       has_more: result.has_more,

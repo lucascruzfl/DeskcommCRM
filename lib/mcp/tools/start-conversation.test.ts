@@ -15,7 +15,11 @@ vi.mock("@/lib/messaging/open-shared-contact-conversation", () => ({
 vi.mock("@/app/api/v1/messages/_handler", () => ({
   sendMessageHandler: vi.fn(),
 }));
+vi.mock("@/lib/api/idempotency", () => ({
+  comIdempotencia: vi.fn(),
+}));
 
+import { comIdempotencia } from "@/lib/api/idempotency";
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
 import { openSharedContactConversation } from "@/lib/messaging/open-shared-contact-conversation";
 import type { McpContext } from "@/lib/mcp/types";
@@ -24,6 +28,7 @@ import { crmStartConversationAndSend } from "./start-conversation";
 
 const mockedOpen = vi.mocked(openSharedContactConversation);
 const mockedSend = vi.mocked(sendMessageHandler);
+const mockedIdempotency = vi.mocked(comIdempotencia);
 
 const ORG_ID = "11111111-1111-4111-8111-111111111111";
 const SESSION_ID = "22222222-2222-4222-8222-222222222222";
@@ -76,6 +81,11 @@ function makeCtx(state: IdemState): McpContext {
 beforeEach(() => {
   mockedOpen.mockReset();
   mockedSend.mockReset();
+  mockedIdempotency.mockReset();
+  mockedIdempotency.mockImplementation(async (entry) => {
+    const effect = await entry.executar();
+    return { tipo: "executou", resposta: effect.resposta, status: effect.status };
+  });
 });
 
 describe("crm_start_conversation_and_send", () => {
@@ -84,6 +94,7 @@ describe("crm_start_conversation_and_send", () => {
     const parsedInput = {
       channel_session_id: SESSION_ID,
       type: "text" as const,
+      idempotency_key: "invalid:1",
     };
 
     await expect(
@@ -113,6 +124,7 @@ describe("crm_start_conversation_and_send", () => {
         name: "Cliente Novo",
         body: "Oi! Tudo bem?",
         type: "text",
+        idempotency_key: "start:1",
       } as never,
       ctx,
     );
@@ -143,8 +155,7 @@ describe("crm_start_conversation_and_send", () => {
       sent_at: "2026-09-14T12:00:00.000Z",
     });
 
-    // Sem idempotency_key, nada é gravado.
-    expect(state.inserts).toHaveLength(0);
+    expect(mockedIdempotency).toHaveBeenCalledTimes(1);
   });
 
   it("com idempotency_key, grava a resposta cobrindo o PAR abrir+enviar", async () => {
@@ -158,6 +169,16 @@ describe("crm_start_conversation_and_send", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
+    mockedIdempotency.mockImplementation(async (entry) => {
+      expect(entry).toMatchObject({
+        organizationId: ORG_ID,
+        endpoint: "mcp:crm_start_conversation_and_send",
+        chave: "run-1:step-1",
+        corpo: { channel_session_id: SESSION_ID, contact_id: CONTACT_ID, body: "Oi!" },
+      });
+      const effect = await entry.executar();
+      return { tipo: "executou", resposta: effect.resposta, status: effect.status };
+    });
     const ctx = makeCtx(state);
     await crmStartConversationAndSend.handler(
       {
@@ -170,15 +191,7 @@ describe("crm_start_conversation_and_send", () => {
       ctx,
     );
 
-    expect(state.inserts).toHaveLength(1);
-    const gravado = state.inserts[0]!;
-    expect(gravado.key).toBe("run-1:step-1");
-    expect(gravado.organization_id).toBe(ORG_ID);
-    expect(gravado.response_body).toMatchObject({
-      contact_id: CONTACT_ID,
-      conversation_id: CONVERSATION_ID,
-      message_id: MESSAGE_ID,
-    });
+    expect(mockedIdempotency).toHaveBeenCalledTimes(1);
   });
 
   it("retry com a mesma idempotency_key NÃO abre outra conversa nem manda outra mensagem", async () => {
@@ -191,6 +204,7 @@ describe("crm_start_conversation_and_send", () => {
       sent_at: "2026-09-14T12:00:00.000Z",
     };
     const state: IdemState = { cached: cachedResponse, inserts: [] };
+    mockedIdempotency.mockResolvedValue({ tipo: "replay", resposta: cachedResponse, status: 200 });
     const ctx = makeCtx(state);
 
     const result = await crmStartConversationAndSend.handler(
