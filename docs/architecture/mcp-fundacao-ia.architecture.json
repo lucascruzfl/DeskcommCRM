@@ -2,15 +2,15 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "MCP: fundação de autorização e operação de IA",
-    "subtitle": "Registry único, policy explícita, serviço canônico e isolamento por organização",
+    "title": "MCP: fundação, IA e núcleo comercial",
+    "subtitle": "Registry único, policy explícita, serviços canônicos e isolamento por organização",
     "output": "mcp-fundacao-ia.html",
     "quality_profile": "standard"
   },
   "lanes": [
     { "id": "cliente", "label": "Cliente MCP" },
     { "id": "mcp", "label": "Servidor MCP" },
-    { "id": "dominio", "label": "Domínio de IA" },
+    { "id": "dominio", "label": "Domínios de IA e CRM" },
     { "id": "dados", "label": "Dados e auditoria" }
   ],
   "mainPath": ["token", "registry", "policy", "toolsia", "serviceia", "tenantdb", "audit"],
@@ -22,6 +22,8 @@
     { "id": "errors", "lane": "mcp", "col": 3, "type": "backend", "label": "Erros estáveis e respostas higienizadas" },
     { "id": "toolsia", "lane": "mcp", "col": 3, "type": "backend", "label": "Tools de catálogo e administração de agentes" },
     { "id": "serviceia", "lane": "dominio", "col": 4, "type": "backend", "label": "Serviço MCP de IA reutilizando validação e publicação reais" },
+    { "id": "toolscrm", "lane": "mcp", "col": 3, "type": "backend", "label": "Tools de contatos, oportunidades, funis, etapas, campos, tags e tarefas" },
+    { "id": "servicecrm", "lane": "dominio", "col": 4, "type": "backend", "label": "Handlers e serviços compartilhados pela UI/API e pelo MCP" },
     { "id": "platformkey", "lane": "dominio", "col": 3, "type": "security", "label": "Resolvedor interno de credencial da instalação" },
     { "id": "tenantdb", "lane": "dados", "col": 5, "type": "database", "label": "Catálogo, credenciais seguras, agentes, versões e runs cercados por organização" },
     { "id": "audit", "lane": "dados", "col": 4, "type": "database", "label": "Auditoria com recurso, resultado, request e redação recursiva" }
@@ -33,6 +35,11 @@
     { "from": "policy", "to": "toolsia", "label": "Autoriza antes do handler" },
     { "from": "policy", "to": "errors", "label": "Recusas tipadas" },
     { "from": "toolsia", "to": "serviceia", "label": "Delega regra de negócio" },
+    { "from": "policy", "to": "toolscrm", "label": "Autoriza domínio e risco" },
+    { "from": "toolscrm", "to": "servicecrm", "label": "Delega regra de negócio" },
+    { "from": "servicecrm", "to": "tenantdb", "label": "Filtra ids e referências por organização" },
+    { "from": "servicecrm", "to": "audit", "label": "Registra mutação e ator técnico" },
+    { "from": "tenantdb", "to": "toolscrm", "label": "Retorna histórico e estado paginados" },
     { "from": "serviceia", "to": "platformkey", "label": "Consulta apenas disponibilidade" },
     { "from": "serviceia", "to": "tenantdb", "label": "Filtra toda referência por organização" },
     { "from": "toolsia", "to": "audit", "label": "Declara recurso mutado" },

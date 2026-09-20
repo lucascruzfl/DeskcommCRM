@@ -17,17 +17,14 @@ import { type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { ok, fail } from "@/lib/api/wrappers";
-import { audit } from "@/lib/audit";
+import { ApiError } from "@/lib/api/types";
 import { requireRole } from "@/lib/auth/require-role";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { createClient } from "@/lib/supabase/server";
-import { registraAtividadeDaTarefa } from "@/lib/tarefas/atividade";
-import { PRIORIDADES_DA_TAREFA, SITUACOES_DA_TAREFA, type Tarefa } from "@/lib/tarefas/tipos";
+import { PRIORIDADES_DA_TAREFA, SITUACOES_DA_TAREFA } from "@/lib/tarefas/tipos";
+import { atualizarTarefa, excluirTarefa } from "@/lib/tarefas/operations";
 
 export const dynamic = "force-dynamic";
-
-const COLUNAS =
-  "id, organization_id, title, description, due_date, priority, status, lead_id, contact_id, assigned_to, created_by, created_at, updated_at";
 
 const edicaoSchema = z
   .object({
@@ -69,60 +66,14 @@ export async function PATCH(req: NextRequest, ctx: Contexto): Promise<Response> 
 
   const supabase = await createClient();
 
-  // A situação ANTES da edição decide se esta é a vez em que a tarefa fechou.
-  // Sem ler antes, marcar "concluída" duas vezes emitiria duas linhas na
-  // timeline do negócio — e a segunda seria mentira.
-  const { data: antes } = await supabase
-    .from("crm_tasks")
-    .select("status")
-    .eq("id", id)
-    .eq("organization_id", authz.org.orgId)
-    .maybeSingle();
-
-  const { data, error } = await supabase
-    .from("crm_tasks")
-    .update(parsed.data)
-    .eq("id", id)
-    .eq("organization_id", authz.org.orgId)
-    .select(COLUNAS)
-    .single();
-
-  if (error) {
-    if (error.code === "PGRST116") {
-      return fail("not_found", t("Tarefa não encontrada."), 404, { requestId });
-    }
-    if (error.code === "23503") {
-      return fail("validation_failed", t("O negócio ou contato vinculado não existe."), 422, {
-        requestId,
-      });
-    }
+  try {
+    const tarefa = await atualizarTarefa({ supabase, organizationId: authz.org.orgId,
+      actor: { type: "user", id: authz.user.id }, requestId }, id, parsed.data);
+    return ok({ task: tarefa }, { requestId });
+  } catch (error) {
+    if (error instanceof ApiError) return fail(error.code, error.message, error.status, { requestId });
     return fail("internal_error", t("Erro ao salvar a tarefa."), 500, { requestId });
   }
-
-  const tarefa = data as unknown as Tarefa;
-
-  await audit({
-    organizationId: authz.org.orgId,
-    actorUserId: authz.user.id,
-    action: "crm_task.updated",
-    resourceType: "crm_tasks",
-    resourceId: tarefa.id,
-    requestId,
-    metadata: { campos: Object.keys(parsed.data) },
-  });
-
-  const fechouAgora =
-    tarefa.status === "done" && (antes as { status?: string } | null)?.status !== "done";
-  if (fechouAgora) {
-    await registraAtividadeDaTarefa(supabase, {
-      organizationId: authz.org.orgId,
-      tarefa,
-      tipo: "task_completed",
-      actorUserId: authz.user.id,
-    });
-  }
-
-  return ok({ task: tarefa }, { requestId });
 }
 
 export async function DELETE(_req: NextRequest, ctx: Contexto): Promise<Response> {
@@ -137,31 +88,12 @@ export async function DELETE(_req: NextRequest, ctx: Contexto): Promise<Response
   const t = (texto: string) => traduzir(texto, authz.user.idioma);
 
   const supabase = await createClient();
-  // `.select()` no delete para saber se ALGUMA linha saiu. Sem isso, apagar uma
-  // tarefa de outra organização devolveria 200 — e a tela sumiria com a linha
-  // do próprio usuário na próxima recarga, sem que nada tivesse sido apagado.
-  const { data, error } = await supabase
-    .from("crm_tasks")
-    .delete()
-    .eq("id", id)
-    .eq("organization_id", authz.org.orgId)
-    .select("id");
-
-  if (error) {
+  try {
+    await excluirTarefa({ supabase, organizationId: authz.org.orgId,
+      actor: { type: "user", id: authz.user.id }, requestId }, id);
+    return ok({ deleted: true }, { requestId });
+  } catch (error) {
+    if (error instanceof ApiError) return fail(error.code, error.message, error.status, { requestId });
     return fail("internal_error", t("Erro ao apagar a tarefa."), 500, { requestId });
   }
-  if (!data || data.length === 0) {
-    return fail("not_found", t("Tarefa não encontrada."), 404, { requestId });
-  }
-
-  await audit({
-    organizationId: authz.org.orgId,
-    actorUserId: authz.user.id,
-    action: "crm_task.deleted",
-    resourceType: "crm_tasks",
-    resourceId: id,
-    requestId,
-  });
-
-  return ok({ deleted: true }, { requestId });
 }

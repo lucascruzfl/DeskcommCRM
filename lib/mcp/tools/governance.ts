@@ -182,6 +182,8 @@ export const crmManageTags: McpToolDefinition<typeof tagsInputShape> = {
   category: "write",
   requiresRole: "agent",
   requiresScope: "mcp:write",
+  domain: "contacts",
+  auditResource: (input) => ({ type: input.target_kind, id: input.target_id }),
   handler: async (input, ctx) => {
     const addTags = (input.add ?? []).map((t) => conversationTagSchema.parse(t));
     const removeTags = new Set((input.remove ?? []).map((t) => conversationTagSchema.parse(t)));

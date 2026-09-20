@@ -54,6 +54,29 @@ async function ownerPatchOrThrow(
   }
   if (!result.patch) return null;
 
+  if (result.patch.owner_user_id !== null) {
+    const { data: membership, error: membershipErr } = await supabase
+      .from("user_organizations")
+      .select("user_id")
+      .eq("user_id", result.patch.owner_user_id)
+      .eq("organization_id", ctx.organization_id)
+      .is("revoked_at", null)
+      .maybeSingle();
+
+    if (membershipErr) {
+      throw new ApiError(500, "internal_error", undefined, ctx.requestId, membershipErr.message);
+    }
+    if (!membership) {
+      throw new ApiError(
+        422,
+        "validation_failed",
+        undefined,
+        ctx.requestId,
+        traduzir("Responsável não encontrado nesta organização.", ctx.idioma ?? "pt-BR"),
+      );
+    }
+  }
+
   if (result.patch.owner_agent_id !== null) {
     const { data: agent, error: agentErr } = await supabase
       .from("ai_agents")
@@ -118,10 +141,15 @@ function actorAuditPayload(actor: Actor): {
 // ---------------------------------------------------------------------------
 
 export interface ListLeadsQuery {
+  search?: string;
   pipeline_id?: string;
   stage_id?: string;
   status?: "open" | "won" | "lost";
   owner_user_id?: string;
+  tag?: string;
+  source?: string;
+  created_from?: string;
+  created_to?: string;
   limit?: number;
   cursor?: string | null;
 }
@@ -175,6 +203,11 @@ export async function listLeadsHandler(
   if (q.stage_id) query = query.eq("stage_id", q.stage_id);
   if (q.status) query = query.eq("status", q.status);
   if (q.owner_user_id) query = query.eq("owner_user_id", q.owner_user_id);
+  if (q.search) query = query.ilike("title", `%${q.search}%`);
+  if (q.tag) query = query.contains("tags", [q.tag]);
+  if (q.source) query = query.eq("source", q.source);
+  if (q.created_from) query = query.gte("created_at", q.created_from);
+  if (q.created_to) query = query.lte("created_at", q.created_to);
 
   if (q.cursor) {
     const c = decLeadCursor(q.cursor);

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { emitLeadActivity } from "@/lib/leads/activity-emitter";
 import type { Tarefa } from "@/lib/tarefas/tipos";
+import type { Actor } from "@/lib/api/handlers/types";
 
 /**
  * O LAÇO DE RETORNO DA TAREFA (invariante 7 do Sistema Vivo).
@@ -26,7 +27,8 @@ export async function registraAtividadeDaTarefa(
     organizationId: string;
     tarefa: Pick<Tarefa, "id" | "title" | "due_date" | "priority" | "lead_id" | "contact_id">;
     tipo: "task_created" | "task_completed";
-    actorUserId: string;
+    actorUserId?: string;
+    actor?: Actor;
   },
 ): Promise<{ ok: boolean; error?: string }> {
   // Sem negócio não há linha do tempo onde escrever: `crm_lead_activities.lead_id`
@@ -41,7 +43,7 @@ export async function registraAtividadeDaTarefa(
     type: args.tipo,
     sourceModule: "tarefas",
     sourceId: args.tarefa.id,
-    actor: { type: "user", id: args.actorUserId },
+    actor: args.actor ?? { type: "user", id: args.actorUserId! },
     // O título é texto que o operador escreveu SOBRE ESTE negócio — a mesma
     // classe do `reason` que a Agenda já grava. Cortado porque o campo aparece
     // numa linha da timeline, não num parágrafo.

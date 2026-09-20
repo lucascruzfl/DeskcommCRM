@@ -24,9 +24,9 @@ import {
   type FunilEditavel,
   type RegraDeAutomacao,
 } from "@/lib/pipelines/pipeline-editing";
-import type { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-type Supabase = Awaited<ReturnType<typeof createClient>>;
+type Supabase = SupabaseClient;
 
 /** `position` entra: a reordenação calcula em cima dela. */
 const COLUNAS =

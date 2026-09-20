@@ -81,6 +81,7 @@ export const crmListStages: McpToolDefinition<typeof listStagesShape> = {
   category: "read",
   requiresRole: "agent",
   requiresScope: "mcp:read",
+  domain: "pipelines",
   handler: async (input, ctx) => {
     const etapas = await lerFunil(ctx.supabase, ctx.organizationId, input.pipeline_id);
     if (!etapas) {
@@ -105,6 +106,8 @@ export const crmCreateStage: McpToolDefinition<typeof createStageShape> = {
   category: "write",
   requiresRole: "manager",
   requiresScope: "mcp:write",
+  domain: "pipelines",
+  auditResource: (_input, result) => ({ type: "crm_stage", id: (result as { stage_id?: string } | undefined)?.stage_id }),
   handler: async (input, ctx) => {
     const { stageId, funil } = await criarEtapa(deps(ctx), {
       pipelineId: input.pipeline_id,
@@ -135,6 +138,8 @@ export const crmUpdateStage: McpToolDefinition<typeof updateStageShape> = {
   category: "write",
   requiresRole: "manager",
   requiresScope: "mcp:write",
+  domain: "pipelines",
+  auditResource: (input) => ({ type: "crm_stage", id: input.stage_id }),
   handler: async (input, ctx) => {
     const pedido: Parameters<typeof atualizarEtapa>[1]["pedido"] = {};
     if (input.name !== undefined) pedido.name = input.name;
@@ -176,6 +181,9 @@ export const crmArchiveStage: McpToolDefinition<typeof archiveStageShape> = {
   category: "write",
   requiresRole: "manager",
   requiresScope: "mcp:write",
+  domain: "pipelines",
+  capabilities: ["destructive_operations"],
+  auditResource: (input) => ({ type: "crm_stage", id: input.stage_id }),
   handler: async (input, ctx) => {
     const { funil, negociosMovidos } = await arquivarEtapa(deps(ctx), {
       pipelineId: input.pipeline_id,
@@ -204,6 +212,7 @@ export const crmListTags: McpToolDefinition<typeof listTagsShape> = {
   category: "read",
   requiresRole: "agent",
   requiresScope: "mcp:read",
+  domain: "contacts",
   handler: async (input, ctx) => {
     return { marcadores: await listarMarcadores(deps(ctx), { limite: input.limit }) };
   },

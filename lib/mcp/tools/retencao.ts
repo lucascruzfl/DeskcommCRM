@@ -433,6 +433,8 @@ export const crmCloseDemand: McpToolDefinition<typeof encerrarShape> = {
   category: "write",
   requiresRole: "agent",
   requiresScope: "mcp:write",
+  domain: "leads",
+  auditResource: (input) => ({ type: "crm_lead", id: input.lead_id }),
   handler: async (input, ctx) => {
     try {
       const { lead, jaEstava } = await encerraDemanda(
@@ -481,6 +483,8 @@ export const crmProposeReactivation: McpToolDefinition<typeof reativacaoShape> =
   category: "write",
   requiresRole: "agent",
   requiresScope: "mcp:write",
+  domain: "leads",
+  auditResource: (input) => ({ type: "crm_lead", id: input.lead_id }),
   handler: async (input, ctx) => {
     const { data: lead, error } = await ctx.supabase
       .from("crm_leads")
@@ -559,6 +563,11 @@ export const crmProposeReactivation: McpToolDefinition<typeof reativacaoShape> =
       proposta_id: proposta.id,
       lead_id: input.lead_id,
       vence_em: proposta.expiresAt.toISOString(),
+      human_action_required: true,
+      code: "reactivation_approval_required",
+      reason: "A retomada de um negócio exige aprovação humana antes de qualquer contato.",
+      resource: { type: "crm_lead_reactivation", id: proposta.id },
+      instruction: "Abra a proposta de retomada do negócio e escolha aprovar ou descartar.",
       mensagem:
         "sugestão registrada. Uma pessoa precisa aprovar antes de qualquer mensagem sair para o cliente.",
     };

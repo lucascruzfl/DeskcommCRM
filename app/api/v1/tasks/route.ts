@@ -28,18 +28,14 @@ import { type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { ok, fail } from "@/lib/api/wrappers";
-import { audit } from "@/lib/audit";
+import { ApiError } from "@/lib/api/types";
 import { requireRole } from "@/lib/auth/require-role";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { createClient } from "@/lib/supabase/server";
-import { registraAtividadeDaTarefa } from "@/lib/tarefas/atividade";
-import { PRIORIDADES_DA_TAREFA, SITUACOES_DA_TAREFA, type Tarefa } from "@/lib/tarefas/tipos";
+import { PRIORIDADES_DA_TAREFA, SITUACOES_DA_TAREFA } from "@/lib/tarefas/tipos";
+import { criarTarefa, listarTarefas } from "@/lib/tarefas/operations";
 
 export const dynamic = "force-dynamic";
-
-/** As colunas que a tela lê. Explícitas para o `select *` não vazar coluna nova. */
-const COLUNAS =
-  "id, organization_id, title, description, due_date, priority, status, lead_id, contact_id, assigned_to, created_by, created_at, updated_at";
 
 const criacaoSchema = z.object({
   title: z.string().trim().min(1).max(255),
@@ -83,28 +79,15 @@ export async function GET(req: NextRequest): Promise<Response> {
   // ⚠️ `organization_id` à mão mesmo com RLS ligada: é a regra do CLAUDE.md, e
   // ela não é redundante — o dia em que esta rota trocar para o admin client
   // (que bypassa RLS) o filtro já está aqui.
-  let query = supabase
-    .from("crm_tasks")
-    .select(COLUNAS)
-    .eq("organization_id", authz.org.orgId)
-    .order("due_date", { ascending: true, nullsFirst: false })
-    .order("created_at", { ascending: false })
-    .limit(500);
-
-  if (filtros.status) query = query.eq("status", filtros.status);
-  if (filtros.priority) query = query.eq("priority", filtros.priority);
-  if (filtros.lead_id) query = query.eq("lead_id", filtros.lead_id);
-  if (filtros.contact_id) query = query.eq("contact_id", filtros.contact_id);
-  if (filtros.due_from) query = query.gte("due_date", filtros.due_from);
-  if (filtros.due_to) query = query.lte("due_date", filtros.due_to);
-  if (filtros.aberto === "true") query = query.in("status", ["pending", "in_progress"]);
-
-  const { data, error } = await query;
-  if (error) {
+  try {
+    const result = await listarTarefas({ supabase, organizationId: authz.org.orgId,
+      actor: { type: "user", id: authz.user.id }, requestId }, {
+      ...filtros, open_only: filtros.aberto === "true", limit: 500, offset: 0,
+    });
+    return ok({ tasks: result.tasks }, { requestId });
+  } catch {
     return fail("internal_error", t("Erro ao listar as tarefas."), 500, { requestId });
   }
-
-  return ok({ tasks: (data ?? []) as unknown as Tarefa[] }, { requestId });
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
@@ -127,46 +110,12 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("crm_tasks")
-    .insert({
-      ...parsed.data,
-      organization_id: authz.org.orgId,
-      created_by: authz.user.id,
-    })
-    .select(COLUNAS)
-    .single();
-
-  if (error) {
-    // 23503 = lead ou contato de outra organização (ou apagado no meio). A
-    // recusa nomeia o campo porque quem lê é quem escolheu na tela.
-    if (error.code === "23503") {
-      return fail("validation_failed", t("O negócio ou contato vinculado não existe."), 422, {
-        requestId,
-      });
-    }
+  try {
+    const tarefa = await criarTarefa({ supabase, organizationId: authz.org.orgId,
+      actor: { type: "user", id: authz.user.id }, requestId }, parsed.data);
+    return ok({ task: tarefa }, { requestId, status: 201 });
+  } catch (error) {
+    if (error instanceof ApiError) return fail(error.code, error.message, error.status, { requestId });
     return fail("internal_error", t("Erro ao salvar a tarefa."), 500, { requestId });
   }
-
-  const tarefa = data as unknown as Tarefa;
-
-  await audit({
-    organizationId: authz.org.orgId,
-    actorUserId: authz.user.id,
-    action: "crm_task.created",
-    resourceType: "crm_tasks",
-    resourceId: tarefa.id,
-    requestId,
-    metadata: { due_date: tarefa.due_date, priority: tarefa.priority },
-  });
-
-  // O laço de retorno: tarefa presa a um negócio aparece na linha do tempo dele.
-  await registraAtividadeDaTarefa(supabase, {
-    organizationId: authz.org.orgId,
-    tarefa,
-    tipo: "task_created",
-    actorUserId: authz.user.id,
-  });
-
-  return ok({ task: tarefa }, { requestId, status: 201 });
 }

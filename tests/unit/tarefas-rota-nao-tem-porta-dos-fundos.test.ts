@@ -88,7 +88,7 @@ function fazerSupabase(respostas: Resposta[]) {
       const r = proxima();
       return Promise.resolve({ data: r.data ?? null, error: r.error ?? null });
     };
-    for (const metodo of ["select", "insert", "update", "delete", "order", "limit", "in", "gte", "lte"]) {
+    for (const metodo of ["select", "insert", "update", "delete", "order", "limit", "range", "in", "gte", "lte"]) {
       elo[metodo] = () => elo;
     }
     elo.eq = (coluna: string, valor: unknown) => {
@@ -297,6 +297,7 @@ describe("PATCH e DELETE /api/v1/tasks/[id]", () => {
 
 // Este teste isola o handler; autoridade de suporte é exercitada na suíte própria.
 vi.mock("@/lib/impersonate/support", async (importOriginal) => ({
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- tipo do mock dinâmico precisa acompanhar o módulo real
   ...await importOriginal<typeof import("@/lib/impersonate/support")>(),
   requireSupportWrite: vi.fn(async () => null),
   authenticatedSessionId: vi.fn(async () => "f2200000-0000-4000-8000-000000000099"),

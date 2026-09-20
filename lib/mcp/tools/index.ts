@@ -6,7 +6,15 @@
  */
 import type { McpToolDefinition } from "../types";
 import { TOOL_CATALOG, VALID_TOOL_IDS } from "./catalog";
-import { crmSearchContacts, crmGetContact, crmProposeContactField } from "./contacts";
+import {
+  crmSearchContacts,
+  crmGetContact,
+  crmProposeContactField,
+  crmCreateContact,
+  crmUpdateContact,
+  crmGetContactTimeline,
+  crmDeleteContact,
+} from "./contacts";
 import {
   crmListConversations,
   crmGetConversation,
@@ -18,8 +26,17 @@ import {
   crmCreateLead,
   crmUpdateLead,
   crmMoveLeadStage,
+  crmMoveLeadPipeline,
+  crmGetLeadTimeline,
 } from "./leads";
-import { crmListPipelines } from "./pipelines";
+import {
+  crmListPipelines,
+  crmGetPipeline,
+  crmCreatePipeline,
+  crmUpdatePipeline,
+  crmArchivePipeline,
+  crmUpdatePipelineSchema,
+} from "./pipelines";
 import { crmSendWhatsappMessage } from "./messages";
 import { crmStartConversationAndSend } from "./start-conversation";
 import {
@@ -83,6 +100,9 @@ import {
   crmProposeReactivation,
 } from "./retencao";
 import { AI_MCP_TOOLS } from "./ia";
+import { CRM_TASK_TOOLS } from "./tarefas";
+import { CRM_TAG_TOOLS } from "./tags";
+import { crmSetCustomFieldValues } from "./campos-personalizados";
 
 // Cast via `unknown` porque McpToolDefinition<TInput> nao e covariante
 // em TInput (handler usa TInput em posicao contravariante). Coletar
@@ -97,6 +117,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmListAppointments,
   crmSearchContacts,
   crmGetContact,
+  crmGetContactTimeline,
   crmProposeContactField,
   crmListConversations,
   crmGetConversation,
@@ -104,7 +125,9 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmGetQueueStatus,
   crmListLeads,
   crmGetLead,
+  crmGetLeadTimeline,
   crmListPipelines,
+  crmGetPipeline,
   crmSearchKnowledge,
   crmListKnowledgeSources,
   crmListImprovementProposals,
@@ -128,6 +151,8 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmListAvailableAttendants,
   crmListHumanCases,
   crmGetHumanCase,
+  ...CRM_TASK_TOOLS.filter((tool) => tool.category === "read"),
+  ...CRM_TAG_TOOLS.filter((tool) => tool.category === "read"),
   // write
   // A que consulta E marca numa chamada só vem primeiro: quando o cliente já deu
   // dia e hora, é o caminho curto, e é o que evita o turno morrer no meio (#831).
@@ -140,10 +165,21 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmCreateLead,
   crmUpdateLead,
   crmMoveLeadStage,
+  crmMoveLeadPipeline,
   crmSendWhatsappMessage,
   crmStartConversationAndSend,
   crmAssignConversation,
   crmManageTags,
+  crmCreateContact,
+  crmUpdateContact,
+  crmDeleteContact,
+  crmCreatePipeline,
+  crmUpdatePipeline,
+  crmArchivePipeline,
+  crmUpdatePipelineSchema,
+  crmSetCustomFieldValues,
+  ...CRM_TASK_TOOLS.filter((tool) => tool.category === "write"),
+  ...CRM_TAG_TOOLS.filter((tool) => tool.category === "write"),
   // write — organizar a operação (W4)
   crmCreateStage,
   crmUpdateStage,
