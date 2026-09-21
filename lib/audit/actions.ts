@@ -73,6 +73,14 @@ export const AUDIT_ACTIONS = [
   "lgpd.anonymize_catchup",
   "member.invited",
   "team.interface_changed",
+  /**
+   * A EMPRESA trocou as portas que mostra (issue #1341, migration 0367). É o
+   * degrau acima do `team.interface_changed`: ali a pergunta é "quem tirou o
+   * Inbox da Maria", aqui é "quem escondeu o Inbox da instalação inteira, e
+   * quando" — pergunta que só tem resposta na trilha, porque a coluna guarda só
+   * o valor de agora e a escolha anterior não se reconstrói.
+   */
+  "org.interface_changed",
   "member.accepted",
   "member.role_changed",
   "member.revoked",
