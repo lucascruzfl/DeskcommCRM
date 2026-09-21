@@ -148,7 +148,7 @@ No recorte atual também não foram criados loops paralelos para operações com
 
 ## 12. Migrations do projeto MCP
 
-Até o fim da Parte 5, nenhuma migration nova foi criada pelo projeto MCP. A Parte 6 adicionou a tripla `20260920230000_0381_replace_faq_atomico.sql` + baseline + MANIFEST para substituir FAQs atomicamente por `fn_replace_knowledge_faq_items`. As demais implementações reutilizaram schema, RPCs e mecanismos existentes, inclusive a reserva idempotente da migration 0321 e `fn_set_channel_routing`.
+Até o fim da Parte 5, nenhuma migration nova foi criada pelo projeto MCP. A Parte 6 adicionou a tripla `20260921092259_0382_replace_faq_atomico.sql` + baseline + MANIFEST para substituir FAQs atomicamente por `fn_replace_knowledge_faq_items`. As demais implementações reutilizaram schema, RPCs e mecanismos existentes, inclusive a reserva idempotente da migration 0321 e `fn_set_channel_routing`.
 
 ## 13. Arquivos importantes
 
@@ -251,7 +251,7 @@ Auditoria delta concluída nos nove recortes solicitados:
 
 Serviços e decisões: `emit_event`/`rag-indexer`, storage oficial, `fn_replace_knowledge_faq_items`, render canônico de templates, `moedaDaOrganizacao`, serviços de entradas automáticas, `fn_configurar_pre_go_live_canal` e `emitirConvite`/`reenviarConvite`. Configurar continua distinto de executar: template não envia mensagem, webhook não chama destino, canal não envia e produto não conclui pedido.
 
-Schema: migration `0381_replace_faq_atomico`, apêndice idempotente no baseline e MANIFEST. A rota HTTP e o MCP compartilham a RPC transacional, que valida todo o novo conjunto antes do delete e só concede EXECUTE ao `service_role`.
+Schema: migration `0382_replace_faq_atomico`, apêndice idempotente no baseline e MANIFEST. A rota HTTP e o MCP compartilham a RPC transacional, que valida todo o novo conjunto antes do delete e só concede EXECUTE ao `service_role`. O número foi corrigido de `0381` para `0382` após a checagem ampliada encontrar o primeiro em dois PRs abertos.
 
 Compatibilidade preservada:
 
@@ -259,7 +259,7 @@ Compatibilidade preservada:
 upstream → fork → merge oficial → auditoria delta → testes MCP → correção incremental → deploy
 ```
 
-Nesta fase houve um único merge seguro de `origin/main` (`de74202f2`) sobre a base comum `a796ea3c9`; os commits MCP foram preservados. Não repetir merge durante a fase.
+Nesta fase houve um único merge seguro de `origin/main` (`de74202f2`) sobre a base comum `a796ea3c9`; os commits MCP foram preservados. A checagem posterior de colisões atualizou a ref para `df1b18f2eb`; conforme a regra de um merge por fase, os 23 commits novos não foram mesclados novamente e ficam para a próxima auditoria delta.
 
 ## 22. Living System Checklist — Parte 6
 

@@ -1,4 +1,4 @@
--- 0381_replace_faq_atomico.sql
+-- 0382_replace_faq_atomico.sql
 -- Substitui o conjunto de FAQ em uma única transação, sem janela vazia.
 
 create or replace function public.fn_replace_knowledge_faq_items(

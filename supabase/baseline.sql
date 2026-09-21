@@ -36159,7 +36159,7 @@ on conflict (model) do update set
   notes = excluded.notes,
   superseded_at = null;
 
--- ---- substituição atômica de FAQ (migration 0381) ----
+-- ---- substituição atômica de FAQ (migration 0382) ----
 create or replace function public.fn_replace_knowledge_faq_items(
   p_organization_id uuid,
   p_knowledge_source_id uuid,

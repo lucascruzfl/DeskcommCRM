@@ -18,7 +18,7 @@ describe("contratos de segurança MCP da Parte 6", () => {
   });
 
   it("migration valida antes de apagar e fecha EXECUTE público", () => {
-    const sql = ler("supabase/migrations/20260920230000_0381_replace_faq_atomico.sql");
+    const sql = ler("supabase/migrations/20260921092259_0382_replace_faq_atomico.sql");
     expect(sql.indexOf("knowledge_faq_invalid_item")).toBeLessThan(
       sql.indexOf("delete from public.ai_faq_items"),
     );
