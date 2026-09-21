@@ -103,6 +103,10 @@ import { crmSetCustomFieldValues } from "./campos-personalizados";
 import { AGENDA_ADMIN_MCP_TOOLS } from "./agenda-administracao";
 import { FOLLOWUP_ADMIN_MCP_TOOLS } from "./followup-administracao";
 import { AUTOMATION_ROUTING_MCP_TOOLS } from "./automacoes-roteamento";
+import { KNOWLEDGE_ADMIN_MCP_TOOLS } from "./knowledge-administracao";
+import { TEMPLATES_COMERCIO_ADMIN_MCP_TOOLS } from "./templates-comercio-administracao";
+import { WEBHOOKS_INTEGRACOES_CANAIS_MCP_TOOLS } from "./webhooks-integracoes-canais";
+import { EQUIPE_ADMIN_MCP_TOOLS } from "./equipe-administracao";
 
 // Cast via `unknown` porque McpToolDefinition<TInput> nao e covariante
 // em TInput (handler usa TInput em posicao contravariante). Coletar
@@ -114,6 +118,10 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   ...AGENDA_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...FOLLOWUP_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...AUTOMATION_ROUTING_MCP_TOOLS.filter((tool) => tool.category === "read"),
+  ...KNOWLEDGE_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "read"),
+  ...TEMPLATES_COMERCIO_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "read"),
+  ...WEBHOOKS_INTEGRACOES_CANAIS_MCP_TOOLS.filter((tool) => tool.category === "read"),
+  ...EQUIPE_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "read"),
   // read
   crmListEventTypes,
   crmFindFreeSlots,
@@ -200,6 +208,10 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   ...AGENDA_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "write"),
   ...FOLLOWUP_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "write"),
   ...AUTOMATION_ROUTING_MCP_TOOLS.filter((tool) => tool.category === "write"),
+  ...KNOWLEDGE_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "write"),
+  ...TEMPLATES_COMERCIO_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "write"),
+  ...WEBHOOKS_INTEGRACOES_CANAIS_MCP_TOOLS.filter((tool) => tool.category === "write"),
+  ...EQUIPE_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "write"),
   crmAddCaseNote,
   crmCloseHumanCase,
   crmResumeAiAttendance,

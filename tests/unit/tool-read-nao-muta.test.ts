@@ -76,6 +76,15 @@ function definicoesDeTool(): Definicao[] {
       if (!nome || !cat) continue;
       achadas.push({ name: nome[1]!, category: cat[1]!, corpo: bloco, arquivo });
     }
+    // `ia.ts` usa os factories tipados `read()`/`write()` para não repetir a
+    // política nas 25 tools. A varredura anterior enxergava só a primeira e o
+    // controle passou a falhar assim que comparou com o catálogo completo.
+    for (const bloco of txt.split(/(?=const \w+ = (?:read|write)\(\{)/)) {
+      const factory = /^const \w+ = (read|write)\(\{/.exec(bloco)?.[1];
+      const nome = /name:\s*"([^"]+)"/.exec(bloco);
+      if (!factory || !nome || achadas.some((item) => item.name === nome[1])) continue;
+      achadas.push({ name: nome[1]!, category: factory, corpo: bloco, arquivo });
+    }
   }
   return achadas;
 }

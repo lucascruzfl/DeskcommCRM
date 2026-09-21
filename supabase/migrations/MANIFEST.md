@@ -45,6 +45,7 @@ aplica.
 
 | Version | Name | Description |
 |---|---|---|
+| `20260920230000` | `0381_replace_faq_atomico` | Substitui todos os itens de uma fonte FAQ em uma transação por `fn_replace_knowledge_faq_items`. A função valida organização, tipo, limite e conteúdo antes do primeiro `delete`, preservando o conjunto anterior quando um item é inválido. MCP e HTTP compartilham a operação; `organization_id` continua vindo do contexto autenticado. `SECURITY DEFINER` com `search_path` fixo, `EXECUTE` revogado de `public`, `anon` e `authenticated`, concedido somente a `service_role`. Sem tabela ou coluna nova. |
 | `20260428195354` | `0001_platform_base` | organizations, user_organizations, platform_admins, api_tokens, api_audit_log, user_recovery_codes, idempotency_keys + RLS helpers (fn_user_org_ids, fn_is_platform_admin, fn_user_role_in_org, fn_role_at_least) |
 | `20260428195513` | `0002_event_log_and_compat` | event_log + emit_event/fn_log_event helpers + compat aliases (fn_set_updated_at, fn_user_role_in returning int) |
 | `20260428195708` | `0003_customer_360` | contacts (CPF encrypted), crm_pipelines, crm_stages, crm_leads, crm_lead_activities, crm_lead_links, merge_queue + 5 domain triggers |

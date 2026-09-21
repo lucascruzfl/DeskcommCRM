@@ -144,11 +144,11 @@ Notas internas usam uma operação compartilhada em `lib/atendimento/notas-da-co
 - import/upload genérico sem prepare/preview/commit;
 - operações administrativas de alto risco sem desenho de aprovação.
 
-No recorte atual também não foram criados loops paralelos para empresas comerciais inexistentes, merge/bulk/import/export sem serviço seguro, CRUD de fila inexistente e tipos de mensagem que o produto não suporta. Pairing QR/OAuth continua sendo ação humana. Upload/import/export genérico e administração completa de canal/sessão permanecem fora.
+No recorte atual também não foram criados loops paralelos para operações comerciais inexistentes, merge/bulk/import/export sem serviço seguro, CRUD de fila inexistente e tipos de mensagem que o produto não suporta. Pairing QR/OAuth e ações de sessão que exigem consentimento continuam humanas. Upload/import/export genérico permanece fora.
 
 ## 12. Migrations do projeto MCP
 
-Até o fim da Parte 5, nenhuma migration nova foi criada pelo projeto MCP. As implementações reutilizaram schema, RPCs e mecanismos existentes, inclusive a reserva idempotente da migration 0321 e `fn_set_channel_routing`. Se uma fase futura mudar schema, a entrega obrigatória será a tripla: migration versionada, apêndice idempotente no `supabase/baseline.sql` e entrada em `supabase/migrations/MANIFEST.md`, seguida dos testes de banco relevantes.
+Até o fim da Parte 5, nenhuma migration nova foi criada pelo projeto MCP. A Parte 6 adicionou a tripla `20260920230000_0381_replace_faq_atomico.sql` + baseline + MANIFEST para substituir FAQs atomicamente por `fn_replace_knowledge_faq_items`. As demais implementações reutilizaram schema, RPCs e mecanismos existentes, inclusive a reserva idempotente da migration 0321 e `fn_set_channel_routing`.
 
 ## 13. Arquivos importantes
 
@@ -206,9 +206,9 @@ Posteriormente será criado o repositório `deskcomm-mcp-skill`, com suporte a C
 
 ## 16. Pendências e próxima fase
 
-Pendências deliberadas: pairing/conexão por QR ou OAuth continua humano; upload binário usa o endpoint bearer oficial em vez de uma tool MCP com base64; não existe entidade `queue_id`; não há edição de nota interna no produto, somente criação e exclusão autorizada. Knowledge, templates/produtos, webhooks/integrações administrativas, equipe administrativa completa e import/export genérico permanecem para fases futuras. O gate global de banco mantém a falha alheia documentada em `prospecting-agent-setup.test.ts`.
+Pendências deliberadas: pairing/conexão por QR ou OAuth continua humano; upload binário usa o endpoint bearer oficial em vez de uma tool MCP com base64; não existe entidade `queue_id`; não há edição de nota interna no produto, somente criação e exclusão autorizada; import/export genérico segue sem serviço compartilhado seguro. O produto não possui escrita/transição oficial de pedidos, webhook outbound genérico, delivery log outbound nem simulação de entrega, portanto essas operações não foram inventadas. O gate global de banco mantém a falha alheia documentada em `prospecting-agent-setup.test.ts`.
 
-Próxima fase: knowledge/templates/produtos ou a fase definida pelo roteiro seguinte, começando por auditoria delta do domínio escolhido. Não iniciar automaticamente. Antes de ampliar o MCP, medir `tools/list`, reler serviços oficiais e executar testes de compatibilidade.
+Próxima fase: a fase definida pelo roteiro seguinte, começando por auditoria delta do domínio escolhido. Não iniciar automaticamente. Antes de ampliar o MCP, medir `tools/list`, reler serviços oficiais e executar testes de compatibilidade.
 
 ## 19. Living System Checklist — Parte 5
 
@@ -233,6 +233,57 @@ Próxima fase: knowledge/templates/produtos ou a fase definida pelo roteiro segu
 - ESLint alterados, `lint:channels`, `lint:role-rank` e release check: aprovados.
 - `test:db` global: 253/254 arquivos; 5 falhas fora do diff em prospecting, reproduzidas isoladamente.
 - Migrations: nenhuma. E2E, `test:shell`, build e suíte unitária global não executados por escopo.
+
+## 21. Parte 6 — knowledge, templates, comércio, integrações, canais e equipe
+
+Estado de entrada: 153 tools. A Parte 6 acrescenta 37 handlers e eleva o registry derivado a 190; `tools/list`, e não este número histórico, continua sendo a fonte de verdade para clientes futuros.
+
+Auditoria delta concluída nos nove recortes solicitados:
+
+- Knowledge real: `ai_knowledge_sources`, `ai_faq_items`, versões/chunks, storage privado, `event_log` e `rag-indexer`. O MCP administra texto e FAQ, consulta estado/erro, solicita indexação pelo evento oficial e encaminha upload binário ao endpoint oficial. Vínculo com agente permanece em `ai_agent_versions.knowledge_source_ids`, já coberto pela administração de drafts.
+- Templates internos: `message_templates`, separados dos templates externos em `meta_templates`. CRUD e duplicação não enviam mensagem; preview continua em `crm_render_message_template`; aprovação externa permanece humana.
+- Comércio: CRUD do `catalog_products`, com moeda da organização e estoque somente porque existe no modelo. `orders` é histórico sincronizado sem serviço de criação/transição; por isso ganhou somente list/get.
+- Webhooks: o recurso real é a entrada inbound `webhook_sources`, não uma assinatura outbound genérica. Configuração, ativação, recebimentos e exclusão omitem `secret_encrypted`; não foi inventado teste externo ou delivery log inexistente.
+- Integrações: `tenant_integrations` expõe somente provider, estado, scopes e metadados não sensíveis. OAuth e desconexão retornam ação humana na superfície oficial; access/refresh token, secret e ciphertext nunca saem.
+- Canais: leitura de health/status e configuração atômica de acesso da IA. Provisionamento, pairing/QR, reconexão e arquivamento permanecem humanos e não expõem o nome/segredo interno de sessão.
+- Equipe: consulta, convites, reenvio/revogação, áreas operacionais, role delegável, revogação e reativação. O MCP só aceita `viewer|agent|manager`, bloqueia o provisionador do token e transforma qualquer alteração de `admin`/owner em ação humana. As mutações administrativas ainda validam que o token foi provisionado por um admin ativo; o `role:manager` do token não concede esse privilégio. Áreas de interface não concedem autorização.
+- Configurações: routing e agenda já estavam na Parte 5; billing, infraestrutura, branding de plataforma, secrets e exclusão de tenant ficaram fora. Nenhuma configuração genérica paralela foi criada.
+
+Serviços e decisões: `emit_event`/`rag-indexer`, storage oficial, `fn_replace_knowledge_faq_items`, render canônico de templates, `moedaDaOrganizacao`, serviços de entradas automáticas, `fn_configurar_pre_go_live_canal` e `emitirConvite`/`reenviarConvite`. Configurar continua distinto de executar: template não envia mensagem, webhook não chama destino, canal não envia e produto não conclui pedido.
+
+Schema: migration `0381_replace_faq_atomico`, apêndice idempotente no baseline e MANIFEST. A rota HTTP e o MCP compartilham a RPC transacional, que valida todo o novo conjunto antes do delete e só concede EXECUTE ao `service_role`.
+
+Compatibilidade preservada:
+
+```text
+upstream → fork → merge oficial → auditoria delta → testes MCP → correção incremental → deploy
+```
+
+Nesta fase houve um único merge seguro de `origin/main` (`de74202f2`) sobre a base comum `a796ea3c9`; os commits MCP foram preservados. Não repetir merge durante a fase.
+
+## 22. Living System Checklist — Parte 6
+
+1. Entrada: token MCP e IDs, nunca `organization_id` público.
+2. Saída: serviços/RPCs oficiais alimentam as mesmas tabelas e workers das telas.
+3. Registro: toda escrita declara recurso auditável; indexação e convites preservam eventos/auditoria do domínio.
+4. Tela: Acervo, Respostas prontas, Produtos, Integrações, Conexões e Equipe continuam sendo as superfícies humanas.
+5. Porta: registry/catálogo MCP; nenhuma UI paralela.
+6. Anti-morte: index state/error, health, status de integração, convite e revogação deixam próximo passo explícito.
+7. Configuração: toda configuração nova tem superfície existente; QR/OAuth/upload e privilégio elevado voltam à pessoa.
+8. Continuidade: conhecimento indexado retorna ao agente; humano mantém controle de canal, consentimento e equipe.
+9. Laço: worker, estado, erro, auditoria e reconsulta fecham cada mutação assíncrona.
+10. Mapa: `docs/architecture/mcp-fundacao-ia.architecture.json` inclui a Parte 6 e as ações humanas.
+
+## 23. Validação final da Parte 6
+
+- Foco/registry/perfil público: 4 arquivos, 25 testes aprovados.
+- Regressão MCP das Partes 2–6: 21 arquivos, 201 testes aprovados.
+- Catálogo, classificação read/write e mapa: 3 arquivos, 725 testes aprovados. A sonda de mutação passou a reconhecer também as definições tipadas pelos factories `read()`/`write()` de IA.
+- Banco focado: 1 arquivo, 4 testes aprovados; instalação e reaplicação idempotente do baseline aprovadas.
+- Banco global: 254/255 arquivos e 2.132 testes aprovados; as únicas 5 falhas são as preexistentes de `prospecting-agent-setup.test.ts`, por ausência de credencial/modelo, fora do diff.
+- Typecheck aprovado com `NODE_OPTIONS=--max-old-space-size=3584`.
+- ESLint global aprovado com zero erro; avisos preexistentes permanecem. ESLint dos alterados, `lint:channels`, `lint:role-rank`, release check e `git diff --check` aprovados.
+- E2E, `test:shell` e build não foram executados: não houve mudança de UI, jornada visual ou packaging.
 
 ## 17. Living System Checklist — Parte 4
 

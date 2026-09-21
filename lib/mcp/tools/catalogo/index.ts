@@ -25,6 +25,7 @@ import { TOOLS_RETENCAO } from "./retencao";
 import { TOOLS_IA } from "./ia";
 import { TOOLS_CRM_COMPLETO } from "./crm-completo";
 import { TOOLS_PARTE5 } from "./parte5";
+import { TOOLS_PARTE6 } from "./parte6";
 import type { McpToolCatalogEntry } from "./tipos";
 
 export type { McpToolCatalogEntry } from "./tipos";
@@ -43,6 +44,7 @@ export const TOOL_CATALOG: ReadonlyArray<McpToolCatalogEntry> = [
   ...TOOLS_OPERACAO,
   ...TOOLS_RETENCAO,
   ...TOOLS_PARTE5,
+  ...TOOLS_PARTE6,
 ];
 
 /**

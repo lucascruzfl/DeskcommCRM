@@ -91,7 +91,10 @@ export async function GET(
     .eq("knowledge_source_id", sourceId)
     .order("position", { ascending: true });
 
-  return ok({ ...(fonte as unknown as Record<string, unknown>), items: itens ?? [] }, { requestId });
+  return ok(
+    { ...(fonte as unknown as Record<string, unknown>), items: itens ?? [] },
+    { requestId },
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -184,53 +187,39 @@ export async function PATCH(
   }
 
   if (input.items !== undefined && tipo === "faq") {
-    // Delete existing items.
-    const { error: delErr } = await admin
-      .from("ai_faq_items")
-      .delete()
-      .eq("knowledge_source_id", sourceId)
-      .eq("organization_id", activeOrg.orgId);
-
-    if (delErr) {
-      console.error("[ai-knowledge-sources] PATCH delete items failed:", delErr.message);
-      return fail("internal_error", "Erro ao remover itens antigos.", 500, { requestId });
+    if (input.items.length === 0) {
+      return fail("validation_failed", "A FAQ exige ao menos um item.", 422, { requestId });
     }
-
-    if (input.items.length > 0) {
-      const rows = input.items.map((item, idx) => ({
-        organization_id: activeOrg.orgId,
-        knowledge_source_id: sourceId,
-        question: item.question,
-        answer: item.answer,
-        tags: item.tags,
-        locale: item.locale,
-        position: idx,
-      }));
-
-      const { error: insertErr } = await admin.from("ai_faq_items").insert(rows);
-
-      if (insertErr) {
-        console.error("[ai-knowledge-sources] PATCH insert items failed:", insertErr.message);
-        return fail("internal_error", "Erro ao inserir novos itens FAQ.", 500, { requestId });
-      }
-      itemsCount = rows.length;
-    } else {
-      itemsCount = 0;
+    const { data: replaced, error: replaceErr } = await admin.rpc(
+      "fn_replace_knowledge_faq_items" as never,
+      {
+        p_organization_id: activeOrg.orgId,
+        p_knowledge_source_id: sourceId,
+        p_items: input.items,
+      } as never,
+    );
+    if (replaceErr) {
+      console.error("[ai-knowledge-sources] PATCH replace items failed:", replaceErr.message);
+      return fail("internal_error", "Erro ao substituir os itens FAQ.", 500, { requestId });
     }
+    itemsCount = Number(replaced ?? input.items.length);
   }
 
   // Emit knowledge_source.updated (fire-and-forget).
-  const { error: emitErr } = await admin.rpc("emit_event" as never, {
-    p_event_type: "knowledge_source.updated",
-    p_entity_kind: "ai_knowledge_source",
-    p_entity_id: sourceId,
-    p_payload: {
-      knowledge_source_id: sourceId,
-      agent_id: ksRow.agent_id,
-      source_type: ksRow.source_type,
-    },
-    p_organization_id: activeOrg.orgId,
-  } as never);
+  const { error: emitErr } = await admin.rpc(
+    "emit_event" as never,
+    {
+      p_event_type: "knowledge_source.updated",
+      p_entity_kind: "ai_knowledge_source",
+      p_entity_id: sourceId,
+      p_payload: {
+        knowledge_source_id: sourceId,
+        agent_id: ksRow.agent_id,
+        source_type: ksRow.source_type,
+      },
+      p_organization_id: activeOrg.orgId,
+    } as never,
+  );
 
   if (emitErr) {
     console.warn("[ai-knowledge-sources] emit_event failed (non-blocking):", emitErr.message);

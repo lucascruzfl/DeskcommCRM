@@ -2,8 +2,8 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "MCP: fundação, IA, CRM, atendimento e operação",
-    "subtitle": "Registry único, policy explícita e serviços canônicos de agenda, follow-up, automação e routing",
+    "title": "MCP: controle seguro da operação completa",
+    "subtitle": "Registry único, policy explícita e serviços canônicos do conhecimento à equipe",
     "output": "mcp-fundacao-ia.html",
     "quality_profile": "standard"
   },
@@ -115,6 +115,20 @@
       "label": "Agenda, flows/versionamento, event_log, workers e decideRouting oficiais"
     },
     {
+      "id": "toolsadmin",
+      "lane": "mcp",
+      "col": 3,
+      "type": "backend",
+      "label": "Tools de knowledge, templates, comércio, integrações, canais e equipe"
+    },
+    {
+      "id": "serviceadmin",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "FAQ atômica, indexador, OAuth humano, catálogo e convites oficiais"
+    },
+    {
       "id": "canal",
       "lane": "dominio",
       "col": 5,
@@ -178,6 +192,31 @@
       "from": "toolsoperacao",
       "to": "serviceoperacao",
       "label": "Delega aos serviços, RPCs e regras oficiais"
+    },
+    {
+      "from": "policy",
+      "to": "toolsadmin",
+      "label": "Autoriza domínio, papel e operações destrutivas"
+    },
+    {
+      "from": "toolsadmin",
+      "to": "serviceadmin",
+      "label": "Configura sem confundir com executar efeitos externos"
+    },
+    {
+      "from": "serviceadmin",
+      "to": "tenantdb",
+      "label": "Filtra fonte, produto, webhook, canal e membro pela organização"
+    },
+    {
+      "from": "serviceadmin",
+      "to": "audit",
+      "label": "Registra mutações sem credenciais ou conteúdo secreto"
+    },
+    {
+      "from": "toolsadmin",
+      "to": "humano",
+      "label": "Entrega QR, OAuth, upload e privilégio elevado à pessoa"
     },
     {
       "from": "serviceoperacao",
