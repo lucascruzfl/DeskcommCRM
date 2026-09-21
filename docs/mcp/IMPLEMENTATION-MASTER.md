@@ -283,7 +283,14 @@ Nesta fase houve um único merge seguro de `origin/main` (`de74202f2`) sobre a b
 - Banco global: 254/255 arquivos e 2.132 testes aprovados; as únicas 5 falhas são as preexistentes de `prospecting-agent-setup.test.ts`, por ausência de credencial/modelo, fora do diff.
 - Typecheck aprovado com `NODE_OPTIONS=--max-old-space-size=3584`.
 - ESLint global aprovado com zero erro; avisos preexistentes permanecem. ESLint dos alterados, `lint:channels`, `lint:role-rank`, release check e `git diff --check` aprovados.
+- Colisão de migration conferida contra `origin/main`, 65 outras refs e 17 PRs abertos: `0382` e seu timestamp estão livres.
 - E2E, `test:shell` e build não foram executados: não houve mudança de UI, jornada visual ou packaging.
+
+Commits recuperáveis da fase:
+
+- `598ac209e` — merge único e seguro do upstream no início da fase;
+- `45b3900d4` — implementação, testes, migration tripla, catálogo e arquitetura da Parte 6;
+- `1edc92c48` — renumeração da migration após a sonda ampliada detectar colisão em PRs abertos.
 
 ## 17. Living System Checklist — Parte 4
 
