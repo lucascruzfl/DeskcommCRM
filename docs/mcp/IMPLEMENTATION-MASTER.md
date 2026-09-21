@@ -33,6 +33,8 @@ A versão 1.41.0 é a base auditada, não um congelamento do MCP. A fonte de ver
 - Parte 4: `feat(mcp): complete conversations and messaging operations` (commit que contém este documento).
 - Merge da `origin/main` anterior à Parte 5: `8656c4066`.
 - Parte 5: `feat(mcp): complete scheduling automation and routing operations` (commit que conterá este documento).
+- Merge único da Parte 7: `4ab5dfabe` (incorpora `origin/main` em `3538380b9`).
+- Parte 7: `752625aa1 feat(mcp): complete import export and bulk operations`.
 
 ## 4. Fases concluídas
 
