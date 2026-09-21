@@ -6,6 +6,7 @@ import {
   aiAccessUpdateSchema,
 } from "@/lib/ai/elegibilidade/pre-go-live";
 import { McpToolError } from "@/lib/mcp/errors";
+import { humanAction } from "@/lib/mcp/human-action";
 import type { McpContext, McpToolDefinition } from "@/lib/mcp/types";
 
 const uuid = z.string().uuid();
@@ -14,12 +15,26 @@ const WEBHOOK_COLUMNS =
 const CHANNEL_COLUMNS =
   "id, provider, display_name, phone_number, status, status_reason, last_health_check_at, last_status_change_at, daily_message_limit, is_warmup_complete, created_at, metadata";
 
-function falhar(code: ConstructorParameters<typeof McpToolError>[0], message: string): never {
-  throw new McpToolError(code, message);
+function falhar(
+  code: ConstructorParameters<typeof McpToolError>[0],
+  message: string,
+  details?: Record<string, unknown>,
+): never {
+  throw new McpToolError(code, message, details);
 }
 async function exigirProvisionadorAdmin(ctx: McpContext) {
   if (!ctx.provisionedByUserId)
-    falhar("human_action_required", "Ação exige token provisionado por administrador humano.");
+    falhar(
+      "human_action_required",
+      "Ação exige token provisionado por administrador humano.",
+      humanAction({
+        code: "channel_admin_provisioner_required",
+        reason: "channel_administration_requires_active_human_admin",
+        resource: { type: "channel_session" },
+        instruction: "Peça a uma pessoa administradora para concluir a configuração em Conexões.",
+        href: "/app/connections",
+      }),
+    );
   const { data } = await ctx.supabase
     .from("user_organizations")
     .select("id")
@@ -33,6 +48,13 @@ async function exigirProvisionadorAdmin(ctx: McpContext) {
     falhar(
       "human_action_required",
       "A configuração do canal exige um token provisionado por administrador ativo.",
+      humanAction({
+        code: "channel_admin_provisioner_inactive",
+        reason: "channel_administration_requires_active_human_admin",
+        resource: { type: "channel_session" },
+        instruction: "Peça a uma pessoa administradora ativa para concluir a configuração.",
+        href: "/app/connections",
+      }),
     );
 }
 function webhookSeguro(row: Record<string, unknown>) {
@@ -184,16 +206,21 @@ export const crmPrepareIntegrationAction: McpToolDefinition<typeof integrationAc
   requiresRole: "manager",
   requiresScope: "mcp:read",
   domain: "channels",
-  handler: async (input) => ({
-    human_action_required: true,
-    provider: input.provider,
-    reason:
-      input.action === "connect"
-        ? "oauth_consent_requires_human"
-        : "disconnect_requires_human_confirmation",
-    instruction: `Abra Integrações e escolha ${input.action === "connect" ? "Conectar" : "Desconectar"}.`,
-    url: "/app/integrations/nuvemshop",
-  }),
+  handler: async (input) =>
+    humanAction({
+      code:
+        input.action === "connect"
+          ? "oauth_consent_required"
+          : "integration_disconnect_confirmation_required",
+      reason:
+        input.action === "connect"
+          ? "oauth_consent_requires_human"
+          : "disconnect_requires_human_confirmation",
+      resource: { type: "tenant_integration" },
+      instruction: `Abra Integrações e escolha ${input.action === "connect" ? "Conectar" : "Desconectar"}.`,
+      href: "/app/integrations/nuvemshop",
+      metadata: { provider: input.provider, action: input.action },
+    }),
 };
 
 async function canalDaOrg(ctx: McpContext, id: string) {
@@ -285,17 +312,17 @@ export const crmPrepareChannelAction: McpToolDefinition<typeof channelActionShap
     if (i.action !== "provision" && !i.channel_id)
       falhar("validation_error", "channel_id é obrigatório para esta ação.");
     if (i.channel_id) await canalDaOrg(c, i.channel_id);
-    return {
-      human_action_required: true,
+    return humanAction({
+      code: i.action === "pair" ? "channel_pairing_required" : "channel_confirmation_required",
       reason:
         i.action === "pair"
           ? "qr_or_pairing_requires_human"
           : "channel_external_effect_requires_human",
+      resource: { type: "channel_session", id: i.channel_id ?? null },
       instruction: "Abra Conexões para concluir a ação e confirmar o estado do provedor.",
-      url: "/app/connections",
-      channel_id: i.channel_id ?? null,
-      action: i.action,
-    };
+      href: "/app/connections",
+      metadata: { channel_id: i.channel_id ?? null, action: i.action },
+    });
   },
 };
 

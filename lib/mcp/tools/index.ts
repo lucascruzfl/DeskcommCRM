@@ -107,6 +107,7 @@ import { KNOWLEDGE_ADMIN_MCP_TOOLS } from "./knowledge-administracao";
 import { TEMPLATES_COMERCIO_ADMIN_MCP_TOOLS } from "./templates-comercio-administracao";
 import { WEBHOOKS_INTEGRACOES_CANAIS_MCP_TOOLS } from "./webhooks-integracoes-canais";
 import { EQUIPE_ADMIN_MCP_TOOLS } from "./equipe-administracao";
+import { PARTE7_OPERATION_TOOLS } from "./parte7-operacoes";
 
 // Cast via `unknown` porque McpToolDefinition<TInput> nao e covariante
 // em TInput (handler usa TInput em posicao contravariante). Coletar
@@ -122,6 +123,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   ...TEMPLATES_COMERCIO_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...WEBHOOKS_INTEGRACOES_CANAIS_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...EQUIPE_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "read"),
+  ...PARTE7_OPERATION_TOOLS.filter((tool) => tool.category === "read"),
   // read
   crmListEventTypes,
   crmFindFreeSlots,
@@ -212,6 +214,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   ...TEMPLATES_COMERCIO_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "write"),
   ...WEBHOOKS_INTEGRACOES_CANAIS_MCP_TOOLS.filter((tool) => tool.category === "write"),
   ...EQUIPE_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "write"),
+  ...PARTE7_OPERATION_TOOLS.filter((tool) => tool.category === "write"),
   crmAddCaseNote,
   crmCloseHumanCase,
   crmResumeAiAttendance,

@@ -59,8 +59,8 @@ describe("registry MCP da Parte 5", () => {
     expect(AUTOMACOES).toHaveLength(10);
     expect(ROUTING).toHaveLength(5);
     expect(PARTE_5).toHaveLength(35);
-    expect(MCP_TOOL_COUNT).toBe(190);
-    expect(new Set(MCP_REGISTRY.map((tool) => tool.name)).size).toBe(190);
+    expect(MCP_TOOL_COUNT).toBe(202);
+    expect(new Set(MCP_REGISTRY.map((tool) => tool.name)).size).toBe(202);
     for (const name of PARTE_5) expect(registry.has(name), name).toBe(true);
   });
 

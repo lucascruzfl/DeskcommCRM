@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { moedaDaOrganizacao } from "@/lib/catalogo/moeda-da-org";
 import { McpToolError } from "@/lib/mcp/errors";
+import { humanAction } from "@/lib/mcp/human-action";
 import {
   COLUNAS_DO_PRODUTO,
   produtoCreateSchema,
@@ -15,8 +16,12 @@ const TEMPLATE_COLUMNS = "id, title, body, shortcut, owner_user_id, created_at, 
 const ORDER_COLUMNS =
   "id, contact_id, external_id, external_provider, status, total_cents, currency, payment_method, fulfillment_status, tracking_code, ordered_at, created_at, updated_at, is_anonymized";
 
-function falhar(code: ConstructorParameters<typeof McpToolError>[0], message: string): never {
-  throw new McpToolError(code, message);
+function falhar(
+  code: ConstructorParameters<typeof McpToolError>[0],
+  message: string,
+  details?: Record<string, unknown>,
+): never {
+  throw new McpToolError(code, message, details);
 }
 
 async function templateDaOrg(ctx: McpContext, id: string) {
@@ -62,6 +67,14 @@ export const crmCreateMessageTemplate: McpToolDefinition<typeof templateCreateSh
       falhar(
         "human_action_required",
         "Template pessoal exige um usuário humano associado ao token.",
+        humanAction({
+          code: "personal_template_human_owner_required",
+          reason: "personal_resource_requires_human_identity",
+          resource: { type: "message_template" },
+          instruction:
+            "Crie o modelo pessoal pela tela ou use shared=true para um modelo da empresa.",
+          href: "/app/templates",
+        }),
       );
     const { data, error } = await ctx.supabase
       .from("message_templates")
@@ -195,8 +208,14 @@ export const crmListExternalMessageTemplates: McpToolDefinition<Record<never, ne
     if (error) falhar("not_allowed", "external_templates_read_failed");
     return {
       templates: data ?? [],
-      human_action_required: true,
-      reason: "provider_approval_requires_human",
+      ...humanAction({
+        code: "external_template_approval_required",
+        reason: "provider_approval_requires_human",
+        resource: { type: "external_message_template" },
+        instruction:
+          "Abra Modelos de mensagem para criar, enviar e acompanhar a aprovação externa.",
+        href: "/app/templates",
+      }),
     };
   },
 };

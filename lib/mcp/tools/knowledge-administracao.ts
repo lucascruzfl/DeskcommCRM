@@ -5,6 +5,7 @@ import { BUCKET_DE_CONHECIMENTO } from "@/lib/ai/rag/ingest/documento";
 import { parseFaqMarkdown } from "@/lib/ai/rag/ingest/faq";
 import { aceitaTextoColado, canonizarTipoDeFonte } from "@/lib/ai/rag/tipos-de-fonte";
 import { McpToolError } from "@/lib/mcp/errors";
+import { humanAction } from "@/lib/mcp/human-action";
 import type { McpContext, McpToolDefinition } from "@/lib/mcp/types";
 
 const uuid = z.string().uuid();
@@ -319,14 +320,26 @@ export const crmGetKnowledgeUploadInstructions: McpToolDefinition<typeof uploadS
   requiresRole: "manager",
   requiresScope: "mcp:read",
   domain: "knowledge",
-  handler: async () => ({
-    human_action_required: true,
-    reason: "binary_upload_requires_official_endpoint",
-    instruction:
-      "Envie multipart/form-data para /api/v1/ai/knowledge/sources/upload usando a sessão web autorizada; depois consulte a fonte pelo MCP.",
-    endpoint: "/api/v1/ai/knowledge/sources/upload",
-    accepted_extensions: ["pdf", "md", "txt", "csv"],
-  }),
+  handler: async () =>
+    humanAction({
+      code: "knowledge_file_upload_required",
+      reason: "binary_upload_requires_official_endpoint",
+      resource: { type: "ai_knowledge_source" },
+      instruction:
+        "Abra o Acervo e envie o arquivo pelo formulário oficial; depois consulte a fonte e a indexação pelo MCP.",
+      endpoint: "/api/v1/ai/knowledge/sources/upload",
+      href: "/app/ai/knowledge",
+      method: "POST",
+      uploadRequired: true,
+      metadata: {
+        content_type: "multipart/form-data",
+        fields: ["file", "name", "agent_id opcional"],
+        accepted_extensions: ["pdf", "md", "txt", "csv"],
+        accepted_mime_types: ["application/pdf", "text/markdown", "text/plain", "text/csv"],
+        max_bytes: 20 * 1024 * 1024,
+        result: "fonte de conhecimento seguida de indexação assíncrona",
+      },
+    }),
 };
 
 export const KNOWLEDGE_ADMIN_MCP_TOOLS = [

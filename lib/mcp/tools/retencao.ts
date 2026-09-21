@@ -48,6 +48,7 @@ import {
 } from "@/lib/followup/retorno-crm";
 import { duracaoLegivel } from "@/lib/followup/retorno";
 import { ApiError } from "@/lib/api/types";
+import { humanAction } from "@/lib/mcp/human-action";
 import { encerraDemanda } from "@/lib/leads/encerramento";
 import { carregaRadarDeRisco } from "@/lib/leads/radar-de-risco";
 import { propoeReativacao } from "@/lib/leads/reactivation";
@@ -342,7 +343,12 @@ export const crmListFollowups: McpToolDefinition<typeof listarShape> = {
   requiresScope: "mcp:read",
   handler: async (input, ctx) => {
     const resultado = await listaRetornosNoCrm(
-      { admin: ctx.supabase, orgId: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId },
+      {
+        admin: ctx.supabase,
+        orgId: ctx.organizationId,
+        actor: ctx.actor,
+        requestId: ctx.requestId,
+      },
       { leadId: input.lead_id ?? null, contactId: input.contact_id ?? null },
       { limite: input.limit },
     );
@@ -563,11 +569,13 @@ export const crmProposeReactivation: McpToolDefinition<typeof reativacaoShape> =
       proposta_id: proposta.id,
       lead_id: input.lead_id,
       vence_em: proposta.expiresAt.toISOString(),
-      human_action_required: true,
-      code: "reactivation_approval_required",
-      reason: "A retomada de um negócio exige aprovação humana antes de qualquer contato.",
-      resource: { type: "crm_lead_reactivation", id: proposta.id },
-      instruction: "Abra a proposta de retomada do negócio e escolha aprovar ou descartar.",
+      ...humanAction({
+        code: "reactivation_approval_required",
+        reason: "A retomada de um negócio exige aprovação humana antes de qualquer contato.",
+        resource: { type: "crm_lead_reactivation", id: proposta.id },
+        instruction: "Abra a proposta de retomada do negócio e escolha aprovar ou descartar.",
+        href: `/app/kanban?lead=${input.lead_id}`,
+      }),
       mensagem:
         "sugestão registrada. Uma pessoa precisa aprovar antes de qualquer mensagem sair para o cliente.",
     };
@@ -629,7 +637,8 @@ export const crmEnrollFollowupFlow: McpToolDefinition<typeof inscreverShape> = {
       // Recusa de negócio vira RESPOSTA. Só falha de infraestrutura sobe como
       // exceção — o wrapper do runtime a devolve como `{ error }` e o audit
       // marca a chamada como malsucedida.
-      if (r.status >= 500) throw new ApiError(r.status, r.code, undefined, ctx.requestId, r.message);
+      if (r.status >= 500)
+        throw new ApiError(r.status, r.code, undefined, ctx.requestId, r.message);
       return {
         inscrito: false,
         motivo: r.code,
@@ -646,7 +655,12 @@ export const crmEnrollFollowupFlow: McpToolDefinition<typeof inscreverShape> = {
       resourceType: "followup_enrollment",
       resourceId: enrollmentId,
       requestId: ctx.requestId,
-      metadata: { ...a.metadataActor, via: "mcp", flow_id: input.flow_id, contact_id: input.contact_id },
+      metadata: {
+        ...a.metadataActor,
+        via: "mcp",
+        flow_id: input.flow_id,
+        contact_id: input.contact_id,
+      },
     });
 
     return {

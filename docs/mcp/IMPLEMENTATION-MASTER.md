@@ -1,9 +1,9 @@
 # DeskcommCRM 1.41.0 — MCP Full Control — implementação mestre
 
-Atualizado em: 2026-09-20
+Atualizado em: 2026-09-21
 
 Branch: `feat/mcp-full-control`
-Estado deste checkpoint: Partes 1, 2, 3, 4 e 5 concluídas; Parte 5 validada e pronta para o commit desta entrega.
+Estado deste checkpoint: Partes 1 a 7 concluídas; Parte 7 preparada para a auditoria final.
 
 ## 1. Objetivo
 
@@ -18,7 +18,10 @@ A versão 1.41.0 é a base auditada, não um congelamento do MCP. A fonte de ver
 - Tools originais: 63.
 - Tools antes da Parte 5: **118**, calculadas diretamente por `MCP_REGISTRY.length` no commit da Parte 4.
 - Tools novas na Parte 5: **35** (9 agenda, 11 follow-up, 10 automações, 5 routing).
-- Tools atuais: **153**, calculadas diretamente por `MCP_TOOL_COUNT`/`MCP_REGISTRY.length` neste checkpoint.
+- Tools atuais: **202**, calculadas diretamente por `MCP_TOOL_COUNT`/`MCP_REGISTRY.length` neste checkpoint.
+- Tools antes da Parte 7: **190**.
+- Tools novas na Parte 7: **12**.
+- Total derivado atual: **202**, calculado por `MCP_TOOL_COUNT`/`MCP_REGISTRY.length`.
 - Branch atual: `feat/mcp-full-control`.
 - Base anterior às implementações: `6eceb0e60`.
 
@@ -316,3 +319,56 @@ Commits recuperáveis da fase:
 - `pnpm release:conferir`: aprovado; próxima versão calculada 1.42.0, sem escrever arquivos.
 - Não executados por escopo: suíte global, `test:db`, `test:e2e`, `test:shell` e build. Não houve mudança de schema, UI ou packaging.
 - Não houve envio real, alteração de conversa real, push ou deploy.
+
+## 24. Parte 7 — uploads, importações, exportações, bulk e gaps finais
+
+Estado de entrada: 190 tools. A auditoria delta encontrou 12 operações seguras e elevou o registry derivado a 202 tools. O upstream `3538380b9` estava 31 commits à frente da base comum; um único merge seguro gerou `4ab5dfabe`, preservando a FAQ MCP e o novo bloco upstream de configurações por empresa no baseline.
+
+| Domínio                        | Operação real                                                         | Cobertura MCP                                             | Classe/ação                                                |
+| ------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------- |
+| Contatos, leads e produtos     | importação CSV multipart, 5 MB/500 linhas                             | instrução com formato, campos, limites, dedupe e endpoint | B: confirmação/upload humano; não há preview/job oficial   |
+| Conversas e templates externos | upload oficial de mídia com MIME/tamanho                              | instrução; conversa e mídia validadas no tenant           | B: binário no endpoint oficial                             |
+| Knowledge e skills             | PDF/DOC/TXT/MD/ZIP nos endpoints oficiais                             | instrução padronizada, sem base64 ou credencial           | B: upload/revisão humana                                   |
+| Leads                          | bulk oficial, máximo 50                                               | preview tenant-scoped e preparo da ação                   | B: execução humana; endpoint não possui idempotência       |
+| Auditoria                      | exportação CSV filtrada, até 10 mil registros                         | preparo com filtros/endpoint e alerta de PII              | B: download humano                                         |
+| LGPD                           | job/worker e estado de exportação                                     | consulta de estado/resultado higienizado                  | A: implementado; arquivo permanece no fluxo humano oficial |
+| Tokens MCP                     | API/UI admin, plaintext uma vez na criação                            | instrução sem emitir, ler plaintext ou autoelevar         | B/C: administração humana; autoelevação proibida           |
+| Operação                       | health agregado de canais, knowledge, automações, follow-up e eventos | diagnóstico seguro, sem IP, filesystem ou segredo         | A: implementado                                            |
+
+Uploads de logo continuam C por exigirem administração/MFA e alterarem branding; avatar não possui upload independente, pois é sincronizado do canal. Não existem imports oficiais de pedidos ou knowledge em lote, exports gerais de contatos/leads/produtos/pedidos/conversas/knowledge, nem bulk seguro para esses domínios. Nenhum serviço foi inventado.
+
+As 12 tools novas são: `crm_get_contact_import_instructions`, `crm_get_lead_import_instructions`, `crm_get_product_import_instructions`, `crm_get_conversation_media_upload_instructions`, `crm_get_template_media_upload_instructions`, `crm_get_ai_skill_import_instructions`, `crm_preview_lead_bulk_action`, `crm_prepare_lead_bulk_action`, `crm_prepare_audit_export`, `crm_get_privacy_export_status`, `crm_prepare_mcp_token_management` e `crm_get_operational_diagnostics`.
+
+Todas são read-only no MCP. `organization_id` vem do contexto; referências são filtradas pela organização; respostas grandes são agregadas ou limitadas; caminhos privados, signed URLs, mensagens brutas de storage, credenciais e plaintext de token não saem. O contrato compartilhado de ação humana usa `human_action_required`, `code`, `reason`, `resource`, `instruction` e `endpoint|href` quando aplicável. Respostas anteriores de QR/OAuth/upload/privilégio elevado foram alinhadas a esse formato.
+
+Gaps C mantidos fora: billing, secrets, infraestrutura/VPS, SQL arbitrário, exclusão de tenant, autoelevação, transferência de owner, MFA/segurança pessoal, consentimento OAuth automático, logo administrativo e CRUD/exports/imports inexistentes. Não houve migration na Parte 7.
+
+## 25. Living System Checklist — Parte 7
+
+1. Entrada: token MCP, filtros e IDs; nunca organização pública ou binário em base64.
+2. Saída: endpoints multipart, RPC bulk, exportador CSV e worker LGPD oficiais.
+3. Registro: as tools não mutam; os endpoints humanos preservam auditoria/eventos do domínio.
+4. Tela: Inbox, importadores, Auditoria, LGPD, Tokens e diagnósticos existentes continuam sendo a superfície.
+5. Porta: registry/catálogo MCP aponta para endpoints/hrefs oficiais, sem UI paralela.
+6. Anti-morte: instrução, limite, dedupe, retry, estado e próximo passo ficam explícitos.
+7. Configuração: tokens, uploads e consentimentos continuam nas superfícies humanas autorizadas.
+8. Continuidade: o MCP prepara/observa e a pessoa conclui efeitos de alto impacto.
+9. Laço: preview, status LGPD e diagnóstico permitem observar resultado e decidir a próxima ação.
+10. Mapa: `docs/architecture/mcp-fundacao-ia.architecture.json` inclui arquivos/operações e ação humana.
+
+## 26. Próxima fase
+
+Executar a auditoria final do MCP inteiro, sem iniciar a Skill antes desse fechamento. Medir o registry por `tools/list`, revisar o delta após `3538380b9` e converter em tool somente eventual serviço novo que seja seguro e canônico.
+
+## 27. Validação da Parte 7
+
+- Foco Parte 7/registry/catálogo: 4 arquivos e 636 testes aprovados.
+- Regressão MCP final: 29 arquivos e 256 testes aprovados. A primeira rodada encontrou somente um contador histórico, corrigido antes desta medição.
+- Banco global: baseline install/update idempotente aprovado; 254/255 arquivos e 2.133 testes verdes. Permanecem as 5 falhas preexistentes de `prospecting-agent-setup.test.ts` por ausência de provider/modelo, fora do diff.
+- Cercas: 140/141 arquivos e 1.369/1.370 testes verdes. A única falha é dívida anterior da Parte 3 em `lib/mcp/tools/tags.ts`, que usa a tag textual como `resourceId`; o HEAD de entrada já continha as duas ocorrências.
+- A cerca específica da posição da varredura de privilégios passou 5/5 após o bloco FAQ ser recolocado antes dela. A Parte 7 não criou migration; a alteração no baseline corrige somente a ordem resultante do merge.
+- Typecheck, ESLint dos alterados, `lint:channels`, `lint:role-rank`, release check e `git diff --check`: aprovados.
+- Sonda de mutação: trocar temporariamente `human_action_required` para falso derrubou 3 testes pelo motivo esperado; a linha foi restaurada e a regressão final voltou a verde.
+- E2E, `test:shell` e build não executados por escopo: não houve UI, packaging ou mudança de schema.
+
+Incidente de teste: uma tentativa de configuração Vitest isolada ignorou o filtro e acionou o setup E2E disponível no ambiente, que criou fixtures de teste em um Supabase remoto antes da interrupção. O arquivo local de credenciais foi enviado à lixeira. A remoção remota ficou pendente para uma pessoa autorizada, pois esta fase não autoriza apagar dados externos.

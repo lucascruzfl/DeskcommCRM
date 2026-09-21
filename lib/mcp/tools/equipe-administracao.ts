@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { McpToolError } from "@/lib/mcp/errors";
+import { humanAction } from "@/lib/mcp/human-action";
 import {
   interfaceSettingsSchema,
   interfaceTemDestino,
@@ -17,8 +18,12 @@ const MEMBER_COLUMNS =
 const INVITE_COLUMNS =
   "id, organization_id, email, role, interface_settings, invited_by, inviter_name, email_dispatched, created_at, last_sent_at, resend_count, expires_at, accepted_at, revoked_at";
 
-function falhar(code: ConstructorParameters<typeof McpToolError>[0], message: string): never {
-  throw new McpToolError(code, message);
+function falhar(
+  code: ConstructorParameters<typeof McpToolError>[0],
+  message: string,
+  details?: Record<string, unknown>,
+): never {
+  throw new McpToolError(code, message, details);
 }
 async function membro(ctx: McpContext, userId: string) {
   const { data, error } = await ctx.supabase
@@ -36,6 +41,13 @@ async function atorAdministrador(ctx: McpContext) {
     falhar(
       "human_action_required",
       "Ação de equipe exige token provisionado por um administrador humano.",
+      humanAction({
+        code: "team_admin_provisioner_required",
+        reason: "team_administration_requires_active_human_admin",
+        resource: { type: "team_membership" },
+        instruction: "Peça a uma pessoa administradora para concluir a ação na tela de Equipe.",
+        href: "/app/team",
+      }),
     );
   const { data: membership } = await ctx.supabase
     .from("user_organizations")
@@ -50,6 +62,14 @@ async function atorAdministrador(ctx: McpContext) {
     falhar(
       "human_action_required",
       "Administração da equipe exige um token provisionado por administrador ativo.",
+      humanAction({
+        code: "team_admin_provisioner_inactive",
+        reason: "team_administration_requires_active_human_admin",
+        resource: { type: "team_membership" },
+        instruction:
+          "Peça a uma pessoa administradora ativa para concluir a ação na tela de Equipe.",
+        href: "/app/team",
+      }),
     );
   const { data: user } = await ctx.supabase.auth.admin.getUserById(ctx.provisionedByUserId!);
   return {
@@ -275,6 +295,13 @@ export const crmUpdateTeamMemberRole: McpToolDefinition<typeof roleShape> = {
       falhar(
         "human_action_required",
         "Alterações de administrador devem ser feitas por uma pessoa na tela de Equipe.",
+        humanAction({
+          code: "admin_role_change_requires_human",
+          reason: "privileged_role_change_requires_human",
+          resource: { type: "team_membership", id: i.member_id },
+          instruction: "Abra Equipe com uma sessão administradora e revise a alteração de papel.",
+          href: "/app/team",
+        }),
       );
     if (target.revoked_at) falhar("conflict", "Membro revogado precisa ser reativado antes.");
     const { error } = await c.supabase
@@ -305,7 +332,17 @@ export const crmRevokeTeamMember: McpToolDefinition<{ member_id: typeof uuid }> 
       falhar("not_allowed", "O token não pode revogar quem o provisionou.");
     const target = await membro(c, i.member_id);
     if (target.role === "admin")
-      falhar("human_action_required", "Revogação de administrador exige ação humana na tela.");
+      falhar(
+        "human_action_required",
+        "Revogação de administrador exige ação humana na tela.",
+        humanAction({
+          code: "admin_revocation_requires_human",
+          reason: "privileged_access_revocation_requires_human",
+          resource: { type: "team_membership", id: i.member_id },
+          instruction: "Abra Equipe com uma sessão administradora e confirme a revogação.",
+          href: "/app/team",
+        }),
+      );
     if (target.revoked_at) return { member_id: i.member_id, already_revoked: true };
     const now = new Date().toISOString();
     const { error } = await c.supabase
@@ -333,7 +370,17 @@ export const crmReactivateTeamMember: McpToolDefinition<{ member_id: typeof uuid
     await atorAdministrador(c);
     const target = await membro(c, i.member_id);
     if (target.role === "admin")
-      falhar("human_action_required", "Reativação de administrador exige ação humana na tela.");
+      falhar(
+        "human_action_required",
+        "Reativação de administrador exige ação humana na tela.",
+        humanAction({
+          code: "admin_reactivation_requires_human",
+          reason: "privileged_access_reactivation_requires_human",
+          resource: { type: "team_membership", id: i.member_id },
+          instruction: "Abra Equipe com uma sessão administradora e confirme a reativação.",
+          href: "/app/team",
+        }),
+      );
     if (!target.revoked_at) return { member_id: i.member_id, already_active: true };
     const { error } = await c.supabase
       .from("user_organizations")

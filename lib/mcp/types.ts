@@ -31,6 +31,7 @@ export type McpToolCategory = "read" | "write" | "handoff";
 export type McpToolDomain =
   | "agents"
   | "ai"
+  | "audit"
   | "appointments"
   | "automations"
   | "channels"
@@ -42,7 +43,10 @@ export type McpToolDomain =
   | "messages"
   | "pipelines"
   | "products"
+  | "privacy"
   | "routing"
+  | "operations"
+  | "settings"
   | "team"
   | "templates"
   | "webhooks";
@@ -73,7 +77,10 @@ export interface McpToolDefinition<TInput extends z.ZodRawShape = z.ZodRawShape>
   /** Ausente/true = aparece no perfil externo quando o token é autorizado. */
   publicProfile?: boolean;
   /** Recurso concreto para a linha de auditoria da mutação. */
-  auditResource?: (input: z.infer<z.ZodObject<TInput>>, result?: unknown) => {
+  auditResource?: (
+    input: z.infer<z.ZodObject<TInput>>,
+    result?: unknown,
+  ) => {
     type: string;
     id?: string | null;
   };
@@ -97,8 +104,5 @@ export interface McpToolDefinition<TInput extends z.ZodRawShape = z.ZodRawShape>
    * transformaria comportamento normal em alarme.
    */
   motivoDoVazio?: (resultado: unknown) => string | null;
-  handler: (
-    input: z.infer<z.ZodObject<TInput>>,
-    ctx: McpContext,
-  ) => Promise<unknown>;
+  handler: (input: z.infer<z.ZodObject<TInput>>, ctx: McpContext) => Promise<unknown>;
 }

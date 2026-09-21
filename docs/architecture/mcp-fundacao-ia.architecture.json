@@ -129,6 +129,20 @@
       "label": "FAQ atômica, indexador, OAuth humano, catálogo e convites oficiais"
     },
     {
+      "id": "toolsarquivos",
+      "lane": "mcp",
+      "col": 3,
+      "type": "backend",
+      "label": "Instruções de upload/import/export, preview bulk, LGPD e diagnóstico seguro"
+    },
+    {
+      "id": "servicearquivos",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "Endpoints multipart, RPC bulk, exportadores e workers oficiais"
+    },
+    {
       "id": "canal",
       "lane": "dominio",
       "col": 5,
@@ -217,6 +231,31 @@
       "from": "toolsadmin",
       "to": "humano",
       "label": "Entrega QR, OAuth, upload e privilégio elevado à pessoa"
+    },
+    {
+      "from": "policy",
+      "to": "toolsarquivos",
+      "label": "Autoriza domínio, escopo, papel e privacidade"
+    },
+    {
+      "from": "toolsarquivos",
+      "to": "servicearquivos",
+      "label": "Descobre o fluxo oficial sem transportar binário"
+    },
+    {
+      "from": "toolsarquivos",
+      "to": "humano",
+      "label": "Padroniza upload, importação, exportação e privilégio humano"
+    },
+    {
+      "from": "servicearquivos",
+      "to": "tenantdb",
+      "label": "Valida recursos, filtros e ownership pela organização"
+    },
+    {
+      "from": "servicearquivos",
+      "to": "audit",
+      "label": "Preserva logs oficiais sem segredo ou arquivo binário"
     },
     {
       "from": "serviceoperacao",
