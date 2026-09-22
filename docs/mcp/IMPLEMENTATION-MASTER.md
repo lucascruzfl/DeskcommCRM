@@ -1,9 +1,9 @@
 # DeskcommCRM 1.41.0 — MCP Full Control — implementação mestre
 
-Atualizado em: 2026-09-21
+Atualizado em: 2026-09-22
 
 Branch: `feat/mcp-full-control`
-Estado deste checkpoint: Partes 1 a 7 concluídas; Parte 7 preparada para a auditoria final.
+Estado deste checkpoint: Partes 1 a 9 concluídas; Skill/instalador e documentação reproduzível preparados, sem push ou deploy.
 
 ## 1. Objetivo
 
@@ -406,3 +406,38 @@ O registry continua com 202 tools. Não foi criada tool para pedido mutável, we
 - Build: tentativa com 7,8 GiB totais, 3,7 GiB disponíveis e zero swap; o Turbopack foi morto com exit 137 durante a compilação otimizada. Classificação: OOM ambiental, sem diagnóstico de erro de código.
 - Fixtures E2E acidentais: IDs e tipos constam de `docs/mcp/FINAL-AUDIT.md`; não houve acesso nem exclusão remota. O plano exige confirmação do projeto, preview por FK e autorização explícita.
 - Sem Skill, push ou deploy.
+
+## 31. Parte 9 — Skill, instalador e reprodução
+
+Foi criado o repositório independente `/root/deskcomm-mcp-skill`, branch `main`, versão `0.1.0`.
+A Skill aplica `DISCOVER → INSPECT → VALIDATE → EXECUTE → VERIFY`, interpreta
+`human_action_required`/`human_confirmation_required`, documenta gaps B/C e proíbe REST/SQL como
+fallback silencioso. `tools/list` é a fonte de verdade; 202 permanece apenas snapshot no manifest.
+
+O instalador NPX suporta Codex e Claude Code, escopos project/global, perfis e URL dinâmica
+normalizada para `/api/mcp`. No Codex usa Streamable HTTP + `http_headers_helper`; no Claude usa
+bridge stdio local porque o contrato HTTP não oferece helper equivalente. Token fica fora do
+projeto, em arquivo 0600 no POSIX ou ACL restrita via `icacls` no Windows. Reinstall/update
+preservam URL, token e outros MCPs; uninstall remove somente artefatos marcados.
+
+Validação: 23/23 testes do pacote, incluindo Linux/macOS/Windows por mocks, paths com espaço,
+project/global, Codex/Claude, fresh/reinstall/update/uninstall, 202/203/250 tools, tool desconhecida,
+human action, unauthorized, URL inválida, doctor, bridge e secret leakage. `quick_validate` e
+`npm pack --dry-run` aprovados; Codex 0.155.1 leu a configuração em HOME temporário. Claude Code
+não está instalado nesta VPS, então houve validação de config/bridge/mock, não da CLI real.
+
+Documentos adicionados: `INSTALL-NEW-VPS.md`, `UPDATE-DESKCOMM.md`, `TROUBLESHOOTING.md`,
+`BACKUP-RECOVERY.md` e `RELEASE-MANIFEST.json`. O build da Parte 8 segue registrado como exit 137
+no Turbopack por memória insuficiente/sem swap e deve ser repetido antes do deploy em ambiente
+adequado. As fixtures E2E remotas seguem intactas; limpeza continua pendente de autorização.
+
+Living System Checklist: entrada = instalador/perfil/token; saída = clientes MCP + serviços reais;
+registro = doctor/verify/auditoria do servidor; superfície = CLIs e telas existentes; porta = Skill
+instalada e config MCP; anti-morte = diagnóstico e próximo passo explícito; configuração = URL,
+perfil e escopo no instalador; continuidade = ação humana estruturada; laço = verify após cada
+operação/update; mapa = arquitetura MCP existente, sem componente novo dentro do runtime CRM.
+
+Commits Skill: `15ac293` (implementação), `69bd1d9` (manifest), `f6f6199` (proteção de configs não
+gerenciados) e `bacb491` (manifest final). Próximo passo: revisão humana, criar o remote GitHub da
+Skill, publicar sem alterar os commits e então validar Claude Code real e o endpoint real somente
+após o deploy autorizado.
