@@ -15,12 +15,19 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 
 import { createMcpServer } from "@/lib/mcp/server";
 import { McpAuthError, validateBearerToken } from "@/lib/mcp/auth";
+import { limitMcpRequest } from "@/lib/mcp/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-function jsonRpcError(code: number, message: string, status: number): Response {
+function jsonRpcError(
+  code: number,
+  message: string,
+  status: number,
+  requestId: string,
+  headers?: Record<string, string>,
+): Response {
   return new Response(
     JSON.stringify({
       jsonrpc: "2.0",
@@ -29,7 +36,7 @@ function jsonRpcError(code: number, message: string, status: number): Response {
     }),
     {
       status,
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "X-Request-Id": requestId, ...headers },
     },
   );
 }
@@ -41,10 +48,18 @@ async function handle(req: NextRequest): Promise<Response> {
     auth = await validateBearerToken(req.headers.get("authorization"));
   } catch (err) {
     if (err instanceof McpAuthError) {
-      return jsonRpcError(err.mcpCode, err.message, err.httpStatus);
+      return jsonRpcError(err.mcpCode, err.message, err.httpStatus, requestId);
     }
-    const msg = err instanceof Error ? err.message : "auth_failed";
-    return jsonRpcError(-32603, msg, 500);
+    return jsonRpcError(-32603, "auth_failed", 500, requestId);
+  }
+
+  const rateLimit = await limitMcpRequest(auth);
+  if (!rateLimit.allowed) {
+    return jsonRpcError(-32004, "Rate limited.", 429, requestId, {
+      "Retry-After": String(rateLimit.retryAfterSeconds),
+      "X-RateLimit-Limit": String(rateLimit.limit),
+      "X-RateLimit-Remaining": "0",
+    });
   }
 
   const transport = new WebStandardStreamableHTTPServerTransport({});
@@ -55,9 +70,8 @@ async function handle(req: NextRequest): Promise<Response> {
     const response = await transport.handleRequest(req as unknown as Request);
     response.headers.set("X-Request-Id", requestId);
     return response;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "transport_error";
-    return jsonRpcError(-32603, msg, 500);
+  } catch {
+    return jsonRpcError(-32603, "transport_error", 500, requestId);
   }
 }
 

@@ -374,3 +374,35 @@ Executar a auditoria final do MCP inteiro, sem iniciar a Skill antes desse fecha
 - E2E, `test:shell` e build não executados por escopo: não houve UI, packaging ou mudança de schema.
 
 Incidente de teste: uma tentativa de configuração Vitest isolada ignorou o filtro e acionou o setup E2E disponível no ambiente, que criou fixtures de teste em um Supabase remoto antes da interrupção. O arquivo local de credenciais foi enviado à lixeira. A remoção remota ficou pendente para uma pessoa autorizada, pois esta fase não autoriza apagar dados externos.
+
+## 28. Parte 8 — auditoria final de cobertura
+
+Estado de entrada: branch `feat/mcp-full-control`, HEAD `a3a744462`, 202 tools, árvore limpa. `origin/main` e merge-base apontavam para `3538380b9`; atraso zero, 12 commits próprios, sem sobreposição ou merge obrigatório.
+
+A auditoria refez a comparação do produto atual — UI, APIs, actions, serviços, repositórios, workers e schemas — com registry, perfil público, handlers, policies, scopes e capabilities. A matriz completa está em `docs/mcp/FINAL-AUDIT.md`; a conclusão é 100% de cobertura das operações classe A e zero gap A remanescente. Doze grupos B preservam participação humana, consentimento, binário ou endpoint externo, e doze grupos C preservam secrets, privilégios, infraestrutura e operações inexistentes fora do MCP.
+
+O único gap A descoberto era transversal: o endpoint MCP ainda não aplicava o rate limit que a especificação exige. `lib/mcp/rate-limit.ts`, `app/api/mcp/route.ts` e `lib/mcp/server.ts` agora impõem 60 chamadas/min por token, 600/min por organização e 30 escritas/min por token usando o limitador canônico, sem usar bearer nas chaves. Excesso retorna 429/`-32004`, `Retry-After` e headers de limite; erros JSON-RPC carregam `X-Request-Id`, e falhas internas não devolvem texto bruto.
+
+O registry continua com 202 tools. Não foi criada tool para pedido mutável, webhook outbound, `queue_id`, edição de nota, transporte binário, SQL ou qualquer funcionalidade ausente. O preset “Operação completa via MCP” foi validado para manager com `mcp:read/write`, scopes de domínio, allowlist e capabilities explícitas, sem exigir admin.
+
+## 29. Compatibilidade, migrations e Skill readiness
+
+- `docs/mcp/ARCHITECTURE.md` registra fronteiras, autorização, rate limit, auditoria e serviços canônicos.
+- `docs/mcp/COMPATIBILITY.md` registra contratos e pontos frágeis; `docs/mcp/AUDIT-NEW-VERSION.md` define a auditoria delta futura.
+- `tests/unit/mcp-compatibility-sentinels.test.ts` acusa handler removido, registry/policy divergente, scope/capability inválidos, schema proibido, secret leakage, rename dos serviços canônicos e regressão do preset manager.
+- `tests/unit/mcp-final-flows.test.ts` cobre os 11 fluxos ponta a ponta por descoberta dinâmica e mocks, sem IDs/modelos fixos ou efeito externo.
+- `tests/unit/mcp-rate-limit.test.ts` cobre os três limites e o isolamento das chaves.
+- A única migration do programa MCP continua `20260921092259_0382_replace_faq_atomico.sql`; migration, apêndice do baseline, MANIFEST, dependências, ordem e reaplicação foram aprovados. A Parte 8 não criou migration.
+- A futura Skill está pronta para conectar, chamar `tools/list`, descobrir capabilities e interpretar `human_action_required` sem depender de total fixo. A Skill ainda não foi criada.
+
+## 30. Validação final da Parte 8
+
+- Testes novos: 3 arquivos e 14 testes aprovados.
+- Regressão MCP: 29 arquivos e 256 testes aprovados. Total MCP/focado executado: 270 verdes.
+- Banco focado: 3 arquivos e 13 testes aprovados, incluindo dois tenants e reaplicação da FAQ atômica.
+- Banco global: 254/255 arquivos, 2.133 testes aprovados, 5 falhas preexistentes em `prospecting-agent-setup.test.ts` por provider/modelo ausente, fora do diff.
+- Unit global: um worker permaneceu ativo por mais de 19 minutos e a rodada foi interrompida; antes do hang apareceram seis falhas preexistentes em cinco arquivos (`audit-resource-id-e-uuid`, `i18n-espanhol-cobre-a-tela`, `escrita-em-organizations-usa-cliente-admin`, `escopo-de-funil` e `capacidade-alcancavel-pelo-agente`).
+- Typecheck aprovado com heap de 3.584 MB. ESLint global: zero erro e 414 warnings preexistentes; ESLint focado: limpo. `lint:channels`, `lint:role-rank`, release check, migration collision check e `test:shell` aprovados.
+- Build: tentativa com 7,8 GiB totais, 3,7 GiB disponíveis e zero swap; o Turbopack foi morto com exit 137 durante a compilação otimizada. Classificação: OOM ambiental, sem diagnóstico de erro de código.
+- Fixtures E2E acidentais: IDs e tipos constam de `docs/mcp/FINAL-AUDIT.md`; não houve acesso nem exclusão remota. O plano exige confirmação do projeto, preview por FK e autorização explícita.
+- Sem Skill, push ou deploy.

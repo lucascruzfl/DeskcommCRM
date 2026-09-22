@@ -15,6 +15,7 @@
   ],
   "mainPath": [
     "token",
+    "ratelimit",
     "registry",
     "policy",
     "toolsatendimento",
@@ -43,6 +44,13 @@
       "col": 1,
       "type": "backend",
       "label": "Registry único e tools/list derivado"
+    },
+    {
+      "id": "ratelimit",
+      "lane": "mcp",
+      "col": 1,
+      "type": "security",
+      "label": "Rate limit por token, organização e escrita"
     },
     {
       "id": "policy",
@@ -180,7 +188,9 @@
   ],
   "edges": [
     { "from": "preset", "to": "token", "label": "Seleção humana explícita" },
-    { "from": "token", "to": "registry", "label": "Autentica contexto e organização" },
+    { "from": "token", "to": "ratelimit", "label": "Usa somente IDs resolvidos" },
+    { "from": "ratelimit", "to": "registry", "label": "Autoriza orçamento da requisição" },
+    { "from": "ratelimit", "to": "audit", "label": "Recusa tipada e correlacionada por request" },
     { "from": "registry", "to": "policy", "label": "Filtra perfil público" },
     { "from": "policy", "to": "toolsia", "label": "Autoriza antes do handler" },
     { "from": "policy", "to": "errors", "label": "Recusas tipadas" },

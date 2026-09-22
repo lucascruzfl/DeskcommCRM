@@ -18,6 +18,7 @@ import { ensureRole, type McpAuthResult } from "./auth";
 import { authorizeTool } from "./policy";
 import { toolsForAuth } from "./registry";
 import { McpToolError, mcpErrorPayload, sanitizeMcpPayload } from "./errors";
+import { enforceMcpToolRateLimit } from "./rate-limit";
 import { higienizarUuidsDeAterro } from "./uuid-de-aterro";
 import type { McpContext } from "./types";
 
@@ -75,6 +76,7 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
         try {
           authorizeTool(auth, tool);
           ensureRole(auth.role, tool.requiresRole);
+          await enforceMcpToolRateLimit(auth, tool);
 
           const result = await tool.handler(args as never, ctx);
           const safeResult = sanitizeMcpPayload(result);
