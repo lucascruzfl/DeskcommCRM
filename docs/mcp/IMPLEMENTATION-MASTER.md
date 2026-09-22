@@ -441,3 +441,31 @@ Commits Skill: `15ac293` (implementação), `69bd1d9` (manifest), `f6f6199` (pro
 gerenciados) e `bacb491` (manifest final). Próximo passo: revisão humana, criar o remote GitHub da
 Skill, publicar sem alterar os commits e então validar Claude Code real e o endpoint real somente
 após o deploy autorizado.
+
+## 32. Primeiro deploy do MCP Full Control
+
+Em `2026-09-22`, o fluxo oficial implantou o commit auditado
+`b69af88721de5ee2f560158ae9be83bb5c4e1293` sobre a produção anteriormente identificada em
+`7acf480fd9db330295b0fd6d33ae30a8acd9cc58`. O build de produção passou com Node 22, heap de 4 GiB
+e swap temporária controlada. Como o fork não possui permissão de escrita nos pacotes GHCR do
+upstream, o fallback oficial do `update.sh` construiu app, worker e scheduler localmente.
+
+O backup pré-deploy preservou banco, configuração e sessões WAHA. A validação detectou que o
+arquivo WAHA produzido pelo backup automático usava um nome lógico antigo e estava vazio; antes de
+migrar, foi criado e validado um snapshot do volume realmente montado `deskcommcrm_waha-data`.
+Nenhum volume, storage ou sessão foi removido.
+
+O baseline oficial aplicou, em ordem, as migrations pendentes `0367`, `0374`, `0380` e `0382`.
+Sondas estruturais confirmaram a coluna de interface, a tabela de hierarquia com RLS, a função de
+reagendamento e `fn_replace_knowledge_faq_items(uuid,uuid,jsonb)`, cuja execução permanece negada a
+`anon`/`authenticated` e concedida a `service_role`.
+
+Após sete horas, app, worker, scheduler, Redis, SRH e WAHA estavam ativos e com zero restarts; o
+healthcheck aprovou Supabase, Redis e WAHA. O endpoint `/api/mcp` respondeu em JSON-RPC e rejeitou
+credencial ausente e inválida com HTTP 401. Trinta e dois testes sentinela de autenticação, perfil
+público e compatibilidade passaram.
+
+A emissão do token operacional ficou como `human_action_required`: a rota oficial exige sessão de
+administrador e o plaintext é exibido uma única vez. Não houve bypass por SQL. Handshake autenticado,
+`tools/list` e leituras reais serão executados depois que uma pessoa selecionar o preset **Operação
+completa via MCP** na UI e guardar o token em mecanismo seguro. As fixtures E2E foram preservadas.
