@@ -64,7 +64,7 @@ jobs:
       - name: Isolamento e baseline em banco descartável
         run: pnpm test:db tests/invariants/mcp-nao-alcanca-outro-tenant.test.ts tests/invariants/agenda-mcp-nao-alcanca-contato-alheio.test.ts tests/invariants/mcp-faq-atomica.test.ts
       - run: pnpm test:shell
-      - run: python3 -m unittest tests/unit/mcp_upstream_test.py
+      - run: python3 -m unittest tests/unit/mcp_upstream_test.py tests/unit/mcp_manifest_test.py
       - name: Snapshot do catálogo, sem número fixo
         id: tools
         env:
@@ -112,24 +112,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
           TOOL_COUNT: ${{ needs.validate.outputs.tools }}
         run: |
-          python3 - <<'PY'
-          import json, os
-          from datetime import datetime, timezone
-          owner = os.environ["GITHUB_REPOSITORY_OWNER"].lower()
-          version = os.environ["RELEASE_VERSION"]
-          names = {"app": "deskcommcrm", "worker": "deskcomm-worker", "scheduler": "deskcomm-scheduler", "voice_agent": "deskcomm-voice-agent"}
-          images = {}
-          for role, name in names.items():
-              with open(f"{role}.metadata.json", encoding="utf-8") as stream:
-                  digest = json.load(stream)["containerimage.digest"]
-              images[role] = {"repository": f"ghcr.io/{owner}/{name}", "tag": f"{version}-mcp", "digest": digest}
-          manifest = {"schema_version": 1, "release_date": datetime.now(timezone.utc).isoformat(),
-                      "deskcomm_version": version, "tag": f"v{version}-mcp", "mcp_commit": os.environ["GITHUB_SHA"],
-                      "tests": "passed", "gaps_a": 0, "tool_count_snapshot": int(os.environ["TOOL_COUNT"]), "images": images}
-          with open("mcp-release.json", "w", encoding="utf-8") as stream:
-              json.dump(manifest, stream, indent=2)
-              stream.write("\n")
-          PY
+          python3 scripts/mcp_manifest.py
           python3 hostgator-setup-kit/mcp-release-validate.py mcp-release.json \
             "v${RELEASE_VERSION}-mcp" "$GITHUB_SHA" "ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/deskcommcrm"
       - name: Conferir acesso anônimo aos quatro digests
