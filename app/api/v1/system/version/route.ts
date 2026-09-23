@@ -169,6 +169,8 @@ export async function GET(_req: NextRequest): Promise<Response> {
   }
 
   const latest = version?.latest_version ?? "";
+  const mcpChannel = process.env.DESKCOMM_UPDATE_CHANNEL === "custom-mcp";
+  const readyVersion = mcpChannel && !/^v\d+\.\d+\.\d+-mcp$/.test(latest) ? "" : latest;
   // A faixa INTEIRA entre o que está no ar e o que vai entrar, não só a seção
   // da versão-alvo. Mostrar só a alvo perdia aviso: quem pulava da 1.4.0 para a
   // 1.6.0 nunca lia a 1.4.1 nem a 1.5.0 — e a 1.4.1 existia para corrigir uma
@@ -177,12 +179,14 @@ export async function GET(_req: NextRequest): Promise<Response> {
   // O limite inferior é `running`, NUNCA `current`: depois de um rollback,
   // `current` nomeia a versão que quebrou, e a faixa sairia vazia justamente
   // para quem mais precisa lê-la.
-  const faixa = latest ? extractChangelogRange(version?.changelog_raw ?? "", latest, running) : null;
+  const faixa = readyVersion ? extractChangelogRange(version?.changelog_raw ?? "", readyVersion, running) : null;
 
   return ok({
     current_version: running,
     is_owner: true,
-    latest_version: latest,
+    latest_version: readyVersion,
+    update_channel: mcpChannel ? "custom-mcp" : "official",
+    mcp_build: mcpChannel ? running.replace(/^v/, "") : null,
     update_available:
       // `!acabouDeInstalar` é o degrau histórico: na janela logo após um
       // sucesso, o host ainda não bateu, `current` nomeia a versão antiga e a
@@ -192,7 +196,7 @@ export async function GET(_req: NextRequest): Promise<Response> {
       // versão confirmada é a antiga, em vez de afirmar a nova e não voltar
       // atrás nunca. `sucessoJaInstalado` fecha a janela sozinho passados
       // `RUN_STALE_AFTER_MS` do fim do run.
-      Boolean(latest) && latest !== running && !acabouDeInstalar,
+      Boolean(readyVersion) && readyVersion !== running && !acabouDeInstalar,
     off_release: version?.off_release ?? false,
     // Sem isto, a tela lê "sem versão nova anunciada" como "você está em dia" —
     // e uma instalação atrasada cujo host não conseguiu comparar é informada de

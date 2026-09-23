@@ -1,0 +1,133 @@
+name: Publicar release MCP validada
+
+on:
+  push:
+    tags: ["v*-mcp"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mcp-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tools: ${{ steps.tools.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Conferir tag, base oficial e auditoria
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-mcp$ ]]
+          test "$(git cat-file -t "refs/tags/$RELEASE_TAG")" = commit
+          version="${RELEASE_TAG#v}"
+          version="${version%-mcp}"
+          git fetch --no-tags https://github.com/melgarafael/DeskcommCRM.git \
+            "refs/tags/v${version}:refs/tags/upstream-${version}"
+          git merge-base --is-ancestor "upstream-${version}" HEAD
+          jq -e --arg v "$version" \
+            '.deskcomm_version == $v and .gaps_a == 0 and .mcp_compatible == true' \
+            docs/mcp/RELEASE-AUDIT.json
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+      - run: pnpm lint
+      - run: pnpm lint:channels
+      - run: pnpm lint:role-rank
+      - name: MCP, política, fluxos e atualizador
+        run: pnpm exec vitest run tests/unit/mcp-compatibility-sentinels.test.ts tests/unit/mcp-final-flows.test.ts tests/unit/mcp-rate-limit.test.ts app/api/v1/system/version/route.test.ts app/api/v1/system/update/route.test.ts
+      - name: Isolamento e baseline em banco descartável
+        run: pnpm test:db tests/invariants/mcp-nao-alcanca-outro-tenant.test.ts tests/invariants/agenda-mcp-nao-alcanca-contato-alheio.test.ts tests/invariants/mcp-faq-atomica.test.ts
+      - run: pnpm test:shell
+      - name: Snapshot do catálogo, sem número fixo
+        id: tools
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+        run: |
+          count="$(pnpm exec tsx -e 'import { MCP_TOOL_COUNT } from "./lib/mcp/registry"; process.stdout.write(String(MCP_TOOL_COUNT))')"
+          [[ "$count" =~ ^[0-9]+$ ]] && test "$count" -gt 0
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Construir e publicar as quatro imagens do mesmo commit
+        env:
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          for spec in 'app:deskcommcrm:Dockerfile' 'worker:deskcomm-worker:Dockerfile.worker' 'scheduler:deskcomm-scheduler:Dockerfile.scheduler' 'voice_agent:deskcomm-voice-agent:Dockerfile.voice-agent'; do
+            IFS=: read -r role name dockerfile <<< "$spec"
+            repository="ghcr.io/$owner/$name"
+            docker buildx build --platform linux/amd64 --file "$dockerfile" \
+              --build-arg "APP_VERSION=${RELEASE_VERSION}-mcp" \
+              --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+              --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+              --label "org.opencontainers.image.version=${RELEASE_VERSION}-mcp" \
+              --tag "${repository}:${RELEASE_VERSION}-mcp" \
+              --metadata-file "${role}.metadata.json" --push .
+          done
+      - name: Criar manifesto após o push completo
+        env:
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+          TOOL_COUNT: ${{ needs.validate.outputs.tools }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          owner = os.environ["GITHUB_REPOSITORY_OWNER"].lower()
+          version = os.environ["RELEASE_VERSION"]
+          names = {"app": "deskcommcrm", "worker": "deskcomm-worker", "scheduler": "deskcomm-scheduler", "voice_agent": "deskcomm-voice-agent"}
+          images = {}
+          for role, name in names.items():
+              with open(f"{role}.metadata.json", encoding="utf-8") as stream:
+                  digest = json.load(stream)["containerimage.digest"]
+              images[role] = {"repository": f"ghcr.io/{owner}/{name}", "tag": f"{version}-mcp", "digest": digest}
+          manifest = {"schema_version": 1, "release_date": datetime.now(timezone.utc).isoformat(),
+                      "deskcomm_version": version, "tag": f"v{version}-mcp", "mcp_commit": os.environ["GITHUB_SHA"],
+                      "tests": "passed", "gaps_a": 0, "tool_count_snapshot": int(os.environ["TOOL_COUNT"]), "images": images}
+          with open("mcp-release.json", "w", encoding="utf-8") as stream:
+              json.dump(manifest, stream, indent=2)
+              stream.write("\n")
+          PY
+          python3 hostgator-setup-kit/mcp-release-validate.py mcp-release.json \
+            "v${RELEASE_VERSION}-mcp" "$GITHUB_SHA" "ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/deskcommcrm"
+      - name: Publicar o manifesto como última etapa
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" mcp-release.json \
+            --verify-tag --title "$GITHUB_REF_NAME" \
+            --notes "DeskcommCRM + MCP Full Control; testes e digests no manifesto."

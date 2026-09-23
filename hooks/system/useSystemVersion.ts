@@ -9,6 +9,8 @@ export interface SystemVersion {
   is_owner: boolean;
   latest_version?: string;
   update_available?: boolean;
+  update_channel?: "official" | "custom-mcp";
+  mcp_build?: string | null;
   off_release?: boolean;
   /** O host não conseguiu comparar a versão instalada com a última publicada. */
   compare_failed?: boolean;

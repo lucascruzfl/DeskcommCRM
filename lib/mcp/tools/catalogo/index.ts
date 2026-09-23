@@ -13,9 +13,11 @@
  *
  * Client-safe: zero import de zod, supabase ou next/headers.
  */
+import type { ModuloOpcional } from "@/lib/instalacao/modulos";
 import { TOOLS_AGENDAMENTO } from "./agendamento";
 import { TOOLS_ATENDIMENTO } from "./atendimento";
 import { TOOLS_COMERCIO } from "./comercio";
+import { TOOLS_DADOS_EXTERNOS } from "./dados-externos";
 import { TOOLS_EVOLUCAO } from "./evolucao";
 import { TOOLS_ESCALACAO } from "./escalacao";
 import { TOOLS_FUNIL } from "./funil";
@@ -27,12 +29,16 @@ import { TOOLS_CRM_COMPLETO } from "./crm-completo";
 import { TOOLS_PARTE5 } from "./parte5";
 import { TOOLS_PARTE6 } from "./parte6";
 import { TOOLS_PARTE7 } from "./parte7";
+import { TOOLS_CAMPANHAS } from "./campanhas";
+import { TOOLS_CAMPANHAS_COMPLEMENTOS } from "./campanhas-complementos";
 import type { McpToolCatalogEntry } from "./tipos";
 
 export type { McpToolCatalogEntry } from "./tipos";
 export { declararTools } from "./tipos";
 
 export const TOOL_CATALOG: ReadonlyArray<McpToolCatalogEntry> = [
+  ...TOOLS_CAMPANHAS,
+  ...TOOLS_CAMPANHAS_COMPLEMENTOS,
   ...TOOLS_IA,
   ...TOOLS_CRM_COMPLETO,
   ...TOOLS_AGENDAMENTO,
@@ -42,6 +48,7 @@ export const TOOL_CATALOG: ReadonlyArray<McpToolCatalogEntry> = [
   ...TOOLS_GOVERNANCA,
   ...TOOLS_EVOLUCAO,
   ...TOOLS_COMERCIO,
+  ...TOOLS_DADOS_EXTERNOS,
   ...TOOLS_OPERACAO,
   ...TOOLS_RETENCAO,
   ...TOOLS_PARTE5,
@@ -72,4 +79,15 @@ export const VALID_TOOL_IDS: ReadonlyArray<string> = TOOL_CATALOG.map((t) => t.n
 
 export function catalogEntry(name: string): McpToolCatalogEntry | undefined {
   return TOOL_CATALOG.find((t) => t.name === name);
+}
+
+/**
+ * A capacidade e de um modulo opcional DESLIGADO nesta instalacao? Entao, aqui,
+ * ela nao existe. `ligados` vem de `modulosLigados()`. Os tres lugares que
+ * oferecem capacidade passam por aqui: o turno do agente (`pickToolsFromMcp`),
+ * o MCP externo (`createMcpServer`) e o catalogo servido a tela.
+ */
+export function deModuloDesligado(name: string, ligados: readonly ModuloOpcional[]): boolean {
+  const modulo = catalogEntry(name)?.modulo;
+  return modulo !== undefined && !ligados.includes(modulo);
 }

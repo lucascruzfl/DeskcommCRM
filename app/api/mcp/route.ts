@@ -16,6 +16,8 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { createMcpServer } from "@/lib/mcp/server";
 import { McpAuthError, validateBearerToken } from "@/lib/mcp/auth";
 import { limitMcpRequest } from "@/lib/mcp/rate-limit";
+import { modulosLigados } from "@/lib/instalacao/modulos";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -63,7 +65,7 @@ async function handle(req: NextRequest): Promise<Response> {
   }
 
   const transport = new WebStandardStreamableHTTPServerTransport({});
-  const server = createMcpServer(auth, requestId);
+  const server = createMcpServer(auth, requestId, await modulosLigados(createAdminClient()));
 
   try {
     await server.connect(transport);

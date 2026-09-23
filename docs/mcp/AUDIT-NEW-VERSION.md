@@ -1,6 +1,12 @@
 # Auditoria do MCP após uma nova versão
 
+Registro concreto desta integração: [AUDIT-1.42.0.md](AUDIT-1.42.0.md).
+
 Use este roteiro depois de incorporar `origin/main`. Não reconstrua o MCP do zero.
+
+Para o canal de imagem, uma nova tag oficial não é release instalável. A
+auditoria gera um commit integrado e só após os gates uma tag `vX.Y.Z-mcp` e o
+manifesto de publicação. Veja [MCP-UPDATE-CHANNEL.md](MCP-UPDATE-CHANNEL.md).
 
 ## 1. Proteja a branch
 
@@ -18,6 +24,8 @@ Compare a base anterior e a nova em:
 - `lib` e `workers` (serviços, regras e efeitos);
 - `supabase/migrations`, baseline e MANIFEST (contratos de dados);
 - registry, catálogo, policy, scopes e capabilities MCP.
+- scripts de atualização, CI de imagens e manifesto de release;
+- módulos novos upstream, especialmente operações A que antes não existiam.
 
 Para cada diferença registre domínio, recurso, operação, UI, API/action, service, tool, role, scope, capability, side effect, ação humana e cobertura.
 
@@ -57,3 +65,5 @@ Se tocar UI, acrescente Playwright e evidência visual. Se tocar packaging, `pnp
 - cross-tenant e migrations aprovados no banco real descartável;
 - todo efeito externo foi mockado/simulado ou entregue à ação humana;
 - matriz, mapa vivo, compatibilidade e relatório final atualizados.
+- `RELEASE-AUDIT.json` registra a versão, o snapshot de tools, gaps A e o
+  veredito. `mcp_compatible` só vira `true` com todos os itens acima medidos.

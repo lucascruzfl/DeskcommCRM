@@ -20,6 +20,9 @@ source "$KIT_DIR/_common.sh"
 # shellcheck source=manutencao.sh
 source "$KIT_DIR/manutencao.sh"
 enter_project
+if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+  source "$KIT_DIR/mcp-channel.sh"
+fi
 
 FORCE=""; SKIP_BACKUP=""; TARGET_TAG=""
 while [ $# -gt 0 ]; do
@@ -37,6 +40,19 @@ done
 # em 401. Ver `recusar_projeto_de_outra_arvore` em _common.sh.
 recusar_projeto_de_outra_arvore || die "Atualização interrompida para não quebrar a instalação que está no ar."
 
+# Single-server: o Supabase desta VPS também tem dono. E o e-mail de acesso
+# (GoTrue) acompanha o SMTP do CRM AQUI, antes da decisão de versão: é este
+# comando que o instalador ensina a rodar depois de configurar /admin/email, e
+# "já está na versão mais recente" sairia sem entregar a troca.
+if [ "${SINGLE_SERVER:-0}" = "1" ]; then
+  recusar_supabase_de_outra_arvore || die "Atualização interrompida para não mexer no Supabase de outra instalação."
+  if sincronizar_smtp_do_gotrue; then
+    dc_supabase up -d --no-deps auth >/dev/null 2>&1 || c_ylw "⚠ Não consegui reiniciar o auth do Supabase com o SMTP do CRM."
+  else
+    c_ylw "⚠ Sem SMTP no CRM: 'esqueci a senha' e a confirmação de cadastro não enviam e-mail. Configure em /admin/email e rode o update.sh de novo."
+  fi
+fi
+
 # ── 0. Liga o agente da tela ANTES de qualquer decisão de versão ─────────────
 # Instalar o cron aqui, e não no fim, é o que faz o bootstrap ter fim: os
 # caminhos "já está na versão mais recente" e "essa versão é anterior à sua"
@@ -46,8 +62,22 @@ setup_update_agent_cron
 
 # ── 1. Tem atualização mesmo? ────────────────────────────────────────────────
 step "Procurando atualizações"
-git fetch --tags --quiet origin 2>/dev/null || c_ylw "⚠ não consegui falar com o GitHub — sigo com o código que já está aqui."
-[ -n "$TARGET_TAG" ] || TARGET_TAG="$(git tag -l 'v*' --sort=-v:refname | head -1)"
+if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+  mcp_channel_init || die "Canal MCP sem configuração válida; não vou instalar a imagem oficial."
+  [ -n "$TARGET_TAG" ] || TARGET_TAG="$(mcp_channel_latest)" || TARGET_TAG=""
+  [ -n "$TARGET_TAG" ] || die "Ainda não há release MCP validada no registro. Nenhuma imagem foi trocada."
+  mcp_channel_fetch "$TARGET_TAG" || die "A release $TARGET_TAG não possui manifesto e imagens MCP validados. Nenhuma imagem foi trocada."
+  mcp_channel_load_images "$TARGET_TAG" "$(git rev-parse "${TARGET_TAG}^{commit}")" \
+    || die "Não consegui fixar os digests das imagens MCP. Nenhuma imagem foi trocada."
+  IMG_NS="$MCP_IMAGE_NS"
+  IMG_APP="${IMG_NS}/deskcommcrm"
+  IMG_WORKER="${IMG_NS}/deskcomm-worker"
+  IMG_SCHEDULER="${IMG_NS}/deskcomm-scheduler"
+  IMG_VOICE_AGENT="${IMG_NS}/deskcomm-voice-agent"
+else
+  git fetch --tags --quiet origin 2>/dev/null || c_ylw "⚠ não consegui falar com o GitHub — sigo com o código que já está aqui."
+  [ -n "$TARGET_TAG" ] || TARGET_TAG="$(git tag -l 'v*' --sort=-v:refname | head -1)"
+fi
 [ -n "$TARGET_TAG" ] || die "Não encontrei nenhuma versão publicada para instalar."
 git rev-parse --verify --quiet "${TARGET_TAG}^{commit}" >/dev/null \
   || die "Não conheço a versão $TARGET_TAG aqui. Confira o nome (ex.: v1.1.0) ou tente de novo quando o servidor conseguir falar com o GitHub."
@@ -163,6 +193,13 @@ fi
 # COMPOSE, cores, REFUSED_RC), então reler é idempotente: nada é reexecutado
 # com efeito. O que muda é de onde vêm as funções daqui para baixo.
 source "$KIT_DIR/_common.sh"
+if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+  IMG_NS="$MCP_IMAGE_NS"
+  IMG_APP="${IMG_NS}/deskcommcrm"
+  IMG_WORKER="${IMG_NS}/deskcomm-worker"
+  IMG_SCHEDULER="${IMG_NS}/deskcomm-scheduler"
+  IMG_VOICE_AGENT="${IMG_NS}/deskcomm-voice-agent"
+fi
 # E o aviso de manutenção pelo MESMO motivo, na mesma linha do raciocínio acima:
 # ele também é carregado no topo, também é só definição de função, e o passo que
 # o USA (a pausa do banco) vem depois daqui. Sem esta linha o parágrafo acima
@@ -170,6 +207,12 @@ source "$KIT_DIR/_common.sh"
 # manutenção chegaria uma atualização atrasada, que é exatamente o defeito que a
 # releitura existe para fechar.
 source "$KIT_DIR/manutencao.sh"
+
+# Single-server: o Supabase vai para a versão pinada no código novo ANTES do
+# banco (o passo 4 pausa peças dele, e um `up` depois as religaria).
+if [ "${SINGLE_SERVER:-0}" = "1" ]; then
+  atualizar_supabase_single_server || die "O Supabase desta VPS não subiu (erro acima). NÃO mexi no banco do CRM."
+fi
 
 [ -n "${DESKCOMM_AGENT_REPORT:-}" ] && eval "${DESKCOMM_AGENT_REPORT_CMD}" codigo
 
@@ -242,7 +285,7 @@ if [ -f supabase/baseline.sql ]; then
   manutencao_sobe
   pausar_o_que_fala_com_o_banco
   # Extensões que o schema exige (idempotente; iguais ao install.sh).
-  docker run --rm postgres:17-alpine psql "$(url_do_schema)" -c \
+  pg_container postgres:17-alpine psql "$(url_do_schema)" -c \
     "create extension if not exists vector with schema public; create extension if not exists citext with schema public; create extension if not exists pg_trgm with schema public;" \
     >/dev/null 2>&1 || true
 
@@ -316,7 +359,7 @@ if [ -f supabase/baseline.sql ]; then
     END { for (k in estado) if (estado[k] == "create") print k }
   ' supabase/baseline.sql | sort -u)"
 
-  existentes="$(docker run --rm -i postgres:17-alpine psql "$(url_do_schema)" -t -A -F'|' -c \
+  existentes="$(pg_container -i postgres:17-alpine psql "$(url_do_schema)" -t -A -F'|' -c \
     "select p.polname, c.relname from pg_policy p join pg_class c on c.oid=p.polrelid
        join pg_namespace n on n.oid=c.relnamespace where n.nspname='public';" 2>/dev/null | sort -u)"
 
@@ -367,12 +410,12 @@ if [ -f supabase/baseline.sql ]; then
     ' "$faltam_arq" supabase/baseline.sql)"
 
     if [ -n "$recria" ]; then
-      printf '%s\n' "$recria" | docker run --rm -i postgres:17-alpine \
+      printf '%s\n' "$recria" | pg_container -i postgres:17-alpine \
         psql "$(url_do_schema)" >> "$PROJECT_DIR/.deskcomm-banco.log" 2>&1 || true
     fi
     rm -f "$faltam_arq"
 
-    existentes="$(docker run --rm -i postgres:17-alpine psql "$(url_do_schema)" -t -A -F'|' -c \
+    existentes="$(pg_container -i postgres:17-alpine psql "$(url_do_schema)" -t -A -F'|' -c \
       "select p.polname, c.relname from pg_policy p join pg_class c on c.oid=p.polrelid
          join pg_namespace n on n.oid=c.relnamespace where n.nspname='public';" 2>/dev/null | sort -u)"
     faltando="$(comm -23 <(printf '%s\n' "$esperadas") <(printf '%s\n' "$existentes") || true)"
@@ -476,10 +519,10 @@ step "Baixando a versão nova do app e reiniciando"
 PIN_FALTANDO_ANTES="$(pin_incompleto .env)"
 
 VERSAO_ALVO="${TARGET_TAG#v}"
-export APP_IMAGE="${IMG_APP}:${VERSAO_ALVO}"
-export WORKER_IMAGE="${IMG_WORKER}:${VERSAO_ALVO}"
-export SCHEDULER_IMAGE="${IMG_SCHEDULER}:${VERSAO_ALVO}"
-export VOICE_AGENT_IMAGE="${IMG_VOICE_AGENT}:${VERSAO_ALVO}"
+export APP_IMAGE="${MCP_APP_PIN:-${IMG_APP}:${VERSAO_ALVO}}"
+export WORKER_IMAGE="${MCP_WORKER_PIN:-${IMG_WORKER}:${VERSAO_ALVO}}"
+export SCHEDULER_IMAGE="${MCP_SCHEDULER_PIN:-${IMG_SCHEDULER}:${VERSAO_ALVO}}"
+export VOICE_AGENT_IMAGE="${MCP_VOICE_PIN:-${IMG_VOICE_AGENT}:${VERSAO_ALVO}}"
 gravar_imagens .env "$VERSAO_ALVO"
 
 # Os segredos da chamada de voz (spec 18), para quem instalou antes dela existir.
@@ -497,6 +540,9 @@ VOZ_CRIADA="$(completar_segredos_da_voz .env)" || VOZ_CRIADA=""
 # ainda tem `build:` ao lado do `image:` do worker e do scheduler, então o
 # `up -d` os constrói localmente: pior que puxar, melhor que não atualizar.
 if ! dc pull; then
+  if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+    die "As imagens MCP validadas não puderam ser baixadas. Atualização interrompida."
+  fi
   # A mensagem distingue os dois casos porque a consequência é oposta, e uma
   # frase tranquilizadora sobre o caso errado é o pior desfecho possível: o
   # `worker` e o `scheduler` têm `build:` ao lado do `image:` e o `up -d` os
@@ -546,6 +592,9 @@ garantir_rede_do_proxy
 manutencao_desce
 CONSTRUIU_AQUI=""
 if ! dc up -d; then
+  if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+    die "As imagens MCP não subiram; o agente restaurará as imagens anteriores."
+  fi
   if construir_aqui_e_subir "$VERSAO_ALVO"; then
     CONSTRUIU_AQUI=1
   else
@@ -645,6 +694,19 @@ fi
 step "Conferindo as automações"
 ensure_encryption_key .env
 setup_event_log_drain_cron
+
+if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+  [ -z "$BANCO_INCOMPLETO" ] || die "Migrations incompletas; o agente restaurará os serviços anteriores."
+  for svc in app worker scheduler; do
+    cid="$(dc ps -q "$svc")"
+    [ -n "$cid" ] && [ "$(docker inspect -f '{{.State.Running}}' "$cid")" = true ] \
+      || die "Serviço $svc não está rodando após a atualização MCP."
+  done
+  # Sem token administrativo no host: 401 JSON-RPC prova a borda e o guard.
+  dc exec -T app node -e 'fetch("http://127.0.0.1:3000/api/mcp",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",method:"initialize",id:1,params:{protocolVersion:"2025-06-18",capabilities:{},clientInfo:{name:"health",version:"1"}}})}).then(async r=>{const b=await r.json();process.exit(r.status===401&&b.jsonrpc==="2.0"&&b.error?0:1)}).catch(()=>process.exit(1))' \
+    || die "A borda MCP não respondeu ao handshake sem credencial como esperado."
+  c_grn "✓ app, worker, scheduler, migrations e borda MCP conferidos"
+fi
 
 # ── Fim: o banco que não terminou limpo é a ÚLTIMA coisa na tela ─────────────
 # Na v1.27.3 de uma VPS real o aviso do passo 4 ficou soterrado por centenas de

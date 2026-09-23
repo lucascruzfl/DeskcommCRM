@@ -326,6 +326,15 @@ export function UpdatePanel() {
   }
 
   if (!data.update_available && !data.off_release) {
+    if (data.update_channel === "custom-mcp") {
+      return (
+        <Layout titulo={t("Canal MCP aguardando release validada")}>
+          <p className="text-sm text-muted-foreground">
+            {t("O painel só oferece uma atualização depois que o build MCP e suas imagens passam nos testes e são publicados.")}
+          </p>
+        </Layout>
+      );
+    }
     return (
       <Layout titulo={`${t("Você está na versão")} ${versao}`}>
         <p className="text-sm text-muted-foreground">
@@ -347,6 +356,15 @@ export function UpdatePanel() {
   // Sem distinguir os dois, a tela de baixo renderizava "Versão  disponível",
   // com o número vazio, e um botão que a API recusa com 409.
   if (!nova) {
+    if (data.update_channel === "custom-mcp") {
+      return (
+        <Layout titulo={t("Aguardando build MCP compatível")}>
+          <p className="text-sm text-muted-foreground">
+            {t("Uma versão oficial sem release MCP validada não pode ser instalada por este botão.")}
+          </p>
+        </Layout>
+      );
+    }
     if (!data.has_known_release) {
       return (
         <Layout titulo={t("Ainda não há nenhuma versão publicada")}>
@@ -610,6 +628,8 @@ function DetalhesTecnicos({ texto }: { texto: string | undefined }) {
 
 function Layout({ titulo, children }: { titulo?: string; children: React.ReactNode }) {
   const t = useT();
+  const { data } = useSystemVersion();
+  const crmVersion = data?.current_version?.replace(/^v/, "").replace(/-mcp$/, "");
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
       <header>
@@ -617,6 +637,13 @@ function Layout({ titulo, children }: { titulo?: string; children: React.ReactNo
           {titulo ?? t("Atualização do sistema")}
         </h1>
       </header>
+      {data?.is_owner && data.update_channel === "custom-mcp" ? (
+        <div className="grid gap-1 text-sm text-muted-foreground">
+          <p>{t("Versão Deskcomm")}: {crmVersion}</p>
+          <p>{t("Build MCP")}: {data.mcp_build?.includes("-mcp") ? data.mcp_build : t("a confirmar")}</p>
+          <p>{t("Canal de atualização")}: MCP</p>
+        </div>
+      ) : null}
       <Card className="p-6">{children}</Card>
     </div>
   );

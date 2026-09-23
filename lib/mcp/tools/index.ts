@@ -58,6 +58,7 @@ import {
   crmSaveOrgMemory,
 } from "./evolucao";
 import { crmListContactOrders, crmSearchProducts } from "./comercio";
+import { crmDescribeExternalData, crmQueryExternalData } from "./dados-externos";
 import { crmListPrivacyRequests } from "./privacidade";
 import {
   crmArchiveStage,
@@ -108,6 +109,8 @@ import { TEMPLATES_COMERCIO_ADMIN_MCP_TOOLS } from "./templates-comercio-adminis
 import { WEBHOOKS_INTEGRACOES_CANAIS_MCP_TOOLS } from "./webhooks-integracoes-canais";
 import { EQUIPE_ADMIN_MCP_TOOLS } from "./equipe-administracao";
 import { PARTE7_OPERATION_TOOLS } from "./parte7-operacoes";
+import { CAMPAIGN_MCP_TOOLS } from "./campanhas";
+import { CAMPAIGN_EXTRA_MCP_TOOLS } from "./campanhas-complementos";
 
 // Cast via `unknown` porque McpToolDefinition<TInput> nao e covariante
 // em TInput (handler usa TInput em posicao contravariante). Coletar
@@ -115,6 +118,8 @@ import { PARTE7_OPERATION_TOOLS } from "./parte7-operacoes";
 // nivel do array — o server core ja recebe args como `Record<string,
 // unknown>` e cada handler valida no Zod do registerTool.
 export const allTools: ReadonlyArray<McpToolDefinition> = [
+  ...CAMPAIGN_MCP_TOOLS.filter((tool) => tool.category === "read"),
+  ...CAMPAIGN_EXTRA_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...AI_MCP_TOOLS,
   ...AGENDA_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...FOLLOWUP_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "read"),
@@ -148,6 +153,8 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmSaveOrgMemory,
   crmListContactOrders,
   crmSearchProducts,
+  crmDescribeExternalData,
+  crmQueryExternalData,
   crmListPrivacyRequests,
   // read — organizar a operação (W4)
   crmListStages,
@@ -168,6 +175,8 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   ...CRM_TASK_TOOLS.filter((tool) => tool.category === "read"),
   ...CRM_TAG_TOOLS.filter((tool) => tool.category === "read"),
   // write
+  ...CAMPAIGN_MCP_TOOLS.filter((tool) => tool.category === "write"),
+  ...CAMPAIGN_EXTRA_MCP_TOOLS.filter((tool) => tool.category === "write"),
   // A que consulta E marca numa chamada só vem primeiro: quando o cliente já deu
   // dia e hora, é o caminho curto, e é o que evita o turno morrer no meio (#831).
   crmFindAndBookAppointment,

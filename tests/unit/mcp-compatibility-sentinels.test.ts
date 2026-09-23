@@ -126,10 +126,21 @@ describe("sentinelas de compatibilidade do MCP", () => {
         ["fn_replace_knowledge_faq_items", "knowledge_source.updated"],
       ],
       ["lib/mcp/tools/equipe-administracao.ts", ["emitirConvite", "reenviarConvite"]],
+      ["lib/mcp/tools/campanhas.ts", ["carregarCampanha", "prepararAcao", "pausarAcao", "cancelarAcao", "preverAudiencia"]],
     ];
     for (const [file, symbols] of sentinels) {
       const source = read(file);
       for (const symbol of symbols) expect(source, `${file}:${symbol}`).toContain(symbol);
     }
+  });
+
+  it("oferece campanhas no preset completo sem iniciar envios em massa por tool", () => {
+    const tools = MCP_REGISTRY.filter((tool) => tool.domain === "campaigns");
+    expect(tools.length).toBeGreaterThan(0);
+    expect(tools.map((tool) => tool.name)).toContain("crm_prepare_campaign_launch");
+    expect(tools.map((tool) => tool.name)).not.toContain("crm_start_campaign");
+    expect(mcpPublicProfile(auth).filter((tool) => tool.name.startsWith("crm_") && tool.name.includes("campaign"))).not.toHaveLength(0);
+    const launch = TOOL_CATALOG.find((tool) => tool.name === "crm_prepare_campaign_launch");
+    expect(launch?.apenasHumano).toBe(true);
   });
 });

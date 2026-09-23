@@ -7,6 +7,7 @@ export const MCP_DOMAINS = [
   "audit",
   "appointments",
   "automations",
+  "campaigns",
   "channels",
   "contacts",
   "conversations",

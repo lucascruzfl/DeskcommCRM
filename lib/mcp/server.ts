@@ -12,13 +12,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { z } from "zod";
 
+import type { ModuloOpcional } from "@/lib/instalacao/modulos";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { auditMcpToolCall } from "./audit";
-import { ensureRole, type McpAuthResult } from "./auth";
+import { ensureRole, ensureScope, type McpAuthResult } from "./auth";
 import { authorizeTool } from "./policy";
 import { toolsForAuth } from "./registry";
 import { McpToolError, mcpErrorPayload, sanitizeMcpPayload } from "./errors";
-import { enforceMcpToolRateLimit } from "./rate-limit";
+import { verificarTetoMcp } from "./rate-limit";
+import { deModuloDesligado } from "./tools/catalog";
 import { higienizarUuidsDeAterro } from "./uuid-de-aterro";
 import type { McpContext } from "./types";
 
@@ -35,7 +37,16 @@ function summarizeResult(result: unknown): string | undefined {
   return undefined;
 }
 
-export function createMcpServer(auth: McpAuthResult, requestId: string): McpServer {
+/**
+ * `modulosLigados`: os módulos opcionais ligados na instalação. Capacidade de
+ * módulo desligado nem é registrada — o cliente externo não a vê na lista.
+ * Ausente vale como nenhum, pela mesma razão de `pickToolsFromMcp`.
+ */
+export function createMcpServer(
+  auth: McpAuthResult,
+  requestId: string,
+  modulosLigados: readonly ModuloOpcional[] = [],
+): McpServer {
   const server = new McpServer({
     name: SERVER_NAME,
     version: SERVER_VERSION,
@@ -44,6 +55,7 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
   const supabase = createAdminClient();
 
   for (const tool of toolsForAuth(auth)) {
+    if (deModuloDesligado(tool.name, modulosLigados)) continue;
     server.registerTool(
       tool.name,
       {
@@ -63,6 +75,7 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
           (rawArgs ?? {}) as Record<string, unknown>,
         );
         const args = higiene.limpos;
+        const argsAudit = tool.redigirParaAuditoria ? tool.redigirParaAuditoria(args) : args;
         const ctx: McpContext = {
           organizationId: auth.organizationId,
           role: auth.role,
@@ -74,9 +87,10 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
         };
 
         try {
+          await verificarTetoMcp(auth, tool.category, true);
+          ensureScope(auth.scopes, tool.requiresScope);
           authorizeTool(auth, tool);
           ensureRole(auth.role, tool.requiresRole);
-          await enforceMcpToolRateLimit(auth, tool);
 
           const result = await tool.handler(args as never, ctx);
           const safeResult = sanitizeMcpPayload(result);
@@ -90,7 +104,7 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
           await auditMcpToolCall({
             ctx,
             toolName: tool.name,
-            args,
+            args: argsAudit,
             durationMs,
             success: motivoDoVazio === null,
             resultSummary: summarizeResult(result),
@@ -112,7 +126,7 @@ export function createMcpServer(auth: McpAuthResult, requestId: string): McpServ
           await auditMcpToolCall({
             ctx,
             toolName: tool.name,
-            args,
+            args: argsAudit,
             durationMs,
             success: false,
             errorMessage: message,

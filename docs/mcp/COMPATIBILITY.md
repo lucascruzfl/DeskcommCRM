@@ -29,7 +29,7 @@ As suítes finais acusam:
 - vazamento de secret pela cerca final;
 - renomeação dos services canônicos;
 - cross-tenant via invariantes de banco;
-- regressão dos 11 fluxos compostos;
+- regressão dos fluxos compostos, incluindo campanhas da 1.42.0;
 - migration FAQ sem atomicidade, grants fechados ou baseline correspondente.
 
 ## Política de evolução
@@ -45,3 +45,14 @@ fetch/merge seguro da main
 ```
 
 Compatibilidade não significa manter handler interno antigo. Significa detectar a mudança, preservar o contrato público quando possível e versionar qualquer quebra deliberada.
+
+Na 1.42.0, a borda do MCP passou a receber o limite de falhas de token do
+upstream e o filtro de módulos opcionais. O Full Control mantém o teto de
+requests na rota e o de escritas por tool, sem debitar token/organização duas
+vezes em `tools/call`. O catálogo interno cresceu de forma derivada; nenhum
+teste usa 202 como valor esperado.
+
+O workflow `publish-mcp-release.yml` impede publicação quando a auditoria
+da nova versão não confirma gaps A zero. O agente do painel valida manifesto e
+imagens no registry antes de oferecer a tag MCP. O próprio `update.sh` repete a
+validação, inclusive quando chamado com `--force`.

@@ -34,6 +34,7 @@ export type McpToolDomain =
   | "audit"
   | "appointments"
   | "automations"
+  | "campaigns"
   | "channels"
   | "contacts"
   | "conversations"
@@ -84,6 +85,16 @@ export interface McpToolDefinition<TInput extends z.ZodRawShape = z.ZodRawShape>
     type: string;
     id?: string | null;
   };
+  /**
+   * Limpa os args ANTES da auditoria (os dois ingressos: runtime e `/api/mcp`).
+   *
+   * Existe porque `auditMcpToolCall` grava os args em `api_audit_log.metadata` e
+   * só redige um punhado de chaves conhecidas (token, senha…). Uma tool cujos
+   * args carregam PII por DESENHO — os valores de filtro de uma consulta a banco
+   * externo, por exemplo — precisa tirá-los por conta própria: o valor filtrado
+   * é o dado do cliente, e log é lugar de metadado, não de conteúdo.
+   */
+  redigirParaAuditoria?: (args: Record<string, unknown>) => Record<string, unknown>;
   /**
    * O que a tool DECLARA quando a resposta é um vazio que NÃO é sucesso.
    *

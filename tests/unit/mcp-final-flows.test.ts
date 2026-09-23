@@ -161,6 +161,20 @@ const FLOWS: FlowContract[] = [
       { tool: "crm_get_privacy_export_status" },
     ],
   },
+  {
+    domain: "campanhas-1.42",
+    steps: [
+      { tool: "crm_list_campaigns", discovery: true },
+      { tool: "crm_preview_campaign" },
+      { tool: "crm_create_campaign_draft" },
+      { tool: "crm_update_campaign_draft" },
+      { tool: "crm_prepare_campaign" },
+      { tool: "crm_list_campaign_recipients" },
+      { tool: "crm_get_campaign_metrics" },
+      { tool: "crm_prepare_campaign_launch", externalEffect: true, humanAction: true },
+      { tool: "crm_pause_campaign" },
+    ],
+  },
 ];
 
 const auth: McpAuthResult = {
@@ -185,7 +199,7 @@ describe("harness final de fluxos MCP", () => {
   });
 
   it("não depende de contagem fixa nem de IDs adivinhados", () => {
-    expect(FLOWS).toHaveLength(11);
+    expect(FLOWS).toHaveLength(12);
     expect(FLOWS.every((flow) => flow.steps.some((step) => step.discovery))).toBe(true);
     expect(JSON.stringify(FLOWS)).not.toMatch(/[0-9a-f]{8}-[0-9a-f-]{27,}/i);
   });

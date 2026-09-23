@@ -21,6 +21,15 @@ Bearer dsk_...
 
 O servidor é Streamable HTTP stateless em `app/api/mcp/route.ts`. Cada request cria transporte e server novos. `lib/mcp/registry.ts` deriva registry, contagem e perfil público da mesma coleção. `lib/mcp/server.ts` repete autorização antes do handler, aplica o teto menor de writes, audita sucesso/ausência/erro e sanitiza a saída.
 
+## Publicação e atualização
+
+O código MCP é versionado no fork junto do upstream. O workflow da tag
+`vX.Y.Z-mcp` testa o commit integrado, constrói app/worker/scheduler/voice-agent
+e publica um manifesto com os quatro digests. O agente do painel só anuncia
+releases MCP prontas; o atualizador puxa as imagens por digest e conserva o
+rollback oficial. [MCP-UPDATE-CHANNEL.md](MCP-UPDATE-CHANNEL.md) descreve as
+variáveis, o formato do manifesto e a transição da VPS.
+
 ## Autoridade
 
 - A organização nunca é argumento público; vem do token.

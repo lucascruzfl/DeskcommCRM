@@ -20,7 +20,9 @@ import { z } from "zod";
 import { ok, fail } from "@/lib/api/wrappers";
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { allTools } from "@/lib/mcp/tools";
-import { TOOL_CATALOG } from "@/lib/mcp/tools/catalog";
+import { TOOL_CATALOG, deModuloDesligado } from "@/lib/mcp/tools/catalog";
+import { modulosLigados } from "@/lib/instalacao/modulos";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { juntarCatalogoComHandlers } from "@/lib/mcp/tools/catalogo-servido";
 import { domainOf } from "@/lib/mcp/policy";
 
@@ -47,9 +49,12 @@ export async function GET(_req: NextRequest): Promise<Response> {
     );
   }
 
+  // Módulo opcional desligado na instalação: a capacidade não existe aqui, e a
+  // tela não a oferece para marcar (doc 37).
+  const ligados = await modulosLigados(createAdminClient());
   const schemaPorNome = new Map(allTools.map((t) => [t.name, t.inputSchema]));
   const handlerPorNome = new Map(allTools.map((tool) => [tool.name, tool]));
-  const tools = servidas.map((capacidade) => ({
+  const tools = servidas.filter((c) => !deModuloDesligado(c.id, ligados)).map((capacidade) => ({
     ...capacidade,
     domain: domainOf(handlerPorNome.get(capacidade.id)!),
     capabilities: handlerPorNome.get(capacidade.id)?.capabilities ?? [],

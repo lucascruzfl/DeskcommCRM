@@ -1,57 +1,73 @@
-# Atualizar o DeskcommCRM sem reconstruir o MCP
+# Atualizar DeskcommCRM com MCP Full Control
 
-O MCP faz parte do mesmo produto e evolui incrementalmente. A Skill descobre o catálogo atual por
-`tools/list`; atualização não significa reescrever um servidor paralelo.
+Uma instalação MCP usa código integrado e imagens do fork. A imagem oficial
+`ghcr.io/melgarafael/deskcommcrm` não inclui as extensões MCP e não deve ser alvo
+do botão nessa instalação. Não se instala a oficial para reaplicar patches.
 
-## Fluxo obrigatório
+## Canal da instalação
 
-```text
-upstream oficial
-→ fetch
-→ medir delta
-→ merge seguro
-→ auditoria delta
-→ compatibilidade MCP
-→ testes sentinela
-→ migrations
-→ build
-→ backup
-→ deploy
-→ smoke test
+Depois de publicar uma release MCP validada, fixe no `.env` da VPS:
+
+```dotenv
+DESKCOMM_UPDATE_CHANNEL=custom-mcp
+DESKCOMM_UPDATE_REPOSITORY=lucascruzfl/DeskcommCRM
+DESKCOMM_IMAGE_REPOSITORY=ghcr.io/lucascruzfl/deskcommcrm
 ```
 
-1. Em árvore limpa, rode `git fetch origin` e meça merge-base, atraso, commits próprios e
-   sobreposição. Não use reset, rebase publicado ou force push.
-2. Faça um merge seguro da `origin/main` para a branch MCP somente quando necessário. Resolva
-   conflito lendo os dois lados, especialmente baseline/MANIFEST.
-3. Siga [AUDIT-NEW-VERSION.md](AUDIT-NEW-VERSION.md): compare UI, API/actions, serviços, workers,
-   schema e registry; classifique operações A/B/C.
-4. Atualize apenas adapters/tools afetados. Preserve `/api/mcp`, bearer `dsk_...`, organização do
-   contexto, autorização e ação humana estruturada.
-5. Rode sentinelas e regressão:
+Os três valores são explícitos e não contêm credenciais. O canal `official` é o
+default para qualquer instalação sem essas chaves. O canal customizado exige
+as três; configuração incompleta recusa a atualização. O checkout da instalação
+precisa ser o fork que contém `mcp-channel.sh`; o atualizador antigo em produção
+não conhece o canal. A ativação inicial é uma etapa de deploy separada, após
+revisão, backup e publicação de `v1.42.0-mcp`.
 
-   ```bash
-   pnpm exec vitest run tests/unit/mcp-compatibility-sentinels.test.ts tests/unit/mcp-final-flows.test.ts
-   pnpm test:unit
-   pnpm test:db
-   pnpm typecheck
-   pnpm lint
-   pnpm lint:channels
-   pnpm lint:role-rank
-   pnpm release:conferir
-   git diff --check
-   ```
+O agente do painel consulta somente tags `vX.Y.Z-mcp` do repositório configurado.
+Uma tag só é anunciada depois de encontrar o asset `mcp-release.json`, validar
+versão, SHA, testes, gaps A e quatro digests e conferir as imagens no GHCR. O
+`update.sh` repete essa checagem antes de backup, checkout, banco ou containers.
+Ele grava os digests em `APP_IMAGE`, `WORKER_IMAGE`, `SCHEDULER_IMAGE` e
+`VOICE_AGENT_IMAGE`. Nenhum `latest` ou `stable` customizado decide o deploy.
 
-6. Se houver schema, entregue migration + apêndice idempotente no baseline + MANIFEST e valide
-   instalação/reaplicação. Nunca edite migration aplicada.
-7. Rode `pnpm build` em ambiente com memória adequada. Exit 137/Turbopack por falta de memória é
-   falha ambiental a repetir, não autorização para refatorar código sem diagnóstico.
-8. Antes de deploy, execute `bash hostgator-setup-kit/backup.sh` e retire uma cópia da VPS.
-9. O deploy normal usa `bash hostgator-setup-kit/update.sh`, que puxa imagens publicadas, reaplica
-   baseline e preserva a topologia. Em proxy próprio, todo `up -d` manual leva os dois compose
-   files descritos em `docs/runbooks/deploy.md`.
-10. Depois do deploy, valide healthcheck, 307 no domínio, handshake MCP, `tools/list` e um fluxo de
-    leitura/validação/mutação segura/verificação.
+O botão continua criando um `system_update_run`; o agente do host executa o
+mesmo `update.sh` e reporta progresso/desfecho. Se upstream publicar 1.43.0
+antes de `v1.43.0-mcp` passar pelos gates, a maior release pronta continua
+1.42.0-mcp: o painel espera e não oferece a imagem oficial. Mesmo `--to` e
+`--force` não ignoram o manifesto no canal MCP.
 
-Atualize o manifest de release com commit base, commit testado, migrations e testes. A contagem de
-tools é snapshot; divergência exige auditoria, não comparação rígida.
+## Produzir a próxima release
+
+1. Preserve a branch MCP, faça `git fetch` do upstream e compare merge-base,
+   commits e arquivos sobrepostos antes de um merge único.
+2. Execute [AUDIT-NEW-VERSION.md](AUDIT-NEW-VERSION.md), classifique os deltas
+   A/B/C e ajuste apenas contratos que mudaram. A integração 1.42.0 está
+   registrada em [AUDIT-1.42.0.md](AUDIT-1.42.0.md).
+3. Rode sentinelas MCP, banco focado, typecheck, lint, `test:shell` e build.
+   Atualize `docs/mcp/RELEASE-AUDIT.json` somente quando gaps A forem zero.
+4. Crie uma tag leve `vX.Y.Z-mcp` no commit integrado e envie-a ao fork
+   após autorização de publicação. O workflow do fork valida ancestralidade da
+   tag oficial, auditoria e testes, constrói quatro imagens, publica cada uma
+   com tag `X.Y.Z-mcp` e só depois publica o asset de manifesto.
+5. O agente da VPS passa a oferecer a nova versão no próximo ciclo. Revise a
+   tela e use **Atualizar agora**. Não há etapa de reaplicação manual do MCP.
+
+O workflow de publicação está preparado, mas esta documentação não publica
+nenhuma imagem ou manifesto por si só. O arquivo `RELEASE-MANIFEST.json` antigo
+é histórico da Skill; o asset `mcp-release.json` gerado pelo workflow é o
+contrato machine-readable do canal.
+
+## Saúde e rollback
+
+O `update.sh` preserva backup e a lógica de rollback do agente oficial. No
+canal MCP, ele exige app saudável, baseline sem erro, worker e scheduler em
+execução e resposta JSON-RPC/401 da borda MCP sem credencial. Isso confirma que
+a rota e o guard estão vivos sem guardar token administrativo no servidor.
+Handshake autenticado e `tools/list` exigem um token criado na tela por uma
+pessoa autorizada; rode a verificação da Skill após a atualização. A contagem
+retornada é diagnóstico, nunca trava fixa.
+
+Se o app novo falhar, o agente restaura os IDs locais anteriores de app,
+worker e scheduler e grava esses IDs no `.env`. O manifesto mantém os digests
+do release anterior para uma reinstalação controlada: `update.sh --to
+vX.Y.Z-mcp --force` continua sujeito ao gate do canal. O banco pode já ter
+migrations aditivas; confira o relatório e o backup antes de qualquer reversão
+de dados.

@@ -1,0 +1,11 @@
+{
+  "deskcomm_version": "1.42.0",
+  "upstream_tag": "v1.42.0",
+  "mcp_base_commit": "c16eb8601",
+  "tool_count_snapshot": 226,
+  "tool_count_is_requirement": false,
+  "gaps_a": 0,
+  "mcp_compatible": true,
+  "pending_domains": [],
+  "note": "Campanhas 1.42 cobertas por services e schemas oficiais. Início, agendamento e envio de teste exigem ação humana estruturada; 226 é snapshot, não gate. A publicação ainda exige os testes e builds do workflow."
+}

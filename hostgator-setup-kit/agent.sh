@@ -7,6 +7,9 @@
 # nenhum acesso ao Docker do host.
 source "$(dirname "$0")/_common.sh"
 enter_project
+if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+  source "$(dirname "$0")/mcp-channel.sh"
+fi
 
 SECRET="${INTERNAL_CRON_SECRET:-${INTERNAL_SECRET:-}}"
 [ -n "$SECRET" ] || exit 0
@@ -124,11 +127,25 @@ esc() {
 
 # ── 1. Que versão está instalada e qual é a última publicada? ────────────────
 FETCH_OK=1
-git fetch --tags --quiet origin 2>/dev/null || FETCH_OK=0
+if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+  if mcp_channel_init; then
+    MCP_LATEST="$(mcp_channel_latest)" || MCP_LATEST=""
+    if [ -n "$MCP_LATEST" ]; then
+      mcp_channel_fetch "$MCP_LATEST" || { MCP_LATEST=""; FETCH_OK=0; }
+    fi
+  else
+    MCP_LATEST=""; FETCH_OK=0
+  fi
+else
+  git fetch --tags --quiet origin 2>/dev/null || FETCH_OK=0
+fi
 
 CURRENT_TAG="$(git describe --tags --exact-match HEAD 2>/dev/null || true)"
 CURRENT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo '?')"
 LATEST_TAG="$(git tag -l 'v*' --sort=-v:refname | head -1)" || true
+if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+  LATEST_TAG="$MCP_LATEST"
+fi
 
 # Guardado ANTES de qualquer zeragem abaixo: "vi uma tag" e "não anunciei"
 # são coisas diferentes. Sem isto, um fork sem NENHUMA tag `v*` chega ao app
@@ -187,7 +204,11 @@ fi
 # min), e a alternativa é um botão que derruba o sistema.
 VEREDITO_IMAGEM=""
 if [ -n "$LATEST_TAG" ] && [ "$LATEST_TAG" != "$CURRENT" ]; then
-  VEREDITO_IMAGEM="$(veredito_da_imagem_do_app "${LATEST_TAG#v}" "${CURRENT_TAG#v}")" || VEREDITO_IMAGEM=""
+  if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+    VEREDITO_IMAGEM=publicada
+  else
+    VEREDITO_IMAGEM="$(veredito_da_imagem_do_app "${LATEST_TAG#v}" "${CURRENT_TAG#v}")" || VEREDITO_IMAGEM=""
+  fi
   # Só `ausente` cala. `indisponivel` é "não consegui perguntar ao registro", e
   # nesse caso anunciar é o que preserva o comportamento de sempre — uma VPS com
   # saída de rede ruim não pode ficar sem atualização para sempre, em silêncio.

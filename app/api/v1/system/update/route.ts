@@ -49,6 +49,11 @@ export async function POST(_req: NextRequest): Promise<Response> {
   const current = version?.current_version ?? "";
   const latest = version?.latest_version ?? "";
 
+  if (process.env.DESKCOMM_UPDATE_CHANNEL === "custom-mcp" &&
+      !/^v\d+\.\d+\.\d+-mcp$/.test(latest)) {
+    return fail("state_conflict", "Aguardando uma release MCP validada.", 409);
+  }
+
   if (!latest || latest === current) {
     return fail("state_conflict", "Você já está na versão mais recente.", 409);
   }

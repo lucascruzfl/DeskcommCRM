@@ -29,28 +29,28 @@ compila na VPS.
 
 ## 3. Clone o fork recuperável
 
-Clone o fork que contém a branch MCP. Não clone uma cópia local perdida nem copie `.env` pelo Git:
+Clone o fork que publicou uma release MCP validada. Não copie `.env` pelo Git:
 
 ```bash
-git clone https://github.com/<proprietario-real>/<fork-real>.git deskcommcrm
+git clone https://github.com/lucascruzfl/DeskcommCRM.git deskcommcrm
 cd deskcommcrm
-git fetch --all --tags
 ```
 
 ## 4. Selecione a versão MCP
 
-Prefira uma tag/release auditada. Enquanto esta entrega ainda estiver em branch, selecione
-`feat/mcp-full-control` e confira o commit esperado no manifest de release:
+O instalador do canal MCP seleciona a maior tag validada, confere o manifesto
+e usa os digests das quatro imagens. Configure o canal no ambiente antes da
+primeira instalação; não selecione a branch MCP diretamente para produção:
 
 ```bash
-git switch feat/mcp-full-control
-git rev-parse HEAD
-git describe --tags --always
+export DESKCOMM_UPDATE_CHANNEL=custom-mcp
+export DESKCOMM_UPDATE_REPOSITORY=lucascruzfl/DeskcommCRM
+export DESKCOMM_IMAGE_REPOSITORY=ghcr.io/lucascruzfl/deskcommcrm
 ```
 
-A base auditada foi a tag `v1.41.0`; o contrato testado da Parte 9 está no manifest, não nesta
-frase. Não use `latest` como sinônimo de última release: `latest` segue a `main`; `stable` é a
-última release e uma instalação de cliente deve ficar numa versão numerada.
+O instalador grava as três chaves no `.env` local. Sem release e manifesto
+publicados, ele recusa antes de instalar uma imagem oficial. Veja
+[MCP-UPDATE-CHANNEL.md](MCP-UPDATE-CHANNEL.md).
 
 ## 5. Reponha ambiente e segredos próprios
 
@@ -80,7 +80,9 @@ grep -n '0382_replace_faq_atomico' supabase/migrations/MANIFEST.md
 ```
 
 O arquivo apenas prova que a migration está versionada; a validação do banco é o instalador terminar
-sem erro e o healthcheck responder.
+sem erro e o healthcheck responder. A 1.42.0 oficial criou outra migration de
+número 0382, com timestamp distinto. Ambas são históricas; não renomeie a que
+já foi aplicada. O baseline integrado contém as duas mudanças.
 
 ## 8. Valide os serviços e a rota pública
 
