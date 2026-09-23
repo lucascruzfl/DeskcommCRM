@@ -17,6 +17,15 @@ Se um pacote GHCR já existente estiver privado, ajuste sua visibilidade na
 configuração do pacote antes da primeira release; o canal recusará digests que
 não puder consultar anonimamente.
 
+Se o nome do pacote já existia antes do workflow do fork, o `GITHUB_TOKEN`
+com `packages: write` pode receber `permission_denied: write_package` mesmo
+com o label OCI correto. Nas configurações de **cada pacote existente**,
+conecte `lucascruzfl/DeskcommCRM` e conceda acesso de escrita ao repositório
+em **Manage Actions access**. A permissão é do pacote no GitHub; não se
+resolve colocando PAT no workflow. Depois de liberar o acesso, reexecute o
+job falho da mesma tag. O manifesto continua ausente até que todas as imagens
+sejam publicadas e inspecionáveis anonimamente.
+
 O manifesto tem `schema_version`, `deskcomm_version`, `tag`, `mcp_commit`,
 `tests: passed`, `gaps_a: 0`, `tool_count_snapshot` e quatro entradas em
 `images`, cada uma com `repository`, `tag` e `digest`. O validador exige
