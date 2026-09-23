@@ -39,14 +39,16 @@ antes de `v1.43.0-mcp` passar pelos gates, a maior release pronta continua
 
 ## Produzir a próxima release
 
-1. Preserve a branch MCP, faça `git fetch` do upstream e compare merge-base,
-   commits e arquivos sobrepostos antes de um merge único.
+1. A branch `mcp/stable` preserva a última MCP pronta. O workflow de detecção
+   consulta a última release oficial, busca a tag sem depender de Sync fork e
+   prepara `mcp/integrate/X.Y.Z` a partir da linha estável.
 2. Execute [AUDIT-NEW-VERSION.md](AUDIT-NEW-VERSION.md), classifique os deltas
    A/B/C e ajuste apenas contratos que mudaram. A integração 1.42.0 está
    registrada em [AUDIT-1.42.0.md](AUDIT-1.42.0.md).
 3. Rode sentinelas MCP, banco focado, typecheck, lint, `test:shell` e build.
    Atualize `docs/mcp/RELEASE-AUDIT.json` somente quando gaps A forem zero.
-4. Crie uma tag leve `vX.Y.Z-mcp` no commit integrado e envie-a ao fork
+4. Depois de revisar o PR de integração, confirmar `gaps_a=0` e passar os
+   gates, crie uma tag leve `vX.Y.Z-mcp` no commit integrado e envie-a ao fork
    após autorização de publicação. O workflow do fork valida ancestralidade da
    tag oficial, auditoria e testes, constrói quatro imagens, publica cada uma
    com tag `X.Y.Z-mcp` e só depois publica o asset de manifesto.
@@ -74,3 +76,5 @@ do release anterior para uma reinstalação controlada: `update.sh --to
 vX.Y.Z-mcp --force` continua sujeito ao gate do canal. O banco pode já ter
 migrations aditivas; confira o relatório e o backup antes de qualquer reversão
 de dados.
+
+Veja [AUTOMATED-UPSTREAM-SYNC.md](AUTOMATED-UPSTREAM-SYNC.md) para o fluxo automático, bloqueios e papel humano.

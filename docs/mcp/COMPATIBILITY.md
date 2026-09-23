@@ -35,7 +35,7 @@ As suítes finais acusam:
 ## Política de evolução
 
 ```text
-fetch/merge seguro da main
+fetch/merge seguro da tag oficial em branch isolada
 → inventário diferencial de UI/API/actions/services/workers/schema
 → comparar registry/policy/scopes/capabilities
 → classificar A/B/C
@@ -56,3 +56,7 @@ O workflow `publish-mcp-release.yml` impede publicação quando a auditoria
 da nova versão não confirma gaps A zero. O agente do painel valida manifesto e
 imagens no registry antes de oferecer a tag MCP. O próprio `update.sh` repete a
 validação, inclusive quando chamado com `--force`.
+
+A detecção automática não declara gaps A zero. Se aparecer operação nova,
+conflito, migration ambígua ou teste vermelho, a publicação é bloqueada até
+revisão e nova medição. `tool_count_snapshot` não é gate.

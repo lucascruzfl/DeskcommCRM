@@ -39,3 +39,9 @@ botão passa a usar o canal MCP e não escolhe a imagem upstream.
 Se a chave do canal for removida por engano, o checkout/tag e o `APP_VERSION`
 da imagem MCP ainda bloqueiam o caminho oficial até a configuração ser
 restaurada.
+
+A detecção de upstream usa release/tag oficial; `main` do fork é apenas espelho
+visual. O workflow de corte oficial está desativado especificamente no fork.
+Sync fork na `main` não publica MCP e não atualiza a VPS. O canal só oferece
+release com manifesto e quatro digests validados; falha ou versão oficial sem
+MCP nunca provoca fallback. A pessoa ainda clica **Atualizar** no painel.

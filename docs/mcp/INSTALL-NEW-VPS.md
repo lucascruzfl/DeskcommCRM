@@ -159,3 +159,11 @@ bash hostgator-setup-kit/backup.sh
 Copie o backup criptografado/adequadamente protegido para armazenamento fora da VPS e registre a
 data. Siga [BACKUP-RECOVERY.md](BACKUP-RECOVERY.md) para preservar banco, storage, WAHA/sessões,
 segredos e validar restauração.
+
+## Canal de futuras releases
+
+Uma instalação nova feita com a tag MCP e as três variáveis da seção 4 fica
+no canal `custom-mcp` desde o primeiro `install.sh`. Releases futuras só são
+oferecidas quando o manifesto e os quatro digests existem e são válidos. O
+operador continua clicando **Atualizar**; não há deploy automático nem fallback
+para imagem oficial.

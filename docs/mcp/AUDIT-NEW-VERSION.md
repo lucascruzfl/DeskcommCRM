@@ -2,7 +2,7 @@
 
 Registro concreto desta integração: [AUDIT-1.42.0.md](AUDIT-1.42.0.md).
 
-Use este roteiro depois de incorporar `origin/main`. Não reconstrua o MCP do zero.
+Use este roteiro sobre a branch de integração da **tag da release oficial**. Não reconstrua o MCP do zero.
 
 Para o canal de imagem, uma nova tag oficial não é release instalável. A
 auditoria gera um commit integrado e só após os gates uma tag `vX.Y.Z-mcp` e o
@@ -11,9 +11,9 @@ manifesto de publicação. Veja [MCP-UPDATE-CHANNEL.md](MCP-UPDATE-CHANNEL.md).
 ## 1. Proteja a branch
 
 1. Confirme branch, HEAD e árvore limpa.
-2. Faça `git fetch origin`.
+2. Faça fetch da tag oficial pelo workflow, sem depender de Sync fork.
 3. Meça merge-base, atraso, commits próprios e sobreposição.
-4. Se houver atraso, faça um único merge seguro; nunca reset/rebase destrutivo.
+4. Integre a tag sobre `mcp/stable` em branch isolada. Conflito bloqueia automaticamente; nunca use ours/theirs sem revisão.
 
 ## 2. Gere o delta do produto
 
@@ -67,3 +67,6 @@ Se tocar UI, acrescente Playwright e evidência visual. Se tocar packaging, `pnp
 - matriz, mapa vivo, compatibilidade e relatório final atualizados.
 - `RELEASE-AUDIT.json` registra a versão, o snapshot de tools, gaps A e o
   veredito. `mcp_compatible` só vira `true` com todos os itens acima medidos.
+
+A auditoria automática gera inventário, não interpretação de segurança.
+Confira [AUDIT-1.45.0.md](AUDIT-1.45.0.md) para o caso atual.
