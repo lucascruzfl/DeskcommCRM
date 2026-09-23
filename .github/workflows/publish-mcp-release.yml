@@ -54,7 +54,7 @@ jobs:
       - run: pnpm lint:role-rank
       - run: pnpm release:conferir
       - name: MCP, política, fluxos e atualizador
-        run: pnpm exec vitest run tests/unit/mcp-compatibility-sentinels.test.ts tests/unit/mcp-final-flows.test.ts tests/unit/mcp-rate-limit.test.ts app/api/v1/system/version/route.test.ts app/api/v1/system/update/route.test.ts
+        run: pnpm exec vitest run tests/unit/mcp-compatibility-sentinels.test.ts tests/unit/mcp-final-flows.test.ts tests/unit/mcp-campaign-isolation.test.ts tests/unit/mcp-rate-limit.test.ts app/api/v1/system/version/route.test.ts app/api/v1/system/update/route.test.ts
       - name: Isolamento e baseline em banco descartável
         run: pnpm test:db tests/invariants/mcp-nao-alcanca-outro-tenant.test.ts tests/invariants/agenda-mcp-nao-alcanca-contato-alheio.test.ts tests/invariants/mcp-faq-atomica.test.ts
       - run: pnpm test:shell
