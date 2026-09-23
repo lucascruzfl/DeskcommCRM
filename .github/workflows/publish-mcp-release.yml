@@ -179,3 +179,19 @@ jobs:
           gh release create "$RELEASE_TAG" mcp-release.json \
             --verify-tag --title "$RELEASE_TAG" \
             --notes "DeskcommCRM + MCP Full Control; testes e digests no manifesto."
+          echo "MCP release $RELEASE_TAG pronta para atualização. A VPS só atualiza após o clique humano no painel." >> "$GITHUB_STEP_SUMMARY"
+
+  blocked-summary:
+    needs: [check, validate, publish]
+    if: always() && needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explicar bloqueio
+        env:
+          RELEASE_TAG: ${{ needs.check.outputs.tag }}
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+        run: |
+          echo "Nova versão upstream detectada, mas MCP não foi publicado." >> "$GITHUB_STEP_SUMMARY"
+          echo "Alvo: $RELEASE_TAG. Validação: $VALIDATE_RESULT. Publicação: $PUBLISH_RESULT." >> "$GITHUB_STEP_SUMMARY"
+          echo "Confira o primeiro passo vermelho; não há fallback para imagem oficial." >> "$GITHUB_STEP_SUMMARY"

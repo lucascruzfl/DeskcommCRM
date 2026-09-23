@@ -72,6 +72,10 @@ const GATILHO_ESPERADO: Record<string, { condicao: string | null; efeito: string
     condicao: "needs.check.outputs.needed == 'yes'",
     efeito: "Valida auditoria e contratos da versão nova; pular sem motivo impede a publicação.",
   },
+  "publish-mcp-release.yml::blocked-summary": {
+    condicao: "always() && needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'",
+    efeito: "Explica no resumo por que a release MCP não ficou pronta.",
+  },
   "publish-mcp-release.yml::publish": {
     condicao: null,
     efeito: "Publica imagens e manifesto depois de validate; pular deixa versão sem entrega.",
