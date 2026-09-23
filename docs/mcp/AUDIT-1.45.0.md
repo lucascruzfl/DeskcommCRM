@@ -20,7 +20,7 @@ Os cinco conflitos foram conciliados manualmente na branch `mcp/integrate/1.45.0
 | Área | Mudança oficial | Classe provisória | Decisão pendente |
 | --- | --- | --- | --- |
 | Envio MCP/API | ritmo anti-ban, teto diário e Retry-After | A | preservar idempotência do fork e aplicar o ritmo no caminho MCP inteiro |
-| Follow-up | duplicar/renomear fluxo, retorno e gatilho por lead | A candidata | mapear operações canônicas ao registry e ao preset manager |
+| Follow-up | duplicar/renomear fluxo, retorno e gatilho por lead | A | `crm_update_followup_flow` cobre rename; preflight MCP agora aceita `lead_created` e `inbound_after_silence` com motor. Duplicação ainda sem tool. |
 | Skills de IA | versões e restauração | A/B | conferir autoridade, efeitos e serviço canônico |
 | Produtos | fotos privadas e envio pelo agente | A/B | leitura segura versus upload binário e ação humana |
 | Canais Datafy/Graph | modelos e credenciais | B/C | não expor segredo nem ativação sem consentimento |

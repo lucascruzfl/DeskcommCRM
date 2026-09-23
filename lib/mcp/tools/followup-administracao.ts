@@ -38,6 +38,8 @@ const TRIGGERS_COM_MOTOR = [
   "webhook",
   "silence",
   "stage_change",
+  "lead_created",
+  "inbound_after_silence",
   "case_opened",
   "appointment_no_show",
 ] as const;
