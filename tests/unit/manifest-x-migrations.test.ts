@@ -33,6 +33,11 @@ import { describe, expect, it } from "vitest";
 const DIR = join(process.cwd(), "supabase", "migrations");
 const MANIFEST = join(DIR, "MANIFEST.md");
 
+// O upstream 1.42.0 já registrou esta versão em schema_migrations. Trocar
+// apenas o número legível evita a colisão com a 0382 MCP; trocar o timestamp
+// faria o Supabase executar novamente a migration em bancos oficiais existentes.
+const LINK_SALVO_VERSION = "20260922021548";
+
 /**
  * A chave é o `NNNN_slug`, não o timestamp.
  *
@@ -79,6 +84,16 @@ const DIVERGENCIAS_CONHECIDAS = {
  * (o CLI ordena alfabeticamente, e +1s mantém cada arquivo depois do irmão).
  */
 const TIMESTAMPS_REPETIDOS_CONHECIDOS: readonly string[] = [];
+
+describe("identidade da migration oficial de link salvo", () => {
+  it("preserva o timestamp aplicado no upstream ao renumerar para 0385", () => {
+    const arquivo = `${LINK_SALVO_VERSION}_0385_link_salvo_no_modelo.sql`;
+    expect(readdirSync(DIR)).toContain(arquivo);
+    expect(readFileSync(MANIFEST, "utf8")).toContain(
+      `| \`${LINK_SALVO_VERSION}\` | \`0385_link_salvo_no_modelo\` |`,
+    );
+  });
+});
 
 /** Só os arquivos que carregam timestamp no nome — as legadas não têm. */
 function arquivosComTimestamp(): { timestamp: string; arquivo: string }[] {

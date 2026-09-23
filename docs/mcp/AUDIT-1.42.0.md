@@ -16,8 +16,15 @@ conteúdo, no formulário de tokens, preservou o preset MCP e a rolagem do modal
 | Registry e módulos | Módulos opcionais agora filtram capacidades | O filtro também limita `tools/list` e o catálogo exposto. |
 | Services | Dados externos ganharam descrição e consulta | Os handlers MCP upstream foram incorporados; a contagem derivada cresceu em duas tools. |
 | Campanhas | Novo domínio, máquina de estados, schemas, pool, destinatários, templates, exclusões e padrões | Tools MCP usam os mesmos schemas e services, sempre com `organization_id` do contexto. Início, agendamento e teste de envio dependem de confirmação humana pela tela; a tool de lançamento apenas encaminha a ação. |
-| Banco | Upstream adicionou migration `_0382_` enquanto o MCP já tinha uma 0382 distinta | A migration MCP implantada mantém `0382`; a migration oficial de link salvo foi renumerada no fork para `20260923004404_0385_link_salvo_no_modelo.sql`, sem alterar o SQL. Baseline e MANIFEST incluem ambas. |
+| Banco | Upstream adicionou migration `_0382_` enquanto o MCP já tinha uma 0382 distinta | A migration MCP implantada mantém `0382`; a migration oficial de link salvo foi renumerada no fork para `20260922021548_0385_link_salvo_no_modelo.sql`, sem alterar o SQL nem o timestamp original. O timestamp é a identidade em `schema_migrations`: quem já aplicou a migration oficial não a receberá novamente. Baseline e MANIFEST incluem ambas. |
 | Atualização | Canal upstream usa tag e imagem oficiais | Canal `custom-mcp` exige manifesto e quatro digests do fork antes de anunciar ou executar a atualização. |
+
+O número 0385 identifica o arquivo no fork; a ordem efetiva do Supabase vem do
+timestamp preservado. Assim, a migration de link salvo roda depois da criação
+de `meta_templates` (0088) e antes da 0384, sem dependência da 0384. A
+reaplicação do baseline é idempotente. Em merges futuros, compare o timestamp
+com o upstream antes de renumerar: criar um timestamp novo faria um banco que
+já recebeu a versão oficial executá-la de novo.
 
 O `tools/list` do registry integrado tem 226 entradas no snapshot desta
 auditoria. A contagem anterior de 202 e a de 226 são diagnósticos; nenhuma é

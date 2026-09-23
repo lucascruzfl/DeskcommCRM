@@ -87,7 +87,9 @@ O arquivo apenas prova que a migration está versionada; a validação do banco 
 sem erro e o healthcheck responder. A migration MCP `0382` já implantada não foi
 renomeada. A migration oficial de link salvo recebeu o identificador `0385` no
 fork para evitar colisão com a `0382` MCP e a `0383` posterior do upstream; seu
-SQL foi preservado. O baseline integrado contém as duas mudanças.
+SQL e timestamp `20260922021548` foram preservados. O Supabase identifica a
+migration por timestamp; bancos que já aplicaram a versão oficial não a
+recebem novamente. O baseline integrado contém as duas mudanças.
 
 ## 8. Valide os serviços e a rota pública
 

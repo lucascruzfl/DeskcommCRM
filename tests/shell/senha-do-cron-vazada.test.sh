@@ -53,7 +53,10 @@ printf '{"data":{"update_requested":false}}\n200'
 STUB
 cat > "$WORK/bin/git" <<'STUB'
 #!/usr/bin/env bash
-case "${1:-}" in rev-parse) echo abc1234 ;; esac
+case "${1:-}" in
+  rev-parse) echo abc1234 ;;
+  describe) exit 1 ;; # projeto simulado sem tag MCP
+esac
 exit 0
 STUB
 # A guarda de arquitetura do `_common.sh` recusa install/update em ARM (o Mac
