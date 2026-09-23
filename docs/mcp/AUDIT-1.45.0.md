@@ -21,7 +21,7 @@ Os cinco conflitos foram conciliados manualmente na branch `mcp/integrate/1.45.0
 | --- | --- | --- | --- |
 | Envio MCP/API | ritmo anti-ban, teto diário e Retry-After | A | preservar idempotência do fork e aplicar o ritmo no caminho MCP inteiro |
 | Follow-up | duplicar/renomear fluxo, retorno e gatilho por lead | A | `crm_update_followup_flow` cobre rename; preflight MCP agora aceita `lead_created` e `inbound_after_silence` com motor. Duplicação ainda sem tool. |
-| Skills de IA | versões e restauração | A | falta leitura de versões e restauração org-scoped no MCP; a restauração usa `setSkillPointer` e exige manager |
+| Skills de IA | versões e restauração | A | `crm_list_ai_skill_versions` e `crm_restore_ai_skill_version` cobrem histórico e rollback com isolamento da organização e capability de publicação. Edição de conteúdo ainda em auditoria. |
 | Produtos | fotos privadas e envio pelo agente | A/B | leitura segura versus upload binário e ação humana |
 | Canais Datafy/Graph | modelos e credenciais | B/C | não expor segredo nem ativação sem consentimento |
 | LGPD | anonimização de conversas e mídia | B | operação destrutiva permanece sob confirmação humana |
@@ -29,7 +29,7 @@ Os cinco conflitos foram conciliados manualmente na branch `mcp/integrate/1.45.0
 | UI e responsividade | painel de atualização e telas operacionais | A/B | validar regressão visual após integração |
 | Updater/Docker | guardas de backup e shell tests novos | A operacional | manter fail-closed e rodar harness |
 
-Esta tabela é triagem, **não** certificação de cobertura. Há **ao menos 3 gaps A conhecidos**: duplicar fluxo de follow-up, listar versões de uma skill e restaurar versão. O total de gaps A da 1.45.0 ainda é **indeterminado** até a auditoria por operação. `RELEASE-AUDIT.json` continua em
+Esta tabela é triagem, **não** certificação de cobertura. Há **ao menos 1 gap A conhecido**: duplicar fluxo de follow-up. Edição de conteúdo de skill ainda é candidata A sob revisão. O total de gaps A da 1.45.0 ainda é **indeterminado** até a auditoria por operação. `RELEASE-AUDIT.json` continua em
 1.42.0 e impede a publicação de uma tag 1.45.0-mcp.
 
 ## Migrations e salto de versão

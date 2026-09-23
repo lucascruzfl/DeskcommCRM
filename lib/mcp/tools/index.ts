@@ -111,6 +111,7 @@ import { EQUIPE_ADMIN_MCP_TOOLS } from "./equipe-administracao";
 import { PARTE7_OPERATION_TOOLS } from "./parte7-operacoes";
 import { CAMPAIGN_MCP_TOOLS } from "./campanhas";
 import { CAMPAIGN_EXTRA_MCP_TOOLS } from "./campanhas-complementos";
+import { SKILL_VERSION_MCP_TOOLS } from "./skill-versions";
 
 // Cast via `unknown` porque McpToolDefinition<TInput> nao e covariante
 // em TInput (handler usa TInput em posicao contravariante). Coletar
@@ -121,6 +122,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   ...CAMPAIGN_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...CAMPAIGN_EXTRA_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...AI_MCP_TOOLS,
+  ...SKILL_VERSION_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...AGENDA_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...FOLLOWUP_ADMIN_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...AUTOMATION_ROUTING_MCP_TOOLS.filter((tool) => tool.category === "read"),
@@ -177,6 +179,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   // write
   ...CAMPAIGN_MCP_TOOLS.filter((tool) => tool.category === "write"),
   ...CAMPAIGN_EXTRA_MCP_TOOLS.filter((tool) => tool.category === "write"),
+  ...SKILL_VERSION_MCP_TOOLS.filter((tool) => tool.category === "write"),
   // A que consulta E marca numa chamada só vem primeiro: quando o cliente já deu
   // dia e hora, é o caminho curto, e é o que evita o turno morrer no meio (#831).
   crmFindAndBookAppointment,
