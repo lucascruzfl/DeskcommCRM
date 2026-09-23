@@ -94,6 +94,15 @@ export const TOOLS_PARTE5 = entradas([
     oQueToca: "Retornos e planos de acompanhamento",
   },
   {
+    name: "crm_duplicate_followup_flow",
+    category: "write",
+    rotulo: "Duplicar fluxo de follow-up",
+    explicacao: "Cria uma cópia inativa do fluxo da empresa com o rascunho, gatilho e política; não envia mensagem nem publica.",
+    oQueToca: "Fluxos de follow-up",
+    risco: "atencao",
+    pacotes: ["organizar"],
+  },
+  {
     name: "crm_update_followup_flow",
     category: "write",
     rotulo: "Editar um plano de acompanhamento",

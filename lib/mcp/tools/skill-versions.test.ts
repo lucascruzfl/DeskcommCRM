@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type * as Skills from "@/lib/agent-engine/agent/skills";
 
-vi.mock("@/lib/agent-engine/agent/skills", () => ({ setSkillPointer: vi.fn() }));
+vi.mock("@/lib/agent-engine/agent/skills", async (importOriginal) => ({
+  ...(await importOriginal<typeof Skills>()),
+  setSkillPointer: vi.fn(),
+  insertSkillVersion: vi.fn(),
+}));
 vi.mock("@/lib/ai/skills/db", () => ({ getSkillsPool: vi.fn(() => ({})) }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn() }));
 
-import { setSkillPointer } from "@/lib/agent-engine/agent/skills";
+import { insertSkillVersion, setSkillPointer } from "@/lib/agent-engine/agent/skills";
 import { audit } from "@/lib/audit";
 import type { McpContext } from "@/lib/mcp/types";
-import { crmRestoreAiSkillVersion } from "./skill-versions";
+import { crmRestoreAiSkillVersion, crmSaveAiSkill } from "./skill-versions";
 
 const org = "11111111-1111-4111-8111-111111111111";
 const version = "22222222-2222-4222-8222-222222222222";
@@ -20,7 +25,7 @@ function context(found: boolean) {
       filters.push([key, value]);
       return query;
     },
-    maybeSingle: async () => ({ data: found ? { id: version } : null, error: null }),
+    maybeSingle: async () => ({ data: found ? { id: version, version_id: version, manifest: [] } : null, error: null }),
   };
   const ctx = {
     organizationId: org,
@@ -44,6 +49,22 @@ describe("restauração de skill MCP", () => {
     expect(filters).toContainEqual(["name", "atendimento"]);
     expect(setSkillPointer).not.toHaveBeenCalled();
     expect(audit).not.toHaveBeenCalled();
+  });
+
+
+  it("salvar exige skill instalada no tenant e não audita o corpo", async () => {
+    const absent = context(false);
+    await expect(crmSaveAiSkill.handler({
+      name: "atendimento", description: "Orientação", body: "Passo 1", matcher: { any_keywords: ["ajuda"] },
+    }, absent.ctx)).rejects.toMatchObject({ status: 404 });
+    expect(insertSkillVersion).not.toHaveBeenCalled();
+    const present = context(true);
+    vi.mocked(insertSkillVersion).mockResolvedValue({ id: version } as never);
+    const input = { name: "atendimento", description: "Orientação", body: "Passo 1", matcher: { any_keywords: ["ajuda"] } };
+    const result = await crmSaveAiSkill.handler(input, present.ctx);
+    expect(result).toEqual({ name: "atendimento", version_id: version });
+    expect(insertSkillVersion).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ tenantId: org }));
+    expect(crmSaveAiSkill.redigirParaAuditoria?.(input)).not.toHaveProperty("body");
   });
 
   it("usa o serviço canônico e registra a versão restaurada", async () => {

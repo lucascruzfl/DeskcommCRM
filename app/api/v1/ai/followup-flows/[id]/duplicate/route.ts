@@ -17,14 +17,11 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
-import { nomeDaCopia } from "@/lib/followup/nome-da-copia";
-import { rascunhoDoFluxo } from "@/lib/followup/rascunho";
+import { duplicarFluxo } from "@/lib/followup/duplicar-fluxo";
+import { ApiError } from "@/lib/api/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";
-
-const SOURCE_COLUMNS =
-  "id, name, draft_graph, trigger_config, handoff_policy, surface, active_version_id";
 
 const UUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -46,53 +43,15 @@ export async function POST(_req: NextRequest, ctx: RouteCtx): Promise<Response> 
   const { user, org: activeOrg } = authz;
 
   const supabase = await createClient();
-  const { data: origem, error: fetchErr } = await supabase
-    .from("followup_flow_pointers")
-    .select(SOURCE_COLUMNS)
-    .eq("id", id)
-    .eq("organization_id", activeOrg.orgId)
-    .maybeSingle();
-  if (fetchErr) return fail("internal_error", fetchErr.message, 500, { requestId });
-  if (!origem) return fail("not_found", t("Fluxo não encontrado."), 404, { requestId });
-
-  const { data: nomes, error: nomesErr } = await supabase
-    .from("followup_flow_pointers")
-    .select("name")
-    .eq("organization_id", activeOrg.orgId);
-  if (nomesErr) return fail("internal_error", nomesErr.message, 500, { requestId });
-
-  const draft_graph = await rascunhoDoFluxo(
-    supabase,
-    origem as { draft_graph: unknown; active_version_id: string | null },
-    activeOrg.orgId,
-  );
-
-  const nome = nomeDaCopia(
-    String(origem.name),
-    (nomes ?? []).map((r) => String((r as { name: string }).name)),
-  );
-
-  const { data: copia, error: insErr } = await supabase
-    .from("followup_flow_pointers")
-    .insert({
-      organization_id: activeOrg.orgId,
-      name: nome,
-      status: "draft",
-      draft_graph,
-      trigger_config: origem.trigger_config,
-      handoff_policy: origem.handoff_policy,
-      surface: origem.surface ?? "followup",
-    })
-    .select("*")
-    .single();
-
-  if (insErr || !copia) {
-    if (insErr?.code === "23505") {
-      return fail("conflict", t("Já existe um fluxo com este nome."), 409, { requestId });
+  let copia: { id: string };
+  let nome: string;
+  try {
+    ({ copia, name: nome } = await duplicarFluxo(supabase, activeOrg.orgId, id, requestId));
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return fail(error.code, t(error.message), error.status, { requestId });
     }
-    return fail("internal_error", insErr?.message ?? "followup_flow_duplicate_failed", 500, {
-      requestId,
-    });
+    return fail("internal_error", "followup_flow_duplicate_failed", 500, { requestId });
   }
 
   void audit({
