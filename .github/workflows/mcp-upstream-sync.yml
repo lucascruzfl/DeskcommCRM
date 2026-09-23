@@ -1,0 +1,36 @@
+name: Detectar release upstream para MCP
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: mcp-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  detect-and-integrate:
+    if: github.repository == 'lucascruzfl/DeskcommCRM'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: mcp/stable
+          fetch-depth: 0
+      - name: Detectar tag oficial e preparar PR isolado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/mcp_upstream.py
+      - name: Guardar delta audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-delta-report
+          path: mcp-delta-report.md
+          if-no-files-found: ignore
