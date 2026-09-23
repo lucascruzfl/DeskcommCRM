@@ -2,9 +2,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/app/api/v1/messages/_handler", () => ({ sendMessageHandler: vi.fn() }));
 vi.mock("@/lib/api/idempotency", () => ({ comIdempotencia: vi.fn() }));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn(() => ({})) }));
+vi.mock("@/lib/messaging/ritmo-do-envio-por-token", () => ({
+  depsDoRitmo: vi.fn(async () => ({})),
+  segurarEnvioPorToken: vi.fn(async () => null),
+  registrarEnvioPorToken: vi.fn(async () => {}),
+}));
 
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
 import { comIdempotencia } from "@/lib/api/idempotency";
+import { ApiError } from "@/lib/api/types";
+import { segurarEnvioPorToken, registrarEnvioPorToken } from "@/lib/messaging/ritmo-do-envio-por-token";
 import { crmReplyMessage, crmSendWhatsappMessage } from "@/lib/mcp/tools/messages";
 import type { McpContext } from "@/lib/mcp/types";
 
@@ -23,6 +31,7 @@ const context = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(segurarEnvioPorToken).mockResolvedValue(null);
   vi.mocked(comIdempotencia).mockImplementation(async (entry) => {
     const effect = await entry.executar();
     return { tipo: "executou", resposta: effect.resposta, status: effect.status };
@@ -36,6 +45,30 @@ beforeEach(() => {
 });
 
 describe("envio MCP pela cadeia oficial", () => {
+  it("freia antes do envio e só registra quando o envio ocorre", async () => {
+    const segurado = { channelSessionId: "44444444-4444-4444-8444-444444444444" };
+    vi.mocked(segurarEnvioPorToken).mockResolvedValue(segurado);
+    await crmSendWhatsappMessage.handler(
+      { conversation_id: CONVERSATION, body: "Oi", type: "text", idempotency_key: "ritmo:1" }, context,
+    );
+    expect(segurarEnvioPorToken).toHaveBeenCalledWith(expect.anything(), {
+      organizationId: ORG, conversationId: CONVERSATION, requestId: "request",
+    });
+    expect(vi.mocked(segurarEnvioPorToken).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(sendMessageHandler).mock.invocationCallOrder[0]!,
+    );
+    expect(registrarEnvioPorToken).toHaveBeenCalledWith(expect.anything(), ORG, segurado, "sent");
+  });
+
+  it("recusa de ritmo não envia nem registra", async () => {
+    vi.mocked(segurarEnvioPorToken).mockRejectedValue(new ApiError(429, "rate_limited", undefined, "request"));
+    await expect(crmSendWhatsappMessage.handler(
+      { conversation_id: CONVERSATION, body: "Oi", type: "text", idempotency_key: "ritmo:2" }, context,
+    )).rejects.toBeInstanceOf(ApiError);
+    expect(sendMessageHandler).not.toHaveBeenCalled();
+    expect(registrarEnvioPorToken).not.toHaveBeenCalled();
+  });
+
   it("envia mídia somente por storage path com metadados validados", async () => {
     await crmSendWhatsappMessage.handler(
       {
@@ -133,6 +166,7 @@ describe("envio MCP pela cadeia oficial", () => {
     );
     expect(result).toMatchObject({ message_id: MESSAGE, deduplicated: true });
     expect(sendMessageHandler).not.toHaveBeenCalled();
+    expect(segurarEnvioPorToken).not.toHaveBeenCalled();
   });
 
   it("reserva simultânea retorna conflito retryable em vez de duplicar", async () => {

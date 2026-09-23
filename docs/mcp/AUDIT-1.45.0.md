@@ -1,6 +1,6 @@
 # Auditoria diferencial 1.42.0-mcp → upstream v1.45.0
 
-Estado em 2026-09-23: **bloqueada**. Fonte: release oficial `v1.45.0`, commit
+Estado em 2026-09-23: **candidata integrada; publicação bloqueada**. Fonte: release oficial `v1.45.0`, commit
 `4778e7e9c7b0f91bdec7bb9b8a5c475aaccee2e0`. Base MCP publicada:
 `v1.42.0-mcp` (`381fb71c3fe8eb25d81f1ab15e2050b01b9437c5`). A comparação
 `v1.42.0..v1.45.0` altera 263 arquivos; não se usou a `main` como versão.
@@ -13,7 +13,7 @@ Merge único `git merge --no-commit --no-ff v1.45.0` sobre a linha MCP encontrou
 - `lib/mcp/tools/start-conversation.ts` e seu teste: mesmo conflito para abertura e envio.
 - `package.json`: as duas linhas acrescentaram testes diferentes em `test:shell`.
 
-Nenhum `ours/theirs` foi escolhido. A integração requer conciliar as duas garantias em cada fluxo e rodar os testes reais. **Sem tag, imagens ou manifesto 1.45.0-mcp.**
+Os cinco conflitos foram conciliados manualmente na branch `mcp/integrate/1.45.0`: reserva idempotente antes do efeito, freio anti-ban dentro do efeito e registro depois do envio; scripts de shell das duas linhas unidos. Os 14 testes focados de `messages.test.ts` e `start-conversation.test.ts` passaram em Node 22. O typecheck completo foi interrompido por limite de memória do ambiente de análise; não é gate verde. **Sem tag, imagens ou manifesto 1.45.0-mcp.**
 
 ## Delta de produto a classificar
 
@@ -38,7 +38,10 @@ Esta tabela é triagem, **não** certificação de cobertura. Gaps A da 1.45.0:
 A tag 1.45.0 inclui as migrations oficiais `0383`, `0385`, `0386`, `0387`,
 `0390`, `0391` (timestamps e nomes completos em `supabase/migrations/`). A
 linha MCP preserva a `0382` própria e a renumeração anterior registrada em
-`INSTALL-NEW-VPS.md`. O instalador e atualizador reaplicam o **baseline
+`INSTALL-NEW-VPS.md`. O novo `0385_memoria_da_org_aceita_origem_agente`
+colidiu com a `0385_link_salvo_no_modelo` já implantada na linha MCP; foi
+movido para `20260923231500_0393_memoria_da_org_aceita_origem_agente.sql`
+antes de qualquer deploy. SQL e bloco idempotente do baseline mantidos. O instalador e atualizador reaplicam o **baseline
 acumulado**, não percorrem tags/release por release. Portanto não há exigência
 estrutural de publicar 1.43 e 1.44 separadamente. A prova operacional do salto
 1.42 → 1.45 depende de merge completo, teste de instalação e reaplicação do
@@ -47,7 +50,7 @@ salto continua bloqueado.
 
 ## Gates ainda pendentes
 
-Resolução revisada dos cinco conflitos; classificação A/B/C por operação;
+Revisão do código conciliado; classificação A/B/C por operação;
 `gaps_a=0` demonstrado; sentinelas MCP; typecheck; lint; banco descartável;
 baseline install/reapply; shell/updater; build das quatro imagens; digests
 públicos; manifesto validado e publicado por último.

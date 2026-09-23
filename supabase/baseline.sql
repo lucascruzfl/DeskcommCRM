@@ -9269,15 +9269,21 @@ alter table public.channel_sessions
   add column if not exists wacalls_jid text,
   add column if not exists wacalls_paired_at timestamptz;
 
+-- datafy (migration 0387, canal Datafy — recorte do #1130) — colunas do provider
+-- que espelha a Cloud API, nullable e antes das constraints que as referenciam.
+alter table public.channel_sessions
+  add column if not exists datafy_phone_number_id text,
+  add column if not exists datafy_waba_id text,
+  add column if not exists datafy_token_encrypted bytea;
+
 alter table public.channel_sessions
   drop constraint if exists channel_sessions_provider_check;
 
 alter table public.channel_sessions
   add constraint channel_sessions_provider_check
-  -- 'wacalls' (migration 0233, chamada de voz) e 'zernio_social' (migration
-  -- 0368, redes sociais nativas) somados AQUI — UM bloco só por constraint,
-  -- doutrina de baseline (não duplicar drop+add por migration).
-  check (provider = any (array['waha'::text, 'meta_cloud'::text, 'zernio'::text, 'wacalls'::text, 'zernio_social'::text]));
+  -- 'wacalls' (0233), 'zernio_social' (0368) e 'datafy' (0387) somados AQUI —
+  -- UM bloco só por constraint (não duplicar drop+add por migration).
+  check (provider = any (array['waha'::text, 'meta_cloud'::text, 'zernio'::text, 'wacalls'::text, 'zernio_social'::text, 'datafy'::text]));
 
 alter table public.channel_sessions
   drop constraint if exists channel_sessions_provider_ref_check;
@@ -9289,7 +9295,8 @@ alter table public.channel_sessions
     -- 'zernio_social' (migration 0368) endereça pelo MESMO `zernio_account_id`:
     -- é o mesmo intermediário, com outra superfície de canal.
     (provider in ('zernio', 'zernio_social') and zernio_account_id is not null) or
-    (provider = 'wacalls'    and wacalls_session_id    is not null)
+    (provider = 'wacalls'    and wacalls_session_id    is not null) or
+    (provider = 'datafy'     and datafy_phone_number_id is not null)
   );
 
 comment on column public.channel_sessions.zernio_account_id is
@@ -9906,6 +9913,36 @@ values
   ('gemini-2.0-flash',        10,     40,  'catálogo 0101'),
   ('gemini-2.5-pro',         125,   1000,  'catálogo 0101 — saída corrigida de 500 para 1000'),
   ('gemini-2.5-flash',        30,    250,  'catálogo 0101 — saída corrigida de 120 para 250')
+on conflict (model) do update set
+  prompt_cents_per_million_tokens = excluded.prompt_cents_per_million_tokens,
+  completion_cents_per_million_tokens = excluded.completion_cents_per_million_tokens,
+  notes = excluded.notes,
+  superseded_at = null;
+
+-- ---- as DUAS tabelas de preço do OpenAI (migration 0386, issue #1490) ----
+--
+-- O bloco da 0104 acima semeia 500/3000 para o gpt-5.6-sol, a versão não
+-- promocional do catálogo 0101. O pricing.ts (custo gravado em llm_calls)
+-- cobra 400/2000 — preço promocional medido na fonte oficial em 2026-09-23
+-- (developers.openai.com/api/docs/pricing; a promoção vale ao menos até
+-- 21/11/2026). Quem instala pelo kit nasce com as duas tabelas dizendo o
+-- preço medido, e o invariante catálogo × conta continua com os DOIS lados
+-- iguais. Idempotente: update com guarda de divergência + insert em conflict.
+update public.ai_models
+   set input_price_per_million_cents = 400,
+       output_price_per_million_cents = 2000
+ where provider = 'openai'
+   and model_id = 'gpt-5.6-sol'
+   and (input_price_per_million_cents <> 400
+     or output_price_per_million_cents <> 2000);
+
+insert into public.ai_pricing
+  (model, prompt_cents_per_million_tokens, completion_cents_per_million_tokens, notes)
+values
+  ('gpt-5.6-sol',         400,   2000, 'catálogo 0386 — preço promocional medido na fonte em 2026-09-23 (developers.openai.com/api/docs/pricing); promoção vale ao menos até 21/11/2026'),
+  ('gpt-4o',              250,   1000, 'catálogo 0386 — linha que o pricing.ts já cobrava e a tabela não tinha; preço medido na fonte em 2026-09-23'),
+  ('gpt-4o-mini',          15,     60, 'catálogo 0386 — linha que o pricing.ts já cobrava e a tabela não tinha; preço medido na fonte em 2026-09-23'),
+  ('gpt-4o-2024-05-13',   500,   1500, 'catálogo 0386 — snapshot com preço próprio; linha que o pricing.ts já cobrava e a tabela não tinha; medido em 2026-09-23')
 on conflict (model) do update set
   prompt_cents_per_million_tokens = excluded.prompt_cents_per_million_tokens,
   completion_cents_per_million_tokens = excluded.completion_cents_per_million_tokens,
@@ -14243,7 +14280,7 @@ alter table public.webhook_events_log
   drop constraint if exists webhook_events_log_provider_check;
 alter table public.webhook_events_log
   add constraint webhook_events_log_provider_check check (provider in (
-    'waha', 'nuvemshop', 'generic', 'meta_cloud', 'zernio'
+    'waha', 'nuvemshop', 'generic', 'meta_cloud', 'zernio', 'datafy'
   ));
 
 -- ---- a marca da instalação sai do .env e vai para o banco (migration 0155) ----
@@ -36362,6 +36399,198 @@ alter table public.meta_templates
 comment on column public.meta_templates.saved_values is
   'Valores que o operador salvou para reaproveitar em todo disparo deste modelo, chaveados como template_values (slotKey: header:1, button0:1). Só link de mídia: a rota de escrita recusa valor de texto, que costuma ser dado de pessoa. Sobrevive à sincronização, que não lista esta coluna no upsert.';
 
+-- ---- canal de WhatsApp Datafy (migration 0387) ----
+-- Recorte do PR #1130, de @vgamkt. As COLUNAS e o VOCABULÁRIO dos CHECKs de
+-- `channel_sessions` (provider e ref) e de `webhook_events_log` vivem nos blocos
+-- ÚNICOS deles, lá em cima — doutrina "uma constraint, um bloco"
+-- (`tests/unit/baseline-constraint-reconstruida.test.ts`). Aqui só o que é desta
+-- migration e de mais ninguém: a dedup e o índice único entre ativos (desenho da
+-- 0165). A dedup roda ANTES do índice, para o `update.sh` de um banco que já
+-- tenha dois ativos com o mesmo número consertar em vez de quebrar.
+with ativos as (
+  select id,
+         row_number() over (
+           partition by datafy_phone_number_id
+           order by created_at desc nulls last, id desc
+         ) as posicao
+    from public.channel_sessions
+   where archived_at is null
+     and datafy_phone_number_id is not null
+)
+update public.channel_sessions s
+   set datafy_phone_number_id = s.datafy_phone_number_id || '-conflito-' || s.id::text
+  from ativos a
+ where a.id = s.id
+   and a.posicao > 1;
+
+create unique index if not exists channel_sessions_datafy_phone_number_id_ativo_unique
+  on public.channel_sessions (datafy_phone_number_id)
+  where archived_at is null and datafy_phone_number_id is not null;
+
+comment on column public.channel_sessions.datafy_phone_number_id is
+  'phone_number_id da WABA no canal Datafy (parceiro que espelha a Cloud API). É o sessionRef deste canal. Espelhado em lib/channels/session-ref.ts.';
+comment on column public.channel_sessions.datafy_token_encrypted is
+  'Token do Datafy (sk_live_…), cifrado por fn_encrypt_oauth. Nunca volta à tela depois de gravado.';
+
+-- ---- fim canal de WhatsApp Datafy (migration 0387) ----
+
+-- ---- anonimizar pela tela também redige conversas, mensagens e resumos (migration 0391) ----
+--
+-- Há dois caminhos que anonimizam um contato, e só um redigia a conversa:
+--
+--   fn_lgpd_cascade_redact_contact   o pedido formal (redact)    redigia mensagens e conversas
+--   fn_lgpd_anonymize_contact        o botão da ficha do contato  só o contato
+--                                    + lib/lgpd/cascata.ts        (leads, atividades, régua)
+--
+-- Pelo botão, o nome e o CPF que a pessoa escreveu continuavam no corpo das
+-- mensagens, no `last_message_preview` da conversa (o cabeçalho da ficha
+-- anonimizada) e no resumo que o agente guarda por contato (`lead_checkpoints`)
+-- — o "anonimizado" da tela era mentira sobre o que mais importa.
+--
+-- O conserto é no ESTADO, não num dos caminhos: um gatilho na virada de
+-- `is_anonymized`, o mesmo desenho de `trg_contacts_anonimizado_limpa_custom_fields`
+-- e dos outros seis gatilhos de redação deste schema. Assim os dois caminhos — e
+-- qualquer um que venha — passam pelo mesmo lugar, na mesma transação da virada.
+-- Os comandos de mensagens e conversas são os MESMOS da cascata formal; ela os
+-- repete depois, sem efeito novo.
+--
+-- `lead_checkpoints` não estava em NENHUM dos dois caminhos: o resumo corrido,
+-- os compromissos, as objeções, a próxima ação e a declaração do turno são texto
+-- escrito por modelo sobre a conversa, e nomeiam a pessoa.
+--
+-- A mídia das mensagens vai para `storage_redaction_queue` ANTES de a coluna
+-- ser zerada: zerar primeiro perderia o único ponteiro para o arquivo, que
+-- ficaria no bucket para sempre. `request_id` fica nulo — no caminho do botão não
+-- há pedido, e no formal a fila já é idempotente por (bucket, object_path).
+create or replace function public.fn_redigir_conversas_ao_anonimizar()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  insert into public.storage_redaction_queue (organization_id, bucket, object_path)
+  select distinct new.organization_id, 'whatsapp-media', m.media_storage_path
+    from public.messages m
+   where m.organization_id = new.organization_id
+     and m.conversation_id in (
+       select c.id from public.conversations c
+        where c.contact_id = new.id and c.organization_id = new.organization_id)
+     and m.media_storage_path is not null
+     and length(m.media_storage_path) > 0
+  on conflict (bucket, object_path) do nothing;
+
+  update public.messages set
+    body = '[mensagem anonimizada]',
+    media_url = null,
+    media_mime = null,
+    media_size_bytes = null,
+    media_storage_path = null,
+    metadata = '{}'::jsonb,
+    updated_at = now()
+  where organization_id = new.organization_id
+    and conversation_id in (
+      select c.id from public.conversations c
+       where c.contact_id = new.id and c.organization_id = new.organization_id);
+
+  update public.conversations set
+    metadata = '{}'::jsonb,
+    last_message_preview = null,
+    last_handoff_reason = null,
+    updated_at = now()
+  where contact_id = new.id and organization_id = new.organization_id;
+
+  update public.lead_checkpoints set
+    rolling_summary = '[resumo anonimizado]',
+    commitments = '[]'::jsonb,
+    objections = '[]'::jsonb,
+    next_action = null,
+    declaracao = null
+  where contact_id = new.id and organization_id = new.organization_id;
+
+  return new;
+end
+$$;
+
+-- As DUAS origens de EXECUTE (item 9 do CLAUDE.md): o grant a PUBLIC da criação
+-- e o grant nominal a anon do ALTER DEFAULT PRIVILEGES do baseline.
+revoke all on function public.fn_redigir_conversas_ao_anonimizar() from public;
+revoke execute on function public.fn_redigir_conversas_ao_anonimizar() from anon;
+revoke execute on function public.fn_redigir_conversas_ao_anonimizar() from authenticated;
+
+drop trigger if exists trg_redigir_conversas_ao_anonimizar on public.contacts;
+create trigger trg_redigir_conversas_ao_anonimizar
+  after update of is_anonymized on public.contacts
+  for each row
+  when (new.is_anonymized = true and coalesce(old.is_anonymized, false) = false)
+  execute function public.fn_redigir_conversas_ao_anonimizar();
+
+-- Cura: contatos que JÁ foram anonimizados pelo botão antes deste gatilho. O
+-- gatilho só dispara na virada, e para eles a virada já passou. Cada comando só
+-- alcança o que existia ATÉ `anonymized_at`: um contato anonimizado que volta a
+-- escrever (religado pelo LID) tem conversa NOVA, e reaplicar o baseline no
+-- update.sh não pode redigi-la nem mandar a mídia dela para o apagamento.
+insert into public.storage_redaction_queue (organization_id, bucket, object_path)
+select distinct m.organization_id, 'whatsapp-media', m.media_storage_path
+  from public.messages m
+  join public.conversations c on c.id = m.conversation_id and c.organization_id = m.organization_id
+  join public.contacts k on k.id = c.contact_id and k.organization_id = c.organization_id
+ where k.is_anonymized
+   and m.created_at <= k.anonymized_at
+   and m.media_storage_path is not null
+   and length(m.media_storage_path) > 0
+on conflict (bucket, object_path) do nothing;
+
+update public.messages m set
+  body = '[mensagem anonimizada]',
+  media_url = null,
+  media_mime = null,
+  media_size_bytes = null,
+  media_storage_path = null,
+  metadata = '{}'::jsonb,
+  updated_at = now()
+  from public.conversations c
+  join public.contacts k on k.id = c.contact_id and k.organization_id = c.organization_id
+ where c.id = m.conversation_id
+   and c.organization_id = m.organization_id
+   and k.is_anonymized
+   and m.created_at <= k.anonymized_at
+   and (m.body is distinct from '[mensagem anonimizada]'
+        or m.media_url is not null
+        or m.media_storage_path is not null
+        or m.metadata <> '{}'::jsonb);
+
+update public.conversations c set
+  metadata = '{}'::jsonb,
+  last_message_preview = null,
+  last_handoff_reason = null,
+  updated_at = now()
+  from public.contacts k
+ where k.id = c.contact_id
+   and k.organization_id = c.organization_id
+   and k.is_anonymized
+   and coalesce(c.last_message_at, c.created_at) <= k.anonymized_at
+   and (c.metadata <> '{}'::jsonb
+        or c.last_message_preview is not null
+        or c.last_handoff_reason is not null);
+
+update public.lead_checkpoints l set
+  rolling_summary = '[resumo anonimizado]',
+  commitments = '[]'::jsonb,
+  objections = '[]'::jsonb,
+  next_action = null,
+  declaracao = null
+  from public.contacts k
+ where k.id = l.contact_id
+   and k.organization_id = l.organization_id
+   and k.is_anonymized
+   and l.created_at <= k.anonymized_at
+   and (l.rolling_summary is distinct from '[resumo anonimizado]'
+        or l.commitments <> '[]'::jsonb
+        or l.objections <> '[]'::jsonb
+        or l.next_action is not null
+        or l.declaracao is not null);
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ DE PROPÓSITO, NENHUMA FUNÇÃO É CRIADA DEPOIS DESTE BLOCO. Apêndice que cria
@@ -36533,6 +36762,62 @@ comment on column public.platform_settings.divulgacao_de_pagamento is
 
 comment on column public.platform_settings.promessa_semantica is
   'true = cada envio passa por uma conferência de modelo antes de sair, para não prometer o que a empresa não cumpre (custa uma chamada de modelo por envio). null = a instalação não opinou; vale PROMISE_SEMANTIC_ENABLED do arquivo de ambiente (default do produto: true).';
+
+notify pgrst, 'reload schema';
+
+-- ---- cadastro com aprovação: pedidos de empresa nova (migration 0383) ----
+-- Recorte do PR #714, de @betoarts. Depois dos blocos 0253 e 0331 de propósito:
+-- a CHECK nova altera `platform_settings`, que precisa existir numa instalação
+-- NOVA. Em quem ATUALIZA, o `create table if not exists` da 0253 passa sem
+-- efeito e é o `drop constraint` + `add constraint` abaixo que leva o terceiro
+-- modo. Não cria função (o bloco da varredura anon fica acima sem prejuízo) e
+-- a tabela nova vem antes das travas do suporte, que são o último bloco.
+alter table public.platform_settings
+  drop constraint if exists platform_settings_signup_mode;
+alter table public.platform_settings
+  add constraint platform_settings_signup_mode
+  check (signup_mode in ('aberto', 'com_aprovacao', 'so_convite'));
+
+comment on column public.platform_settings.signup_mode is
+  'aberto = qualquer pessoa cria conta em /signup e abre a própria empresa (comportamento histórico). com_aprovacao = a conta é criada, mas a empresa só nasce quando o administrador da instalação aprova o pedido em /admin/cadastro (tabela registration_requests). so_convite = só quem chega com convite válido; sem convite, /signup recusa com tela e /auth/confirm NÃO provisiona organização.';
+
+create table if not exists public.registration_requests (
+  id                          uuid        primary key default gen_random_uuid(),
+  user_id                     uuid        not null references auth.users(id) on delete cascade,
+  requested_organization_name text        not null,
+  status                      text        not null default 'pending',
+  decided_by                  uuid        references auth.users(id) on delete set null,
+  decided_at                  timestamptz,
+  created_at                  timestamptz not null default now(),
+  updated_at                  timestamptz not null default now(),
+  constraint registration_requests_status check (status in ('pending', 'approved', 'rejected')),
+  constraint registration_requests_decision check (
+    (status = 'pending' and decided_at is null)
+    or (status in ('approved', 'rejected') and decided_at is not null)
+  )
+);
+
+comment on table public.registration_requests is
+  'Pedido de empresa nova numa instalação em signup_mode = com_aprovacao. Da INSTALAÇÃO, não do tenant (a organização ainda não existe): RLS ligada sem policy, lida e escrita só pelo servidor. Ver lib/auth/registration-requests.ts.';
+
+-- Um pedido pendente por conta: clique repetido no formulário não enfileira
+-- duplicata para o administrador.
+create unique index if not exists registration_requests_one_pending_per_user
+  on public.registration_requests (user_id)
+  where status = 'pending';
+
+create index if not exists registration_requests_pending_idx
+  on public.registration_requests (created_at)
+  where status = 'pending';
+
+alter table public.registration_requests enable row level security;
+revoke all on public.registration_requests from anon, authenticated;
+grant select, insert, update on public.registration_requests to service_role;
+
+drop trigger if exists trg_registration_requests_touch on public.registration_requests;
+create trigger trg_registration_requests_touch
+  before update on public.registration_requests
+  for each row execute function public.fn_touch_updated_at();
 
 notify pgrst, 'reload schema';
 
@@ -37043,6 +37328,37 @@ select 'MODULO_BANCO_EXTERNO',
             then 'ligado' else 'desligado' end,
        false, false
 on conflict (chave) do nothing;
+
+-- ---- a memória da organização aceita a origem 'agent' (migration 0385) ----
+-- `crm_save_org_memory` grava `source = 'agent'`, e o CHECK inline da 0067 (que o
+-- Postgres batiza `org_memory_entries_source_check`) só aceitava `manual` e
+-- `flywheel`: toda chamada da ferramenta falhava com 23514 (diagnóstico de
+-- @vgamkt, #1130). Bloco ÚNICO desta constraint, com o conjunto final; as linhas
+-- existentes cabem nele, então reaplicar no `update.sh` não viola nada.
+alter table public.org_memory_entries
+  drop constraint if exists org_memory_entries_source_check;
+alter table public.org_memory_entries
+  add constraint org_memory_entries_source_check
+  check (source in ('manual', 'flywheel', 'agent'));
+
+-- ---- o produto ganha foto (migration 0390, ideia de @vgamkt, #1130) ----
+-- Caminhos em storage/catalog-photos (<org>/<produto>/<uuid>.<jpg|png>); a ordem
+-- é a da tela e a primeira é a capa. Bucket privado, 5 MB, só JPEG/PNG (o que o
+-- WhatsApp oficial aceita como imagem). Racional inteiro na migration 0390.
+alter table public.catalog_products
+  add column if not exists fotos text[] not null default '{}';
+alter table public.catalog_products
+  drop constraint if exists catalog_products_fotos_no_maximo_5;
+alter table public.catalog_products
+  add constraint catalog_products_fotos_no_maximo_5 check (cardinality(fotos) <= 5);
+comment on column public.catalog_products.fotos is
+  'Caminhos em storage/catalog-photos, sempre <organization_id>/<id>/<uuid>.<jpg|png>. A ordem é a da tela e a primeira é a capa. Escrito só por app/api/v1/products/[id]/fotos.';
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('catalog-photos', 'catalog-photos', false, 5242880, array['image/jpeg', 'image/png'])
+on conflict (id) do update
+  set public             = excluded.public,
+      file_size_limit    = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
 
 -- ---- módulos instalados são reaplicados, depois de toda tabela do núcleo (migration 0340) ----
 --

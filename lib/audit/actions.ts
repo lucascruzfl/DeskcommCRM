@@ -294,6 +294,12 @@ export const AUDIT_ACTIONS = [
   "ai.skill_imported",
   "ai.skill_installed",
   "ai.skill_uninstalled",
+  // Edição pela tela (Fase 2 do PLANO-CONFIG-UI-AGENTE): nova versão + ponteiro
+  // movido. O corpo é texto que o agente lê — mudar isso muda o comportamento,
+  // então fica auditado.
+  "ai.skill_saved",
+  // Rollback para uma versão anterior (Fase 5): move o ponteiro sem criar versão.
+  "ai.skill_restored",
   "ai.router_created",
   "ai.router_updated",
   "ai.router_deleted",
@@ -303,6 +309,7 @@ export const AUDIT_ACTIONS = [
   "followup_flow.published",
   "followup_flow.disabled",
   "followup_flow.deleted",
+  "followup_flow.duplicated",
   "followup_flow.rolled_back",
   "followup.worker_run",
   "followup.silence_sweep_run",
@@ -637,6 +644,9 @@ export const AUDIT_ACTIONS = [
   "catalog_product.updated",
   "catalog_product.deleted",
   "catalog_product.imported",
+  // As fotos do produto (migration 0390): subir uma, e reordenar/remover.
+  "catalog_product.photo_added",
+  "catalog_product.photos_updated",
 
   // As tarefas do CRM (migration 0210). Tarefa é combinado de trabalho entre
   // pessoas do time — quem a criou, quem mudou o prazo e quem a apagou é
@@ -848,6 +858,14 @@ export const AUDIT_ACTIONS = [
   // fechou para esta pessoa?" —, e ela não precisa de quatro filtros no painel
   // para ser respondida; o que precisa estar separado é a causa, e ela está.
   "auth.google_signin_failed",
+
+  // ── Cadastro com aprovação (migration 0383, recorte do PR #714) ─────────
+  // O pedido de empresa nova numa instalação em `com_aprovacao`, e a decisão
+  // do administrador da instalação. `approved` leva o `organization_id` da
+  // empresa que nasceu da aprovação — é a única ligação entre o pedido e ela.
+  "registration.requested",
+  "registration.approved",
+  "registration.rejected",
 ] as const;
 
 /** Um código de auditoria. Derivado de `AUDIT_ACTIONS` — não redigite a lista. */

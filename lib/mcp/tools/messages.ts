@@ -10,6 +10,8 @@ import { z } from "zod";
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
 import { comIdempotencia } from "@/lib/api/idempotency";
 import { validateOutboundMedia } from "@/lib/messaging/media/upload-validation";
+import { depsDoRitmo, registrarEnvioPorToken, segurarEnvioPorToken } from "@/lib/messaging/ritmo-do-envio-por-token";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { sendMessageSchema } from "@/lib/schemas/messaging";
 import { McpToolError } from "../errors";
 import type { McpContext, McpToolDefinition } from "../types";
@@ -97,11 +99,18 @@ async function enviar(
     reply_to_message_id: parsed.reply_to_message_id,
   };
   const executar = async () => {
+    const ritmo = await depsDoRitmo(createAdminClient());
+    const segurado = await segurarEnvioPorToken(ritmo, {
+      organizationId: ctx.organizationId,
+      conversationId: parsed.conversation_id,
+      requestId: ctx.requestId,
+    });
     const message = await sendMessageHandler(
       ctx.supabase,
       { organization_id: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId },
       parsed,
     );
+    await registrarEnvioPorToken(ritmo, ctx.organizationId, segurado, message.status);
     return {
       resposta: {
         message_id: message.id,

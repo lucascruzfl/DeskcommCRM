@@ -18,8 +18,16 @@ vi.mock("@/app/api/v1/messages/_handler", () => ({
 vi.mock("@/lib/api/idempotency", () => ({
   comIdempotencia: vi.fn(),
 }));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn(() => ({})) }));
+vi.mock("@/lib/messaging/ritmo-do-envio-por-token", () => ({
+  depsDoRitmo: vi.fn(async () => ({})),
+  segurarEnvioPorToken: vi.fn(async () => null),
+  registrarEnvioPorToken: vi.fn(async () => {}),
+}));
 
 import { comIdempotencia } from "@/lib/api/idempotency";
+import { ApiError } from "@/lib/api/types";
+import { segurarEnvioPorToken, registrarEnvioPorToken } from "@/lib/messaging/ritmo-do-envio-por-token";
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
 import { openSharedContactConversation } from "@/lib/messaging/open-shared-contact-conversation";
 import type { McpContext } from "@/lib/mcp/types";
@@ -82,6 +90,9 @@ beforeEach(() => {
   mockedOpen.mockReset();
   mockedSend.mockReset();
   mockedIdempotency.mockReset();
+  vi.mocked(segurarEnvioPorToken).mockReset();
+  vi.mocked(segurarEnvioPorToken).mockResolvedValue(null);
+  vi.mocked(registrarEnvioPorToken).mockReset();
   mockedIdempotency.mockImplementation(async (entry) => {
     const effect = await entry.executar();
     return { tipo: "executou", resposta: effect.resposta, status: effect.status };
@@ -89,6 +100,33 @@ beforeEach(() => {
 });
 
 describe("crm_start_conversation_and_send", () => {
+  it("freia depois de abrir e antes de enviar", async () => {
+    const segurado = { channelSessionId: SESSION_ID };
+    vi.mocked(segurarEnvioPorToken).mockResolvedValue(segurado);
+    mockedOpen.mockResolvedValue({ conversation_id: CONVERSATION_ID, contact_id: CONTACT_ID });
+    mockedSend.mockResolvedValue({ id: MESSAGE_ID, status: "sent", external_id: null, sent_at: "agora" } as never);
+    await crmStartConversationAndSend.handler(
+      { channel_session_id: SESSION_ID, contact_id: CONTACT_ID, body: "Oi", type: "text", idempotency_key: "ritmo:1" },
+      makeCtx({ cached: null, inserts: [] }),
+    );
+    expect(segurarEnvioPorToken).toHaveBeenCalledWith(expect.anything(), {
+      organizationId: ORG_ID, conversationId: CONVERSATION_ID, requestId: "req-1",
+    });
+    expect(vi.mocked(segurarEnvioPorToken).mock.invocationCallOrder[0]).toBeLessThan(mockedSend.mock.invocationCallOrder[0]!);
+    expect(registrarEnvioPorToken).toHaveBeenCalledWith(expect.anything(), ORG_ID, segurado, "sent");
+  });
+
+  it("recusa de ritmo impede o envio", async () => {
+    vi.mocked(segurarEnvioPorToken).mockRejectedValue(new ApiError(429, "rate_limited", undefined, "req-1"));
+    mockedOpen.mockResolvedValue({ conversation_id: CONVERSATION_ID, contact_id: CONTACT_ID });
+    await expect(crmStartConversationAndSend.handler(
+      { channel_session_id: SESSION_ID, contact_id: CONTACT_ID, body: "Oi", type: "text", idempotency_key: "ritmo:2" },
+      makeCtx({ cached: null, inserts: [] }),
+    )).rejects.toBeInstanceOf(ApiError);
+    expect(mockedSend).not.toHaveBeenCalled();
+    expect(registrarEnvioPorToken).not.toHaveBeenCalled();
+  });
+
   it("recusa sem contact_id e sem phone_number, antes de tocar o banco", async () => {
     const state: IdemState = { cached: null, inserts: [] };
     const parsedInput = {

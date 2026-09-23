@@ -983,6 +983,7 @@ jobs:
         followup-modelos-de-clinica.spec.ts
         presenca-do-atendente.spec.ts
         trunk-sip-config.spec.ts
+        fotos-no-catalogo.spec.ts
 
       # ─── PARTE 4 — a spec de VPS fresca, e quem pode entrar ao lado dela ───
       #

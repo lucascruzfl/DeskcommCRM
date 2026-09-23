@@ -347,7 +347,13 @@ describe('resolveConversationTurn — contexto curto do classificador', () => {
     const db = fakeDb(null, []);
     const { classifyIntent, deps: d } = deps();
     await resolveConversationTurn(db as never, {} as never, { ...baseInput, inbound: false }, d);
-    expect(db.query).toHaveBeenCalledOnce();
+    // Afirma o que o título promete — nenhuma leitura de `messages`, nem a do
+    // signal nem a do contexto — em vez de CONTAR consultas. A contagem era um
+    // atalho que media o resto do turno junto: o degrau 0 de campanha (#1392)
+    // lê `campaign_recipients` em todo turno, por projeto, e derrubou este caso
+    // sem que nada do que ele guarda tivesse mudado. A forma abaixo é a mesma
+    // do caso de mídia, logo adiante.
+    expect(db.query.mock.calls.some(([q]) => q.includes('from messages'))).toBe(false);
     expect(classifyIntent).not.toHaveBeenCalled();
   });
 

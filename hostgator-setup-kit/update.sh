@@ -157,7 +157,7 @@ fi
 # ── 2. Backup de segurança ANTES de tocar no banco ───────────────────────────
 if [ -z "$SKIP_BACKUP" ]; then
   step "Backup de segurança (antes de mexer no banco)"
-  if bash "$(dirname "$0")/backup.sh"; then
+  if bash "$KIT_DIR/backup.sh"; then
     c_grn "✓ backup feito — se algo der errado, dá pra restaurar (restore.sh)."
   else
     if [ -n "${DESKCOMM_AGENT_REPORT:-}" ] || [ ! -t 0 ]; then
