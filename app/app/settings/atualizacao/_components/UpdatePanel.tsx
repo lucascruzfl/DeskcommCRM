@@ -327,10 +327,13 @@ export function UpdatePanel() {
 
   if (!data.update_available && !data.off_release) {
     if (data.update_channel === "custom-mcp") {
+      const instaladaValidada = Boolean(data.latest_version) && data.latest_version === data.current_version;
       return (
-        <Layout titulo={t("Canal MCP aguardando release validada")}>
+        <Layout titulo={instaladaValidada ? t("Versão MCP validada instalada") : t("Canal MCP aguardando release validada")}>
           <p className="text-sm text-muted-foreground">
-            {t("O painel só oferece uma atualização depois que o build MCP e suas imagens passam nos testes e são publicados.")}
+            {instaladaValidada
+              ? t("Esta instalação está na release MCP validada mais recente.")
+              : t("O painel só oferece uma atualização depois que o build MCP e suas imagens passam nos testes e são publicados.")}
           </p>
         </Layout>
       );

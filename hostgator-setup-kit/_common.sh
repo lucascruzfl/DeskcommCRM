@@ -745,6 +745,15 @@ is_already_in_head() {
   return 1
 }
 
+# Se uma instalação já veio de uma release MCP, apagar por engano a variável
+# do canal não pode devolver o atualizador à imagem oficial. O commit/tag do
+# próprio checkout é uma segunda prova, independente do .env.
+mcp_checkout_sem_canal() {
+  [ "${DESKCOMM_UPDATE_CHANNEL:-official}" != custom-mcp ] || return 1
+  case "${APP_VERSION:-}" in *-mcp*) return 0 ;; esac
+  git describe --tags --match 'v*-mcp' --abbrev=0 HEAD >/dev/null 2>&1
+}
+
 # Carrega o .env lendo cada linha como DADO, sem `source`.
 #
 # O `. ./.env` interpretava o arquivo como script, e aí qualquer valor de texto

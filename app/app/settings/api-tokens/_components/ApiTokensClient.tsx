@@ -26,6 +26,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogBody,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -57,7 +58,7 @@ const SCOPES: { id: string; label: string }[] = [
   { id: "messages:read", label: "Ler mensagens" },
   { id: "messages:write", label: "Enviar mensagens" },
   { id: "audit:read", label: "Ler o log de auditoria" },
-  ...MCP_DOMAINS.filter((domain) => !["contacts", "leads", "messages"].includes(domain)).flatMap((domain) => [
+  ...MCP_DOMAINS.filter((domain) => !["contacts", "leads", "messages", "audit"].includes(domain)).flatMap((domain) => [
     { id: `${domain}:read`, label: `Ler o domínio ${domain}` },
     { id: `${domain}:write`, label: `Alterar o domínio ${domain}` },
   ]),
@@ -122,7 +123,7 @@ export function ApiTokensClient() {
         <p className="text-sm text-muted-foreground">{t("Nenhum token criado ainda.")}</p>
       ) : (
         <div className="rounded-md border">
-          <Table>
+          <Table className="min-w-[40rem]">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("Nome")}</TableHead>
@@ -182,78 +183,81 @@ export function ApiTokensClient() {
       )}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
+        <DialogContent className="flex flex-col">
           <DialogHeader>
             <DialogTitle>{t("Criar novo token")}</DialogTitle>
             <DialogDescription>
               {t("O plaintext será mostrado apenas uma vez.")}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={onCreate} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="t-name">{t("Nome")}</Label>
-              <Input
-                id="t-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t("Worker de import")}
-                minLength={2}
-                maxLength={100}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>{t("Escopos")}</Label>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setScopes([...MCP_OPERATION_PRESET])}
-              >
-                {t("Selecionar preset: Operação completa via MCP")}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                {t("O preset só é aplicado quando você o escolhe e inclui allowlist explícita de cada ferramenta.")}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {SCOPES.map((s) => (
-                  <button
-                    type="button"
-                    key={s.id}
-                    onClick={() => toggleScope(s.id)}
-                    title={t(s.label)}
-                    aria-label={`${s.id} — ${t(s.label)}`}
-                    className={`rounded-md border px-2 py-1 text-xs ${
-                      scopes.includes(s.id) ? "border-primary bg-primary/10" : "border-border"
-                    }`}
-                  >
-                    {s.id}
-                    <span className="ml-1 text-muted-foreground">· {t(s.label)}</span>
-                  </button>
-                ))}
+          <DialogBody>
+            <form id="create-api-token" onSubmit={onCreate} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="t-name">{t("Nome")}</Label>
+                <Input
+                  id="t-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t("Worker de import")}
+                  minLength={2}
+                  maxLength={100}
+                  required
+                />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="t-exp">{t("Expira em (dias) — opcional")}</Label>
-              <Input
-                id="t-exp"
-                type="number"
-                min={1}
-                max={365}
-                value={expiresInDays}
-                onChange={(e) => setExpiresInDays(e.target.value)}
-                placeholder="365"
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setCreateOpen(false)}>
-                {t("Cancelar")}
-              </Button>
-              <Button type="submit" disabled={create.isPending}>
-                {t("Criar")}
-              </Button>
-            </DialogFooter>
-          </form>
+              <div className="space-y-2">
+                <Label>{t("Escopos")}</Label>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setScopes([...MCP_OPERATION_PRESET])}
+                >
+                  {t("Selecionar preset: Operação completa via MCP")}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  {t("O preset só é aplicado quando você o escolhe e inclui allowlist explícita de cada ferramenta.")}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {SCOPES.map((s) => (
+                    <button
+                      type="button"
+                      key={s.id}
+                      onClick={() => toggleScope(s.id)}
+                      title={t(s.label)}
+                      aria-label={`${s.id} — ${t(s.label)}`}
+                      aria-pressed={scopes.includes(s.id)}
+                      className={`min-h-11 max-w-full rounded-md border px-2 py-2 text-left text-xs ${
+                        scopes.includes(s.id) ? "border-primary bg-primary/10" : "border-border"
+                      }`}
+                    >
+                      {s.id}
+                      <span className="ml-1 text-muted-foreground">· {t(s.label)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="t-exp">{t("Expira em (dias) — opcional")}</Label>
+                <Input
+                  id="t-exp"
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={expiresInDays}
+                  onChange={(e) => setExpiresInDays(e.target.value)}
+                  placeholder="365"
+                />
+              </div>
+            </form>
+          </DialogBody>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setCreateOpen(false)}>
+              {t("Cancelar")}
+            </Button>
+            <Button type="submit" form="create-api-token" disabled={create.isPending}>
+              {t("Criar")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

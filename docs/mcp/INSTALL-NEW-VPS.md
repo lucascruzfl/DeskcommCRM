@@ -32,9 +32,13 @@ compila na VPS.
 Clone o fork que publicou uma release MCP validada. Não copie `.env` pelo Git:
 
 ```bash
-git clone https://github.com/lucascruzfl/DeskcommCRM.git deskcommcrm
+git clone --branch v1.42.0-mcp --depth 1 https://github.com/lucascruzfl/DeskcommCRM.git deskcommcrm
 cd deskcommcrm
 ```
+
+Use a tag MCP já publicada (troque `v1.42.0-mcp` pela atual). Assim o próprio
+instalador e seu validador de manifesto existem desde o primeiro comando,
+mesmo quando a branch padrão do fork ainda não recebeu essa release.
 
 ## 4. Selecione a versão MCP
 
@@ -80,9 +84,10 @@ grep -n '0382_replace_faq_atomico' supabase/migrations/MANIFEST.md
 ```
 
 O arquivo apenas prova que a migration está versionada; a validação do banco é o instalador terminar
-sem erro e o healthcheck responder. A 1.42.0 oficial criou outra migration de
-número 0382, com timestamp distinto. Ambas são históricas; não renomeie a que
-já foi aplicada. O baseline integrado contém as duas mudanças.
+sem erro e o healthcheck responder. A migration MCP `0382` já implantada não foi
+renomeada. A migration oficial de link salvo recebeu o identificador `0385` no
+fork para evitar colisão com a `0382` MCP e a `0383` posterior do upstream; seu
+SQL foi preservado. O baseline integrado contém as duas mudanças.
 
 ## 8. Valide os serviços e a rota pública
 

@@ -29,6 +29,8 @@ import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogBody,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogDescription,
@@ -253,7 +255,7 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
               ? t("Nenhum número conectado ainda.")
               : `${list.length} ${list.length === 1 ? t("número conectado") : t("números conectados")}.`}
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {list.length > 0 && (
             <Button
               variant="outline"
@@ -397,7 +399,7 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
                       )}
                     </div>
                     {c.phone_number && c.display_name && (
-                      <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+                      <p className="mt-0.5 break-all font-mono text-xs text-muted-foreground">
                         {c.phone_number}
                       </p>
                     )}
@@ -609,11 +611,13 @@ function ExcluirCanalDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && !excluindo && onCancel()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="flex flex-col sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
             {t("Excluir")} {channelLabel(canal, t)}?
           </DialogTitle>
+        </DialogHeader>
+        <DialogBody>
           <DialogDescription asChild>
             <div className="space-y-2">
               <p>{t("O número será desconectado do WhatsApp e sai desta lista.")}</p>
@@ -635,8 +639,8 @@ function ExcluirCanalDialog({
               <p>{t("Para usar este número de novo, será preciso conectá-lo outra vez.")}</p>
             </div>
           </DialogDescription>
-        </DialogHeader>
-        <div className="flex justify-end gap-2 pt-2">
+        </DialogBody>
+        <DialogFooter className="pt-2">
           <Button variant="outline" disabled={excluindo} onClick={onCancel}>
             {t("Cancelar")}
           </Button>
@@ -651,7 +655,7 @@ function ExcluirCanalDialog({
             )}
             {t("Excluir")}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -740,7 +744,7 @@ function QrDialog({
             <img
               src={`/api/v1/channel-sessions/${sessionId}/qr?t=${tick}`}
               alt={t("QR Code para conectar WhatsApp")}
-              className="h-64 w-64 rounded-md border bg-white p-2"
+              className="h-auto w-64 max-w-full rounded-md border bg-white p-2"
             />
             } />
           ) : status === "WORKING" ? (

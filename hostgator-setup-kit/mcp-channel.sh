@@ -16,7 +16,7 @@ mcp_channel_init() {
 }
 
 mcp_channel_tags() {
-  git ls-remote --tags --refs "$MCP_GIT_URL" 'v*-mcp' 2>/dev/null \
+  timeout 20s git ls-remote --tags --refs "$MCP_GIT_URL" 'v*-mcp' 2>/dev/null \
     | awk '{print $2}' | sed 's|refs/tags/||' \
     | awk '/^v[0-9]+\.[0-9]+\.[0-9]+-mcp$/' | sort -Vr
 }
@@ -56,7 +56,7 @@ mcp_channel_latest() {
   local tag sha
   while IFS= read -r tag; do
     [ -n "$tag" ] || continue
-    sha="$(git ls-remote "$MCP_GIT_URL" "refs/tags/$tag" 2>/dev/null | awk '{print $1}')"
+    sha="$(timeout 20s git ls-remote "$MCP_GIT_URL" "refs/tags/$tag" 2>/dev/null | awk '{print $1}')"
     [ -n "$sha" ] || continue
     if mcp_channel_ready "$tag" "$sha"; then printf '%s' "$tag"; return 0; fi
   done < <(mcp_channel_tags)
@@ -66,9 +66,9 @@ mcp_channel_latest() {
 mcp_channel_fetch() {
   local tag="$1" sha
   [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-mcp$ ]] || return 1
-  sha="$(git ls-remote "$MCP_GIT_URL" "refs/tags/$tag" 2>/dev/null | awk '{print $1}')"
+  sha="$(timeout 20s git ls-remote "$MCP_GIT_URL" "refs/tags/$tag" 2>/dev/null | awk '{print $1}')"
   [ -n "$sha" ] && mcp_channel_ready "$tag" "$sha" || return 1
-  git fetch --no-tags --quiet "$MCP_GIT_URL" "refs/tags/$tag:refs/tags/$tag" || return 1
+  timeout 45s git fetch --no-tags --quiet "$MCP_GIT_URL" "refs/tags/$tag:refs/tags/$tag" || return 1
   [ "$(git rev-parse "${tag}^{commit}")" = "$sha" ]
 }
 

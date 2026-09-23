@@ -91,7 +91,7 @@ export function TeamInvitesClient({ canManage }: Props) {
         <p className="text-sm text-muted-foreground">{t("Nenhum convite enviado.")}</p>
       ) : (
         <div className="overflow-x-auto rounded-md border">
-          <Table>
+          <Table className="min-w-[40rem]">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("E-mail")}</TableHead>

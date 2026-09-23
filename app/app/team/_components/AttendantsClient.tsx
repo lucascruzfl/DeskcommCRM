@@ -239,7 +239,7 @@ function ScheduleDialog({
               </p>
             ) : null}
             {windows.map((w, i) => (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2 sm:flex">
                 <Select
                   value={String(w.dow)}
                   onValueChange={(v) =>
@@ -248,7 +248,7 @@ function ScheduleDialog({
                     )
                   }
                 >
-                  <SelectTrigger className="w-[90px]" aria-label="Dia da semana">
+                  <SelectTrigger className="col-span-4 w-full sm:w-[90px] sm:shrink-0" aria-label="Dia da semana">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

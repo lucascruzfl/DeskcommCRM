@@ -62,10 +62,10 @@ export function MetricsClient({ canCompare, currentUserId }: Props) {
   return (
     <div className="flex flex-col gap-6">
       {canCompare ? (
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm text-muted-foreground">{t("Atendente")}</span>
           <Select value={owner} onValueChange={setOwner}>
-            <SelectTrigger className="w-64">
+            <SelectTrigger className="w-full sm:w-64">
               <SelectValue placeholder={t("Todos os atendentes")} />
             </SelectTrigger>
             <SelectContent>
@@ -102,7 +102,7 @@ export function MetricsClient({ canCompare, currentUserId }: Props) {
           ) : (
             metrics.funnel.map((s) => (
               <div key={s.stage_id} className="flex items-center gap-3">
-                <span className="w-40 shrink-0 truncate text-sm">{s.stage_name}</span>
+                <span className="w-24 sm:w-40 shrink-0 truncate text-sm">{s.stage_name}</span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary transition-[width]"
@@ -128,7 +128,7 @@ export function MetricsClient({ canCompare, currentUserId }: Props) {
               {t("Sem atividade no período (ganhos/perdidos, conversas ou respostas).")}
             </p>
           ) : (
-            <Table>
+            <Table className="min-w-[40rem]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("Atendente")}</TableHead>

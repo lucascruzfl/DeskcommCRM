@@ -234,7 +234,7 @@ export function CapturasTab() {
           {/* A tabela rola dentro do próprio container: o corpo da página nunca
               rola na horizontal (regra de responsividade do design system). */}
           <Card className="overflow-x-auto">
-            <Table>
+            <Table className="min-w-[40rem]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("Quem")}</TableHead>

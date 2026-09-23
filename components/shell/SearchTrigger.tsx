@@ -20,6 +20,7 @@ export function SearchTrigger() {
         variant="outline"
         size="sm"
         className="gap-2 text-muted-foreground"
+        aria-label={t("Buscar telas")}
         onClick={() => setOpen(true)}
       >
         <MagnifyingGlass size={14} aria-hidden />

@@ -59,7 +59,7 @@ export function TrechosDoMaterialDialog({ sourceId, nome, aberto, onFechar }: Pr
 
   return (
     <Dialog open={aberto} onOpenChange={(v) => !v && onFechar()}>
-      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-3xl">
+      <DialogContent className="flex max-h-[85dvh] flex-col sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>
             {t("O que o agente aprendeu de")} “{nome}”

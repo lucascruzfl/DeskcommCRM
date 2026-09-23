@@ -169,7 +169,8 @@ export async function GET(_req: NextRequest): Promise<Response> {
   }
 
   const latest = version?.latest_version ?? "";
-  const mcpChannel = process.env.DESKCOMM_UPDATE_CHANNEL === "custom-mcp";
+  const mcpChannel = process.env.DESKCOMM_UPDATE_CHANNEL === "custom-mcp" ||
+    process.env.APP_VERSION?.endsWith("-mcp") === true;
   const readyVersion = mcpChannel && !/^v\d+\.\d+\.\d+-mcp$/.test(latest) ? "" : latest;
   // A faixa INTEIRA entre o que está no ar e o que vai entrar, não só a seção
   // da versão-alvo. Mostrar só a alvo perdia aviso: quem pulava da 1.4.0 para a

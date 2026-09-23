@@ -217,7 +217,7 @@ export function MergeDialog({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+      <DialogContent className="max-h-[85dvh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("Contatos duplicados")}</DialogTitle>
           <DialogDescription>

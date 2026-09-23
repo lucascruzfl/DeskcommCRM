@@ -20,6 +20,7 @@ source "$KIT_DIR/_common.sh"
 # shellcheck source=manutencao.sh
 source "$KIT_DIR/manutencao.sh"
 enter_project
+mcp_checkout_sem_canal && die "Este checkout contém MCP, mas DESKCOMM_UPDATE_CHANNEL=custom-mcp não está configurado. Atualização oficial bloqueada."
 if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
   source "$KIT_DIR/mcp-channel.sh"
 fi

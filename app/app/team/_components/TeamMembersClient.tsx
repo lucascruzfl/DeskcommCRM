@@ -74,7 +74,7 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
   return (
     <>
       <div className="rounded-md border">
-        <Table>
+        <Table className="min-w-[40rem]">
           <TableHeader>
             <TableRow>
               <TableHead>{t("Membro")}</TableHead>

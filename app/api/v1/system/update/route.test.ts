@@ -68,3 +68,17 @@ it("não disfarça falha de infraestrutura como conflito de extensão", async ()
   expect(response.status).toBe(500);
   expect((await response.json()).error.message).not.toContain("Abra Extensões");
 });
+
+it("recusa tag oficial quando a imagem MCP perdeu a configuração do canal", async () => {
+  const previous = process.env.APP_VERSION;
+  process.env.APP_VERSION = "1.42.0-mcp";
+  try {
+    const response = await POST(new NextRequest("http://localhost/api/v1/system/update", { method: "POST" }));
+    expect(response.status).toBe(409);
+    expect((await response.json()).error.message).toContain("MCP");
+    expect(mocks.audit).not.toHaveBeenCalled();
+  } finally {
+    if (previous === undefined) delete process.env.APP_VERSION;
+    else process.env.APP_VERSION = previous;
+  }
+});

@@ -23,6 +23,8 @@ O manifesto tem `schema_version`, `deskcomm_version`, `tag`, `mcp_commit`,
 igualdade do SHA da tag e dos nomes esperados e verifica o formato dos digests.
 O agente confirma que os quatro digests existem no registry. O número de tools
 é um snapshot informativo; `tools/list` é a fonte de verdade.
+O workflow também testa a leitura dos quatro digests sem credenciais antes de
+publicar o asset; pacote privado não vira release pronta.
 
 Tags MCP são versões fixas (`1.42.0-mcp`, `1.43.0-mcp`). O pipeline não move
 `latest-mcp`, evitando mistura de app e worker enquanto as imagens publicam.
@@ -34,3 +36,6 @@ O código antigo em uma VPS que ainda executa o atualizador oficial não recebe
 essa proteção retroativamente. A transição inicial da instalação exige deploy
 autorizado do fork e persistência das três chaves no `.env`. Depois disso, o
 botão passa a usar o canal MCP e não escolhe a imagem upstream.
+Se a chave do canal for removida por engano, o checkout/tag e o `APP_VERSION`
+da imagem MCP ainda bloqueiam o caminho oficial até a configuração ser
+restaurada.

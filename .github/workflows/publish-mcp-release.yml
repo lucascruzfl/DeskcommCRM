@@ -52,6 +52,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm lint:channels
       - run: pnpm lint:role-rank
+      - run: pnpm release:conferir
       - name: MCP, política, fluxos e atualizador
         run: pnpm exec vitest run tests/unit/mcp-compatibility-sentinels.test.ts tests/unit/mcp-final-flows.test.ts tests/unit/mcp-rate-limit.test.ts app/api/v1/system/version/route.test.ts app/api/v1/system/update/route.test.ts
       - name: Isolamento e baseline em banco descartável
@@ -124,6 +125,23 @@ jobs:
           PY
           python3 hostgator-setup-kit/mcp-release-validate.py mcp-release.json \
             "v${RELEASE_VERSION}-mcp" "$GITHUB_SHA" "ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/deskcommcrm"
+      - name: Conferir acesso anônimo aos quatro digests
+        run: |
+          set -euo pipefail
+          anonymous_config="$(mktemp -d)"
+          trap 'rm -rf "$anonymous_config"' EXIT
+          export DOCKER_CONFIG="$anonymous_config"
+          python3 - <<'PY' > mcp-image-refs.txt
+          import json
+          with open("mcp-release.json", encoding="utf-8") as stream:
+              images = json.load(stream)["images"]
+          for role in ("app", "worker", "scheduler", "voice_agent"):
+              image = images[role]
+              print(image["repository"] + "@" + image["digest"])
+          PY
+          while IFS= read -r ref; do
+            timeout 30s docker buildx imagetools inspect "$ref" >/dev/null
+          done < mcp-image-refs.txt
       - name: Publicar o manifesto como última etapa
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

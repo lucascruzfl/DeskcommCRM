@@ -20,6 +20,9 @@ as três; configuração incompleta recusa a atualização. O checkout da instal
 precisa ser o fork que contém `mcp-channel.sh`; o atualizador antigo em produção
 não conhece o canal. A ativação inicial é uma etapa de deploy separada, após
 revisão, backup e publicação de `v1.42.0-mcp`.
+Se a chave do canal sumir de um checkout MCP, o agente e o `update.sh` reconhecem
+a tag MCP no histórico e recusam o caminho oficial. A API também reconhece o
+`APP_VERSION` da imagem MCP e esconde uma tag oficial antiga no banco.
 
 O agente do painel consulta somente tags `vX.Y.Z-mcp` do repositório configurado.
 Uma tag só é anunciada depois de encontrar o asset `mcp-release.json`, validar

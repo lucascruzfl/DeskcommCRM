@@ -82,7 +82,7 @@ export function MfaEnrollModal({ motivo = "obrigatorio" }: { motivo?: "obrigator
       aria-labelledby="mfa-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
     >
-      <div className="w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-xl">
+      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain [overflow-wrap:anywhere] rounded-lg border border-border bg-background p-6 shadow-xl">
         {step === "intro" && (
           <div className="space-y-4">
             <div>

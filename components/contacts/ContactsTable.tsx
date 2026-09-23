@@ -155,7 +155,7 @@ export function ContactsTable({ contacts, orderBy, orderDir, onSort }: Props) {
 
   return (
     <>
-    <Table>
+    <Table className="min-w-[40rem]">
       <TableHeader>
         <TableRow>
           <SortableHead

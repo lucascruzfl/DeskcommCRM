@@ -4,7 +4,9 @@ Base MCP completa: `feat/mcp-full-control` em `c16eb8601` (o commit
 `b69af8872` foi a implantação histórica, seguida por documentação). Upstream:
 `v1.42.0` em `e47387a09`; merge-base `3538380b`. Integração na branch
 `feat/mcp-update-channel-1.42`. O merge foi feito em worktree separado; a
-branch de responsividade e seu patch foram preservados fora dele.
+branch de responsividade e seu patch foram preservados fora dele. Depois da
+validação MCP, os 60 arquivos do patch foram integrados; o único conflito de
+conteúdo, no formulário de tokens, preservou o preset MCP e a rolagem do modal.
 
 ## Deltas que tocam o contrato
 

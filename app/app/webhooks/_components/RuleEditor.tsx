@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetContent,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetDescription,
@@ -599,14 +600,14 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
             </p>
           ) : null}
 
-          <div className="flex justify-end gap-2">
+          <SheetFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {t("Cancelar")}
             </Button>
             <Button type="button" onClick={onSubmit} disabled={saving}>
               {saving ? t("Salvando…") : isEdit ? t("Salvar alterações") : t("Criar automação")}
             </Button>
-          </div>
+          </SheetFooter>
         </div>
       </SheetContent>
     </Sheet>

@@ -36,7 +36,7 @@ export function CommandPalette({
   const t = useT();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="top-[15%] max-w-xl translate-y-0 gap-0 p-0">
+      <DialogContent className="top-[15%] max-h-[calc(85dvh-1rem)] max-w-xl translate-y-0 gap-0 p-0">
         <DialogTitle className="sr-only">{t("Buscar telas")}</DialogTitle>
         {/* O miolo é um componente à parte porque o Radix o DESMONTA ao fechar:
             busca e destaque nascem zerados na próxima abertura por construção,

@@ -918,6 +918,7 @@ if [ -f "$PARTIAL_FILE" ]; then
   # dizendo que N respostas foram guardadas — lê como defeito do instalador.
   c_dim "  (o token do Supabase é de conta e nunca entra no rascunho: ele é perguntado de novo. Enter pula)"
 fi
+mcp_checkout_sem_canal && die "Este checkout contém MCP, mas o canal custom-mcp não está configurado. Instalação oficial bloqueada."
 if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
   source "$KIT_DIR/mcp-channel.sh"
   mcp_channel_init || die "Canal MCP sem configuração válida."

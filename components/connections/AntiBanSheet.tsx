@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetContent,
+  SheetFooter,
   SheetDescription,
   SheetHeader,
   SheetTitle,
@@ -112,7 +113,7 @@ export function AntiBanSheet({ item, canWrite, onClose }: Props) {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="mt-auto flex justify-end gap-2 border-t border-border px-4 py-3">
+          <SheetFooter className="mt-auto border-t border-border px-4 py-3">
             <Button variant="ghost" onClick={onClose}>
               {t("Fechar")}
             </Button>
@@ -122,7 +123,7 @@ export function AntiBanSheet({ item, canWrite, onClose }: Props) {
             >
               {t("Tentar de novo")}
             </Button>
-          </div>
+          </SheetFooter>
         </SheetContent>
       </Sheet>
     );
@@ -379,7 +380,7 @@ export function AntiBanSheet({ item, canWrite, onClose }: Props) {
           </div>
         </div>
 
-        <div className="mt-auto flex justify-end gap-2 border-t border-border px-4 py-3">
+        <SheetFooter className="mt-auto border-t border-border px-4 py-3">
           <Button variant="ghost" onClick={onClose}>
             {canWrite ? t("Cancelar") : t("Fechar")}
           </Button>
@@ -388,7 +389,7 @@ export function AntiBanSheet({ item, canWrite, onClose }: Props) {
               {update.isPending ? t("Salvando…") : t("Salvar proteção")}
             </Button>
           ) : null}
-        </div>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

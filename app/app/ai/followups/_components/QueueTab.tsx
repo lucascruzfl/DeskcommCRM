@@ -195,7 +195,7 @@ export function QueueTab({ canWrite }: Props) {
         </div>
       ) : (
         <div className="rounded-md border border-border">
-          <Table>
+          <Table className="min-w-[40rem]">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("Contato")}</TableHead>

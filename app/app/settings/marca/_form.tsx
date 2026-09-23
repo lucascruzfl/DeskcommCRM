@@ -465,9 +465,9 @@ export function FormularioDaMarcaDaOrganizacao({ gravada, instalacao, ambiente }
         </ul>
       </Card>
 
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3">
         {erroTecnico ? (
-          <span className="font-mono text-xs text-text-muted">{erroTecnico}</span>
+          <span className="min-w-0 break-all font-mono text-xs text-text-muted">{erroTecnico}</span>
         ) : null}
         <Button type="submit" disabled={isPending || !hexValido}>
           {isPending ? t("Salvando…") : t("Salvar")}

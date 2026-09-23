@@ -250,7 +250,7 @@ export function OrgMemoryClient({ initialState }: Props) {
                   required
                 />
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Button type="button" variant="ghost" size="sm" onClick={() => setFormOpen(false)}>
                   {t("Cancelar")}
                 </Button>

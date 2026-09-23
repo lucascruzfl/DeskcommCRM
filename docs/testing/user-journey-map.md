@@ -2853,3 +2853,13 @@ que dirige o browser resolviam `E2E_PORT` para valores **diferentes** — servid
 `page.goto` em outra, e `ERR_CONNECTION_REFUSED` com um servidor saudável no ar. O CI nunca
 pisou nisso porque o gerador não escreve `E2E_PORT`; quem monta bancada em porta própria,
 sim. Consertado pela ordem: publicar primeiro, decidir a porta depois.
+
+### Auditoria responsiva de 22/09/2026
+
+Bancada `pnpm test:responsive`: componentes reais e CSS do produto com APIs de
+fixture, sem Supabase ou acesso a produção. Mede viewport/documento, dialogs,
+ações, campos e navegação em mobile/tablet/desktop. Exercita criação de token,
+confirmação de exclusão de conexão, formulários de contato/lead/tarefa/webhook/
+follow-up, menu mobile e primitives. Escopo e limitações na
+[matriz da auditoria](../audits/responsividade-desktop-mobile.md). Esta cobertura
+não substitui a jornada autenticada de instalação fresca.

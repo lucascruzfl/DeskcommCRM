@@ -147,7 +147,7 @@ export function NovoMaterialDialog({ aberto, onFechar, onCriado, podeIndexar }: 
           inalcançável — medido pelo e2e, que não conseguiu clicar nele. Um
           formulário cujo botão de enviar não cabe na tela é um formulário que
           não se envia. */}
-      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-2xl">
+      <DialogContent className="flex max-h-[85dvh] flex-col sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t("Ensinar algo novo ao agente")}</DialogTitle>
           <DialogDescription>

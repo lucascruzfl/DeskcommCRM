@@ -7,6 +7,10 @@
 # nenhum acesso ao Docker do host.
 source "$(dirname "$0")/_common.sh"
 enter_project
+if mcp_checkout_sem_canal; then
+  echo 'Canal MCP ausente em checkout MCP; não vou consultar ou instalar imagem oficial.' >&2
+  exit 0
+fi
 if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
   source "$(dirname "$0")/mcp-channel.sh"
 fi

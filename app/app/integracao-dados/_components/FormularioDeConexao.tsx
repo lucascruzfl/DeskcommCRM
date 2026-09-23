@@ -189,7 +189,7 @@ export function FormularioDeConexao({ open, onOpenChange, conexao }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{editando ? t("Editar conexão") : t("Conectar banco de dados")}</DialogTitle>
           <DialogDescription>

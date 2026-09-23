@@ -124,6 +124,24 @@ function post() {
 }
 
 describe("GET /api/v1/system/version", () => {
+  it("mantém canal MCP quando o .env perde a chave mas a imagem ainda é MCP", async () => {
+    const previous = process.env.APP_VERSION;
+    process.env.APP_VERSION = "1.42.0-mcp";
+    versionRow.latest_version = "v1.43.0";
+    vi.mocked(loadAuthUser).mockResolvedValue(OWNER as never);
+    try {
+      const { GET } = await import("../version/route");
+      const response = await GET(get());
+      const body = await response.json();
+      expect(body.data.update_channel).toBe("custom-mcp");
+      expect(body.data.latest_version).toBe("");
+      expect(body.data.update_available).toBe(false);
+    } finally {
+      if (previous === undefined) delete process.env.APP_VERSION;
+      else process.env.APP_VERSION = previous;
+    }
+  });
+
   it("exige sessão", async () => {
     vi.mocked(loadAuthUser).mockResolvedValue(null as never);
     const { GET } = await import("../version/route");

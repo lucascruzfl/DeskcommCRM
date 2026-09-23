@@ -64,4 +64,10 @@ test "$(mcp_channel_latest)" = v1.43.0-mcp
 mcp_channel_fetch v1.43.0-mcp
 mcp_channel_load_images v1.43.0-mcp "$(git rev-parse v1.43.0-mcp)"
 test "$MCP_APP_PIN" = "ghcr.io/lucascruzfl/deskcommcrm@sha256:$(printf 'a%.0s' {1..64})"
+source "$ROOT/hostgator-setup-kit/_common.sh"
+git checkout -q v1.43.0-mcp
+DESKCOMM_UPDATE_CHANNEL=official
+mcp_checkout_sem_canal
+DESKCOMM_UPDATE_CHANNEL=custom-mcp
+if mcp_checkout_sem_canal; then exit 1; fi
 echo '✓ 1.43 bloqueada sem manifesto, liberada somente após testes e digests'
