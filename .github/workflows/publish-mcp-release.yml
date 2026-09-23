@@ -78,7 +78,6 @@ jobs:
       - run: pnpm lint
       - run: pnpm lint:channels
       - run: pnpm lint:role-rank
-      - run: pnpm release:conferir
       - run: pnpm test:unit
       - run: pnpm test:db:update
       - run: pnpm build
