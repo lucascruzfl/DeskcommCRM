@@ -9,7 +9,7 @@ import { checkRateLimit } from "@/lib/ai/dispatcher/rate-limit";
 import { resolveAuthDual } from "@/lib/api/auth-dual";
 import { ApiError } from "@/lib/api/types";
 import { fail, ok } from "@/lib/api/wrappers";
-import { JANELA_SEGUNDOS, TETO_DE_ESCRITA } from "@/lib/mcp/rate-limit";
+import { MCP_RATE_LIMITS } from "@/lib/mcp/rate-limit";
 import {
   depsDoRitmo,
   registrarEnvioPorToken,
@@ -49,11 +49,11 @@ export async function POST(req: NextRequest): Promise<Response> {
   // teto: quem digita é uma pessoa.
   if (authz.via === "token") {
     const tokenId = actor.type === "ai_agent" ? (actor.api_token_id ?? actor.id) : actor.id;
-    const teto = await checkRateLimit(`messages:tok:${tokenId}`, TETO_DE_ESCRITA, JANELA_SEGUNDOS);
+    const teto = await checkRateLimit(`messages:tok:${tokenId}`, MCP_RATE_LIMITS.writesPerTokenPerMinute, MCP_RATE_LIMITS.windowSeconds);
     if (!teto.allowed) {
       return fail("rate_limited", "Too many requests.", 429, {
         requestId,
-        headers: { "Retry-After": String(JANELA_SEGUNDOS) },
+        headers: { "Retry-After": String(MCP_RATE_LIMITS.windowSeconds) },
       });
     }
   }
