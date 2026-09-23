@@ -34,8 +34,9 @@ jobs:
           git fetch --no-tags https://github.com/melgarafael/DeskcommCRM.git \
             "refs/tags/v${version}:refs/tags/upstream-${version}"
           git merge-base --is-ancestor "upstream-${version}" HEAD
-          jq -e --arg v "$version" \
-            '.deskcomm_version == $v and .gaps_a == 0 and .mcp_compatible == true' \
+          upstream_sha="$(git rev-parse "upstream-${version}^{commit}")"
+          jq -e --arg v "$version" --arg sha "$upstream_sha" \
+            '.deskcomm_version == $v and .upstream_tag == ("v" + $v) and .upstream_commit == $sha and .gaps_a == 0 and .mcp_compatible == true' \
             docs/mcp/RELEASE-AUDIT.json
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - uses: pnpm/action-setup@v4
@@ -53,11 +54,17 @@ jobs:
       - run: pnpm lint:channels
       - run: pnpm lint:role-rank
       - run: pnpm release:conferir
+      - run: pnpm test:unit
+      - run: pnpm test:db:update
+      - run: pnpm build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
       - name: MCP, política, fluxos e atualizador
         run: pnpm exec vitest run tests/unit/manifest-x-migrations.test.ts tests/unit/mcp-compatibility-sentinels.test.ts tests/unit/mcp-final-flows.test.ts tests/unit/mcp-campaign-isolation.test.ts tests/unit/mcp-rate-limit.test.ts app/api/v1/system/version/route.test.ts app/api/v1/system/update/route.test.ts
       - name: Isolamento e baseline em banco descartável
         run: pnpm test:db tests/invariants/mcp-nao-alcanca-outro-tenant.test.ts tests/invariants/agenda-mcp-nao-alcanca-contato-alheio.test.ts tests/invariants/mcp-faq-atomica.test.ts
       - run: pnpm test:shell
+      - run: python3 -m unittest tests/unit/mcp_upstream_test.py
       - name: Snapshot do catálogo, sem número fixo
         id: tools
         env:
