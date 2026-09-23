@@ -64,6 +64,11 @@ const DIR = join(process.cwd(), ".github/workflows");
  * que desliga um job de entrega fica visível em code review.
  */
 const GATILHO_ESPERADO: Record<string, { condicao: string | null; efeito: string }> = {
+  "mcp-upstream-sync.yml::detect-and-integrate": {
+    condicao: "github.repository == 'lucascruzfl/DeskcommCRM'",
+    efeito:
+      "Detecta a tag oficial no fork; sem este job, novas versões deixam de abrir integração e relatório MCP.",
+  },
   // --- a cadeia que leva o conserto até a VPS ---------------------------------
   "release.yml::abrir-pr-de-release": {
     condicao: "github.event_name == 'workflow_dispatch'",
