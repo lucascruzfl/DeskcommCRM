@@ -22,8 +22,9 @@ Não reative sem revisar a identidade do repositório e as credenciais.
 
 O detector gera `mcp-delta-report.md` como artefato. Um merge limpo abre PR para
 `mcp/stable`; conflito abre issue com arquivos e interrompe a tentativa. A
-classificação A/B/C exige revisão humana quando a semântica mudou. A release
-MCP continua fechada enquanto `RELEASE-AUDIT.json` não identificar a versão e
+classificação A/B/C exige revisão humana quando a semântica mudou. Ao integrar o PR revisado em `mcp/stable`, o workflow dessa branch confere
+a versão/a SHA oficiais, executa os gates, cria a tag, publica as quatro imagens
+e só então o manifesto. A release MCP continua fechada enquanto `RELEASE-AUDIT.json` não identificar a versão e
 `gaps_a=0` com compatibilidade confirmada. O workflow de publicação repete os
 gates e só publica `mcp-release.json` depois das quatro imagens e digests.
 

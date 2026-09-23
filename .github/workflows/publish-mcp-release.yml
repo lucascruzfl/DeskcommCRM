@@ -2,17 +2,46 @@ name: Publicar release MCP validada
 
 on:
   push:
-    tags: ["v*-mcp"]
+    branches: [mcp/stable]
+  workflow_dispatch: {}
 
 permissions:
   contents: read
 
 concurrency:
-  group: mcp-release-${{ github.ref }}
+  group: mcp-release-stable
   cancel-in-progress: false
 
 jobs:
+  check:
+    if: github.repository == 'lucascruzfl/DeskcommCRM'
+    runs-on: ubuntu-latest
+    outputs:
+      needed: ${{ steps.release.outputs.needed }}
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Verificar auditoria e release pronta
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="$(jq -r .deskcomm_version docs/mcp/RELEASE-AUDIT.json)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          tag="v${version}-mcp"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if gh release view "$tag" --json assets --jq '.assets[].name' 2>/dev/null | grep -qx mcp-release.json; then
+            echo 'needed=no' >> "$GITHUB_OUTPUT"
+            echo "MCP release $tag já pronta; nada a publicar." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'needed=yes' >> "$GITHUB_OUTPUT"
+          fi
   validate:
+    needs: check
+    if: needs.check.outputs.needed == 'yes'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -24,11 +53,13 @@ jobs:
       - name: Conferir tag, base oficial e auditoria
         id: version
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ needs.check.outputs.tag }}
         run: |
           set -euo pipefail
           [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-mcp$ ]]
-          test "$(git cat-file -t "refs/tags/$RELEASE_TAG")" = commit
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$GITHUB_SHA"
+          fi
           version="${RELEASE_TAG#v}"
           version="${version%-mcp}"
           git fetch --no-tags https://github.com/melgarafael/DeskcommCRM.git \
@@ -77,13 +108,27 @@ jobs:
           echo "count=$count" >> "$GITHUB_OUTPUT"
 
   publish:
-    needs: validate
+    needs: [check, validate]
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Criar tag MCP depois dos gates
+        env:
+          RELEASE_TAG: ${{ needs.check.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git fetch --tags origin
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$GITHUB_SHA"
+          else
+            git tag "$RELEASE_TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/$RELEASE_TAG"
+          fi
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -134,8 +179,9 @@ jobs:
           done < mcp-image-refs.txt
       - name: Publicar o manifesto como última etapa
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.check.outputs.tag }}
         run: |
-          gh release create "$GITHUB_REF_NAME" mcp-release.json \
-            --verify-tag --title "$GITHUB_REF_NAME" \
+          gh release create "$RELEASE_TAG" mcp-release.json \
+            --verify-tag --title "$RELEASE_TAG" \
             --notes "DeskcommCRM + MCP Full Control; testes e digests no manifesto."

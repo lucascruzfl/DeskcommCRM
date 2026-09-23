@@ -47,11 +47,10 @@ antes de `v1.43.0-mcp` passar pelos gates, a maior release pronta continua
    registrada em [AUDIT-1.42.0.md](AUDIT-1.42.0.md).
 3. Rode sentinelas MCP, banco focado, typecheck, lint, `test:shell` e build.
    Atualize `docs/mcp/RELEASE-AUDIT.json` somente quando gaps A forem zero.
-4. Depois de revisar o PR de integração, confirmar `gaps_a=0` e passar os
-   gates, crie uma tag leve `vX.Y.Z-mcp` no commit integrado e envie-a ao fork
-   após autorização de publicação. O workflow do fork valida ancestralidade da
-   tag oficial, auditoria e testes, constrói quatro imagens, publica cada uma
-   com tag `X.Y.Z-mcp` e só depois publica o asset de manifesto.
+4. Depois de revisar o PR de integração e confirmar `gaps_a=0` em
+   `RELEASE-AUDIT.json` para a versão e SHA oficiais, faça merge em
+   `mcp/stable`. O workflow dessa branch repete todos os gates, cria a tag
+   `vX.Y.Z-mcp`, constrói as quatro imagens e publica o manifesto por último.
 5. O agente da VPS passa a oferecer a nova versão no próximo ciclo. Revise a
    tela e use **Atualizar agora**. Não há etapa de reaplicação manual do MCP.
 
