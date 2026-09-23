@@ -41,7 +41,7 @@ export const crmUpdateTag: McpToolDefinition<typeof updateShape> = {
     if (error) throw new ApiError(error.code === "22023" ? 422 : 500, error.code === "22023" ? "validation_failed" : "internal_error", undefined, ctx.requestId, error.message);
     const a = ator(ctx);
     await audit({ action: "tag_vocabulary.changed", organizationId: ctx.organizationId, actorUserId: a.actorUserId, actorApiTokenId: a.actorApiTokenId,
-      resourceType: "tag", resourceId: input.tag, requestId: ctx.requestId, metadata: { ...a.metadata, action, destination: input.new_name ?? null, color: input.color ?? null } });
+      resourceType: "tag", resourceId: null, requestId: ctx.requestId, metadata: { ...a.metadata, tag: input.tag, action, destination: input.new_name ?? null, color: input.color ?? null } });
     return data;
   },
 };
@@ -61,7 +61,7 @@ export const crmMergeOrDeleteTag: McpToolDefinition<typeof destructiveShape> = {
     if (error) throw new ApiError(error.code === "22023" ? 422 : 500, error.code === "22023" ? "validation_failed" : "internal_error", undefined, ctx.requestId, error.message);
     const a = ator(ctx);
     await audit({ action: "tag_vocabulary.changed", organizationId: ctx.organizationId, actorUserId: a.actorUserId, actorApiTokenId: a.actorApiTokenId,
-      resourceType: "tag", resourceId: input.tag, requestId: ctx.requestId, metadata: { ...a.metadata, action, destination: input.destination ?? null } });
+      resourceType: "tag", resourceId: null, requestId: ctx.requestId, metadata: { ...a.metadata, tag: input.tag, action, destination: input.destination ?? null } });
     return data;
   },
 };

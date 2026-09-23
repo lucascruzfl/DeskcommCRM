@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Prova o intervalo perigoso: upstream 1.43 saiu, mas o release MCP ainda não.
 set -euo pipefail
+unset $(git rev-parse --local-env-vars)
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT

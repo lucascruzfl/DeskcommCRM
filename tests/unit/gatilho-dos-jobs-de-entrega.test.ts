@@ -64,6 +64,18 @@ const DIR = join(process.cwd(), ".github/workflows");
  * que desliga um job de entrega fica visível em code review.
  */
 const GATILHO_ESPERADO: Record<string, { condicao: string | null; efeito: string }> = {
+  "publish-mcp-release.yml::check": {
+    condicao: "github.repository == 'lucascruzfl/DeskcommCRM'",
+    efeito: "Verifica se a versão MCP já está pronta; sem este job o fluxo pode republicar.",
+  },
+  "publish-mcp-release.yml::validate": {
+    condicao: "needs.check.outputs.needed == 'yes'",
+    efeito: "Valida auditoria e contratos da versão nova; pular sem motivo impede a publicação.",
+  },
+  "publish-mcp-release.yml::publish": {
+    condicao: null,
+    efeito: "Publica imagens e manifesto depois de validate; pular deixa versão sem entrega.",
+  },
   // --- a cadeia que leva o conserto até a VPS ---------------------------------
   "release.yml::abrir-pr-de-release": {
     condicao: "github.event_name == 'workflow_dispatch'",
