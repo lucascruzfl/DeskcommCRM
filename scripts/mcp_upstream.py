@@ -99,21 +99,27 @@ def main():
     previous_tag = "v" + ".".join(map(str, ready)) if ready else "v1.42.0"
     run("git", "fetch", "--no-tags", f"https://github.com/{UPSTREAM}.git", f"refs/tags/{previous_tag}:refs/tags/upstream-previous")
     changed = run("git", "diff", "--name-only", "upstream-previous", f"upstream-{v}").stdout.splitlines()
+    run("git", "config", "user.name", "github-actions[bot]")
+    run("git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com")
     run("git", "checkout", "-b", branch)
     merge = run("git", "merge", "--no-commit", "--no-ff", f"upstream-{v}", check=False)
     conflicts = run("git", "diff", "--name-only", "--diff-filter=U").stdout.splitlines()
     report(v, base, upstream_sha, changed, conflicts)
+    if merge.returncode and not conflicts:
+        with open("mcp-delta-report.md", "a", encoding="utf-8") as stream:
+            stream.write("\n## Erro do merge antes de detectar conflitos\n\n" + merge.stderr[-2000:] + "\n")
     if merge.returncode or conflicts:
         title = f"MCP v{v}: integração bloqueada por conflito"
         body = Path("mcp-delta-report.md").read_text(encoding="utf-8")
-        issues = run("gh", "issue", "list", "-R", repo, "--state", "open", "--search", title,
-                     "--json", "title").stdout
-        if not any(i["title"] == title for i in json.loads(issues)):
+        issues = json.loads(run("gh", "issue", "list", "-R", repo, "--state", "open", "--search", title,
+                                "--json", "number,title").stdout)
+        matching = next((i for i in issues if i["title"] == title), None)
+        if matching:
+            run("gh", "issue", "edit", str(matching["number"]), "-R", repo, "--body", body)
+        else:
             run("gh", "issue", "create", "-R", repo, "--title", title, "--body", body)
         summary(f"Nova versão upstream detectada, mas MCP não foi publicado. Conflitos: {', '.join(conflicts)}.")
         return 2
-    run("git", "config", "user.name", "github-actions[bot]")
-    run("git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com")
     run("git", "commit", "-m", f"chore(mcp): integrar tag oficial {tag}")
     run("git", "push", "origin", f"HEAD:refs/heads/{branch}")
     body = (f"Integração automática de `{tag}` sobre `mcp/stable`.\n\n"
