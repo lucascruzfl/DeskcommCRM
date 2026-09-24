@@ -47,6 +47,21 @@ Uma release oficial sem `-mcp`, teste falho, conflito, imagem ou manifesto
 inválido não aparece no canal. A VPS nunca usa imagem oficial como fallback.
 A produção só muda depois do clique humano no painel.
 
+## Provas do comportamento fail-closed
+
+- A/B: `tests/unit/mcp_upstream_test.py` cobre versão igual (noop), versão nova
+  (integração elegível) e ignora release sem manifesto ou em rascunho.
+- C: o mesmo harness simula conflito, exige issue e proíbe push/PR. A execução
+  real para 1.46 abriu a [issue #4](https://github.com/lucascruzfl/DeskcommCRM/issues/4).
+- D: `tests/unit/gatilho-dos-jobs-de-entrega.test.ts` exige que o job de
+  publicação dependa de `validate`, que contém testes e banco. Um `verify`
+  vermelho impede merge em `mcp/stable` pela proteção da branch.
+- E/F: `tests/unit/mcp_manifest_test.py` exige os quatro metadados e digests
+  válidos antes de construir o manifesto completo; o workflow confere acesso
+  anônimo aos quatro digests e publica a release por último.
+- G: `tests/shell/mcp-update-channel.test.sh` prova que uma versão oficial sem
+  manifesto MCP não é oferecida como fallback à VPS.
+
 Situação atual 1.46.0: [AUDIT-1.46.0.md](AUDIT-1.46.0.md) registra a detecção
 real, os conflitos e a PR de integração. A candidata 1.45 foi incorporada à
 1.46 antes de qualquer publicação MCP. Nenhuma delas é release MCP pronta.

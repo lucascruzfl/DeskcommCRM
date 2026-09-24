@@ -388,3 +388,17 @@ describe("nenhum job pode ser desligado por uma condição — `skipped` conta c
     },
   );
 });
+
+it("publicação MCP depende de validate: teste vermelho não chega às imagens nem ao manifesto", () => {
+  const workflow = readFileSync(join(DIR, "publish-mcp-release.yml"), "utf8");
+  const validate = workflow.split(/^  validate:\s*$/m)[1]?.split(/^  publish:\s*$/m)[0];
+  const publish = workflow.split(/^  publish:\s*$/m)[1]?.split(/^  blocked-summary:\s*$/m)[0];
+  expect(validate, "job validate MCP ausente").toBeDefined();
+  expect(publish, "job publish MCP ausente").toBeDefined();
+  expect(validate).toContain("pnpm test:unit");
+  expect(validate).toContain("pnpm test:db");
+  expect(validate).toContain("pnpm test:shell");
+  expect(publish).toMatch(/^    needs: \[check, validate\]$/m);
+  expect(publish).not.toMatch(/^    if:.*always\(/m);
+  expect(publish).toContain("Publicar o manifesto como última etapa");
+});
