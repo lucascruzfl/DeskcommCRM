@@ -24,15 +24,15 @@
 export const ESCOPO_VAZIO: readonly string[] = [];
 
 /**
- * ONDE ESTÁ O FUNIL, para cada ferramenta que ESCREVE.
+ * ONDE ESTÁ O FUNIL, para cada ferramenta de escrita alcançável pelo agente.
  *
  * Tabela declarativa no molde de `EQUIVALENTE_NO_OPERADOR`: uma lista que se lê
  * de uma vez vale mais que a mesma regra espalhada por vinte arquivos.
  *
  * ⚠️ **REGRA DE VACUIDADE:** ferramenta de escrita AUSENTE desta tabela é
  * RECUSADA, não liberada. É o que impede a ferramenta nova de escapar por
- * esquecimento — e `tests/unit/escopo-de-funil-cobre-as-escritas.test.ts`
- * reprova quando alguém acrescenta uma escrita sem decidir o alvo dela.
+ * esquecimento — e `tests/unit/escopo-de-funil.test.ts` reprova quando alguém
+ * acrescenta uma escrita alcançável pelo agente sem decidir o alvo dela.
  */
 export type AlvoDeFunil =
   /** O modelo informa `pipeline_id` direto no argumento. */
