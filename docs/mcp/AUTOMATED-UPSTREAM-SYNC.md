@@ -39,6 +39,13 @@ divergir a `main` do upstream só para alterar a condição do release oficial.
 O detector gera `mcp-delta-report.md` como artefato. Um merge limpo abre PR para
 `mcp/stable`; conflito abre issue com arquivos e interrompe a tentativa. A
 execução seguinte reconhece a branch/PR existente e não duplica a solicitação.
+O detector cria a PR com `GITHUB_TOKEN`, sem segredo pessoal. Pela
+[regra do GitHub para PRs criadas por Actions](https://docs.github.com/en/actions/concepts/security/github_token#when-github_token-triggers-workflow-runs),
+os checks dessa PR podem ficar em `action_required`. Nesse caso, abra a PR no
+fork e clique **Approve workflows to run**; somente um mantenedor com acesso de
+escrita pode fazê-lo. Até o CI passar, a proteção de `mcp/stable` bloqueia o
+merge e a publicação. Usar `workflow_dispatch` para contornar esse clique não
+serviria: [esses checks não satisfazem a proteção de PR](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks#checks-from-some-workflow-jobs-are-not-evaluated).
 Se a tag oficial já estiver integrada em `mcp/stable`, o detector informa que a
 auditoria ou os gates ainda bloqueiam a release, sem abrir outra PR.
 A lista do delta distingue endpoints criados/alterados, contratos, policy,

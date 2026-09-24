@@ -150,6 +150,7 @@ def main():
     run("gh", "pr", "create", "-R", repo, "--base", "mcp/stable", "--head", branch,
         "--title", f"MCP: integrar {tag}", "--body", body)
     summary(f"PR {branch} aberto. Nova versão upstream detectada, mas MCP não foi publicado: auditoria pendente.")
+    summary("Se o GitHub mostrar 'Approve workflows to run' na PR, um mantenedor com acesso de escrita precisa liberar o CI antes da revisão e do merge.")
     return 0
 
 
