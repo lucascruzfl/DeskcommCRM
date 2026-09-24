@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   check:
-    if: github.repository == 'lucascruzfl/DeskcommCRM'
+    if: github.repository == 'lucascruzfl/DeskcommCRM' && github.ref == 'refs/heads/mcp/stable'
     runs-on: ubuntu-latest
     outputs:
       needed: ${{ steps.release.outputs.needed }}
