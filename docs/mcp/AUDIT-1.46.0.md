@@ -63,6 +63,19 @@ crítica e exige seleção individual. O teste passa a exigir que nenhuma críti
 seja ligada pelo pacote e que o envio ao cliente continue indisponível ali.
 Nova rodada completa é obrigatória antes de fechar o audit.
 
+Na rodada seguinte, o E2E encontrou outra divergência da mesma fronteira:
+`crm_send_whatsapp_message` tinha `marcavel: false` no catálogo e o motivo
+aparecia na lista avançada, mas o checkbox dessa lista ignorava `marcavel`.
+A ficha do pacote já respeitava a regra. A lista avançada agora aplica a mesma
+condição; o E2E existente exige que o checkbox permaneça desabilitado.
+Typecheck e lint locais passaram. O E2E dessa correção confirmou a fronteira,
+mas encontrou um defeito diferente na visão Mês da agenda: a grade desenha seis
+semanas, incluindo dias dos meses vizinhos, enquanto o cliente só consultava do
+dia 1 ao último dia do mês. Um evento externo visível numa célula de setembro
+sumia quando a âncora mudava para outubro. O recorte da consulta agora cobre as
+mesmas 42 células que a grade desenha. O E2E precisa confirmar a correção antes
+de declarar gaps A iguais a zero.
+
 ## Migrations, baseline e updater
 
 A 1.46 acrescenta `20260923160000_0392_demanda_derivada_nao_reduplica.sql`

@@ -20,6 +20,22 @@ tag da release oficial; Sync fork manual não é requisito. O workflow oficial
 corte de release oficial. Assim, push e Sync fork não executam esse workflow.
 Não reative sem revisar a identidade do repositório e as credenciais.
 
+## Por que o Sync fork gerou o e-mail de falha
+
+O [run 35930513488](https://github.com/lucascruzfl/DeskcommCRM/actions/runs/35930513488)
+foi um `push` na `main` do fork, no commit
+`d9846883a99ba53a0dabee709793c2f068737ac8`. Esse commit existe no
+upstream oficial e é ancestral da `main` do fork: o Sync fork integrou código.
+O arquivo herdado `.github/workflows/release.yml` reage a todo push na `main`,
+sem condição de identidade do repositório. O job `cortar-tag` tentou criar o
+token do GitHub App no passo `actions/create-github-app-token@v3` e parou com
+`The 'client-id' (or deprecated 'app-id') input must be set to a non-empty string`:
+o fork não tem o secret `RELEASE_APP_ID` do upstream. O job
+`abrir-pr-de-release` foi pulado porque só roda em `workflow_dispatch`.
+Nenhuma tag oficial foi cortada por esse run. A desativação manual de **apenas**
+esse workflow no fork mantém CI, detector e publicação MCP disponíveis e evita
+divergir a `main` do upstream só para alterar a condição do release oficial.
+
 O detector gera `mcp-delta-report.md` como artefato. Um merge limpo abre PR para
 `mcp/stable`; conflito abre issue com arquivos e interrompe a tentativa. A
 execução seguinte reconhece a branch/PR existente e não duplica a solicitação.
