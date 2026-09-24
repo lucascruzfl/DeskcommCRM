@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import { MCP_REGISTRY, MCP_TOOL_COUNT } from "@/lib/mcp/registry";
 
@@ -83,9 +84,11 @@ describe("registry MCP da Parte 5", () => {
     const campo = tool.inputSchema.conversation_stays_with_attendant;
     expect(tool.requiresRole).toBe("manager");
     expect(tool.requiresScope).toBe("mcp:write");
-    expect(campo?.safeParse(true).success).toBe(true);
-    expect(campo?.safeParse(false).success).toBe(true);
-    expect(campo?.safeParse("true").success).toBe(false);
+    expect(campo).toBeDefined();
+    if (!campo) throw new Error("A configuração de roteamento não expõe o novo campo");
+    expect(z.safeParse(campo, true).success).toBe(true);
+    expect(z.safeParse(campo, false).success).toBe(true);
+    expect(z.safeParse(campo, "true").success).toBe(false);
   });
 
   it("não anuncia a superfície de roteiro ainda desligada na criação de follow-up", () => {
