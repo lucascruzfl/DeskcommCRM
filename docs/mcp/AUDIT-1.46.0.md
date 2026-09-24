@@ -41,6 +41,28 @@ Os gaps A identificados acima foram tratados na branch, mas o total **ainda é
 indeterminado** até a auditoria final por operação e gates completos. Portanto
 `RELEASE-AUDIT.json` continua em 1.42.0 e impede publicação.
 
+O primeiro E2E da candidata encontrou dois defeitos adicionais: a rota do
+catálogo convertia a **saída** de schemas Zod com transformações para JSON
+Schema e respondia 500 na configuração do agente; a barra de ações em lote
+ficava fora da viewport do funil. A rota agora serializa a entrada das tools,
+e um teste percorre todos os schemas publicados. A barra fica ancorada à
+viewport com espaço para o conteúdo e para a área segura do celular. Na
+execução seguinte, as partes 1, 3, 4 e 5 do E2E passaram. A parte 2 expôs
+duas fixtures antigas: o token de teste não incluía opt-in para ativação de
+automação e arquivamento, e uma asserção assumia o tamanho anterior do pacote
+de tools. A correção mantém as capabilities explícitas e calcula as vagas
+pela tela. A nova execução ainda precisa passar integralmente.
+
+Essa execução revelou um problema do serviço de follow-up: o envio inline
+consultava cinco jobs pendentes e só depois filtrava o contato pedido. Cinco
+jobs de outros contatos podiam ocultar o job correto. A consulta agora aplica
+o filtro de contato **antes** do limite; o teste unitário reproduz a fila com
+cinco jobs alheios. A mesma rodada mostrou que a expectativa E2E de não haver
+nenhuma capacidade crítica em "Atender" estava vencida: apagar nota interna é
+crítica e exige seleção individual. O teste passa a exigir que nenhuma crítica
+seja ligada pelo pacote e que o envio ao cliente continue indisponível ali.
+Nova rodada completa é obrigatória antes de fechar o audit.
+
 ## Migrations, baseline e updater
 
 A 1.46 acrescenta `20260923160000_0392_demanda_derivada_nao_reduplica.sql`

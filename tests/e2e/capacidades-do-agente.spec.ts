@@ -270,9 +270,12 @@ test.describe("Configurar o que o agente pode fazer", () => {
     // ela deixou de ser oferecível, por clique ou por pacote.
     expect(await estaMarcada(page, ENVIO)).toBe(false);
 
-    // Sem crítica oferecível não há bloco de crítica. Ele existia porque o envio
-    // ERA a crítica do pacote — que o pacote oferecia para o motor descartar.
-    await expect(page.getByTestId("criticas-atender")).toHaveCount(0);
+    // O pacote pode ter outras capacidades críticas. Nenhuma delas é ligada
+    // pelo clique; em especial, o envio externo segue fora da escolha.
+    const criticas = page.getByTestId("criticas-atender");
+    await expect(criticas).toBeVisible();
+    await expect(criticas).not.toContainText("Enviar mensagem no WhatsApp");
+    expect(await estaMarcada(page, "crm_delete_internal_note")).toBe(false);
 
     // Mas a capacidade continua NA TELA, com o motivo escrito e o checkbox
     // travado: sumir com ela esconderia do dono um caminho que ele já viu na
