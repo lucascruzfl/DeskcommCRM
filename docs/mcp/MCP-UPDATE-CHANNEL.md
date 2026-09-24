@@ -3,7 +3,8 @@
 O fluxo é upstream oficial → fork integrado → auditoria delta → testes → quatro
 imagens GHCR do fork → manifesto de release → botão do painel → produção. O
 release do fork contém código oficial e extensões MCP no mesmo commit. O canal
-`official` permanece o padrão do produto; `custom-mcp` é opt-in da instalação.
+`official` permanece o padrão do produto upstream; clones da linha `mcp/stable`
+ativam `custom-mcp` automaticamente na instalação nova.
 
 `DESKCOMM_UPDATE_REPOSITORY` aponta para `owner/repo` no GitHub, de onde vêm
 tags e o asset `releases/download/vX.Y.Z-mcp/mcp-release.json`.
@@ -33,7 +34,7 @@ incompleta fica invisível ao botão. O atualizador ainda repete a validação
 antes de tocar a instalação e grava digests, inclusive para rollback.
 
 O código antigo em uma VPS que ainda executa o atualizador oficial não recebe
-essa proteção retroativamente. A transição inicial da instalação exige deploy
+essa proteção retroativamente. A migração de uma VPS **já instalada** exige deploy
 autorizado do fork e persistência das três chaves no `.env`. Depois disso, o
 botão passa a usar o canal MCP e não escolhe a imagem upstream.
 Se a chave do canal for removida por engano, o checkout/tag e o `APP_VERSION`

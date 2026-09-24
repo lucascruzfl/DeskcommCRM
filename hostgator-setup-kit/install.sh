@@ -16,6 +16,10 @@ set -euo pipefail
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 
 REPO_URL="${REPO_URL:-https://github.com/melgarafael/DeskcommCRM.git}"
+if [ -f "$KIT_DIR/mcp-distribution.sh" ]; then
+  source "$KIT_DIR/mcp-distribution.sh"
+  [ "${INSTALL_SH_LIB:-0}" = 1 ] || mcp_distribution_defaults
+fi
 if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
   [ -n "${DESKCOMM_UPDATE_REPOSITORY:-}" ] \
     || { echo 'Defina DESKCOMM_UPDATE_REPOSITORY para instalar pelo canal MCP.' >&2; exit 1; }
@@ -907,7 +911,15 @@ recusar_projeto_de_outra_arvore || die "Instalação interrompida para não derr
 fase 2 "Suas informações"
 step "Configuração"
 # Se já existe .env, carrega pra não repetir perguntas (idempotência).
-if [ -f .env ]; then load_env .env; c_grn "✓ .env existente carregado"; fi
+if [ -f .env ]; then
+  # Leia o canal realmente gravado, sem deixar os defaults da distribuição
+  # mascararem uma instalação anterior de outro canal.
+  if declare -F mcp_distribution_after_env >/dev/null; then
+    unset DESKCOMM_UPDATE_CHANNEL DESKCOMM_UPDATE_REPOSITORY DESKCOMM_IMAGE_REPOSITORY
+  fi
+  load_env .env
+  c_grn "✓ .env existente carregado"
+fi
 # Respostas guardadas de uma tentativa que não chegou ao fim. Carregam DEPOIS do
 # .env de propósito: se as duas fontes têm a chave, a mais recente é esta.
 if [ -f "$PARTIAL_FILE" ]; then
@@ -917,6 +929,9 @@ if [ -f "$PARTIAL_FILE" ]; then
   # Sem esta linha, ser perguntado de novo sobre o token — depois de uma tela
   # dizendo que N respostas foram guardadas — lê como defeito do instalador.
   c_dim "  (o token do Supabase é de conta e nunca entra no rascunho: ele é perguntado de novo. Enter pula)"
+fi
+if declare -F mcp_distribution_after_env >/dev/null; then
+  mcp_distribution_after_env
 fi
 mcp_checkout_sem_canal && die "Este checkout contém MCP, mas o canal custom-mcp não está configurado. Instalação oficial bloqueada."
 if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
@@ -1288,11 +1303,20 @@ else
   c_ylw "  Instalando pelo canal 'latest'. Depois rode: bash hostgator-setup-kit/update.sh"
 fi
 IMAGEM_APP_DEFAULT="${MCP_APP_PIN:-${IMG_APP}:${VERSAO_ALVO}}"
+if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+  APP_IMAGE="$MCP_APP_PIN"
+fi
 
 FIELDS=(
   "DOMAIN|Domínio do CRM (ex: crm.suaempresa.com.br)||v_domain||"
   "ACME_EMAIL|Seu e-mail (avisos de SSL)||v_email||"
-  "APP_IMAGE|Imagem Docker do app|${IMAGEM_APP_DEFAULT}|||"
+)
+# A imagem é detalhe interno do canal MCP. O instalador oficial continua a
+# perguntar por ela; na distribuição os quatro digests já vieram do manifesto.
+if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" != custom-mcp ]; then
+  FIELDS+=("APP_IMAGE|Imagem Docker do app|${IMAGEM_APP_DEFAULT}|||")
+fi
+FIELDS+=(
   "NEXT_PUBLIC_SUPABASE_URL|Supabase Project URL (Settings > API)||v_supabase_url||"
   "NEXT_PUBLIC_SUPABASE_ANON_KEY|Supabase anon key (Settings > API)||v_anon||"
   "SUPABASE_SERVICE_ROLE_KEY|Supabase service_role key (Settings > API)||v_service|secret|"
@@ -2193,6 +2217,9 @@ step "Puxando a imagem e subindo os serviços"
 # worker e o scheduler têm `build:` ao lado do `image:`, e o Compose os constrói
 # quando a imagem não existe (medido).
 if ! dc pull; then
+  if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+    die "Não consegui puxar as imagens MCP validadas. Instalação interrompida sem build local ou fallback oficial."
+  fi
   c_ylw "⚠ Não consegui puxar todas as imagens do registro."
   c_ylw "  Sigo assim mesmo: o que faltar é construído aqui (mais lento, mesmo resultado)."
 fi
@@ -2203,6 +2230,9 @@ fi
 # CRM no ar. A promessa da frase acima só se sustenta com esta guarda.
 CONSTRUIU_AQUI=""
 if ! dc up -d; then
+  if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
+    die "Não consegui subir as imagens MCP validadas. Instalação interrompida sem build local ou fallback oficial."
+  fi
   if construir_aqui_e_subir "$VERSAO_ALVO"; then
     CONSTRUIU_AQUI=1
   else

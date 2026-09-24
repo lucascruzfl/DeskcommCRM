@@ -25,6 +25,23 @@
 
 ---
 
+## INSTALAÇÃO EM NOVA VPS — distribuição MCP
+
+Em uma VPS Linux x86_64/amd64 nova, use a linha estável deste fork:
+
+```bash
+git clone --branch mcp/stable https://github.com/lucascruzfl/DeskcommCRM.git
+cd DeskcommCRM
+bash hostgator-setup-kit/install.sh
+```
+
+O instalador interativo original orienta cada resposta. Esta distribuição já
+seleciona uma release MCP validada, usa as imagens prontas e ativa o canal
+`custom-mcp` com bloqueio de atualizações oficiais sem release MCP. Veja
+[Instalação em nova VPS](docs/mcp/INSTALL-NEW-VPS.md).
+
+---
+
 > ### ☁️ Rode este CRM em produção com 1 comando
 >
 > O DeskcommCRM foi desenvolvido em **parceria com a HostGator**: o [`hostgator-setup-kit/`](hostgator-setup-kit/)
