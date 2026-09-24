@@ -1,6 +1,6 @@
 # Auditoria diferencial 1.42.0-mcp → upstream v1.47.0
 
-Estado: **candidata integrada; publicação bloqueada até CI completo**. A
+Estado: **candidata auditada; publicação bloqueada até CI da árvore final e workflow de release**. A
 [release oficial v1.47.0](https://github.com/melgarafael/DeskcommCRM/releases/tag/v1.47.0)
 aponta para `ebb7d03e9896468d197df168b19bdd682e2beb48`. O upstream mudou
 412 arquivos entre as tags 1.42 e 1.47; a diferença 1.46 → 1.47 tem 105.
@@ -49,9 +49,10 @@ imagens; ausência de alteração nelas não substitui o teste de integração.
 
 As seis tools acrescentadas na integração 1.43–1.46 permanecem no catálogo;
 nenhuma tool nova foi inferida só da contagem. `tools/list` é a referência.
-O snapshot atual é 232, informativo. Os gaps A identificados foram tratados,
-mas o total permanece **indeterminado** até os gates da árvore final passarem.
-`RELEASE-AUDIT.json` segue em 1.42.0 e impede publicação.
+O snapshot atual é 232, informativo. A auditoria por operação, o typecheck,
+os testes MCP, os invariantes de banco e os cinco shards E2E passaram no commit
+`bdd0bef74`; os gaps A medidos são **0**. `RELEASE-AUDIT.json` registra o
+resultado e exige que o CI repita todos os gates no commit documental final.
 
 ## Salto de banco e gates
 
@@ -63,12 +64,13 @@ oito identidades de objetos inspecionados sobreviveram; uma view legada 1.26
 foi migrada e ficou estável na segunda passada. O workflow de publicação
 repetirá esse salto a partir de `previous_mcp_tag`.
 
-Falta CI obrigatório da PR (`verify`, `invariants`, `imagens-ok`, `e2e`) na
-árvore 1.47. Antes de publicar, o workflow ainda repete typecheck, lint,
+O CI obrigatório da PR (`verify`, `invariants`, `imagens-ok`, `e2e`) passou no
+commit de código `bdd0bef74`. O commit final da auditoria requer nova rodada.
+Antes de publicar, o workflow ainda repete typecheck, lint,
 catálogo/policy/scopes/capabilities, autorização, isolamento entre organizações,
 segredos, rate limit, saneamento de erros e request IDs, fluxos sentinela,
 baseline install/reapply, shell/updater e build. Só depois de todos verdes
-`RELEASE-AUDIT.json` poderá registrar o SHA oficial, `previous_mcp_tag`,
+`RELEASE-AUDIT.json` registra o SHA oficial, `previous_mcp_tag`,
 `mcp_compatible=true` e `gaps_a=0`. Quatro imagens e digests anônimos devem
 existir antes do manifesto. A VPS permanece no canal MCP e só atualiza com
 clique humano no painel.

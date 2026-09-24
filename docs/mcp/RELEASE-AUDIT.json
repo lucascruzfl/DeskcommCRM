@@ -1,11 +1,13 @@
 {
-  "deskcomm_version": "1.42.0",
-  "upstream_tag": "v1.42.0",
-  "mcp_base_commit": "c16eb8601",
-  "tool_count_snapshot": 226,
+  "deskcomm_version": "1.47.0",
+  "upstream_tag": "v1.47.0",
+  "upstream_commit": "ebb7d03e9896468d197df168b19bdd682e2beb48",
+  "previous_mcp_tag": "v1.42.0-mcp",
+  "mcp_base_commit": "381fb71c3fe8eb25d81f1ab15e2050b01b9437c5",
+  "tool_count_snapshot": 232,
   "tool_count_is_requirement": false,
   "gaps_a": 0,
   "mcp_compatible": true,
   "pending_domains": [],
-  "note": "Campanhas 1.42 cobertas por services e schemas oficiais. Início, agendamento e envio de teste exigem ação humana estruturada; 226 é snapshot, não gate. A publicação ainda exige os testes e builds do workflow."
+  "note": "Salto acumulado 1.42.0-mcp para a tag oficial 1.47.0 auditado em AUDIT-1.47.0.md. Gaps A identificados cobertos; módulos opcionais sem superfície operável permanecem fora do MCP. 232 é snapshot do catálogo, não gate. A publicação exige nova rodada de CI na árvore final e todos os gates do workflow de release."
 }
