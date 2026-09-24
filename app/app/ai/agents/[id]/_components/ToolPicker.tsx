@@ -377,7 +377,7 @@ export function ToolPicker({ value, onChange, disabled }: Props) {
                   key={capacidade.name}
                   capacidade={capacidade}
                   marcada={marcada}
-                  bloqueada={!marcada && cheio}
+                  bloqueada={!marcada && (cheio || !capacidade.marcavel)}
                   onToggle={() => alternarCapacidade(capacidade.name)}
                   disabled={disabled}
                   mostrarNomeTecnico
