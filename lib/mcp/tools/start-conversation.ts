@@ -150,6 +150,14 @@ export const crmStartConversationAndSend: McpToolDefinition<typeof inputShape> =
       template_values: input.template_values,
     };
     const executar = async () => {
+      // Freio anti-ban antes de qualquer abertura. A reserva idempotente já
+      // ocorreu; replay não debita ritmo nem deixa conversa vazia.
+      const ritmo = await depsDoRitmo(createAdminClient());
+      const segurado = await segurarEnvioPorToken(ritmo, {
+        organizationId: ctx.organizationId,
+        channelSessionId: input.channel_session_id,
+        requestId: ctx.requestId,
+      });
       // A mesma origem autorizada de open-with-contact decide reuso/reabertura.
       const opened = await openSharedContactConversation(ctx.supabase, ctx.organizationId, {
         channel_session_id: input.channel_session_id,
@@ -167,12 +175,6 @@ export const crmStartConversationAndSend: McpToolDefinition<typeof inputShape> =
         template_name: input.template_name,
         template_language: input.template_language,
         template_values: input.template_values,
-      });
-      const ritmo = await depsDoRitmo(createAdminClient());
-      const segurado = await segurarEnvioPorToken(ritmo, {
-        organizationId: ctx.organizationId,
-        conversationId: opened.conversation_id,
-        requestId: ctx.requestId,
       });
       const message = await sendMessageHandler(
         ctx.supabase,

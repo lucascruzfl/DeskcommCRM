@@ -100,7 +100,7 @@ beforeEach(() => {
 });
 
 describe("crm_start_conversation_and_send", () => {
-  it("freia depois de abrir e antes de enviar", async () => {
+  it("freia antes de abrir e antes de enviar", async () => {
     const segurado = { channelSessionId: SESSION_ID };
     vi.mocked(segurarEnvioPorToken).mockResolvedValue(segurado);
     mockedOpen.mockResolvedValue({ conversation_id: CONVERSATION_ID, contact_id: CONTACT_ID });
@@ -110,9 +110,10 @@ describe("crm_start_conversation_and_send", () => {
       makeCtx({ cached: null, inserts: [] }),
     );
     expect(segurarEnvioPorToken).toHaveBeenCalledWith(expect.anything(), {
-      organizationId: ORG_ID, conversationId: CONVERSATION_ID, requestId: "req-1",
+      organizationId: ORG_ID, channelSessionId: SESSION_ID, requestId: "req-1",
     });
-    expect(vi.mocked(segurarEnvioPorToken).mock.invocationCallOrder[0]).toBeLessThan(mockedSend.mock.invocationCallOrder[0]!);
+    expect(vi.mocked(segurarEnvioPorToken).mock.invocationCallOrder[0]).toBeLessThan(mockedOpen.mock.invocationCallOrder[0]!);
+    expect(mockedOpen.mock.invocationCallOrder[0]).toBeLessThan(mockedSend.mock.invocationCallOrder[0]!);
     expect(registrarEnvioPorToken).toHaveBeenCalledWith(expect.anything(), ORG_ID, segurado, "sent");
   });
 
@@ -123,6 +124,7 @@ describe("crm_start_conversation_and_send", () => {
       { channel_session_id: SESSION_ID, contact_id: CONTACT_ID, body: "Oi", type: "text", idempotency_key: "ritmo:2" },
       makeCtx({ cached: null, inserts: [] }),
     )).rejects.toBeInstanceOf(ApiError);
+    expect(mockedOpen).not.toHaveBeenCalled();
     expect(mockedSend).not.toHaveBeenCalled();
     expect(registrarEnvioPorToken).not.toHaveBeenCalled();
   });
