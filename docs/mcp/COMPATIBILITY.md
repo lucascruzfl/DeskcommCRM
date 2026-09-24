@@ -64,8 +64,10 @@ A detecção automática não declara gaps A zero. Se aparecer operação nova,
 conflito, migration ambígua ou teste vermelho, a publicação é bloqueada até
 revisão e nova medição. `tool_count_snapshot` não é gate.
 
-Na candidata 1.46.0, a continuidade do atendimento por outro número usa o
+Na integração acumulada 1.47.0, a continuidade do atendimento por outro número usa o
 serviço oficial de abertura de conversa, com canal conectado e isolamento da
 organização; ela não envia mensagem. O envio inicial conserva idempotência e
 aplica o freio por número antes de criar a conversa. A classificação e os
-gates pendentes estão em [AUDIT-1.46.0.md](AUDIT-1.46.0.md).
+gates pendentes estão em [AUDIT-1.47.0.md](AUDIT-1.47.0.md). A nova opção de
+manter a conversa com o atendente anterior está coberta pelas tools de leitura
+e atualização da configuração de roteamento, com permissão de gerente.

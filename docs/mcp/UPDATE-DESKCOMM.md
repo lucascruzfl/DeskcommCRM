@@ -46,7 +46,7 @@ antes de `v1.43.0-mcp` passar pelos gates, a maior release pronta continua
 2. Execute [AUDIT-NEW-VERSION.md](AUDIT-NEW-VERSION.md), classifique os deltas
    A/B/C e ajuste apenas contratos que mudaram. A integração 1.42.0 está
    registrada em [AUDIT-1.42.0.md](AUDIT-1.42.0.md); a candidata atual está
-   em [AUDIT-1.46.0.md](AUDIT-1.46.0.md).
+   em [AUDIT-1.47.0.md](AUDIT-1.47.0.md).
 3. Rode sentinelas MCP, banco focado, typecheck, lint, `test:shell` e build.
    O gate de publicação também instala o baseline de `previous_mcp_tag` e
    aplica o novo sobre dados em PostgreSQL 15 e 17. Atualize

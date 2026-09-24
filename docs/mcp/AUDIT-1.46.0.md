@@ -1,5 +1,9 @@
 # Auditoria diferencial 1.42.0-mcp → upstream v1.46.0
 
+Histórico: a candidata 1.46.0 passou pelo CI completo, mas a release oficial
+1.47.0 chegou antes da publicação MCP. A integração prosseguiu em
+[AUDIT-1.47.0.md](AUDIT-1.47.0.md); não existe release 1.46.0-mcp.
+
 Estado: **integração candidata; publicação bloqueada**. A release oficial
 [`v1.46.0`](https://github.com/melgarafael/DeskcommCRM/releases/tag/v1.46.0)
 aponta para `d522966877e2557ec51c77ee9867121a821909f5`. A linha MCP pronta

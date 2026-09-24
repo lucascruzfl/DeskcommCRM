@@ -85,6 +85,7 @@ A produção só muda depois do clique humano no painel.
 - G: `tests/shell/mcp-update-channel.test.sh` prova que uma versão oficial sem
   manifesto MCP não é oferecida como fallback à VPS.
 
-Situação atual 1.46.0: [AUDIT-1.46.0.md](AUDIT-1.46.0.md) registra a detecção
-real, os conflitos e a PR de integração. A candidata 1.45 foi incorporada à
-1.46 antes de qualquer publicação MCP. Nenhuma delas é release MCP pronta.
+Situação atual 1.47.0: [AUDIT-1.47.0.md](AUDIT-1.47.0.md) registra a detecção
+real, os conflitos e a candidata de integração. As candidatas 1.45 e 1.46
+foram incorporadas à 1.47 antes de qualquer publicação MCP. Nenhuma delas
+é release MCP pronta.
