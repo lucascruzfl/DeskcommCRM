@@ -65,16 +65,16 @@ const DIR = join(process.cwd(), ".github/workflows");
  */
 const GATILHO_ESPERADO: Record<string, { condicao: string | null; efeito: string }> = {
   "publish-mcp-release.yml::check": {
-    condicao: "github.repository == 'lucascruzfl/DeskcommCRM'",
-    efeito: "Verifica se a versão MCP já está pronta; sem este job o fluxo pode republicar.",
+    condicao: "github.repository == 'lucascruzfl/DeskcommCRM' && github.ref == 'refs/heads/mcp/stable'",
+    efeito: "Verifica a versão apenas na branch MCP estável do fork; outra ref não pode iniciar publicação.",
   },
   "publish-mcp-release.yml::validate": {
     condicao: "needs.check.outputs.needed == 'yes'",
     efeito: "Valida auditoria e contratos da versão nova; pular sem motivo impede a publicação.",
   },
   "publish-mcp-release.yml::blocked-summary": {
-    condicao: "always() && needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'",
-    efeito: "Explica no resumo por que a release MCP não ficou pronta.",
+    condicao: "always() && github.repository == 'lucascruzfl/DeskcommCRM' && github.ref == 'refs/heads/mcp/stable' && (needs.check.result != 'success' || (needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'))",
+    efeito: "Explica falha de conferência, validação ou publicação somente na linha MCP estável.",
   },
   "publish-mcp-release.yml::publish": {
     condicao: null,

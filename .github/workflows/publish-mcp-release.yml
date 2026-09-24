@@ -189,7 +189,7 @@ jobs:
 
   blocked-summary:
     needs: [check, validate, publish]
-    if: always() && (needs.check.result != 'success' || (needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'))
+    if: always() && github.repository == 'lucascruzfl/DeskcommCRM' && github.ref == 'refs/heads/mcp/stable' && (needs.check.result != 'success' || (needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'))
     runs-on: ubuntu-latest
     permissions:
       actions: read

@@ -49,11 +49,11 @@ pnpm typecheck
 pnpm lint
 pnpm lint:channels
 pnpm lint:role-rank
-pnpm release:conferir
+pnpm test:shell
 git diff --check
 ```
 
-Se tocar UI, acrescente Playwright e evidência visual. Se tocar packaging, `pnpm test:shell`. Antes do build, meça memória e swap.
+O corte da release oficial não é gate da integração de uma tag oficial já publicada. Se tocar UI, acrescente Playwright e evidência visual. Antes do build, meça memória e swap.
 
 ## 5. Critérios de fechamento
 

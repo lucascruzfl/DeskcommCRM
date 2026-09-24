@@ -49,8 +49,9 @@ antes de `v1.43.0-mcp` passar pelos gates, a maior release pronta continua
    Atualize `docs/mcp/RELEASE-AUDIT.json` somente quando gaps A forem zero.
 4. Depois de revisar o PR de integração e confirmar `gaps_a=0` em
    `RELEASE-AUDIT.json` para a versão e SHA oficiais, faça merge em
-   `mcp/stable`. O workflow dessa branch repete todos os gates, cria a tag
-   `vX.Y.Z-mcp`, constrói as quatro imagens e publica o manifesto por último.
+   `mcp/stable`. O workflow dessa branch repete todos os gates, constrói as
+   quatro imagens, valida seus digests, cria a tag `vX.Y.Z-mcp` e publica a
+   release com o manifesto somente ao final.
 5. O agente da VPS passa a oferecer a nova versão no próximo ciclo. Revise a
    tela e use **Atualizar agora**. Não há etapa de reaplicação manual do MCP.
 
