@@ -45,7 +45,7 @@ indeterminado** até a auditoria final por operação e gates completos. Portant
 
 A 1.46 acrescenta `20260923160000_0392_demanda_derivada_nao_reduplica.sql`
 e corrige a reaplicação do baseline para não recriar demanda, índices ou coluna
-temporária já concluídos. A linha MCP mantém a renumeração `0393` para a
+temporária já concluídos. A linha MCP mantém a renumeração `0393` com timestamp novo para a
 migration oficial de memória que colidiu com `0385` implantada. O instalador e
 o updater aplicam o baseline acumulado da tag integrada; não exigem publicar
 1.43, 1.44 e 1.45 separadamente. O salto operacional 1.42 → 1.46 ainda depende

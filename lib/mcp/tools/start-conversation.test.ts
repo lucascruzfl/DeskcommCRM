@@ -27,6 +27,7 @@ vi.mock("@/lib/messaging/ritmo-do-envio-por-token", () => ({
 
 import { comIdempotencia } from "@/lib/api/idempotency";
 import { ApiError } from "@/lib/api/types";
+import { PROVIDERS_DE_MENSAGEM } from "@/lib/channels/capabilities";
 import { segurarEnvioPorToken, registrarEnvioPorToken } from "@/lib/messaging/ritmo-do-envio-por-token";
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
 import { openSharedContactConversation } from "@/lib/messaging/open-shared-contact-conversation";
@@ -118,7 +119,7 @@ describe("crm_continue_on_another_number", () => {
   }
 
   const source = { contact_id: CONTACT_ID, channel_session_id: SESSION_ID };
-  const target = { id: "77777777-7777-4777-8777-777777777777", status: "WORKING", phone_number: "5511999999999", provider: "waha" };
+  const target = { id: "77777777-7777-4777-8777-777777777777", status: "WORKING", phone_number: "5511999999999", provider: PROVIDERS_DE_MENSAGEM[0] };
   const input = { source_conversation_id: SOURCE_ID, channel_session_id: target.id };
 
   it("abre o mesmo contato pelo canal conectado da organização, sem enviar", async () => {
