@@ -110,7 +110,12 @@ async function main(): Promise<void> {
       name: NOME,
       prefix,
       token_hash: `\\x${hash.toString("hex")}`,
-      scopes: ["mcp:read", "mcp:write", "actor:ai_agent", "role:manager"],
+      // O cenário ativa uma regra; a limpeza arquiva uma etapa. As duas
+      // capabilities exigem opt-in explícito, inclusive neste token de teste.
+      scopes: [
+        "mcp:read", "mcp:write", "actor:ai_agent", "role:manager",
+        "capability:automation_activation", "capability:destructive_operations",
+      ],
       expires_at: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
     })
     .select("id")

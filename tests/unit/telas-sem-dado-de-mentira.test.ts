@@ -155,6 +155,15 @@ function cadeiaDeImports(arquivo: string, vistos = new Set<string>()): string[] 
   }
   for (const especificador of importesDe(fonte)) {
     if (PROIBIDOS.test(especificador)) {
+      // O provedor de QA substitui apenas o LLM quando a flag explícita está
+      // ligada; request-deps não injeta registros de cliente na tela. A flag
+      // nasce false (env-example-sync.test.ts). Se o guard sair, esta exceção
+      // deixa de valer e o caminho volta a reprovar.
+      if (
+        relativoEmBarraNormal(RAIZ, arquivo) === "lib/agent-engine/agent/request-deps.ts" &&
+        especificador === "./preview-fixture" &&
+        fonte.includes("process.env.INTERNAL_AGENT_RUN_STUB === 'true'")
+      ) continue;
       achados.push(`${relativoEmBarraNormal(RAIZ, arquivo)} → ${especificador}`);
       continue;
     }

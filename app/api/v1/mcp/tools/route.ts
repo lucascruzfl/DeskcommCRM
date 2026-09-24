@@ -61,6 +61,9 @@ export async function GET(_req: NextRequest): Promise<Response> {
     public_profile: handlerPorNome.get(capacidade.id)?.publicProfile !== false,
     input_schema: z.toJSONSchema(z.object(schemaPorNome.get(capacidade.id) ?? {}), {
       target: "openapi-3.0",
+      // A UI descreve argumentos aceitos. Algumas tools normalizam valores com
+      // Zod transform; serializar a saída falha e derruba o catálogo inteiro.
+      io: "input",
     }),
   }));
 

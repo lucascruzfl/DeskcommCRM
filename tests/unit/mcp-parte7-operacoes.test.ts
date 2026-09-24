@@ -44,8 +44,8 @@ function assertHumanAction(value: unknown) {
 describe("MCP Parte 7 — uploads, importações, exportações e bulk", () => {
   it("adiciona somente as 12 operações auditadas e mantém registry único", () => {
     expect(PARTE7_OPERATION_TOOLS).toHaveLength(12);
-    expect(MCP_TOOL_COUNT).toBe(202);
-    expect(new Set(MCP_REGISTRY.map((tool) => tool.name)).size).toBe(202);
+    expect(MCP_TOOL_COUNT).toBe(MCP_REGISTRY.length);
+    expect(new Set(MCP_REGISTRY.map((tool) => tool.name)).size).toBe(MCP_REGISTRY.length);
     for (const tool of PARTE7_OPERATION_TOOLS) {
       expect(
         MCP_REGISTRY.some((registered) => registered.name === tool.name),

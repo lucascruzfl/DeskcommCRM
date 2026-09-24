@@ -17,6 +17,9 @@ O MCP não é acoplado a um número fixo de tools nem à versão 1.41.0. Cliente
 O teste `tests/unit/mcp-compatibility-sentinels.test.ts` referencia nomes de services canônicos. Renomeá-los deve quebrar a sentinela para forçar decisão explícita: atualizar import/adapter ou reconhecer mudança de contrato. As áreas vigiadas são envio/idempotência, movimento de lead, agenda, publish/intervenção de follow-up, routing, FAQ atômica e convites.
 
 Mudanças de schema são frágeis por outra razão: o self-host aplica `supabase/baseline.sql`. Toda evolução continua em tripla (migration, baseline, MANIFEST), com instalação e reaplicação testadas.
+O gate da release MCP instala ainda o baseline da última tag MCP pronta e
+aplica o novo baseline sobre dados, em PostgreSQL 15 e 17; assim o salto direto
+entre tags é medido, sem exigir publicação de versões intermediárias.
 
 ## Sentinelas
 
@@ -60,3 +63,11 @@ validação, inclusive quando chamado com `--force`.
 A detecção automática não declara gaps A zero. Se aparecer operação nova,
 conflito, migration ambígua ou teste vermelho, a publicação é bloqueada até
 revisão e nova medição. `tool_count_snapshot` não é gate.
+
+Na integração acumulada 1.47.0, a continuidade do atendimento por outro número usa o
+serviço oficial de abertura de conversa, com canal conectado e isolamento da
+organização; ela não envia mensagem. O envio inicial conserva idempotência e
+aplica o freio por número antes de criar a conversa. A classificação e os
+gates pendentes estão em [AUDIT-1.47.0.md](AUDIT-1.47.0.md). A nova opção de
+manter a conversa com o atendente anterior está coberta pelas tools de leitura
+e atualização da configuração de roteamento, com permissão de gerente.

@@ -38,20 +38,25 @@ const JOB = {
 const statusUpdates: string[] = [];
 
 /** Admin stub: job_queue (select pending / claim / status) + followup_enrollments. */
-function admin() {
+function admin(pendingJobs: typeof JOB[] = [JOB]) {
   const make = (table: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const chain: any = {
       _table: table,
       _upd: null as Record<string, unknown> | null,
+      _contactIds: null as string[] | null,
+      _limit: 5,
       select: () => chain,
       eq: () => chain,
       lte: () => chain,
-      in: () => chain,
+      in: (column: string, values: string[]) => {
+        if (table === "job_queue" && column === "contact_id") chain._contactIds = values;
+        return chain;
+      },
       single: () => Promise.resolve({data:table==="send_ledger"?{id:"ledger-1"}:{settings:{}},error:null}),
       insert: () => chain,
       order: () => chain,
-      limit: () => chain,
+      limit: (count: number) => { chain._limit = count; return chain; },
       update: (p: Record<string, unknown>) => {
         chain._upd = p;
         if (table === "job_queue" && typeof p.status === "string") statusUpdates.push(p.status);
@@ -65,7 +70,10 @@ function admin() {
       },
       then: (r: (v: unknown) => unknown) => {
         if (table === "job_queue" && !chain._upd) {
-          return Promise.resolve({ data: [JOB], error: null }).then(r);
+          const scoped = chain._contactIds
+            ? pendingJobs.filter((job) => chain._contactIds.includes(job.contact_id))
+            : pendingJobs;
+          return Promise.resolve({ data: scoped.slice(0, chain._limit), error: null }).then(r);
         }
         return Promise.resolve({ data: null, error: null }).then(r);
       },
@@ -85,6 +93,15 @@ beforeEach(() => {
 });
 
 describe("enviarTextoFixoPendente · gate de elegibilidade", () => {
+  it("filtra o contato antes de limitar a fila a cinco jobs", async () => {
+    decidir.mockResolvedValue({ permite: true, motivo: "autorizado" });
+    const foreign = Array.from({ length: 5 }, (_, index) => ({
+      ...JOB, id: `other-${index}`, contact_id: `other-contact-${index}`,
+    }));
+    expect(await enviarTextoFixoPendente(admin([...foreign, JOB]), [JOB.contact_id])).toBe(1);
+    expect(sendMessageHandler).toHaveBeenCalledOnce();
+  });
+
   it("conversa NÃO elegível → NÃO envia, job vira 'done'", async () => {
     decidir.mockResolvedValue({ permite: false, motivo: "sem_autorizacao", bloqueioPorAllowlist: true });
     const enviados = await enviarTextoFixoPendente(admin());

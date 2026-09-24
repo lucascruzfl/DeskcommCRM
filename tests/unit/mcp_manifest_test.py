@@ -21,8 +21,8 @@ class ManifestTest(unittest.TestCase):
         (self.directory / f"{role}.metadata.json").write_text(
             json.dumps({"containerimage.digest": self.digest}), encoding="utf-8")
 
-    def build(self):
-        return m.build_manifest(self.directory, "lucascruzfl", "1.45.0", "b" * 40, 226)
+    def build(self, tools=7):
+        return m.build_manifest(self.directory, "lucascruzfl", "1.46.0", "b" * 40, tools)
 
     def test_partial_images_block_manifest(self):
         for role in ("app", "worker", "scheduler"):
@@ -43,8 +43,9 @@ class ManifestTest(unittest.TestCase):
             self.write(role)
         manifest = self.build()
         self.assertEqual(set(manifest["images"]), set(m.NAMES))
-        self.assertEqual(manifest["tag"], "v1.45.0-mcp")
-        self.assertEqual(manifest["tool_count_snapshot"], 226)
+        self.assertEqual(manifest["tag"], "v1.46.0-mcp")
+        self.assertEqual(manifest["tool_count_snapshot"], 7)
+        self.assertEqual(self.build(tools=232)["tool_count_snapshot"], 232)
 
 
 if __name__ == "__main__":

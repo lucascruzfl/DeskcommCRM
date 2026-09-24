@@ -9,6 +9,7 @@ import {
 } from "@/lib/followup/api-schemas";
 import { carregaEtapasCitadas } from "@/lib/followup/etapas-citadas";
 import { ENROLLMENT_LIST_COLUMNS } from "@/lib/followup/enroll";
+import { duplicarFluxo } from "@/lib/followup/duplicar-fluxo";
 import { flowGraphSchema, type FlowGraph } from "@/lib/followup/graph-schema";
 import {
   adiaEnrollment,
@@ -38,6 +39,8 @@ const TRIGGERS_COM_MOTOR = [
   "webhook",
   "silence",
   "stage_change",
+  "lead_created",
+  "inbound_after_silence",
   "case_opened",
   "appointment_no_show",
 ] as const;
@@ -125,7 +128,10 @@ export const crmGetFollowupFlow: McpToolDefinition<typeof obterFluxoShape> = {
   },
 };
 
-const criarFluxoShape = createFollowupFlowSchema.shape;
+// O schema REST ganhou `surface=atendimento` para o módulo de roteiros. O
+// módulo ainda não tem tela e permanece desligado; esta tool continua criando
+// somente follow-up, portanto não anuncia uma opção que ignora ao executar.
+const criarFluxoShape = { name: createFollowupFlowSchema.shape.name };
 export const crmCreateFollowupFlow: McpToolDefinition<typeof criarFluxoShape> = {
   name: "crm_create_followup_flow",
   description:
@@ -164,6 +170,38 @@ export const crmCreateFollowupFlow: McpToolDefinition<typeof criarFluxoShape> = 
       metadata: { name: input.name, via: "mcp" },
     });
     return { fluxo: data };
+  },
+};
+
+const duplicarFluxoShape = { flow_id: z.string().uuid() };
+export const crmDuplicateFollowupFlow: McpToolDefinition<typeof duplicarFluxoShape> = {
+  name: "crm_duplicate_followup_flow",
+  description: "Duplica um fluxo existente desta organização como rascunho inativo. Copia grafo, gatilho e política; não publica, não inscreve contatos e não envia mensagem.",
+  inputSchema: duplicarFluxoShape,
+  category: "write",
+  requiresRole: "manager",
+  requiresScope: "mcp:write",
+  domain: "followups",
+  publicProfile: true,
+  auditResource: (_input, result) => ({
+    type: "followup_flow_pointer",
+    id: (result as { fluxo?: { id?: string } })?.fluxo?.id,
+  }),
+  handler: async (input, ctx) => {
+    const { copia, name } = await duplicarFluxo(
+      ctx.supabase, ctx.organizationId, input.flow_id, ctx.requestId,
+    );
+    await audit({
+      action: "followup_flow.duplicated",
+      actorUserId: ator(ctx),
+      actorApiTokenId: ctx.apiTokenId,
+      organizationId: ctx.organizationId,
+      resourceType: "followup_flow_pointer",
+      resourceId: copia.id,
+      requestId: ctx.requestId,
+      metadata: { source_pointer_id: input.flow_id, name, via: "mcp" },
+    });
+    return { fluxo: copia };
   },
 };
 
@@ -628,6 +666,7 @@ export const FOLLOWUP_ADMIN_MCP_TOOLS = [
   crmListFollowupFlows,
   crmGetFollowupFlow,
   crmCreateFollowupFlow,
+  crmDuplicateFollowupFlow,
   crmUpdateFollowupFlow,
   crmPreflightFollowupFlow,
   crmPublishFollowupFlow,

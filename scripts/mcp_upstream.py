@@ -37,6 +37,7 @@ def latest_ready(releases):
     return max((version(r["tag_name"], MCP_VERSION)
                 for r in releases
                 if version(r["tag_name"], MCP_VERSION)
+                and not r.get("draft", False)
                 and any(a["name"] == "mcp-release.json" for a in r.get("assets", []))),
                default=None)
 
@@ -59,7 +60,7 @@ def summary(message):
             stream.write(message + "\n")
 
 
-def report(version_text, previous_tag, base, upstream_sha, changed, conflicts):
+def report(version_text, previous_tag, base, upstream_sha, changed, conflicts, statuses=None):
     lines = [f"# Delta MCP para v{version_text}", "",
              f"- Linha MCP anterior: `{base}`", f"- Tag oficial: `v{version_text}` (`{upstream_sha}`)",
              f"- Arquivos alterados pelo upstream desde {previous_tag}: {len(changed)}",
@@ -69,6 +70,21 @@ def report(version_text, previous_tag, base, upstream_sha, changed, conflicts):
     for area, prefixes in AREAS.items():
         items = [p for p in changed if any(p.startswith(prefix) for prefix in prefixes)]
         lines += [f"## {area} ({len(items)})", ""] + [f"- `{p}`" for p in items] + [""]
+    statuses = statuses or []
+    routes = [(state, path) for state, path in statuses
+              if path.startswith("app/api/") and path.endswith("/route.ts")]
+    lines += ["## Endpoints criados, removidos ou alterados", ""] + [
+        f"- `{state}` `{path}`" for state, path in routes
+    ] + [""]
+    measured = {
+        "Contratos, schemas e tipos": ("schema", "validation", "types", "contract"),
+        "Registry, policy, scopes e capabilities": ("mcp/", "scope", "capabilit", "polic"),
+        "Workers e scheduler": ("worker", "scheduler", "cron"),
+        "Docker e updater": ("docker", "update", "hostgator-setup-kit/"),
+    }
+    for title, needles in measured.items():
+        items = [path for path in changed if any(needle in path.lower() for needle in needles)]
+        lines += [f"## {title} ({len(items)})", ""] + [f"- `{path}`" for path in items] + [""]
     migrations = [p for p in changed if p.startswith("supabase/migrations/") and p.endswith(".sql")]
     lines += ["## Migrations oficiais novas", ""] + [f"- `{p}`" for p in migrations] + [""]
     lines += ["## Classificação A/B/C", "", "PENDENTE: revisão humana das novas operações e contratos. Gaps A não declarados como zero.",
@@ -88,23 +104,28 @@ def main():
     v = tag[1:]
     branch = f"mcp/integrate/{v}"
     summary(f"Nova versão upstream detectada: {tag}. MCP anterior: {ready}.")
+    run("git", "fetch", "--no-tags", f"https://github.com/{UPSTREAM}.git", f"refs/tags/{tag}:refs/tags/upstream-{v}")
+    upstream_sha = run("git", "rev-parse", f"upstream-{v}^{{commit}}").stdout.strip()
+    if run("git", "merge-base", "--is-ancestor", f"upstream-{v}", "HEAD", check=False).returncode == 0:
+        summary(f"{tag} já está na linha MCP; release ainda bloqueada por auditoria ou gates.")
+        return 0
     # A tag, e não a main, define o conteúdo. Sem force e sem sobrescrever
     # uma tentativa anterior: ela pode conter resolução humana em andamento.
     if run("git", "ls-remote", "--exit-code", "origin", f"refs/heads/{branch}", check=False).returncode == 0:
         summary(f"Integração {branch} já existe; aguardando PR e auditoria.")
         return 0
-    run("git", "fetch", "--no-tags", f"https://github.com/{UPSTREAM}.git", f"refs/tags/{tag}:refs/tags/upstream-{v}")
-    upstream_sha = run("git", "rev-parse", f"upstream-{v}^{{commit}}").stdout.strip()
     base = run("git", "rev-parse", "HEAD").stdout.strip()
     previous_tag = "v" + ".".join(map(str, ready)) if ready else "v1.42.0"
     run("git", "fetch", "--no-tags", f"https://github.com/{UPSTREAM}.git", f"refs/tags/{previous_tag}:refs/tags/upstream-previous")
     changed = run("git", "diff", "--name-only", "upstream-previous", f"upstream-{v}").stdout.splitlines()
+    status_lines = run("git", "diff", "--name-status", "--find-renames", "upstream-previous", f"upstream-{v}").stdout.splitlines()
+    statuses = [(fields[0], fields[-1]) for line in status_lines if (fields := line.split("\t"))]
     run("git", "config", "user.name", "github-actions[bot]")
     run("git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com")
     run("git", "checkout", "-b", branch)
     merge = run("git", "merge", "--no-commit", "--no-ff", f"upstream-{v}", check=False)
     conflicts = run("git", "diff", "--name-only", "--diff-filter=U").stdout.splitlines()
-    report(v, previous_tag, base, upstream_sha, changed, conflicts)
+    report(v, previous_tag, base, upstream_sha, changed, conflicts, statuses)
     if merge.returncode and not conflicts:
         with open("mcp-delta-report.md", "a", encoding="utf-8") as stream:
             stream.write("\n## Erro do merge antes de detectar conflitos\n\n" + merge.stderr[-2000:] + "\n")
@@ -112,10 +133,11 @@ def main():
         title = f"MCP v{v}: integração bloqueada por conflito"
         body = Path("mcp-delta-report.md").read_text(encoding="utf-8")
         issues = json.loads(run("gh", "issue", "list", "-R", repo, "--state", "open", "--search", title,
-                                "--json", "number,title").stdout)
+                                "--json", "number,title,body").stdout)
         matching = next((i for i in issues if i["title"] == title), None)
         if matching:
-            run("gh", "issue", "edit", str(matching["number"]), "-R", repo, "--body", body)
+            if matching["body"] != body:
+                run("gh", "issue", "edit", str(matching["number"]), "-R", repo, "--body", body)
         else:
             run("gh", "issue", "create", "-R", repo, "--title", title, "--body", body)
         summary(f"Nova versão upstream detectada, mas MCP não foi publicado. Conflitos: {', '.join(conflicts)}.")
@@ -128,6 +150,7 @@ def main():
     run("gh", "pr", "create", "-R", repo, "--base", "mcp/stable", "--head", branch,
         "--title", f"MCP: integrar {tag}", "--body", body)
     summary(f"PR {branch} aberto. Nova versão upstream detectada, mas MCP não foi publicado: auditoria pendente.")
+    summary("Se o GitHub mostrar 'Approve workflows to run' na PR, um mantenedor com acesso de escrita precisa liberar o CI antes da revisão e do merge.")
     return 0
 
 

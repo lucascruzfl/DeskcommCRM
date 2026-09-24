@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/ai/agents/publish", () => ({ publishAgentVersion: mocks.publish }));
 vi.mock("@/lib/ai/agents/create-draft", () => ({ createMcpAgentDraft: mocks.create }));
 vi.mock("@/lib/audit", () => ({ audit: mocks.audit }));
-vi.mock("@/lib/ai/runtime/agent", () => ({ chaveDePlataforma: mocks.platform }));
+vi.mock("@/lib/ai/platform-credential", () => ({ chaveDePlataforma: mocks.platform }));
 vi.mock("@/lib/ai/agents/capacidades-padrao", () => ({
   capacidadesPadraoDoOnboarding: () => [
     "crm_get_lead",

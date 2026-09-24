@@ -49,11 +49,11 @@ pnpm typecheck
 pnpm lint
 pnpm lint:channels
 pnpm lint:role-rank
-pnpm release:conferir
+pnpm test:shell
 git diff --check
 ```
 
-Se tocar UI, acrescente Playwright e evidência visual. Se tocar packaging, `pnpm test:shell`. Antes do build, meça memória e swap.
+O corte da release oficial não é gate da integração de uma tag oficial já publicada. Se tocar UI, acrescente Playwright e evidência visual. Antes do build, meça memória e swap.
 
 ## 5. Critérios de fechamento
 
@@ -69,4 +69,5 @@ Se tocar UI, acrescente Playwright e evidência visual. Se tocar packaging, `pnp
   veredito. `mcp_compatible` só vira `true` com todos os itens acima medidos.
 
 A auditoria automática gera inventário, não interpretação de segurança.
-Confira [AUDIT-1.45.0.md](AUDIT-1.45.0.md) para o caso atual.
+Confira [AUDIT-1.47.0.md](AUDIT-1.47.0.md) para o caso atual; as auditorias
+1.45.0 e 1.46.0 permanecem como etapas históricas do salto desde a 1.42.0-mcp.

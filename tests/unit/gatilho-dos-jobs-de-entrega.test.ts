@@ -64,6 +64,22 @@ const DIR = join(process.cwd(), ".github/workflows");
  * que desliga um job de entrega fica visível em code review.
  */
 const GATILHO_ESPERADO: Record<string, { condicao: string | null; efeito: string }> = {
+  "publish-mcp-release.yml::check": {
+    condicao: "github.repository == 'lucascruzfl/DeskcommCRM' && github.ref == 'refs/heads/mcp/stable'",
+    efeito: "Verifica a versão apenas na branch MCP estável do fork; outra ref não pode iniciar publicação.",
+  },
+  "publish-mcp-release.yml::validate": {
+    condicao: "needs.check.outputs.needed == 'yes'",
+    efeito: "Valida auditoria e contratos da versão nova; pular sem motivo impede a publicação.",
+  },
+  "publish-mcp-release.yml::blocked-summary": {
+    condicao: "always() && github.repository == 'lucascruzfl/DeskcommCRM' && github.ref == 'refs/heads/mcp/stable' && (needs.check.result != 'success' || (needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'))",
+    efeito: "Explica falha de conferência, validação ou publicação somente na linha MCP estável.",
+  },
+  "publish-mcp-release.yml::publish": {
+    condicao: null,
+    efeito: "Publica imagens e manifesto depois de validate; pular deixa versão sem entrega.",
+  },
   // --- a cadeia que leva o conserto até a VPS ---------------------------------
   "release.yml::abrir-pr-de-release": {
     condicao: "github.event_name == 'workflow_dispatch'",
@@ -150,7 +166,7 @@ const GATILHO_ESPERADO: Record<string, { condicao: string | null; efeito: string
   // Desligar qualquer um destes faz o PR entrar sem ter sido testado.
   "ci.yml::verify-parte": {
     condicao: null,
-    efeito: "São as duas partes da suíte (typecheck + lint + test:unit); sem elas o `verify` não tem o que ler.",
+    efeito: "São as partes da suíte (typecheck + lint + test:unit); sem elas o `verify` não tem o que ler.",
   },
   // A suíte foi dividida em partes (tempo medido, ver ci.yml); o nome que a
   // branch protection exige continua sendo `verify`, agora o agregado.
@@ -371,4 +387,20 @@ describe("nenhum job pode ser desligado por uma condição — `skipped` conta c
       ).toBe(esperado.condicao);
     },
   );
+});
+
+it("publicação MCP depende de validate: teste vermelho não chega às imagens nem ao manifesto", () => {
+  const workflow = readFileSync(join(DIR, "publish-mcp-release.yml"), "utf8");
+  const validate = workflow.split(/^  validate:\s*$/m)[1]?.split(/^  publish:\s*$/m)[0];
+  const publish = workflow.split(/^  publish:\s*$/m)[1]?.split(/^  blocked-summary:\s*$/m)[0];
+  expect(validate, "job validate MCP ausente").toBeDefined();
+  expect(publish, "job publish MCP ausente").toBeDefined();
+  expect(validate).toContain("pnpm test:unit");
+  expect(validate).toContain("pnpm test:db");
+  expect(validate).toContain("pnpm test:shell");
+  expect(validate).toContain("previous_mcp_tag");
+  expect(validate).toContain("TEST_DB_INSTALL_BASELINE");
+  expect(publish).toMatch(/^    needs: \[check, validate\]$/m);
+  expect(publish).not.toMatch(/^    if:.*always\(/m);
+  expect(publish).toContain("Publicar o manifesto como última etapa");
 });

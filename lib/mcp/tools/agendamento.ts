@@ -158,7 +158,8 @@ const horariosLivresShape = {
     .max(MAXIMO_DE_DIAS)
     .optional()
     .describe(
-      `quantos dias olhar a partir de agora (padrão ${DIAS_PADRAO}). Use ESTE campo se você não sabe a data de hoje.`,
+      `quantos dias olhar a partir de agora (padrão ${DIAS_PADRAO}). Use ESTE campo se você não sabe a data de hoje. ` +
+        `Se 'dia' também for informado, 'dia' tem precedência.`,
     ),
   /**
    * A data civil é deliberadamente diferente de um ISO com offset. O modelo sabe
@@ -171,7 +172,8 @@ const horariosLivresShape = {
     .regex(/^\d{4}-\d{2}-\d{2}$/, "dia deve estar em YYYY-MM-DD")
     .optional()
     .describe(
-      "dia civil pedido pelo cliente, em YYYY-MM-DD. Use para uma data específica; o servidor aplica o fuso da agenda.",
+      "dia civil pedido pelo cliente, em YYYY-MM-DD. Use para uma data específica; o servidor aplica o fuso da agenda " +
+        "(tem precedência sobre dias_a_frente).",
     ),
   owner_user_id: z.string().uuid().optional(),
   limite: z
@@ -304,13 +306,8 @@ export const crmFindFreeSlots: McpToolDefinition<typeof horariosLivresShape> = {
   requiresScope: "mcp:read",
   handler: async (input, ctx) => {
     const agora = new Date();
-    if (input.dia !== undefined && input.dias_a_frente !== undefined) {
-      return {
-        horarios: [],
-        motivo: "periodo_ambiguo",
-        mensagem: "informe um dia específico ou quantos dias olhar, não os dois.",
-      };
-    }
+    // Se o modelo enviar `dia` e `dias_a_frente` juntos, toleramos e priorizamos
+    // o mais específico (`dia`), evitando recusa silenciosa em produção (#1436).
 
     // A faixa larga contém o dia civil em QUALQUER fuso. Depois de a coleta
     // revelar o fuso da regra, filtramos pelo mesmo dia local. Assim a IA não

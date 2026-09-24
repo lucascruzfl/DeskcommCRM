@@ -208,6 +208,16 @@ type EntradaDeMarca = {
 };
 
 const MARCA_CONGELADA: Record<string, EntradaDeMarca> = {
+  "app/api/v1/system/update/route.ts": {
+    categoria: "INFRA",
+    motivo: "DESKCOMM_UPDATE_CHANNEL é o nome da variável de ambiente persistida pelo instalador; mudar aqui separadamente impediria o painel MCP de reconhecer o canal configurado",
+    marcas: ["process.env.deskcomm_update_channel"],
+  },
+  "app/api/v1/system/version/route.ts": {
+    categoria: "INFRA",
+    motivo: "a mesma variável de canal lida pela consulta de versão; precisa casar com o instalador e a rota de atualização",
+    marcas: ["process.env.deskcomm_update_channel"],
+  },
   // ─── PROTOCOLO — contrato de fio. Renomear quebra integração alheia. ───
   "app/api/v1/webhooks/in/[token]/route.ts": {
     categoria: "PROTOCOLO",
@@ -880,6 +890,11 @@ const HOSTS_DECLARADOS: Record<string, EntradaDeHost> = {
     categoria: "FORNECEDOR",
     motivo:
       "endpoint padrão do adapter do canal de mensagens, com override por ZERNIO_API_BASE_URL. Fixo de propósito: instalação que não configura nada tem de funcionar.",
+  },
+  "cloud.datafyapi.com.br": {
+    categoria: "FORNECEDOR",
+    motivo:
+      "endpoint padrão do canal parceiro que espelha a Cloud API (recorte do #1130), com override por DATAFY_API_BASE_URL. É o destino das chamadas de envio e de validação do token — e o canal só existe numa instalação que o liga (DATAFY_ENABLED).",
   },
   // ── painel do fornecedor: texto de tela apontando para o endereço DELE ────
   "platform.openai.com": {

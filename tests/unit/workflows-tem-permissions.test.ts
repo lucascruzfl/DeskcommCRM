@@ -52,10 +52,12 @@ const DIR = join(process.cwd(), ".github/workflows");
  * acrescente, e acrescentar sem razão é visível em code review.
  */
 const ESCRITA_JUSTIFICADA: Record<string, string> = {
+  "publish-mcp-release.yml::contents: write":
+    "cria tag MCP auditada e publica manifesto de release depois dos gates",
+  "publish-mcp-release.yml::packages: write":
+    "publica as quatro imagens MCP no GHCR do fork depois dos gates",
   "publish-image.yml::packages: write":
     "publica a imagem do app no GHCR — é o artefato que o self-hoster instala",
-  "deploy-vps-develop.yml::packages: write":
-    "publica as imagens :develop deste fork no GHCR — a VPS só puxa, não builda",
   "vigia-de-colisao.yml::pull-requests: write":
     "comenta e rotula o PR cujo número de migration foi tomado depois de ele ficar verde; " +
     "é o mínimo que escreve (um comentário editado por PR + o rótulo), o workflow não roda " +

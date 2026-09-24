@@ -94,6 +94,12 @@ export const TOOLS_PARTE5 = entradas([
     oQueToca: "Retornos e planos de acompanhamento",
   },
   {
+    name: "crm_duplicate_followup_flow",
+    category: "write",
+    rotulo: "Duplicar fluxo de follow-up",
+    oQueToca: "Fluxos de follow-up",
+  },
+  {
     name: "crm_update_followup_flow",
     category: "write",
     rotulo: "Editar um plano de acompanhamento",

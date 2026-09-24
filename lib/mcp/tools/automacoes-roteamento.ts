@@ -26,6 +26,7 @@ import {
 import { encryptRuleActionSecrets } from "@/lib/webhooks/secrets";
 import { autoriaDaMudanca } from "@/lib/operacao/autoria";
 import type { McpContext, McpToolDefinition } from "@/lib/mcp/types";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const RULE_COLUMNS =
   "id, name, is_active, trigger_event, trigger_config, conditions, actions, last_run_at, run_count, last_change_actor_kind, last_change_at, created_at, updated_at";
@@ -626,12 +627,13 @@ const updateRoutingShape = {
   max_retries: z.number().int().min(0).max(20).optional(),
   backoff_seconds: z.number().int().min(1).max(3600).optional(),
   handoff_return_after_minutes: z.number().int().min(5).max(1440).nullable().optional(),
+  conversation_stays_with_attendant: z.boolean().optional(),
   visibility_mode: z.enum(["all", "own_and_unassigned", "own"]).optional(),
 };
 export const crmUpdateRoutingConfig: McpToolDefinition<typeof updateRoutingShape> = {
   name: "crm_update_routing_config",
   description:
-    "Atualiza a política global oficial de roteamento. round_robin usa a ordem/carga do engine; manual não atribui automaticamente. Não inventa first-match/all-match nem filas inexistentes.",
+    "Atualiza a política global oficial de roteamento, inclusive a opção de manter a conversa com quem atendeu. round_robin usa a ordem/carga do engine; manual não atribui automaticamente. Não inventa first-match/all-match nem filas inexistentes.",
   inputSchema: updateRoutingShape,
   category: "write",
   requiresRole: "manager",
@@ -664,7 +666,8 @@ export const crmUpdateRoutingConfig: McpToolDefinition<typeof updateRoutingShape
     const base = routingConfigSchema.catch(DEFAULT_ROUTING).parse(current.routing ?? {});
     const parsed = atendimentoConfigPatchSchema.parse({ ...base, ...input });
     const next = mesclarSettingsDeAtendimento(current, parsed);
-    const { error } = await ctx.supabase
+    const admin = createAdminClient();
+    const { error } = await admin
       .from("organizations")
       .update({ settings: next.settings })
       .eq("id", ctx.organizationId);

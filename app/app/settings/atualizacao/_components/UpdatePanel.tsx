@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { useT } from "@/hooks/i18n/useT";
 
 // Sem `cd <pasta>`: o instalador não fixa o nome da pasta do clone
-// (REPO_DIR é configurável, default "deskcommcrm" minúsculo) — quem tem
+// (REPO_DIR é configurável, com o diretório padrão do projeto) — quem tem
 // acesso ao servidor já sabe entrar na pasta onde instalou.
 const COMANDO_MANUAL = "bash hostgator-setup-kit/update.sh";
 
@@ -443,6 +443,19 @@ export function UpdatePanel() {
         </p>
       )}
 
+      {/* O botão fica ANTES do changelog, não depois: com várias versões
+          acumuladas ele descia para o fim de uma lista longa, e quem só
+          queria clicar "Atualizar agora" precisava rolar por tudo. Os avisos
+          que pesam na decisão (`off_release`, `requires_attention` e o de
+          histórico incompleto) continuam antes DELE — só o "O que muda", que é
+          consulta, não decisão, desceu para depois. O de histórico incompleto
+          entra na lista porque, com `complete === false`, o "Requer atenção"
+          só junta as versões presentes no texto: pode estar faltando aviso, e
+          esse parágrafo é a única pista disso. */}
+      <div className="mb-6">
+        <BotaoAtualizar mutate={() => atualizar.mutate()} isPending={atualizar.isPending} erro={erro} />
+      </div>
+
       {data.notes?.sections.length ? (
         <div className="mb-6">
           <p className="mb-2 text-sm font-medium">{t("O que muda")}</p>
@@ -469,8 +482,6 @@ export function UpdatePanel() {
           ))}
         </div>
       ) : null}
-
-      <BotaoAtualizar mutate={() => atualizar.mutate()} isPending={atualizar.isPending} erro={erro} />
     </Layout>
   );
 }
@@ -642,7 +653,7 @@ function Layout({ titulo, children }: { titulo?: string; children: React.ReactNo
       </header>
       {data?.is_owner && data.update_channel === "custom-mcp" ? (
         <div className="grid gap-1 text-sm text-muted-foreground">
-          <p>{t("Versão Deskcomm")}: {crmVersion}</p>
+          <p>{t("Versão do CRM")}: {crmVersion}</p>
           <p>{t("Build MCP")}: {data.mcp_build?.includes("-mcp") ? data.mcp_build : t("a confirmar")}</p>
           <p>{t("Canal de atualização")}: MCP</p>
         </div>

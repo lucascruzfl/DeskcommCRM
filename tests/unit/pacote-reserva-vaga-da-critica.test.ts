@@ -28,6 +28,7 @@ import { describe, expect, it } from "vitest";
 
 import { PACOTE_PADRAO_DO_ONBOARDING } from "@/lib/ai/agents/capacidades-padrao";
 import { TOOL_CATALOG } from "@/lib/mcp/tools/catalogo";
+import { IDS_DO_HARNESS } from "@/lib/mcp/tools/ferramentas-do-harness";
 import {
   TETO_TOOLS_POR_AGENTE,
   capacidadesAutomaticasDoPacote,
@@ -40,6 +41,8 @@ const CATALOGO = TOOL_CATALOG.map((t) => ({
   name: t.name,
   risco: t.risco,
   pacotes: t.pacotes,
+  apenasHumano: t.apenasHumano,
+  marcavel: !IDS_DO_HARNESS.has(t.name) && !t.apenasHumano,
 }));
 
 /** Pacotes que realmente têm crítica — os únicos onde a reserva muda algo. */

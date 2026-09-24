@@ -46,12 +46,17 @@ export async function enviarTextoFixoPendente(
   admin: SupabaseClient,
   somenteContactIds?: string[],
 ): Promise<number> {
-  const { data: jobs, error } = await admin
+  if (somenteContactIds?.length === 0) return 0;
+  const pending = admin
     .from("job_queue")
     .select("id, organization_id, contact_id, payload, attempts, max_attempts")
     .eq("kind", "followup_turn")
     .eq("status", "pending")
-    .lte("run_after",new Date().toISOString())
+    .lte("run_after",new Date().toISOString());
+  // O caminho inline atende um contato específico. Filtrar somente DEPOIS do
+  // limit(5) deixa cinco jobs alheios ocultarem o dele; a mensagem não sai.
+  const scoped = somenteContactIds ? pending.in("contact_id", somenteContactIds) : pending;
+  const { data: jobs, error } = await scoped
     .order("created_at", { ascending: true })
     .limit(5);
   if (error) throw new Error(error.message);

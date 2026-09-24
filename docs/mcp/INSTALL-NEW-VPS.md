@@ -89,7 +89,12 @@ renomeada. A migration oficial de link salvo recebeu o identificador `0385` no
 fork para evitar colisão com a `0382` MCP e a `0383` posterior do upstream; seu
 SQL e timestamp `20260922021548` foram preservados. O Supabase identifica a
 migration por timestamp; bancos que já aplicaram a versão oficial não a
-recebem novamente. O baseline integrado contém as duas mudanças.
+recebem novamente. O baseline integrado contém as duas mudanças. Na integração
+1.45.0, a migration oficial de memória da organização foi renumerada de `0385`
+para `0398` na candidata acumulada 1.47.0, com timestamp novo e SQL preservado para evitar colisão com
+a migration MCP já implantada. O SQL é idempotente; a nova entrada deve passar
+pelos testes de instalação e reaplicação do baseline. Instalações novas continuam no canal
+`custom-mcp` quando seguem a seção 4.
 
 ## 8. Valide os serviços e a rota pública
 

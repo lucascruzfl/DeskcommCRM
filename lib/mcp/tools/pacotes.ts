@@ -25,7 +25,9 @@ export type ToolRisk = "seguro" | "atencao" | "critico";
 export type ToolBundle =
   | "atender"
   | "vender"
+  | "agendar"
   | "reter"
+  | "campanhas"
   | "escalar"
   | "organizar"
   | "evoluir";
@@ -55,32 +57,44 @@ export const PACOTES: ReadonlyArray<PacoteMeta> = [
     ordem: 2,
   },
   {
+    id: "agendar",
+    rotulo: "Marcar consultas e compromissos",
+    explicacao: "O agente consulta horários livres e marca, remarca ou confirma compromissos quando essa jornada é necessária.",
+    ordem: 3,
+  },
+  {
     id: "reter",
     rotulo: "Não perder o cliente",
     explicacao:
       "O agente agenda retornos e acompanha quem esfriou, para que nenhum interessado morra por falta de resposta.",
-    ordem: 3,
+    ordem: 4,
+  },
+  {
+    id: "campanhas",
+    rotulo: "Preparar campanhas",
+    explicacao: "O agente consulta públicos, prepara rascunhos e acompanha campanhas; iniciar envios continua a exigir uma pessoa.",
+    ordem: 5,
   },
   {
     id: "escalar",
     rotulo: "Passar para um humano",
     explicacao:
       "O agente reconhece quando não é o caso dele resolver, chama uma pessoa e entrega o resumo do que já aconteceu.",
-    ordem: 4,
+    ordem: 6,
   },
   {
     id: "organizar",
     rotulo: "Organizar a operação",
     explicacao:
       "O agente mantém a casa em ordem: marcadores, etapas do funil, avisos automáticos e distribuição de trabalho.",
-    ordem: 5,
+    ordem: 7,
   },
   {
     id: "evoluir",
     rotulo: "Aprender e evoluir",
     explicacao:
       "O agente consulta o que a empresa já sabe, aprende com os atendimentos e sugere melhorias para você aprovar.",
-    ordem: 6,
+    ordem: 8,
   },
 ] as const;
 

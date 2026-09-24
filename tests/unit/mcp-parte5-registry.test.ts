@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import { MCP_REGISTRY, MCP_TOOL_COUNT } from "@/lib/mcp/registry";
 
@@ -59,8 +60,8 @@ describe("registry MCP da Parte 5", () => {
     expect(AUTOMACOES).toHaveLength(10);
     expect(ROUTING).toHaveLength(5);
     expect(PARTE_5).toHaveLength(35);
-    expect(MCP_TOOL_COUNT).toBe(202);
-    expect(new Set(MCP_REGISTRY.map((tool) => tool.name)).size).toBe(202);
+    expect(MCP_TOOL_COUNT).toBe(MCP_REGISTRY.length);
+    expect(new Set(MCP_REGISTRY.map((tool) => tool.name)).size).toBe(MCP_REGISTRY.length);
     for (const name of PARTE_5) expect(registry.has(name), name).toBe(true);
   });
 
@@ -76,5 +77,21 @@ describe("registry MCP da Parte 5", () => {
       expect(tool.domain, name).toBeTruthy();
       if (tool.category === "write") expect(tool.auditResource, name).toBeTypeOf("function");
     }
+  });
+
+  it("a política MCP oferece o novo ajuste de retenção somente como booleano", () => {
+    const tool = registry.get("crm_update_routing_config")!;
+    const campo = tool.inputSchema.conversation_stays_with_attendant;
+    expect(tool.requiresRole).toBe("manager");
+    expect(tool.requiresScope).toBe("mcp:write");
+    expect(campo).toBeDefined();
+    if (!campo) throw new Error("A configuração de roteamento não expõe o novo campo");
+    expect(z.safeParse(campo, true).success).toBe(true);
+    expect(z.safeParse(campo, false).success).toBe(true);
+    expect(z.safeParse(campo, "true").success).toBe(false);
+  });
+
+  it("não anuncia a superfície de roteiro ainda desligada na criação de follow-up", () => {
+    expect(Object.keys(registry.get("crm_create_followup_flow")!.inputSchema)).not.toContain("surface");
   });
 });

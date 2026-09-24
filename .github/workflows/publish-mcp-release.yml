@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   check:
-    if: github.repository == 'lucascruzfl/DeskcommCRM'
+    if: github.repository == 'lucascruzfl/DeskcommCRM' && github.ref == 'refs/heads/mcp/stable'
     runs-on: ubuntu-latest
     outputs:
       needed: ${{ steps.release.outputs.needed }}
@@ -33,7 +33,7 @@ jobs:
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           tag="v${version}-mcp"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          if gh release view "$tag" --json assets --jq '.assets[].name' 2>/dev/null | grep -qx mcp-release.json; then
+          if gh release view "$tag" --json assets,isDraft --jq 'if .isDraft then empty else .assets[].name end' 2>/dev/null | grep -qx mcp-release.json; then
             echo 'needed=no' >> "$GITHUB_OUTPUT"
             echo "MCP release $tag já pronta; nada a publicar." >> "$GITHUB_STEP_SUMMARY"
           else
@@ -69,15 +69,14 @@ jobs:
           jq -e --arg v "$version" --arg sha "$upstream_sha" \
             '.deskcomm_version == $v and .upstream_tag == ("v" + $v) and .upstream_commit == $sha and .gaps_a == 0 and .mcp_compatible == true' \
             docs/mcp/RELEASE-AUDIT.json
+          previous_tag="$(jq -r .previous_mcp_tag docs/mcp/RELEASE-AUDIT.json)"
+          [[ "$previous_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-mcp$ ]]
+          test "$previous_tag" != "$RELEASE_TAG"
+          git show "${previous_tag}:supabase/baseline.sql" > "$RUNNER_TEMP/mcp-previous-baseline.sql"
+          echo "MCP_PREVIOUS_BASELINE=$RUNNER_TEMP/mcp-previous-baseline.sql" >> "$GITHUB_ENV"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/preparar-node
+        timeout-minutes: 5
       - run: pnpm typecheck
         env:
           NODE_OPTIONS: --max-old-space-size=4096
@@ -86,13 +85,24 @@ jobs:
       - run: pnpm lint:role-rank
       - run: pnpm test:unit
       - run: pnpm test:db:update
+      - name: Salto da última MCP pronta em PostgreSQL 15 e 17
+        run: |
+          set -euo pipefail
+          for major in 15 17; do
+            TEST_DB_IMAGE="pgvector/pgvector:pg${major}" \
+              TEST_DB_INSTALL_BASELINE="$MCP_PREVIOUS_BASELINE" pnpm test:db:update
+          done
       - run: pnpm build
         env:
           NODE_OPTIONS: --max-old-space-size=4096
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          NEXT_PUBLIC_APP_URL: https://placeholder.invalid
+          NEXT_PUBLIC_ADMIN_URL: https://placeholder.invalid
       - name: MCP, política, fluxos e atualizador
         run: pnpm exec vitest run tests/unit/manifest-x-migrations.test.ts tests/unit/mcp-compatibility-sentinels.test.ts tests/unit/mcp-final-flows.test.ts tests/unit/mcp-campaign-isolation.test.ts tests/unit/mcp-rate-limit.test.ts app/api/v1/system/version/route.test.ts app/api/v1/system/update/route.test.ts
-      - name: Isolamento e baseline em banco descartável
-        run: pnpm test:db tests/invariants/mcp-nao-alcanca-outro-tenant.test.ts tests/invariants/agenda-mcp-nao-alcanca-contato-alheio.test.ts tests/invariants/mcp-faq-atomica.test.ts
+      - name: Baseline e invariantes em banco descartável
+        run: pnpm test:db
       - run: pnpm test:shell
       - run: python3 -m unittest tests/unit/mcp_upstream_test.py tests/unit/mcp_manifest_test.py
       - name: Snapshot do catálogo, sem número fixo
@@ -116,18 +126,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Criar tag MCP depois dos gates
-        env:
-          RELEASE_TAG: ${{ needs.check.outputs.tag }}
-        run: |
-          set -euo pipefail
-          git fetch --tags origin
-          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
-            test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$GITHUB_SHA"
-          else
-            git tag "$RELEASE_TAG" "$GITHUB_SHA"
-            git push origin "refs/tags/$RELEASE_TAG"
-          fi
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -181,6 +179,47 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.check.outputs.tag }}
         run: |
-          gh release create "$RELEASE_TAG" mcp-release.json \
-            --verify-tag --title "$RELEASE_TAG" \
-            --notes "DeskcommCRM + MCP Full Control; testes e digests no manifesto."
+          set -euo pipefail
+          git fetch --tags origin
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$GITHUB_SHA"
+          else
+            git tag "$RELEASE_TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/$RELEASE_TAG"
+          fi
+          if gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft >/dev/null 2>&1; then
+            test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+            gh release upload "$RELEASE_TAG" mcp-release.json --clobber
+          else
+            gh release create "$RELEASE_TAG" mcp-release.json --draft \
+              --verify-tag --title "$RELEASE_TAG" \
+              --notes "DeskcommCRM + MCP Full Control; testes e digests no manifesto."
+          fi
+          gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' | grep -qx mcp-release.json
+          gh release edit "$RELEASE_TAG" --draft=false
+          echo "MCP release $RELEASE_TAG pronta para atualização. A VPS só atualiza após o clique humano no painel." >> "$GITHUB_STEP_SUMMARY"
+
+  blocked-summary:
+    needs: [check, validate, publish]
+    if: always() && github.repository == 'lucascruzfl/DeskcommCRM' && github.ref == 'refs/heads/mcp/stable' && (needs.check.result != 'success' || (needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'))
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Explicar bloqueio
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.check.outputs.tag }}
+          CHECK_RESULT: ${{ needs.check.result }}
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+        run: |
+          echo "Nova versão upstream detectada, mas MCP não foi publicado." >> "$GITHUB_STEP_SUMMARY"
+          echo "Alvo: $RELEASE_TAG. Conferência: $CHECK_RESULT. Validação: $VALIDATE_RESULT. Publicação: $PUBLISH_RESULT." >> "$GITHUB_STEP_SUMMARY"
+          falhas="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?per_page=100" \
+            --jq '.jobs[] | select(.conclusion == "failure") | .name as $job | .steps[] | select(.conclusion == "failure") | "\($job): \(.name)"' 2>/dev/null || true)"
+          if [ -n "$falhas" ]; then
+            echo 'Passos que falharam:' >> "$GITHUB_STEP_SUMMARY"
+            while IFS= read -r passo; do echo "- $passo" >> "$GITHUB_STEP_SUMMARY"; done <<< "$falhas"
+          fi
+          echo "Sem fallback para imagem oficial." >> "$GITHUB_STEP_SUMMARY"

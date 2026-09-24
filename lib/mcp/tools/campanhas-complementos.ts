@@ -5,6 +5,7 @@ import { enderecoValido, finalDoEndereco, hashDoEndereco } from "@/lib/campanhas
 import { criarExclusaoSchema, criarTemplateSchema, editarTemplateSchema } from "@/lib/campanhas/schemas";
 import { McpToolError } from "@/lib/mcp/errors";
 import type { McpToolDefinition } from "@/lib/mcp/types";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const uuid = z.string().uuid();
 const idShape = { id: uuid };
@@ -156,7 +157,8 @@ const updateSettings: McpToolDefinition<typeof configuracaoDeCampanhasSchema.sha
       .eq("id", ctx.organizationId).maybeSingle();
     if (readError || !data) fail("Não consegui consultar as configurações atuais.");
     const settings = (data.settings && typeof data.settings === "object") ? data.settings as Record<string, unknown> : {};
-    const { error } = await ctx.supabase.from("organizations")
+    const admin = createAdminClient();
+    const { error } = await admin.from("organizations")
       .update({ settings: { ...settings, campanhas: parsed } }).eq("id", ctx.organizationId);
     if (error) fail("Não consegui atualizar os padrões de campanhas.");
     return { settings: parsed };
