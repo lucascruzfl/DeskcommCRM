@@ -76,14 +76,14 @@ const TOOLS_DO_SEED = [
   // "faltam 1 vaga". Com teto 25 essas mesmas 21 passam, a recusa nunca acontece
   // e o caso vira um clique que sempre dá certo — verde sem medir nada.
   //
-  // Nove reproduzem a MESMA aritmética no teto novo: 9 + 17 = 26 > 25, recusa
-  // por 1 vaga; desligar uma deixa 8 + 17 = 25, que é o teto exato e passa.
+  // Estas nove ficam fora do pacote. O teste lê quantas vagas faltam da tela,
+  // pois o pacote cresce quando uma release traz novas capacidades.
   //
-  // Os 17 são o pacote "Atender" DEPOIS da #528, e foi ela que mudou o número:
+  // O pacote "Atender" tinha 17 depois da #528, e foi ela que mudou o número:
   // a crítica que o pacote contava (o envio de WhatsApp, que o motor descarta
   // em todo turno) deixou de ser oferecida, e com ela saiu uma vaga da conta.
-  // Com as oito antigas, 8 + 17 = 25 exatas — o pacote passaria a caber e o
-  // caso de recusa morreria calado, que é o desfecho que se quer evitar.
+  // Com as oito antigas, 8 + 17 = 25 exatas naquela versão; a recusa teria
+  // morrido calada, que é o desfecho que se quer evitar.
   //
   // As escolhidas ficam FORA do pacote "Atender" de propósito — se alguma
   // estivesse dentro, a união seria menor que a soma e a conta acima não valeria.
@@ -226,36 +226,30 @@ test.describe("Configurar o que o agente pode fazer", () => {
 
     // O TETO ENTRA NA JORNADA (issue #162), e entra antes do clique.
     //
-    // "Atender" exige 17 vagas: 17 automáticas e nenhuma crítica — a única que
-    // ele tinha (o envio de WhatsApp) deixou de ser oferecida na #528, e com ela
-    // saiu uma vaga da conta. Com as 9 do seed dá 26, acima do teto de 25.
-    //
-    // ⚠️ AS 9 SÃO O QUE MANTÉM ESTE CASO VIVO. Eram 3, e 3 + 18 = 21 estourava o
-    // teto de 20. Quando o teto foi para 25 essas mesmas 21 passaram a caber: a
-    // recusa nunca aconteceria e o caso viraria um clique que sempre dá certo —
-    // verde sem medir nada, que é o pior desfecho para um teste de recusa. As 5
-    // novas entraram aí; a NONA entrou com a #528, que tirou uma vaga do pacote
-    // (8 + 17 = 25 exatas: o pacote caberia e a recusa sumiria de novo).
-    // Todas estão FORA de "Atender", senão a união seria menor que a soma.
+    // O pacote cresce entre releases. As nove tools do seed ficam fora de
+    // "Atender"; a prova exige recusa e libera a quantidade que a tela medir.
     //
     // Antes da correção a tela aceitava o pacote, chegava a 20 exatas e deixava
     // o checkbox da crítica DESABILITADO — prometia uma escolha que o produto
     // não permitia fazer, sem dizer por quê. Agora recusa e diz quantas vagas
     // faltam, e o operador faz o que a própria tela manda.
     await page.getByTestId("switch-pacote-atender").click();
-    await expect(page.getByTestId("aviso-teto")).toContainText(/faltam? 1 vaga/);
+    const aviso = await page.getByTestId("aviso-teto").innerText();
+    const faltam = Number(aviso.match(/faltam? (\d+) vagas?/)?.[1]);
+    expect(faltam, aviso).toBeGreaterThan(0);
+    expect(faltam, aviso).toBeLessThanOrEqual(TOOLS_DO_SEED.length);
     await expect(
       page.getByTestId("pacote-atender"),
       "recusar significa NÃO aplicar: pacote meio-ligado seria o pior dos dois mundos",
     ).not.toHaveAttribute("data-estado", "ligado");
 
-    // Libera a vaga desligando uma capacidade que o seed tinha ligado.
+    // Libera exatamente as vagas faltantes, sem prender o teste à contagem de
+    // tools de uma versão específica.
     await page.getByTestId("toggle-avancado").click();
     await page.getByTestId("lista-avancada").waitFor({ state: "visible" });
-    await page
-      .getByTestId(`capacidade-${TOOLS_DO_SEED[2]}`)
-      .locator("input[type=checkbox]")
-      .click();
+    for (const tool of TOOLS_DO_SEED.slice(0, faltam)) {
+      await page.getByTestId(`capacidade-${tool}`).locator("input[type=checkbox]").uncheck();
+    }
     await page.getByTestId("toggle-avancado").click();
 
     await page.getByTestId("switch-pacote-atender").click();

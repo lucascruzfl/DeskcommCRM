@@ -69,4 +69,5 @@ O corte da release oficial não é gate da integração de uma tag oficial já p
   veredito. `mcp_compatible` só vira `true` com todos os itens acima medidos.
 
 A auditoria automática gera inventário, não interpretação de segurança.
-Confira [AUDIT-1.45.0.md](AUDIT-1.45.0.md) para o caso atual.
+Confira [AUDIT-1.46.0.md](AUDIT-1.46.0.md) para o caso atual; a auditoria
+da 1.45.0 permanece como etapa histórica do salto desde a 1.42.0-mcp.
