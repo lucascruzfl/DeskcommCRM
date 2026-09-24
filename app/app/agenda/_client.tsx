@@ -24,6 +24,7 @@ import { rotuloDoLocal } from "@/lib/agenda/locais";
 import { ancoraAoFecharPainel } from "@/lib/agenda/ancora-depois-de-marcar";
 import { ancoraLocalDoDia } from "@/lib/agenda/semana-semente";
 import { janelaDoMesVisivel } from "@/lib/agenda/janela-do-mes-visivel";
+import { recorteDaGrade as recorteDaGradeDe } from "@/lib/agenda/recorte-da-grade";
 import { resolverResponsavelDoPainel } from "@/lib/agenda/responsavel-do-painel";
 import { useVinculoDaMarcacao } from "@/lib/agenda/vinculo-da-marcacao";
 import { Button } from "@/components/ui/button";
@@ -325,22 +326,14 @@ export function AgendaClient({
   // hook assume dali: `useMarcarAgendamento` já invalida `["agenda"]`, então
   // marcar pela tela repinta a grade sozinho.
   // O recorte acompanha o que a grade DESENHA — mesma visão, mesma âncora.
-  // Mês desenha sempre seis semanas, inclusive dias dos meses vizinhos.
-  // Consultar só do dia 1 ao último dia esconde compromissos nessas células.
   // Instante ISO, nunca o filtro `dia`: o cabeçalho do hook mede por que
   // (`dia=` corta em UTC e some com o compromisso das 22h no fuso de São Paulo).
+  // A conta mora em `lib/agenda/recorte-da-grade.ts`, junto com a do desenho:
+  // a visão Mês desenha seis semanas, e buscar só o mês deixava vazios os dias
+  // do mês vizinho que ela mostra.
   const recorteDaGrade = React.useMemo(() => {
-    const inicio =
-      visao === "mes"
-        ? startOfWeek(startOfMonth(ancora), { weekStartsOn: 0 })
-        : visao === "semana"
-          ? startOfWeek(ancora, { weekStartsOn: 0 })
-          : startOfDay(ancora);
-    const fim =
-      visao === "mes"
-        ? addDays(inicio, 42)
-        : addDays(inicio, visao === "semana" ? 7 : 1);
-    return { de: inicio.toISOString(), ate: fim.toISOString() };
+    const { de, ate } = recorteDaGradeDe(visao, ancora);
+    return { de: de.toISOString(), ate: ate.toISOString() };
   }, [visao, ancora]);
 
   // A janela que o SERVIDOR pintou. Sem esta comparação, navegar para outra

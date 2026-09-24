@@ -627,12 +627,13 @@ const updateRoutingShape = {
   max_retries: z.number().int().min(0).max(20).optional(),
   backoff_seconds: z.number().int().min(1).max(3600).optional(),
   handoff_return_after_minutes: z.number().int().min(5).max(1440).nullable().optional(),
+  conversation_stays_with_attendant: z.boolean().optional(),
   visibility_mode: z.enum(["all", "own_and_unassigned", "own"]).optional(),
 };
 export const crmUpdateRoutingConfig: McpToolDefinition<typeof updateRoutingShape> = {
   name: "crm_update_routing_config",
   description:
-    "Atualiza a política global oficial de roteamento. round_robin usa a ordem/carga do engine; manual não atribui automaticamente. Não inventa first-match/all-match nem filas inexistentes.",
+    "Atualiza a política global oficial de roteamento, inclusive a opção de manter a conversa com quem atendeu. round_robin usa a ordem/carga do engine; manual não atribui automaticamente. Não inventa first-match/all-match nem filas inexistentes.",
   inputSchema: updateRoutingShape,
   category: "write",
   requiresRole: "manager",

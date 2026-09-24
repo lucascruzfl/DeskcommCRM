@@ -67,7 +67,7 @@ A tag 1.45.0 inclui as migrations oficiais `0383`, `0385`, `0386`, `0387`,
 linha MCP preserva a `0382` própria e a renumeração anterior registrada em
 `INSTALL-NEW-VPS.md`. O novo `0385_memoria_da_org_aceita_origem_agente`
 colidiu com a `0385_link_salvo_no_modelo` já implantada na linha MCP; foi
-movido para `20260923231500_0393_memoria_da_org_aceita_origem_agente.sql`
+movido para `20260924093000_0398_memoria_da_org_aceita_origem_agente.sql`
 antes de qualquer deploy. SQL e bloco idempotente do baseline mantidos. O instalador e atualizador reaplicam o **baseline
 acumulado**, não percorrem tags/release por release. Portanto não há exigência
 estrutural de publicar 1.43 e 1.44 separadamente. A prova operacional do salto

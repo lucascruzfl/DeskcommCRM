@@ -77,4 +77,18 @@ describe("registry MCP da Parte 5", () => {
       if (tool.category === "write") expect(tool.auditResource, name).toBeTypeOf("function");
     }
   });
+
+  it("a política MCP oferece o novo ajuste de retenção somente como booleano", () => {
+    const tool = registry.get("crm_update_routing_config")!;
+    const campo = tool.inputSchema.conversation_stays_with_attendant;
+    expect(tool.requiresRole).toBe("manager");
+    expect(tool.requiresScope).toBe("mcp:write");
+    expect(campo?.safeParse(true).success).toBe(true);
+    expect(campo?.safeParse(false).success).toBe(true);
+    expect(campo?.safeParse("true").success).toBe(false);
+  });
+
+  it("não anuncia a superfície de roteiro ainda desligada na criação de follow-up", () => {
+    expect(Object.keys(registry.get("crm_create_followup_flow")!.inputSchema)).not.toContain("surface");
+  });
 });

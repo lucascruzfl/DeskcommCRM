@@ -128,7 +128,10 @@ export const crmGetFollowupFlow: McpToolDefinition<typeof obterFluxoShape> = {
   },
 };
 
-const criarFluxoShape = createFollowupFlowSchema.shape;
+// O schema REST ganhou `surface=atendimento` para o módulo de roteiros. O
+// módulo ainda não tem tela e permanece desligado; esta tool continua criando
+// somente follow-up, portanto não anuncia uma opção que ignora ao executar.
+const criarFluxoShape = { name: createFollowupFlowSchema.shape.name };
 export const crmCreateFollowupFlow: McpToolDefinition<typeof criarFluxoShape> = {
   name: "crm_create_followup_flow",
   description:
