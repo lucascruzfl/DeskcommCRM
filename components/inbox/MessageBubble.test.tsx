@@ -159,3 +159,28 @@ describe("MessageBubble — contenção de layout e quebra de palavras (#1451)",
   });
 });
 
+describe("pino compartilhado pelo cliente", () => {
+  it("vira cartão que abre o mapa, no lugar do link cru", () => {
+    render(
+      <MessageBubble
+        message={msg({
+          direction: "inbound",
+          sent_via: "external_device",
+          type: "location",
+          body: "📍 https://maps.google.com/?q=-25.33,-57.54",
+          metadata: { location: { latitude: -25.33, longitude: -57.54 } },
+        })}
+      />,
+    );
+    const link = screen.getByRole("link", { name: /Abrir no mapa/ });
+    expect(link.getAttribute("href")).toBe("https://maps.google.com/?q=-25.33,-57.54");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(screen.queryByText("📍 https://maps.google.com/?q=-25.33,-57.54")).toBeNull();
+  });
+
+  it("sem coordenadas, o corpo aparece como sempre", () => {
+    render(<MessageBubble message={msg({ direction: "inbound", type: "location", body: "📍 Location" })} />);
+    expect(screen.getByText("📍 Location")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Abrir no mapa/ })).toBeNull();
+  });
+});
