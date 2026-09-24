@@ -12,6 +12,17 @@
 
 ---
 
+## Instalação da distribuição MCP em VPS nova
+
+Para instalar o fork `lucascruzfl/DeskcommCRM`, siga
+[`docs/mcp/INSTALL-NEW-VPS.md`](docs/mcp/INSTALL-NEW-VPS.md). Clone a branch
+`mcp/stable`, execute o `hostgator-setup-kit/install.sh` existente e acompanhe
+as perguntas dele. A distribuição escolhe release, imagens e canal MCP sem
+perguntas técnicas adicionais; peça à pessoa apenas os dados solicitados pelo
+instalador.
+
+---
+
 ## Visão (1 parágrafo)
 
 DeskcommCRM é um sistema operacional de vendas open source com agentes de IA nativos — multi-nicho (e-commerce, clínicas, imobiliárias, infoprodutos, serviços), com WhatsApp como canal primário (via WAHA). Agentes com RAG por tenant atendem, qualificam e movem o funil junto com humanos; CRM inteiro exposto via MCP. Monetização = self-host em VPS (parceria HostGator), não assinatura. Arquitetura multi-tenant com RLS desde o dia 1; LGPD nativa. Posicionamento completo: `VISION.md`.

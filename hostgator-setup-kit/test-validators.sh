@@ -3530,6 +3530,140 @@ else
   printf '  ✓ o heredoc do bootstrap do dono está livre de crase\n'
 fi
 
+echo "distribuição MCP: instalação nova usa o mesmo wizard e imagens validadas"
+TMP_MCP_INSTALL="$(mktemp -d)"
+(
+  montar_vps "$TMP_MCP_INSTALL/vps" "crm" <<'STUB'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$DOCKER_LOG"
+case "$*" in
+  *"buildx imagetools inspect "*) exit 0 ;;
+  *"compose "*" pull"*) [ "${MCP_PULL_FAIL:-0}" != 1 ]; exit $? ;;
+  *"compose "*" up -d"*) [ "${MCP_UP_FAIL:-0}" != 1 ]; exit $? ;;
+  *"compose "*" exec "*) printf 'healthy\n{"data":{"status":"healthy"}}\n'; exit 0 ;;
+esac
+exit 0
+STUB
+  cp mcp-distribution.sh mcp-channel.sh mcp-release-validate.py "$VPS_RAIZ/"
+  printf '%s\n' "$BASE_ENV" > "$VPS_PROJ/.env.partial"
+  sed -i '/^DOMAIN=/d' "$VPS_PROJ/.env.partial"
+  git -C "$VPS_PROJ" init -q
+  git -C "$VPS_PROJ" add docker-compose.prod.yml
+  git -C "$VPS_PROJ" -c user.name=Teste -c user.email=teste@example.invalid commit -qm fixture
+  git -C "$VPS_PROJ" tag v1.47.0-mcp
+  sha="$(git -C "$VPS_PROJ" rev-parse v1.47.0-mcp)"
+  python3 - "$TMP_MCP_INSTALL/manifest.json" "$sha" <<'PY'
+import json, sys
+images = {role: {"repository": "ghcr.io/lucascruzfl/" + name,
+                 "tag": "1.47.0-mcp", "digest": "sha256:" + "a" * 64}
+          for role, name in {"app": "deskcommcrm", "worker": "deskcomm-worker",
+                             "scheduler": "deskcomm-scheduler", "voice_agent": "deskcomm-voice-agent"}.items()}
+with open(sys.argv[1], "w", encoding="utf-8") as stream:
+    json.dump({"schema_version": 1, "deskcomm_version": "1.47.0",
+               "tag": "v1.47.0-mcp", "mcp_commit": sys.argv[2], "tests": "passed",
+               "gaps_a": 0, "tool_count_snapshot": 202, "images": images}, stream)
+PY
+  cat > "$VPS_RAIZ/bin/git" <<'STUB'
+#!/usr/bin/env bash
+args=("$@")
+for i in "${!args[@]}"; do
+  [ "${args[$i]}" = https://github.com/lucascruzfl/DeskcommCRM.git ] && args[$i]="$MCP_TEST_GIT"
+done
+exec /usr/bin/git "${args[@]}"
+STUB
+  cat > "$VPS_RAIZ/bin/curl" <<'STUB'
+#!/usr/bin/env bash
+case "$*" in
+  *"/releases/download/v1.47.0-mcp/mcp-release.json"*)
+    args=("$@"); for i in "${!args[@]}"; do
+      if [ "${args[$i]}" = -o ]; then cp "$MCP_TEST_MANIFEST" "${args[$((i+1))]}"; exit; fi
+    done
+    exit 1 ;;
+  *) printf 200 ;;
+esac
+STUB
+  chmod +x "$VPS_RAIZ/bin/git" "$VPS_RAIZ/bin/curl"
+  export MCP_TEST_GIT="$VPS_PROJ" MCP_TEST_MANIFEST="$TMP_MCP_INSTALL/manifest.json"
+  export CRONTAB_SANDBOX="$TMP_MCP_INSTALL/crontab"
+  : > "$VPS_LOG"
+  saida="$(cd "$VPS_PROJ" && printf '\ncrm.exemplo.com.br\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nc\n' \
+    | env PATH="$VPS_RAIZ/bin:$PATH" DOCKER_LOG="$VPS_LOG" \
+        CRONTAB_SANDBOX="$CRONTAB_SANDBOX" SUPABASE_ACCESS_TOKEN= \
+        bash "$VPS_RAIZ/install.sh" 2>&1)" || {
+    printf '  ✗ instalação MCP simulada falhou:\n%s\n' "$(printf '%s' "$saida" | tail -20)"; exit 1;
+  }
+  for chave in DESKCOMM_UPDATE_CHANNEL DESKCOMM_UPDATE_REPOSITORY DESKCOMM_IMAGE_REPOSITORY \
+    APP_IMAGE WORKER_IMAGE SCHEDULER_IMAGE VOICE_AGENT_IMAGE; do
+    [ -n "$(valor_no_env "$VPS_PROJ/.env" "$chave")" ] || { printf '  ✗ falta %s no .env MCP\n' "$chave"; exit 1; }
+  done
+  [ "$(valor_no_env "$VPS_PROJ/.env" DESKCOMM_UPDATE_CHANNEL)" = custom-mcp ] || exit 1
+  [ "$(valor_no_env "$VPS_PROJ/.env" APP_IMAGE)" = "ghcr.io/lucascruzfl/deskcommcrm@sha256:$(printf 'a%.0s' {1..64})" ] || exit 1
+  # read -p só imprime o prompt em TTY; aqui o stdin é um pipe. A resposta
+  # precisa chegar ao .env, e a tela de conferência ainda precisa listar DOMAIN.
+  [ "$(valor_no_env "$VPS_PROJ/.env" DOMAIN)" = crm.exemplo.com.br ] \
+    && printf '%s' "$saida" | grep -q 'DOMAIN' \
+    && grep -q 'Domínio do CRM' "$VPS_RAIZ/install.sh" \
+    || { printf '  ✗ entrevista oficial sumiu\n'; exit 1; }
+  if printf '%s' "$saida" | grep -Eq 'Imagem Docker do app|GHCR token|MCP token|update channel'; then
+    printf '  ✗ a entrevista pediu detalhes internos MCP\n'; exit 1
+  fi
+  if grep -Eq 'compose .* build|buildx build' "$VPS_LOG"; then printf '  ✗ build local inesperado\n'; exit 1; fi
+  printf '  ✓ wizard original, quatro digests MCP, canal automático e nenhum build local\n'
+
+  # O mesmo checkout não pode cair em build local quando o pull falha.
+  export MCP_PULL_FAIL=1
+  : > "$VPS_LOG"
+  saida="$(cd "$VPS_PROJ" && env PATH="$VPS_RAIZ/bin:$PATH" DOCKER_LOG="$VPS_LOG" \
+    CRONTAB_SANDBOX="$CRONTAB_SANDBOX" SUPABASE_ACCESS_TOKEN= \
+    bash "$VPS_RAIZ/install.sh" --yes 2>&1 || true)"
+  printf '%s' "$saida" | grep -q 'sem build local ou fallback oficial' || {
+    printf '  ✗ pull falho não chegou à guarda MCP:\n%s\n' "$(printf '%s' "$saida" | tail -16)"; exit 1;
+  }
+  if grep -Eq 'compose .* up|compose .* build|buildx build' "$VPS_LOG"; then
+    printf '  ✗ pull MCP falho tentou subir ou construir\n'; exit 1
+  fi
+  printf '  ✓ pull falho interrompe antes de subir; nenhum fallback upstream\n'
+
+  export MCP_PULL_FAIL=0 MCP_UP_FAIL=1
+  : > "$VPS_LOG"
+  saida="$(cd "$VPS_PROJ" && env PATH="$VPS_RAIZ/bin:$PATH" DOCKER_LOG="$VPS_LOG" \
+    CRONTAB_SANDBOX="$CRONTAB_SANDBOX" SUPABASE_ACCESS_TOKEN= \
+    bash "$VPS_RAIZ/install.sh" --yes 2>&1 || true)"
+  printf '%s' "$saida" | grep -q 'Não consegui subir as imagens MCP validadas' || {
+    printf '  ✗ up falho não chegou à guarda MCP:\n%s\n' "$(printf '%s' "$saida" | tail -16)"; exit 1;
+  }
+  if grep -Eq 'compose .* build|buildx build' "$VPS_LOG"; then
+    printf '  ✗ up MCP falho tentou construir\n'; exit 1
+  fi
+  printf '  ✓ up falho também bloqueia build local\n'
+
+  export MCP_UP_FAIL=0 MCP_TEST_MANIFEST="$TMP_MCP_INSTALL/ausente.json"
+  : > "$VPS_LOG"
+  saida="$(cd "$VPS_PROJ" && env PATH="$VPS_RAIZ/bin:$PATH" DOCKER_LOG="$VPS_LOG" \
+    CRONTAB_SANDBOX="$CRONTAB_SANDBOX" SUPABASE_ACCESS_TOKEN= \
+    bash "$VPS_RAIZ/install.sh" --yes 2>&1 || true)"
+  printf '%s' "$saida" | grep -q 'Ainda não há release MCP validada' || {
+    printf '  ✗ manifesto ausente não bloqueou:\n%s\n' "$(printf '%s' "$saida" | tail -16)"; exit 1;
+  }
+  if grep -Eq 'compose .* pull|compose .* up|compose .* build' "$VPS_LOG"; then
+    printf '  ✗ sem manifesto ainda tentou instalar\n'; exit 1
+  fi
+  printf '  ✓ manifesto ausente bloqueia antes do pull e da instalação\n'
+
+  # Um .env de outro canal pode ser uma instalação real; o marcador não o migra.
+  sed -i 's/DESKCOMM_UPDATE_CHANNEL="custom-mcp"/DESKCOMM_UPDATE_CHANNEL="official"/' "$VPS_PROJ/.env"
+  : > "$VPS_LOG"
+  saida="$(cd "$VPS_PROJ" && env PATH="$VPS_RAIZ/bin:$PATH" DOCKER_LOG="$VPS_LOG" \
+    CRONTAB_SANDBOX="$CRONTAB_SANDBOX" SUPABASE_ACCESS_TOKEN= \
+    bash "$VPS_RAIZ/install.sh" --yes 2>&1 || true)"
+  printf '%s' "$saida" | grep -q 'outro canal' || exit 1
+  if grep -Eq 'compose .* pull|compose .* up|compose .* build' "$VPS_LOG"; then
+    printf '  ✗ .env anterior de outro canal foi alterado\n'; exit 1
+  fi
+  printf '  ✓ .env de outro canal não é migrado silenciosamente\n'
+) || fail=1
+rm -rf "$TMP_MCP_INSTALL"
+
 echo
 if [ "$fail" = 0 ]; then echo "todos os validadores passaram"; else echo "FALHOU"; fi
 exit "$fail"

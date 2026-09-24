@@ -6,6 +6,14 @@
 > Precedência quando dois documentos discordam: `CLAUDE.md` > `docs/specs/` > `docs/prd/` >
 > `HANDOFF-*.md` > `README.md`.
 
+## Instalação da distribuição MCP em VPS nova
+
+Quando o pedido citar a distribuição de `lucascruzfl/DeskcommCRM`, siga
+[`docs/mcp/INSTALL-NEW-VPS.md`](docs/mcp/INSTALL-NEW-VPS.md): clone
+`--branch mcp/stable` do fork e execute `bash hostgator-setup-kit/install.sh`.
+Acompanhe a entrevista do instalador e peça ao operador somente os dados que
+ele solicitar. Canal MCP, release e imagens são selecionados automaticamente.
+
 ## Project Overview
 
 Sistema operacional de vendas open source com agentes de IA nativos, multi-nicho (e-commerce,

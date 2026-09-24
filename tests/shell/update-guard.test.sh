@@ -734,7 +734,7 @@ check "caminho feliz: a saída não fala em arquitetura nem em construção loca
 # ponta a ponta pelo update.sh; aqui se prova que o install.sh a chama — e logo
 # depois do `up -d` que pode falhar, não em outro lugar qualquer.
 check "install.sh chama a recuperação depois de um up -d que pode falhar" \
-  bash -c "grep -A1 'if ! dc up -d; then' '$REPO_ROOT/hostgator-setup-kit/install.sh' | grep -q 'construir_aqui_e_subir'"
+  bash -c "grep -A6 'if ! dc up -d; then' '$REPO_ROOT/hostgator-setup-kit/install.sh' | grep -q 'construir_aqui_e_subir'"
 
 echo "── 13. \"Nada a atualizar\" derruba o aviso de manutenção preso (PR #1524)"
 # Medido numa VPS real: a atualização morreu depois de subir o aviso, com a tag

@@ -28,6 +28,13 @@ A fonte da verdade é o instalador, `hostgator-setup-kit/install.sh` — ele val
 hora (chave da Anthropic testada numa chamada real, connection string testada com uma conexão real).
 Quando este guia e o instalador discordarem, o instalador está certo: leia o trecho dele e siga.
 
+**Distribuição MCP do fork:** quando o pedido for instalar a distribuição de
+`lucascruzfl/DeskcommCRM`, clone `--branch mcp/stable` desse repositório e rode
+`bash hostgator-setup-kit/install.sh`. Veja `docs/mcp/INSTALL-NEW-VPS.md`.
+Deixe o próprio instalador fazer as perguntas, uma de cada vez; não faça as três
+perguntas preliminares deste guia nesse caso. O canal MCP, manifesto e imagens
+são automáticos; não peça token do GitHub/GHCR nem crie outro processo.
+
 ## Primeiro: descubra o cenário
 
 Três perguntas, uma por vez, antes de qualquer comando:
