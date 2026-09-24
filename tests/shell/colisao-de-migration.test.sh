@@ -50,6 +50,10 @@
 #  30. mais de 30 PRs abertos: o gate pede --limit, senão o gh corta calado em 30.
 set -uo pipefail
 
+# Os PRs #7/#9 abaixo são personagens do fixture. Em CI de um PR real #7,
+# herdar GITHUB_REF faria o gate excluir o #7 fictício como se fosse o PR atual.
+unset GITHUB_REF
+
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 GATE_ORIGEM="$RAIZ/scripts/checar-colisao-de-migration.sh"
 

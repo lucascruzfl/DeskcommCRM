@@ -34,8 +34,18 @@ incremental 1.46 → 1.47 teve dois conflitos:
 | Base dos roteiros de atendimento | C por ora | Módulo da instalação desligado por padrão e ainda sem tela; o servidor recusa ligá-lo. MCP não oferece ativação da plataforma. `crm_create_followup_flow` anuncia apenas `name`, pois continua criando follow-up comum e ignoraria `surface=atendimento`. Reavaliar quando o upstream entregar a superfície operável. |
 | Mês da Agenda consulta seis semanas | A operacional | Helper oficial substitui a correção local equivalente; E2E de ocupação do Google na célula de mês vizinho e teste do helper são gates. |
 | Resposta do Inbox, rascunho seguinte e refetch de segurança | A operacional | Código oficial integrado; E2E e testes de mensagens protegem o fluxo. MCP usa o mesmo serviço de envio, sem novo contrato externo. |
+| Reabertura e resposta assumem ou preservam o atendente | A operacional | O novo ajuste é opt-in; migrations 0396 e invariantes cobrem atribuição, episódio e isolamento da organização. A tool de configuração permite ao gerente controlar o valor. |
+| Template do agente usa o modelo da conexão | A operacional | Código oficial integrado e teste `send-template-wiring` exigido pela suíte. O MCP continua a usar o serviço de envio, sem introduzir escolha de modelo não autorizada. |
+| Aviso de retenção exibe estado e janela atuais | A visual | Texto e estado do Inbox integrados; teste unitário oficial confirma o aviso. Nenhuma ação MCP nova decorre do aviso. |
+| Configuração SMTP limitada ao servidor | B/C | Segredo e configuração da instalação não viram saída nem escrita MCP. O invariante oficial `configuracao-de-smtp-e-server-side` entra no gate de banco. |
 | Roteiro encerra por humano, opt-out ou prazo | C por ora | Mesmo módulo ainda desligado; triggers, RLS, LGPD e scheduler ficam no baseline e nos invariantes. Nenhum token MCP pode ligar o módulo da plataforma. |
+| Relógio e varredura dos roteiros | C por ora | O serviço `lib/relogio/executar.ts` foi integrado; o módulo continua desligado e os testes de inatividade, opt-out e prazo verificam que o relógio não ativa roteiros indevidos. |
 | Migrations 0394, 0396 e 0397 | A de instalação | Baseline oficial acumulado e migrations integradas. A migration oficial de memória, ainda não publicada na linha MCP, recebeu `0398` e timestamp posterior para não colidir nem inverter a ordem de aplicação. |
+
+O delta 1.46 → 1.47 não alterou Dockerfiles, scripts de atualização,
+manifests de imagem, o código do voice-agent nem campanhas. Essas superfícies
+continuam cobertas pelos gates acumulados 1.42 → 1.47 e pelo build das quatro
+imagens; ausência de alteração nelas não substitui o teste de integração.
 
 As seis tools acrescentadas na integração 1.43–1.46 permanecem no catálogo;
 nenhuma tool nova foi inferida só da contagem. `tools/list` é a referência.
