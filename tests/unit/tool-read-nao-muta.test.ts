@@ -69,8 +69,9 @@ function definicoesDeTool(): Definicao[] {
     if (!arquivo.endsWith(".ts") || arquivo.endsWith(".test.ts")) continue;
     if (NAO_SAO_DOMINIO.has(arquivo)) continue;
     const txt = readFileSync(path.join(DIR, arquivo), "utf8");
-    // Cada `export const x: McpToolDefinition` abre um bloco que vai até o próximo.
-    for (const bloco of txt.split(/(?=export const \w+: McpToolDefinition)/)) {
+    // Factories locais também declaram tools; cortar só em `export const`
+    // colava várias definições e atribuía a mutação de uma escrita à leitura anterior.
+    for (const bloco of txt.split(/(?=(?:export )?const \w+: McpToolDefinition)/)) {
       const nome = /name:\s*"([^"]+)"/.exec(bloco);
       const cat = /category:\s*"(\w+)"/.exec(bloco);
       if (!nome || !cat) continue;

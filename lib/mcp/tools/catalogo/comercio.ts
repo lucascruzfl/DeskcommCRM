@@ -15,7 +15,7 @@ export const TOOLS_COMERCIO = declararTools([
       "Mostra o que este cliente já comprou, quanto pagou e como está a entrega, para o assistente não prometer prazo no escuro nem repetir uma oferta já aceita.",
     oQueToca: "Compras do cliente",
     risco: "seguro",
-    pacotes: ["vender", "atender"],
+    pacotes: ["vender"],
   },
   {
     name: "crm_search_products",
@@ -25,7 +25,7 @@ export const TOOLS_COMERCIO = declararTools([
       "Procura um produto no catálogo da loja e devolve o preço exato e o que está disponível, para o assistente responder com o valor cadastrado em vez de estimar.",
     oQueToca: "Catálogo da loja",
     risco: "seguro",
-    pacotes: ["vender", "atender"],
+    pacotes: ["vender"],
   },
   {
     name: "crm_list_privacy_requests",
@@ -35,6 +35,6 @@ export const TOOLS_COMERCIO = declararTools([
       "Mostra quem pediu para exportar ou apagar os próprios dados e qual o prazo, para o assistente parar de insistir com quem pediu para sair.",
     oQueToca: "Privacidade e dados do cliente",
     risco: "seguro",
-    pacotes: ["organizar", "atender"],
+    pacotes: ["organizar"],
   },
 ]);

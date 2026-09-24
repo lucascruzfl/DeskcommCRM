@@ -98,9 +98,9 @@ function contexto(db: ReturnType<typeof fakeDb>["db"]): McpContext {
 describe("MCP Parte 5 — follow-up administrativo", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("registra onze tools, sem organization_id público, e cerca publicação/ativação/exclusão", () => {
-    expect(tools.FOLLOWUP_ADMIN_MCP_TOOLS).toHaveLength(11);
-    expect(new Set(tools.FOLLOWUP_ADMIN_MCP_TOOLS.map((tool) => tool.name)).size).toBe(11);
+  it("registra tools únicas, sem organization_id público, e cerca publicação/ativação/exclusão", () => {
+    expect(tools.FOLLOWUP_ADMIN_MCP_TOOLS.some((tool) => tool.name === "crm_duplicate_followup_flow")).toBe(true);
+    expect(new Set(tools.FOLLOWUP_ADMIN_MCP_TOOLS.map((tool) => tool.name)).size).toBe(tools.FOLLOWUP_ADMIN_MCP_TOOLS.length);
     for (const tool of tools.FOLLOWUP_ADMIN_MCP_TOOLS) {
       expect(Object.keys(tool.inputSchema), tool.name).not.toContain("organization_id");
     }

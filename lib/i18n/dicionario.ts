@@ -391,6 +391,14 @@ export const DICIONARIO: Traducoes = {
   "O agente registra a oportunidade, atualiza o negócio e move o cliente de etapa conforme a conversa avança.": {
     es: "El agente registra la oportunidad, actualiza el negocio y mueve al cliente de etapa a medida que avanza la conversación.",
   },
+  "Marcar consultas e compromissos": { es: "Programar consultas y citas" },
+  "O agente consulta horários livres e marca, remarca ou confirma compromissos quando essa jornada é necessária.": {
+    es: "El agente consulta horarios disponibles y programa, reprograma o confirma citas cuando se necesita esta tarea.",
+  },
+  "Preparar campanhas": { es: "Preparar campañas" },
+  "O agente consulta públicos, prepara rascunhos e acompanha campanhas; iniciar envios continua a exigir uma pessoa.": {
+    es: "El agente consulta públicos, prepara borradores y sigue campañas; iniciar los envíos sigue requiriendo una persona.",
+  },
   "Não perder o cliente": { es: "No perder al cliente" },
   "O agente agenda retornos e acompanha quem esfriou, para que nenhum interessado morra por falta de resposta.": {
     es: "El agente programa seguimientos y retoma el contacto con quien se enfrió, para que ningún interesado se pierda por falta de respuesta.",
@@ -4825,6 +4833,18 @@ export const DICIONARIO: Traducoes = {
     es: "Detalles técnicos (útil si vas a pedir ayuda)",
   },
   "Atualização do sistema": { es: "Actualización del sistema" },
+  "Selecionar preset: Operação completa via MCP": { es: "Seleccionar preajuste: operación completa por MCP" },
+  "O preset só é aplicado quando você o escolhe e inclui allowlist explícita de cada ferramenta.": { es: "El preajuste solo se aplica cuando lo eliges e incluye una lista explícita de herramientas permitidas." },
+  "Versão MCP validada instalada": { es: "Versión MCP validada instalada" },
+  "Canal MCP aguardando release validada": { es: "Canal MCP a la espera de una versión validada" },
+  "Esta instalação está na release MCP validada mais recente.": { es: "Esta instalación tiene la versión MCP validada más reciente." },
+  "O painel só oferece uma atualização depois que o build MCP e suas imagens passam nos testes e são publicados.": { es: "El panel solo ofrece una actualización después de que la compilación MCP y sus imágenes superan las pruebas y se publican." },
+  "Aguardando build MCP compatível": { es: "A la espera de una compilación MCP compatible" },
+  "Uma versão oficial sem release MCP validada não pode ser instalada por este botão.": { es: "Este botón no puede instalar una versión oficial sin una versión MCP validada." },
+  "Versão do CRM": { es: "Versión del CRM" },
+  "Build MCP": { es: "Compilación MCP" },
+  "a confirmar": { es: "por confirmar" },
+  "Canal de atualização": { es: "Canal de actualización" },
   "Guardando uma cópia de segurança dos seus dados": {
     es: "Guardando una copia de seguridad de tus datos",
   },

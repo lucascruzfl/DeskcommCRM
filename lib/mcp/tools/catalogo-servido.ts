@@ -76,8 +76,10 @@ export function juntarCatalogoComHandlers(
       o_que_toca: entrada.oQueToca,
       risco: entrada.risco,
       pacotes: entrada.pacotes,
-      marcavel: !IDS_DO_HARNESS.has(handler.name),
-      motivo_nao_marcavel: motivoDoHarness(handler.name),
+      marcavel: !IDS_DO_HARNESS.has(handler.name) && !entrada.apenasHumano,
+      motivo_nao_marcavel: entrada.apenasHumano
+        ? "Operação reservada a uma pessoa ou cliente MCP autorizado; o agente automático não pode recebê-la."
+        : motivoDoHarness(handler.name),
     };
   });
 }

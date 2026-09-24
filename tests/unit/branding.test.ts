@@ -208,6 +208,16 @@ type EntradaDeMarca = {
 };
 
 const MARCA_CONGELADA: Record<string, EntradaDeMarca> = {
+  "app/api/v1/system/update/route.ts": {
+    categoria: "INFRA",
+    motivo: "DESKCOMM_UPDATE_CHANNEL é o nome da variável de ambiente persistida pelo instalador; mudar aqui separadamente impediria o painel MCP de reconhecer o canal configurado",
+    marcas: ["process.env.deskcomm_update_channel"],
+  },
+  "app/api/v1/system/version/route.ts": {
+    categoria: "INFRA",
+    motivo: "a mesma variável de canal lida pela consulta de versão; precisa casar com o instalador e a rota de atualização",
+    marcas: ["process.env.deskcomm_update_channel"],
+  },
   // ─── PROTOCOLO — contrato de fio. Renomear quebra integração alheia. ───
   "app/api/v1/webhooks/in/[token]/route.ts": {
     categoria: "PROTOCOLO",

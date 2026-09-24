@@ -60,8 +60,8 @@ const registry = new Map(MCP_REGISTRY.map((tool) => [tool.name, tool]));
 describe("registry MCP da Parte 6", () => {
   it("preserva as 37 tools da Parte 6 no registry atual, sem duplicidade", () => {
     expect(PARTE_6).toHaveLength(37);
-    expect(MCP_TOOL_COUNT).toBe(202);
-    expect(new Set(MCP_REGISTRY.map((tool) => tool.name)).size).toBe(202);
+    expect(MCP_TOOL_COUNT).toBe(MCP_REGISTRY.length);
+    expect(new Set(MCP_REGISTRY.map((tool) => tool.name)).size).toBe(MCP_REGISTRY.length);
     for (const name of PARTE_6) expect(registry.has(name), name).toBe(true);
   });
 

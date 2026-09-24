@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, expect, it, vi } from "vitest";
 import { seedGov, GOV_ADMIN } from "./gov-helpers";
 vi.mock("@/lib/audit", () => ({ audit: vi.fn().mockResolvedValue(undefined) }));
-vi.mock("@/lib/ai/runtime/agent", () => ({
+vi.mock("@/lib/ai/platform-credential", () => ({
   chaveDePlataforma: (provider: string) => (provider === "openai" ? "test-key-never-sent" : null),
 }));
 import { setupProspectingAgent } from "@/lib/prospecting/agent-setup";

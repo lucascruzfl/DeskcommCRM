@@ -35,6 +35,8 @@ import { describe, expect, it } from "vitest";
 
 import { allTools } from "@/lib/mcp/tools";
 import { catalogEntry } from "@/lib/mcp/tools/catalog";
+import { TOOL_CATALOG } from "@/lib/mcp/tools/catalog";
+import { juntarCatalogoComHandlers } from "@/lib/mcp/tools/catalogo-servido";
 import { ROLE_RANK, type Role } from "@/lib/auth/types";
 
 const RAIZ = join(__dirname, "..", "..");
@@ -109,6 +111,20 @@ const ESCRITA_QUE_E_TRABALHO_DE_ATENDENTE: ReadonlyArray<string> = [
   // `app/api/v1/conversation-tags` é leitura `viewer`; marcar conversa é trabalho
   // de atendente e o dano máximo é um filtro sujo, reversível na tela.
   "crm_manage_tags",
+  // Rotas HTTP de leads, contatos, tarefas e conversas exigem agent. O escopo
+  // de funil da ponte classifica essas mutações antes de executar a tool.
+  "crm_move_lead_pipeline",
+  "crm_reply_message",
+  "crm_create_contact",
+  "crm_update_contact",
+  "crm_set_custom_field_values",
+  "crm_create_task",
+  "crm_update_task",
+  "crm_close_conversation",
+  "crm_reopen_conversation",
+  "crm_mark_conversation_read",
+  "crm_create_internal_note",
+  "crm_delete_internal_note",
 ];
 
 function alcancavelPeloAgente(requiresRole: Role): boolean {
@@ -135,15 +151,15 @@ describe("catálogo de tools — papel exigido e alcance real do agente", () => 
     expect(acidentais).toEqual([...INALCANCAVEIS_CONHECIDAS].sort());
   });
 
-  it("capacidade marcada como operada por pessoa está mesmo fora do alcance do agente", () => {
-    // A marca é declaração, não trava — quem trava é `requiresRole`. Uma tool
-    // marcada `apenasHumano` mas alcançável pelo agente é a pior combinação:
-    // diz na tela que só gente opera, e o agente opera assim mesmo.
-    const mentirosas = allTools
-      .filter((t) => catalogEntry(t.name)?.apenasHumano)
-      .filter((t) => alcancavelPeloAgente(t.requiresRole))
-      .map((t) => t.name);
-    expect(mentirosas).toEqual([]);
+  it("capacidade operada por pessoa não pode ser marcada no catálogo do agente", () => {
+    // A ponte do turno também filtra `apenasHumano`. Papel sozinho não basta:
+    // leituras e instruções para ações humanas podem permitir token MCP de
+    // agente, mas nunca devem virar opção na configuração do agente automático.
+    const servido = juntarCatalogoComHandlers(allTools, TOOL_CATALOG);
+    const marcaveis = servido
+      .filter((t) => catalogEntry(t.id)?.apenasHumano && t.marcavel)
+      .map((t) => t.id);
+    expect(marcaveis).toEqual([]);
   });
 
   it("escrita que muda a casa não entra no alcance do agente por atalho", () => {

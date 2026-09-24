@@ -108,7 +108,7 @@ export const TOOLS_OPERACAO = declararTools([
       "Mostra quais marcadores a empresa já usa e em quantas conversas, para o agente reaproveitar em vez de inventar outro parecido.",
     oQueToca: "Organização da operação",
     risco: "seguro",
-    pacotes: ["organizar", "atender"],
+    pacotes: ["organizar"],
   },
 
   // ---- respostas prontas ----
@@ -120,7 +120,7 @@ export const TOOLS_OPERACAO = declararTools([
       "Lista os textos que a empresa já escreveu para responder as situações de sempre, com o atalho de cada um.",
     oQueToca: "Respostas prontas",
     risco: "seguro",
-    pacotes: ["atender", "organizar"],
+    pacotes: ["organizar"],
   },
   {
     name: "crm_render_message_template",
@@ -130,7 +130,7 @@ export const TOOLS_OPERACAO = declararTools([
       "Pega uma resposta pronta e troca as lacunas pelos dados do cliente, avisando se sobrou alguma sem preencher. Não envia nada.",
     oQueToca: "Respostas prontas",
     risco: "seguro",
-    pacotes: ["atender", "organizar"],
+    pacotes: ["organizar"],
   },
 
   // ---- entradas automáticas de contatos ----

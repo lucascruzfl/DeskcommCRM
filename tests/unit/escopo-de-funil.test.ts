@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { allTools } from "@/lib/mcp/tools";
 import { TOOL_CATALOG } from "@/lib/mcp/tools/catalog";
+import { ROLE_RANK } from "@/lib/auth/types";
 import {
   ALVO_DE_FUNIL,
   podeChamarFerramenta,
@@ -105,6 +106,20 @@ describe("a chamada de ferramenta", () => {
     expect(v.permitido).toBe(false);
     if (v.permitido) return;
     expect(v.motivo).toBe("funil_fora_do_escopo");
+  });
+
+  it("transferência exige permissão no funil de origem e no destino", async () => {
+    const argumentos = { lead_id: "1eadaaaa-0000-4000-8000-000000000001", pipeline_id: FUNIL_B };
+    expect((await podeChamarFerramenta({ ...base, ferramenta: "crm_move_lead_pipeline", argumentos, resolvePipelineDoLead: resolveFixo(FUNIL_A) })).permitido).toBe(false);
+    expect((await podeChamarFerramenta({ ...base, ferramenta: "crm_move_lead_pipeline", argumentos: { ...argumentos, pipeline_id: FUNIL_A }, resolvePipelineDoLead: resolveFixo(FUNIL_B) })).permitido).toBe(false);
+    expect((await podeChamarFerramenta({ ...base, ferramenta: "crm_move_lead_pipeline", argumentos: { ...argumentos, pipeline_id: FUNIL_A }, resolvePipelineDoLead: resolveFixo(FUNIL_A) })).permitido).toBe(true);
+  });
+
+  it("campos personalizados conferem o funil do alvo", async () => {
+    const lead = await podeChamarFerramenta({ ...base, ferramenta: "crm_set_custom_field_values", argumentos: { target_kind: "lead", target_id: "1eadaaaa-0000-4000-8000-000000000001" }, resolvePipelineDoLead: resolveFixo(FUNIL_B) });
+    const contact = await podeChamarFerramenta({ ...base, ferramenta: "crm_set_custom_field_values", argumentos: { target_kind: "contact", target_id: "c0a7aaaa-0000-4000-8000-000000000001", pipeline_id: FUNIL_B } });
+    expect(lead.permitido).toBe(false);
+    expect(contact.permitido).toBe(false);
   });
 
   it("`crm_close_demand` é escopado — encerrar é a escrita de MAIOR dano", async () => {
@@ -330,7 +345,8 @@ describe("VACUIDADE — nenhuma escrita escapa da tabela", () => {
     // Este caso é o que mantém `ALVO_DE_FUNIL` viva. Sem ele, a tabela vira uma
     // lista que envelhece — e a ferramenta de escrita nº 22 nasce fora do gate
     // sem nada vermelhar.
-    const escritas = TOOL_CATALOG.filter((t) => t.category === "write").map((t) => t.name);
+    const agentWrites = new Set(allTools.filter((t) => t.category === "write" && ROLE_RANK[t.requiresRole] <= ROLE_RANK.ai_operator).map((t) => t.name));
+    const escritas = TOOL_CATALOG.filter((t) => t.category === "write" && !t.apenasHumano && agentWrites.has(t.name)).map((t) => t.name);
     const semClassificacao = escritas.filter((n) => ALVO_DE_FUNIL[n] === undefined).sort();
 
     expect(
@@ -343,7 +359,8 @@ describe("VACUIDADE — nenhuma escrita escapa da tabela", () => {
     // Zero achados só vale se houve o que procurar. Se `TOOL_CATALOG` mudasse de
     // forma, o caso anterior varreria uma lista vazia e ficaria verde para
     // sempre.
-    const escritas = TOOL_CATALOG.filter((t) => t.category === "write");
+    const agentWrites = new Set(allTools.filter((t) => t.category === "write" && ROLE_RANK[t.requiresRole] <= ROLE_RANK.ai_operator).map((t) => t.name));
+    const escritas = TOOL_CATALOG.filter((t) => t.category === "write" && !t.apenasHumano && agentWrites.has(t.name));
     expect(escritas.length, "esperava ferramentas de escrita no catálogo").toBeGreaterThan(10);
   });
 

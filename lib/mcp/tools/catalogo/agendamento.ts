@@ -119,44 +119,9 @@
  * primeiro tenant nessa configuração. (Achado do Arquiteto; a ressalva mora aqui, e não no
  * briefing da entrega, porque briefing morre com a entrega e este arquivo não.)
  *
- * ⚠️ PACOTE: `vender`, e a razão é ARITMÉTICA antes de ser semântica.
- *
- * `atender` seria a primeira escolha — marcar consulta é o desfecho de um
- * atendimento. Mas ele já está com 18 capacidades, quase todo o teto POR AGENTE
- * (`TETO_TOOLS_POR_AGENTE`), e a família de agenda são CINCO: consultar,
- * listar, marcar, remarcar e desmarcar. Em `atender` cabe UMA — e uma família
- * partida entre dois pacotes é pior que ela inteira no pacote vizinho, porque o
- * dono liga "Atender" e ganha metade da agenda sem saber qual metade.
- *
- * `vender` tem folga para as cinco. E é defensável sem apelar para o número: numa
- * clínica, marcar consulta É a conversão — é o "ganho" do funil, não uma resposta
- * a mais na conversa.
- *
- * ⚠️ NÃO CRAVO O NÚMERO AQUI, e a razão é que ele já me pegou uma vez: a versão
- * anterior deste comentário dizia "vender tem 11 (11+5=16)" e estava errada — eram
- * 12 antes desta tool, 13 depois. O erro não foi de leitura, foi de INSTRUMENTO:
- * medi com regex sobre o texto do catálogo, com janela de 900 caracteres entre
- * `name:` e `pacotes:`, e `crm_propose_contact_field` tem 1930. A janela truncou
- * em silêncio e o script não tinha como avisar.
- *
- * Quem for reabrir a decisão de pacote mede pelo OBJETO, não pelo texto:
- *
- *   pnpm exec tsx -e 'import("@/lib/mcp/tools/catalogo").then(({TOOL_CATALOG})=>{
- *     const p={}; for(const t of TOOL_CATALOG) for(const b of t.pacotes) p[b]=(p[b]??0)+1;
- *     console.log(p, "total:", TOOL_CATALOG.length)})'
- *
- * O total serve de controle: se a soma dos pacotes não fizer sentido contra
- * `TOOL_CATALOG.length`, o instrumento está perdendo entrada.
- *
- * Medido: acrescentar esta capacidade a `atender` levaria o pacote a 19 e
- * quebraria `tests/e2e/capacidades-do-agente.spec.ts` em DOIS pontos — a
- * asserção de "falta 1 vaga" (viraria 2) e a de que liberar UMA vaga basta para
- * ligar o pacote (não bastaria). Isso não é motivo para escolher `vender`, mas é
- * o custo que a escolha por `atender` teria, e ele está aqui para quem reabrir.
- *
- * **Decisão de pacote PRÓPRIO (`agendar`) segue pendente com o maestro** — foi
- * levantada em `CONTRATO-MCP-agenda.md` §7 antes de existir código. `vender` é o
- * lar que não estoura nada hoje e não parte a família.
+ * PACOTE: `agendar`. A família de consultas e compromissos fica junta e
+ * opcional: ela não consome o orçamento de 25 capacidades de `vender`.
+ * A distribuição é conferida por `tests/unit/selecao-por-pacote.test.ts`.
  */
 import { declararTools } from "./tipos";
 
@@ -173,7 +138,7 @@ export const TOOLS_AGENDAMENTO = declararTools([
       "Mostra os tipos de atendimento que dá para marcar, quanto cada um dura e como é feito, para o atendente de IA falar do que existe de verdade.",
     oQueToca: "Agenda da equipe",
     risco: "seguro",
-    pacotes: ["vender"],
+    pacotes: ["agendar"],
   },
   {
     name: "crm_find_free_slots",
@@ -183,7 +148,7 @@ export const TOOLS_AGENDAMENTO = declararTools([
       "Mostra os horários em que um atendente pode receber, já descontando as folgas dele, o que ele tem marcado e os compromissos da agenda pessoal.",
     oQueToca: "Agenda da equipe",
     risco: "seguro",
-    pacotes: ["vender"],
+    pacotes: ["agendar"],
   },
   {
     name: "crm_list_appointments",
@@ -193,7 +158,7 @@ export const TOOLS_AGENDAMENTO = declararTools([
       "Lista os compromissos com hora marcada de um cliente ou de um dia, com a situação de cada um: marcado, realizado ou desmarcado.",
     oQueToca: "Agenda da equipe",
     risco: "seguro",
-    pacotes: ["vender"],
+    pacotes: ["agendar"],
   },
   {
     name: "crm_find_and_book_appointment",
@@ -205,7 +170,7 @@ export const TOOLS_AGENDAMENTO = declararTools([
     // `atencao`, igual a `crm_book_appointment`: o que ela faz a mais é a
     // consulta, e o efeito que persiste é o mesmo marcar — que se desfaz.
     risco: "atencao",
-    pacotes: ["vender"],
+    pacotes: ["agendar"],
   },
   {
     name: "crm_book_appointment",
@@ -216,7 +181,7 @@ export const TOOLS_AGENDAMENTO = declararTools([
     oQueToca: "Agenda da equipe",
     // `atencao` e não `critico`: marcar errado se desfaz — remarca ou desmarca.
     risco: "atencao",
-    pacotes: ["vender"],
+    pacotes: ["agendar"],
   },
   {
     name: "crm_reschedule_appointment",
@@ -226,7 +191,7 @@ export const TOOLS_AGENDAMENTO = declararTools([
       "Move um compromisso já marcado para outro horário, mantendo o mesmo cliente e o mesmo tipo de atendimento.",
     oQueToca: "Agenda da equipe",
     risco: "atencao",
-    pacotes: ["vender"],
+    pacotes: ["agendar"],
   },
   {
     name: "crm_confirm_appointment",
@@ -237,7 +202,7 @@ export const TOOLS_AGENDAMENTO = declararTools([
     oQueToca: "Agenda da equipe",
     // `atencao` e não `critico`: confirmar errado se desfaz — remarca ou desmarca.
     risco: "atencao",
-    pacotes: ["vender"],
+    pacotes: ["agendar"],
   },
   {
     name: "crm_set_appointment_outcome",
@@ -249,7 +214,7 @@ export const TOOLS_AGENDAMENTO = declararTools([
     // `atencao`: registrar falta devolve o horário para outra pessoa, mas o
     // sistema recusa fazer isso antes da hora — a guarda mora no handler.
     risco: "atencao",
-    pacotes: ["vender"],
+    pacotes: ["agendar"],
   },
   {
     name: "crm_cancel_appointment",
@@ -264,6 +229,6 @@ export const TOOLS_AGENDAMENTO = declararTools([
     // nunca entra por pacote, então a IA marca assim que o pacote é ligado e só
     // desmarca se o dono ligar explicitamente. Falha fechado no lado certo.
     risco: "critico",
-    pacotes: ["vender"],
+    pacotes: ["agendar"],
   },
 ]);

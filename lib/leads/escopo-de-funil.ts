@@ -37,10 +37,14 @@ export const ESCOPO_VAZIO: readonly string[] = [];
 export type AlvoDeFunil =
   /** O modelo informa `pipeline_id` direto no argumento. */
   | "pipeline_no_argumento"
+  /** Confere o funil de origem do lead e o funil destino antes da transferência. */
+  | "origem_e_destino"
   /** O modelo informa `lead_id`; o funil sai do lead (uma consulta). */
   | "funil_vem_do_lead"
   /** `target_kind`/`target_id`: só conta quando o alvo é um lead. */
   | "alvo_polimorfico"
+  /** Campos do lead usam seu funil; campos do contato informam pipeline_id. */
+  | "campos_personalizados"
   /**
    * O modelo informa `contact_id`; o funil sai do NEGÓCIO ABERTO daquele contato.
    *
@@ -61,11 +65,13 @@ export const ALVO_DE_FUNIL: Record<string, AlvoDeFunil> = {
   crm_create_lead: "pipeline_no_argumento",
   crm_update_lead: "funil_vem_do_lead",
   crm_move_lead_stage: "funil_vem_do_lead",
+  crm_move_lead_pipeline: "origem_e_destino",
   // Encerrar é a escrita de MAIOR dano do inventário e não aparece na frase
   // "mover card": dá o negócio por ganho ou perdido, tira do radar e das
   // cobranças.
   crm_close_demand: "funil_vem_do_lead",
   crm_manage_tags: "alvo_polimorfico",
+  crm_set_custom_field_values: "campos_personalizados",
   // Não muda o card, mas pendura uma decisão humana nele — encher o funil da
   // Andrea de sugestões da IA é ocupar a atenção de quem cuida dele.
   crm_propose_reactivation: "funil_vem_do_lead",
@@ -144,6 +150,18 @@ export const ALVO_DE_FUNIL: Record<string, AlvoDeFunil> = {
   crm_create_webhook_source: "sem_funil",
   crm_set_webhook_source_active: "sem_funil",
   crm_set_automation_rule_active: "sem_funil",
+  // Contatos, conversas e notas não mudam um card nem sua posição no funil.
+  crm_create_contact: "sem_funil",
+  crm_update_contact: "sem_funil",
+  crm_reply_message: "sem_funil",
+  crm_close_conversation: "sem_funil",
+  crm_reopen_conversation: "sem_funil",
+  crm_mark_conversation_read: "sem_funil",
+  crm_create_internal_note: "sem_funil",
+  crm_delete_internal_note: "sem_funil",
+  // Tarefa ligada a lead confere o funil pelo lead informado. Atualização por
+  // task_id precisa de resolvedor próprio; até lá é apenasHumano no catálogo.
+  crm_create_task: "funil_vem_do_lead",
 };
 
 /**
@@ -261,6 +279,29 @@ export async function podeChamarFerramenta(entrada: {
     case "pipeline_no_argumento": {
       const p = entrada.argumentos.pipeline_id;
       return podeOperarNoFunil(entrada.escopo, typeof p === "string" ? p : null);
+    }
+
+    case "origem_e_destino": {
+      const leadId = entrada.argumentos.lead_id;
+      const destination = entrada.argumentos.pipeline_id;
+      if (typeof leadId !== "string" || typeof destination !== "string")
+        return { permitido: false, motivo: "indisponivel", detalhe: "lead_id ou pipeline_id ausente" };
+      const origem = await resolverPeloLead(entrada, leadId);
+      return origem.permitido ? podeOperarNoFunil(entrada.escopo, destination) : origem;
+    }
+
+    case "campos_personalizados": {
+      const target = entrada.argumentos.target_kind;
+      if (target === "lead") {
+        const id = entrada.argumentos.target_id;
+        if (typeof id !== "string") return { permitido: false, motivo: "indisponivel", detalhe: "target_id ausente" };
+        return resolverPeloLead(entrada, id);
+      }
+      if (target === "contact") {
+        const pipelineId = entrada.argumentos.pipeline_id;
+        return podeOperarNoFunil(entrada.escopo, typeof pipelineId === "string" ? pipelineId : null);
+      }
+      return { permitido: false, motivo: "indisponivel", detalhe: "target_kind inválido" };
     }
 
     case "alvo_polimorfico": {

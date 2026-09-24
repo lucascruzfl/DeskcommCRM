@@ -79,9 +79,10 @@ describe("capacidade do harness não é oferecida como marcável", () => {
     }
   });
 
-  it("o resto do catálogo continua marcável — não é desculpa para esconder capacidade", () => {
+  it("só harness e operações humanas ficam fora da seleção do agente", () => {
     const naoMarcaveis = SERVIDO.filter((c) => !c.marcavel).map((c) => c.id);
-    expect(naoMarcaveis.sort()).toEqual([...IDS_DO_HARNESS].sort());
+    const humanas = TOOL_CATALOG.filter((c) => c.apenasHumano).map((c) => c.name);
+    expect(naoMarcaveis.sort()).toEqual([...new Set([...IDS_DO_HARNESS, ...humanas])].sort());
     // E o motivo é exclusivo de quem não é marcável.
     for (const c of SERVIDO) {
       if (c.marcavel) expect(c.motivo_nao_marcavel, `${c.id} é marcável`).toBeNull();
@@ -115,7 +116,7 @@ describe("capacidade do harness não é oferecida como marcável", () => {
 
     const oferecidas = capacidadesAutomaticasDoPacote(PARA_SELECAO, "atender");
     const criticas = capacidadesCriticasDoPacote(PARA_SELECAO, "atender");
-    expect(oferecidas.length + criticas.length).toBe(noCatalogo.length - harnessNoPacote.length);
+    expect(oferecidas.length + criticas.length).toBe(noCatalogo.filter((c) => c.marcavel).length);
     // A crítica de envio sumiu daqui: é o checkbox que o dono marcava à toa.
     expect(criticas).not.toContain("crm_send_whatsapp_message");
     expect(capacidadesAutomaticasDoPacote(PARA_SELECAO, "atender")).not.toContain(

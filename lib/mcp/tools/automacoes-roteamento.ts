@@ -26,6 +26,7 @@ import {
 import { encryptRuleActionSecrets } from "@/lib/webhooks/secrets";
 import { autoriaDaMudanca } from "@/lib/operacao/autoria";
 import type { McpContext, McpToolDefinition } from "@/lib/mcp/types";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const RULE_COLUMNS =
   "id, name, is_active, trigger_event, trigger_config, conditions, actions, last_run_at, run_count, last_change_actor_kind, last_change_at, created_at, updated_at";
@@ -664,7 +665,8 @@ export const crmUpdateRoutingConfig: McpToolDefinition<typeof updateRoutingShape
     const base = routingConfigSchema.catch(DEFAULT_ROUTING).parse(current.routing ?? {});
     const parsed = atendimentoConfigPatchSchema.parse({ ...base, ...input });
     const next = mesclarSettingsDeAtendimento(current, parsed);
-    const { error } = await ctx.supabase
+    const admin = createAdminClient();
+    const { error } = await admin
       .from("organizations")
       .update({ settings: next.settings })
       .eq("id", ctx.organizationId);

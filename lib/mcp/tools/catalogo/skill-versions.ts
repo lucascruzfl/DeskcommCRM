@@ -9,6 +9,7 @@ export const TOOLS_SKILL_VERSIONS = declararTools([
     oQueToca: "Skills do agente",
     risco: "seguro",
     pacotes: ["evoluir"],
+    apenasHumano: true,
   },
   {
     name: "crm_save_ai_skill",

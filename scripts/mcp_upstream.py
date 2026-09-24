@@ -59,10 +59,10 @@ def summary(message):
             stream.write(message + "\n")
 
 
-def report(version_text, base, upstream_sha, changed, conflicts):
+def report(version_text, previous_tag, base, upstream_sha, changed, conflicts):
     lines = [f"# Delta MCP para v{version_text}", "",
              f"- Linha MCP anterior: `{base}`", f"- Tag oficial: `v{version_text}` (`{upstream_sha}`)",
-             f"- Arquivos alterados pelo upstream desde v1.42.0: {len(changed)}",
+             f"- Arquivos alterados pelo upstream desde {previous_tag}: {len(changed)}",
              f"- Conflitos Git: {len(conflicts)}", ""]
     if conflicts:
         lines += ["## Conflitos — intervenção obrigatória", ""] + [f"- `{p}`" for p in conflicts] + [""]
@@ -104,7 +104,7 @@ def main():
     run("git", "checkout", "-b", branch)
     merge = run("git", "merge", "--no-commit", "--no-ff", f"upstream-{v}", check=False)
     conflicts = run("git", "diff", "--name-only", "--diff-filter=U").stdout.splitlines()
-    report(v, base, upstream_sha, changed, conflicts)
+    report(v, previous_tag, base, upstream_sha, changed, conflicts)
     if merge.returncode and not conflicts:
         with open("mcp-delta-report.md", "a", encoding="utf-8") as stream:
             stream.write("\n## Erro do merge antes de detectar conflitos\n\n" + merge.stderr[-2000:] + "\n")

@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { useT } from "@/hooks/i18n/useT";
 
 // Sem `cd <pasta>`: o instalador não fixa o nome da pasta do clone
-// (REPO_DIR é configurável, default "deskcommcrm" minúsculo) — quem tem
+// (REPO_DIR é configurável, com o diretório padrão do projeto) — quem tem
 // acesso ao servidor já sabe entrar na pasta onde instalou.
 const COMANDO_MANUAL = "bash hostgator-setup-kit/update.sh";
 
@@ -653,7 +653,7 @@ function Layout({ titulo, children }: { titulo?: string; children: React.ReactNo
       </header>
       {data?.is_owner && data.update_channel === "custom-mcp" ? (
         <div className="grid gap-1 text-sm text-muted-foreground">
-          <p>{t("Versão Deskcomm")}: {crmVersion}</p>
+          <p>{t("Versão do CRM")}: {crmVersion}</p>
           <p>{t("Build MCP")}: {data.mcp_build?.includes("-mcp") ? data.mcp_build : t("a confirmar")}</p>
           <p>{t("Canal de atualização")}: MCP</p>
         </div>

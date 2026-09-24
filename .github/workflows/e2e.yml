@@ -33,7 +33,7 @@ name: e2e
 # executado. Verde que não distingue "passou" de "nem rodou" é pior que vermelho.
 on:
   pull_request:
-    branches: [main]
+    branches: [main, mcp/stable]
   push:
     branches: [main]
 

@@ -66,7 +66,7 @@ describe("capacidades padrão do onboarding", () => {
     // tem de ser exatamente o que o pacote diz hoje, não o que ele dizia quando
     // isto foi escrito.
     const doPacote = CATALOGO.filter(
-      (c) => c.pacotes.includes(PACOTE_PADRAO_DO_ONBOARDING) && c.risco !== "critico",
+      (c) => c.pacotes.includes(PACOTE_PADRAO_DO_ONBOARDING) && c.risco !== "critico" && !c.apenasHumano,
     ).map((c) => c.name);
     expect([...IDS].sort()).toEqual([...doPacote].sort());
   });

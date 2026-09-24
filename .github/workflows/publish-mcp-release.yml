@@ -184,13 +184,22 @@ jobs:
     needs: [check, validate, publish]
     if: always() && needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
     steps:
       - name: Explicar bloqueio
         env:
+          GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.check.outputs.tag }}
           VALIDATE_RESULT: ${{ needs.validate.result }}
           PUBLISH_RESULT: ${{ needs.publish.result }}
         run: |
           echo "Nova versão upstream detectada, mas MCP não foi publicado." >> "$GITHUB_STEP_SUMMARY"
           echo "Alvo: $RELEASE_TAG. Validação: $VALIDATE_RESULT. Publicação: $PUBLISH_RESULT." >> "$GITHUB_STEP_SUMMARY"
-          echo "Confira o primeiro passo vermelho; não há fallback para imagem oficial." >> "$GITHUB_STEP_SUMMARY"
+          falhas="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?per_page=100" \
+            --jq '.jobs[] | select(.conclusion == "failure") | .name as $job | .steps[] | select(.conclusion == "failure") | "\($job): \(.name)"' 2>/dev/null || true)"
+          if [ -n "$falhas" ]; then
+            echo 'Passos que falharam:' >> "$GITHUB_STEP_SUMMARY"
+            while IFS= read -r passo; do echo "- $passo" >> "$GITHUB_STEP_SUMMARY"; done <<< "$falhas"
+          fi
+          echo "Sem fallback para imagem oficial." >> "$GITHUB_STEP_SUMMARY"
