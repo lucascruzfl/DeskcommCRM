@@ -62,6 +62,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BASELINE="$ROOT/supabase/baseline.sql"
+INSTALL_BASELINE="${TEST_DB_INSTALL_BASELINE:-$BASELINE}"
 CONTAINER="deskcomm-update-dados-$$"
 # A major, pelo mesmo mecanismo do `scripts/test-db.sh` (o comentário longo
 # está lá): quem PEDE escolhe, quem não pede fica no PISO. Assim o mesmo script
@@ -70,6 +71,7 @@ CONTAINER="deskcomm-update-dados-$$"
 IMAGE="${TEST_DB_IMAGE:-pgvector/pgvector:pg15}"
 
 [ -f "$BASELINE" ] || { echo "FATAL: $BASELINE não encontrado" >&2; exit 1; }
+[ -f "$INSTALL_BASELINE" ] || { echo "FATAL: $INSTALL_BASELINE não encontrado" >&2; exit 1; }
 
 cleanup() { docker rm -fv "$CONTAINER" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
@@ -144,8 +146,8 @@ fi
 psql_stop <<<"$prelude"
 echo "    ✓ prelude ok ($(wc -l <<<"$prelude" | tr -d ' ') linhas, extraídas do harness)"
 
-echo "==> INSTALL: baseline.sql com ON_ERROR_STOP=1"
-psql_stop < "$BASELINE" >/dev/null
+echo "==> INSTALL: $(basename "$INSTALL_BASELINE") com ON_ERROR_STOP=1"
+psql_stop < "$INSTALL_BASELINE" >/dev/null
 echo "    ✓ install ok"
 
 echo "==> SEMEANDO DADOS — é isto que o test:db não faz"

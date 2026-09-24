@@ -67,7 +67,7 @@ export function PipelinePageClient({
 
   return (
     <div
-      className="flex h-full flex-col gap-4"
+      className={selectedIds.length > 0 ? "flex h-full flex-col gap-4 pb-32 sm:pb-20" : "flex h-full flex-col gap-4"}
       // OBSERVÁVEL de propósito, e é a razão de existir desta linha: "a
       // assinatura morreu" e "nada aconteceu" produzem o MESMO silêncio na
       // tela, e sem este valor nem o produto nem o teste conseguem separar as

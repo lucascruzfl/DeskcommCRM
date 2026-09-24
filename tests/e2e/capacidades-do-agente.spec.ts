@@ -362,6 +362,9 @@ test.describe("Olhar o agente funcionando", () => {
   // dependesse de admin, o manager veria "0 usos" — indistinguível de "nunca
   // usada", que é a pior mentira que esta tela poderia contar.
   test("o painel mostra o uso real, e o que fazer com cada número", async ({ page }) => {
+    // Os casos anteriores salvam novos rascunhos. Repor a idade do seed é
+    // necessário para medir uma configuração antiga que nunca foi usada.
+    seed("seed-e2e-capacidades.ts");
     await login(page, creds.users.manager!.email);
     await page.goto(`/app/ai/agents/${AGENTE}`);
     await page.getByRole("tab", { name: /capacidades/i }).click();

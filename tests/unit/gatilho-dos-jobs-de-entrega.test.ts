@@ -398,6 +398,8 @@ it("publicação MCP depende de validate: teste vermelho não chega às imagens 
   expect(validate).toContain("pnpm test:unit");
   expect(validate).toContain("pnpm test:db");
   expect(validate).toContain("pnpm test:shell");
+  expect(validate).toContain("previous_mcp_tag");
+  expect(validate).toContain("TEST_DB_INSTALL_BASELINE");
   expect(publish).toMatch(/^    needs: \[check, validate\]$/m);
   expect(publish).not.toMatch(/^    if:.*always\(/m);
   expect(publish).toContain("Publicar o manifesto como última etapa");

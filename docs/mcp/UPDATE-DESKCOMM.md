@@ -39,7 +39,8 @@ antes de `v1.43.0-mcp` passar pelos gates, a maior release pronta continua
 
 ## Produzir a próxima release
 
-1. A branch `mcp/stable` preserva a última MCP pronta. O workflow de detecção
+1. A branch `mcp/stable` preserva a última integração MCP aprovada. A última
+   release **pronta** é a que possui manifesto publicado e válido. O detector
    consulta a última release oficial, busca a tag sem depender de Sync fork e
    prepara `mcp/integrate/X.Y.Z` a partir da linha estável.
 2. Execute [AUDIT-NEW-VERSION.md](AUDIT-NEW-VERSION.md), classifique os deltas
@@ -47,7 +48,9 @@ antes de `v1.43.0-mcp` passar pelos gates, a maior release pronta continua
    registrada em [AUDIT-1.42.0.md](AUDIT-1.42.0.md); a candidata atual está
    em [AUDIT-1.46.0.md](AUDIT-1.46.0.md).
 3. Rode sentinelas MCP, banco focado, typecheck, lint, `test:shell` e build.
-   Atualize `docs/mcp/RELEASE-AUDIT.json` somente quando gaps A forem zero.
+   O gate de publicação também instala o baseline de `previous_mcp_tag` e
+   aplica o novo sobre dados em PostgreSQL 15 e 17. Atualize
+   `docs/mcp/RELEASE-AUDIT.json` somente quando gaps A forem zero.
 4. Depois de revisar o PR de integração e confirmar `gaps_a=0` em
    `RELEASE-AUDIT.json` para a versão e SHA oficiais, faça merge em
    `mcp/stable`. O workflow dessa branch repete todos os gates, constrói as

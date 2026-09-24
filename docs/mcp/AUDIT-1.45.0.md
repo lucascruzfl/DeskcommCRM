@@ -1,5 +1,9 @@
 # Auditoria diferencial 1.42.0-mcp → upstream v1.45.0
 
+Histórico: a release oficial v1.46.0 chegou antes de publicar a 1.45.0-mcp.
+Esta candidata foi incorporada à [PR #5](https://github.com/lucascruzfl/DeskcommCRM/pull/5);
+o alvo atual e seus gates estão em [AUDIT-1.46.0.md](AUDIT-1.46.0.md).
+
 Estado em 2026-09-23: **candidata integrada; publicação bloqueada**. Fonte: release oficial `v1.45.0`, commit
 `4778e7e9c7b0f91bdec7bb9b8a5c475aaccee2e0`. Base MCP publicada:
 `v1.42.0-mcp` (`381fb71c3fe8eb25d81f1ab15e2050b01b9437c5`). A comparação

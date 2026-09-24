@@ -69,6 +69,11 @@ jobs:
           jq -e --arg v "$version" --arg sha "$upstream_sha" \
             '.deskcomm_version == $v and .upstream_tag == ("v" + $v) and .upstream_commit == $sha and .gaps_a == 0 and .mcp_compatible == true' \
             docs/mcp/RELEASE-AUDIT.json
+          previous_tag="$(jq -r .previous_mcp_tag docs/mcp/RELEASE-AUDIT.json)"
+          [[ "$previous_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-mcp$ ]]
+          test "$previous_tag" != "$RELEASE_TAG"
+          git show "${previous_tag}:supabase/baseline.sql" > "$RUNNER_TEMP/mcp-previous-baseline.sql"
+          echo "MCP_PREVIOUS_BASELINE=$RUNNER_TEMP/mcp-previous-baseline.sql" >> "$GITHUB_ENV"
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/preparar-node
         timeout-minutes: 5
@@ -80,6 +85,13 @@ jobs:
       - run: pnpm lint:role-rank
       - run: pnpm test:unit
       - run: pnpm test:db:update
+      - name: Salto da última MCP pronta em PostgreSQL 15 e 17
+        run: |
+          set -euo pipefail
+          for major in 15 17; do
+            TEST_DB_IMAGE="pgvector/pgvector:pg${major}" \
+              TEST_DB_INSTALL_BASELINE="$MCP_PREVIOUS_BASELINE" pnpm test:db:update
+          done
       - run: pnpm build
         env:
           NODE_OPTIONS: --max-old-space-size=4096

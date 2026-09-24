@@ -147,6 +147,20 @@ describe("crm_continue_on_another_number", () => {
     await expect(crmContinueOnAnotherNumber.handler(input, ctx)).rejects.toThrow("target_number_unavailable");
     expect(mockedOpen).not.toHaveBeenCalled();
   });
+
+  it("recusa canal de outra organização antes de abrir", async () => {
+    const { ctx } = contextForContinue(source, null);
+    await expect(crmContinueOnAnotherNumber.handler(input, ctx)).rejects.toThrow("target_number_unavailable");
+    expect(mockedOpen).not.toHaveBeenCalled();
+  });
+
+  it("recusa o próprio canal da conversa de origem", async () => {
+    const { ctx } = contextForContinue(source, target);
+    await expect(crmContinueOnAnotherNumber.handler(
+      { ...input, channel_session_id: SESSION_ID }, ctx,
+    )).rejects.toThrow("same_channel_session");
+    expect(mockedOpen).not.toHaveBeenCalled();
+  });
 });
 
 describe("crm_start_conversation_and_send", () => {

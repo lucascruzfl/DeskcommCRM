@@ -48,9 +48,12 @@ e corrige a reaplicação do baseline para não recriar demanda, índices ou col
 temporária já concluídos. A linha MCP mantém a renumeração `0393` com timestamp novo para a
 migration oficial de memória que colidiu com `0385` implantada. O instalador e
 o updater aplicam o baseline acumulado da tag integrada; não exigem publicar
-1.43, 1.44 e 1.45 separadamente. O salto operacional 1.42 → 1.46 ainda depende
-de instalação, reaplicação e invariantes em banco descartável, além dos testes
-do updater. Uma ambiguidade nesse caminho mantém a release bloqueada.
+1.43, 1.44 e 1.45 separadamente. O harness `test-update-com-dados.sh` instalou
+o baseline da tag `v1.42.0-mcp`, semeou dados e aplicou o baseline 1.46 com
+`ON_ERROR_STOP=1` em PostgreSQL 15 e 17: dados e identidades dos objetos
+inspecionados sobreviveram. O workflow de publicação repete esse salto da
+última tag MCP pronta. O CI da PR também mede instalação e reaplicação do
+baseline atual nas duas majors. Uma ambiguidade ainda bloqueia a release.
 
 ## Gates de fechamento
 
