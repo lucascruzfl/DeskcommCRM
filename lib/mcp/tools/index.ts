@@ -38,7 +38,7 @@ import {
   crmUpdatePipelineSchema,
 } from "./pipelines";
 import { crmReplyMessage, crmSendWhatsappMessage } from "./messages";
-import { crmStartConversationAndSend } from "./start-conversation";
+import { crmContinueOnAnotherNumber, crmStartConversationAndSend } from "./start-conversation";
 import { ATENDIMENTO_COMPLETO_MCP_TOOLS } from "./atendimento-completo";
 import { crmAssignConversation, crmManageTags, crmGetQueueStatus } from "./governance";
 import {
@@ -195,6 +195,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmSendWhatsappMessage,
   crmReplyMessage,
   crmStartConversationAndSend,
+  crmContinueOnAnotherNumber,
   crmAssignConversation,
   crmManageTags,
   crmCreateContact,

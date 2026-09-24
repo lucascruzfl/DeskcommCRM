@@ -1,0 +1,63 @@
+# Auditoria diferencial 1.42.0-mcp → upstream v1.46.0
+
+Estado: **integração candidata; publicação bloqueada**. A release oficial
+[`v1.46.0`](https://github.com/melgarafael/DeskcommCRM/releases/tag/v1.46.0)
+aponta para `d522966877e2557ec51c77ee9867121a821909f5`. A linha MCP pronta
+permanece `v1.42.0-mcp`. A tag 1.46 inclui 1.43, 1.44 e 1.45; a auditoria
+dessas mudanças está em [AUDIT-1.45.0.md](AUDIT-1.45.0.md). A diferença oficial
+1.45 → 1.46 tem 103 arquivos; 1.42 → 1.46 tem 338.
+
+## Detecção e integração
+
+O detector do fork executou para 1.46 e encontrou seis conflitos ao mesclar a
+tag sobre `mcp/stable`: agenda, envio de mensagens, início de conversa,
+respectivos testes e `package.json`. Abriu a
+[issue #4](https://github.com/lucascruzfl/DeskcommCRM/issues/4) e não publicou.
+A [PR #5](https://github.com/lucascruzfl/DeskcommCRM/pull/5) preserva a resolução
+humana da candidata 1.45 e integra a tag 1.46. Os quatro conflitos incrementais
+foram resolvidos manualmente. O freio de envio da 1.46 acontece **dentro da
+reserva idempotente, antes de abrir a conversa**: replay não debita ritmo, e
+um 429 não deixa conversa vazia. Os testes focados de mensagem e agenda passaram
+(32 testes), e o typecheck local passou antes da nova tool de continuidade.
+O CI completo da PR precisa confirmar a versão final da branch.
+
+## Classificação diferencial da 1.46
+
+| Mudança | Classe | Cobertura/decisão |
+| --- | --- | --- |
+| Continuar atendimento pelo outro número conectado | A | `crm_continue_on_another_number` usa o mesmo serviço da tela, exige conversa e canal da organização, canal WORKING e sem envio implícito. A atribuição permanece na tool auditada `crm_assign_conversation`. |
+| `crm_find_free_slots` com `dia` e `dias_a_frente` | A | A data específica prevalece; descrição e teste seguem a regra oficial. |
+| Freio de envio antes da abertura e teto agregado por organização | A | MCP conserva reserva idempotente e usa canal antes da abertura; rota REST mantém teto por token e organização. |
+| Correções de modelo Meta, vínculo por canal/idioma e envio de foto | A operacional | Mesmos serviços oficiais integrados; regressões de mensagem e canal precisam passar. |
+| Salvar link público de mídia em template Meta | B | Configuração de canal externo por administrador; revisão humana do conteúdo e URL. Não é envio MCP. |
+| `META_WEBHOOK_BASE_URL` opcional | B | Configuração do host/URL pública; instalação existente usa fallback. MCP não escreve configuração de servidor. |
+| Correções de atribuição, dono de lead, webhook recusado e transcrição | A operacional | Código oficial integrado; invariantes de banco, auth, isolamento e testes de canal são gates. |
+| Ajustes de UI, rolagem da agenda e quebra de linha no Inbox | A visual | Playwright/UI do projeto precisa passar; não muda o contrato MCP. |
+| Credencial OpenRouter e extensões do servidor | B/C | Credencial e instalação de plataforma exigem pessoa autorizada; nenhuma saída de segredo. |
+
+Nenhuma nova operação foi inferida a partir da contagem de tools. `tools/list` é a
+fonte de verdade. O número é snapshot informativo no manifesto e não é gate.
+Os gaps A identificados acima foram tratados na branch, mas o total **ainda é
+indeterminado** até a auditoria final por operação e gates completos. Portanto
+`RELEASE-AUDIT.json` continua em 1.42.0 e impede publicação.
+
+## Migrations, baseline e updater
+
+A 1.46 acrescenta `20260923160000_0392_demanda_derivada_nao_reduplica.sql`
+e corrige a reaplicação do baseline para não recriar demanda, índices ou coluna
+temporária já concluídos. A linha MCP mantém a renumeração `0393` para a
+migration oficial de memória que colidiu com `0385` implantada. O instalador e
+o updater aplicam o baseline acumulado da tag integrada; não exigem publicar
+1.43, 1.44 e 1.45 separadamente. O salto operacional 1.42 → 1.46 ainda depende
+de instalação, reaplicação e invariantes em banco descartável, além dos testes
+do updater. Uma ambiguidade nesse caminho mantém a release bloqueada.
+
+## Gates de fechamento
+
+Exigir CI `verify`, `invariants`, `imagens-ok` e `e2e` verdes na PR; typecheck,
+lint, registry/policy/scopes/capabilities, autorização, cross-tenant, secrets,
+rate limit, erros/request IDs, fluxos sentinela, baseline install/reapply,
+shell/updater e build das quatro imagens no workflow de publicação. Só então
+registrar SHA oficial e `gaps_a=0` em `RELEASE-AUDIT.json`, integrar a PR em
+`mcp/stable`, publicar os quatro digests e, por último, o manifesto. A VPS só
+atualiza por clique humano no painel.

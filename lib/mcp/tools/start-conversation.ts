@@ -33,6 +33,7 @@ import { z } from "zod";
 
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
 import { comIdempotencia } from "@/lib/api/idempotency";
+import { transportaMensagem } from "@/lib/channels/capabilities";
 import { openSharedContactConversation } from "@/lib/messaging/open-shared-contact-conversation";
 import { validateOutboundMedia } from "@/lib/messaging/media/upload-validation";
 import { depsDoRitmo, registrarEnvioPorToken, segurarEnvioPorToken } from "@/lib/messaging/ritmo-do-envio-por-token";
@@ -42,6 +43,59 @@ import { McpToolError } from "../errors";
 import type { McpToolDefinition } from "../types";
 
 const ENDPOINT_TAG = "mcp:crm_start_conversation_and_send";
+
+const continueShape = {
+  source_conversation_id: z.string().uuid(),
+  channel_session_id: z.string().uuid(),
+};
+
+/** Abre o atendimento do mesmo contato por outro número, sem enviar mensagem. */
+export const crmContinueOnAnotherNumber: McpToolDefinition<typeof continueShape> = {
+  name: "crm_continue_on_another_number",
+  description:
+    "Abre ou reabre a conversa do MESMO contato por outro número conectado da organização. " +
+    "Não envia mensagem nem assume o atendimento. Para atribuir, use crm_assign_conversation " +
+    "com o conversation_id retornado. Recusa canal desconectado ou sem transporte de mensagem.",
+  inputSchema: continueShape,
+  category: "write",
+  requiresRole: "manager",
+  requiresScope: "mcp:write",
+  domain: "conversations",
+  capabilities: [],
+  publicProfile: true,
+  auditResource: (input) => ({ type: "conversation", id: input.source_conversation_id }),
+  handler: async (input, ctx) => {
+    const { data: source, error: sourceError } = await ctx.supabase
+      .from("conversations")
+      .select("contact_id, channel_session_id")
+      .eq("id", input.source_conversation_id)
+      .eq("organization_id", ctx.organizationId)
+      .maybeSingle();
+    if (sourceError) throw new Error(sourceError.message);
+    if (!source?.contact_id) throw new McpToolError("not_found", "conversation_not_found");
+    if (source.channel_session_id === input.channel_session_id) {
+      throw new McpToolError("validation_error", "same_channel_session");
+    }
+
+    const { data: target, error: targetError } = await ctx.supabase
+      .from("channel_sessions")
+      .select("id, status, phone_number, provider")
+      .eq("id", input.channel_session_id)
+      .eq("organization_id", ctx.organizationId)
+      .maybeSingle();
+    if (targetError) throw new Error(targetError.message);
+    if (!target || target.status !== "WORKING" || !target.phone_number ||
+        !transportaMensagem(target.provider)) {
+      throw new McpToolError("validation_error", "target_number_unavailable");
+    }
+
+    const opened = await openSharedContactConversation(ctx.supabase, ctx.organizationId, {
+      contact_id: source.contact_id,
+      channel_session_id: input.channel_session_id,
+    });
+    return { ...opened, channel_session_id: input.channel_session_id, claim_required: true };
+  },
+};
 
 const inputShape = {
   /** O ganho central desta tool: quem chama ESCOLHE o canal, sem auto-seleção. */

@@ -230,4 +230,15 @@ export const TOOLS_ATENDIMENTO = declararTools([
     pacotes: ["vender"],
     apenasHumano: true,
   },
+  {
+    name: "crm_continue_on_another_number",
+    category: "write",
+    rotulo: "Continuar atendimento por outro número",
+    explicacao:
+      "Abre o atendimento do mesmo cliente em outro número conectado da empresa, sem enviar mensagem nem assumir a conversa.",
+    oQueToca: "Atendimento",
+    risco: "atencao",
+    pacotes: ["organizar"],
+    apenasHumano: true,
+  },
 ]);

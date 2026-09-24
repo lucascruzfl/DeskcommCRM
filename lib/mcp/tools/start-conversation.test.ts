@@ -32,7 +32,7 @@ import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
 import { openSharedContactConversation } from "@/lib/messaging/open-shared-contact-conversation";
 import type { McpContext } from "@/lib/mcp/types";
 
-import { crmStartConversationAndSend } from "./start-conversation";
+import { crmContinueOnAnotherNumber, crmStartConversationAndSend } from "./start-conversation";
 
 const mockedOpen = vi.mocked(openSharedContactConversation);
 const mockedSend = vi.mocked(sendMessageHandler);
@@ -43,6 +43,7 @@ const SESSION_ID = "22222222-2222-4222-8222-222222222222";
 const CONTACT_ID = "33333333-3333-4333-8333-333333333333";
 const CONVERSATION_ID = "44444444-4444-4444-8444-444444444444";
 const MESSAGE_ID = "55555555-5555-4555-8555-555555555555";
+const SOURCE_ID = "66666666-6666-4666-8666-666666666666";
 
 interface IdemState {
   cached: Record<string, unknown> | null;
@@ -96,6 +97,54 @@ beforeEach(() => {
   mockedIdempotency.mockImplementation(async (entry) => {
     const effect = await entry.executar();
     return { tipo: "executou", resposta: effect.resposta, status: effect.status };
+  });
+});
+
+describe("crm_continue_on_another_number", () => {
+  function contextForContinue(source: Record<string, unknown> | null, target: Record<string, unknown> | null) {
+    const filters: Array<[string, string, unknown]> = [];
+    const supabase = {
+      from: (table: string) => ({
+        select: () => ({
+          eq(key: string, value: unknown) {
+            filters.push([table, key, value]);
+            return this;
+          },
+          maybeSingle: async () => ({ data: table === "conversations" ? source : target, error: null }),
+        }),
+      }),
+    };
+    return { ctx: { ...makeCtx({ cached: null, inserts: [] }), supabase } as unknown as McpContext, filters };
+  }
+
+  const source = { contact_id: CONTACT_ID, channel_session_id: SESSION_ID };
+  const target = { id: "77777777-7777-4777-8777-777777777777", status: "WORKING", phone_number: "5511999999999", provider: "waha" };
+  const input = { source_conversation_id: SOURCE_ID, channel_session_id: target.id };
+
+  it("abre o mesmo contato pelo canal conectado da organização, sem enviar", async () => {
+    const { ctx, filters } = contextForContinue(source, target);
+    mockedOpen.mockResolvedValue({ contact_id: CONTACT_ID, conversation_id: CONVERSATION_ID });
+    const result = await crmContinueOnAnotherNumber.handler(input, ctx);
+    expect(filters).toContainEqual(["conversations", "organization_id", ORG_ID]);
+    expect(filters).toContainEqual(["channel_sessions", "organization_id", ORG_ID]);
+    expect(mockedOpen).toHaveBeenCalledWith(ctx.supabase, ORG_ID, {
+      contact_id: CONTACT_ID,
+      channel_session_id: target.id,
+    });
+    expect(mockedSend).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ conversation_id: CONVERSATION_ID, claim_required: true });
+  });
+
+  it("recusa conversa de outra organização antes de abrir", async () => {
+    const { ctx } = contextForContinue(null, target);
+    await expect(crmContinueOnAnotherNumber.handler(input, ctx)).rejects.toThrow("conversation_not_found");
+    expect(mockedOpen).not.toHaveBeenCalled();
+  });
+
+  it("recusa número desconectado antes de abrir", async () => {
+    const { ctx } = contextForContinue(source, { ...target, status: "DISCONNECTED" });
+    await expect(crmContinueOnAnotherNumber.handler(input, ctx)).rejects.toThrow("target_number_unavailable");
+    expect(mockedOpen).not.toHaveBeenCalled();
   });
 });
 

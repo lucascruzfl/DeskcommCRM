@@ -47,5 +47,6 @@ Uma release oficial sem `-mcp`, teste falho, conflito, imagem ou manifesto
 inválido não aparece no canal. A VPS nunca usa imagem oficial como fallback.
 A produção só muda depois do clique humano no painel.
 
-Situação 1.45.0: [AUDIT-1.45.0.md](AUDIT-1.45.0.md) contém os cinco conflitos
-e a triagem pendente. Ainda não é release MCP pronta.
+Situação atual 1.46.0: [AUDIT-1.46.0.md](AUDIT-1.46.0.md) registra a detecção
+real, os conflitos e a PR de integração. A candidata 1.45 foi incorporada à
+1.46 antes de qualquer publicação MCP. Nenhuma delas é release MCP pronta.
