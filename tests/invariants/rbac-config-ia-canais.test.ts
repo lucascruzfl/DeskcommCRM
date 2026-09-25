@@ -204,6 +204,8 @@ const DIVIDA_RBAC_CONHECIDA = new Set([
 ]);
 
 describe("0150 — a dívida de RBAC não cresce", () => {
+  // Só uma policy PERMISSIVE pode conceder acesso. Os gates de área gerenciada
+  // são RESTRICTIVE e compõem por AND; contá-los como dívida dá falso positivo.
   it("as tabelas já corrigidas têm policy de escrita com fn_role_at_least", () => {
     const corrigidas = [
       "channel_sessions", "ai_agents", "ai_agent_versions", "ai_budgets",
@@ -218,6 +220,7 @@ describe("0150 — a dívida de RBAC não cresce", () => {
        where schemaname = 'public'
          and tablename in (${corrigidas.map((t) => `'${t}'`).join(",")})
          and cmd = 'ALL'
+         and permissive = 'PERMISSIVE'
          and (coalesce(qual, '') || coalesce(with_check, '')) not like '%role_at_least%';
     `);
     expect(semRole.trim()).toBe("");
@@ -228,6 +231,7 @@ describe("0150 — a dívida de RBAC não cresce", () => {
       select coalesce(string_agg(distinct tablename, ',' order by tablename), '') from pg_policies
        where schemaname = 'public'
          and cmd = 'ALL'
+         and permissive = 'PERMISSIVE'
          and (coalesce(qual, '') || coalesce(with_check, '')) not like '%role_at_least%';
     `)
       .trim()

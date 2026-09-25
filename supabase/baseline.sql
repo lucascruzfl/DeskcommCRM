@@ -38333,3 +38333,45 @@ create policy managed_llm_calls_read on public.llm_calls
     and public.fn_managed_area_allowed(organization_id, '/app/ai/runs')
     and public.fn_managed_area_allowed(organization_id, '/app/ai/usage')
   );
+
+-- 0413: escrita administrativa de funis e canais; SELECT operacional preservado.
+drop policy if exists managed_crm_stages_insert on public.crm_stages;
+create policy managed_crm_stages_insert on public.crm_stages as restrictive for insert to authenticated
+  with check (public.fn_managed_area_allowed(organization_id, '/app/settings/tenant/pipelines'));
+drop policy if exists managed_crm_stages_update on public.crm_stages;
+create policy managed_crm_stages_update on public.crm_stages as restrictive for update to authenticated
+  using (public.fn_managed_area_allowed(organization_id, '/app/settings/tenant/pipelines'))
+  with check (public.fn_managed_area_allowed(organization_id, '/app/settings/tenant/pipelines'));
+drop policy if exists managed_crm_stages_delete on public.crm_stages;
+create policy managed_crm_stages_delete on public.crm_stages as restrictive for delete to authenticated
+  using (public.fn_managed_area_allowed(organization_id, '/app/settings/tenant/pipelines'));
+drop policy if exists managed_crm_pipelines_insert on public.crm_pipelines;
+create policy managed_crm_pipelines_insert on public.crm_pipelines as restrictive for insert to authenticated
+  with check (public.fn_managed_area_allowed(organization_id, '/app/settings/tenant/pipelines'));
+drop policy if exists managed_crm_pipelines_update on public.crm_pipelines;
+create policy managed_crm_pipelines_update on public.crm_pipelines as restrictive for update to authenticated
+  using (public.fn_managed_area_allowed(organization_id, '/app/settings/tenant/pipelines'))
+  with check (public.fn_managed_area_allowed(organization_id, '/app/settings/tenant/pipelines'));
+drop policy if exists managed_crm_pipelines_delete on public.crm_pipelines;
+create policy managed_crm_pipelines_delete on public.crm_pipelines as restrictive for delete to authenticated
+  using (public.fn_managed_area_allowed(organization_id, '/app/settings/tenant/pipelines'));
+drop policy if exists managed_channel_sessions_insert on public.channel_sessions;
+create policy managed_channel_sessions_insert on public.channel_sessions as restrictive for insert to authenticated
+  with check (public.fn_managed_area_allowed(organization_id, '/app/connections'));
+drop policy if exists managed_channel_sessions_update on public.channel_sessions;
+create policy managed_channel_sessions_update on public.channel_sessions as restrictive for update to authenticated
+  using (public.fn_managed_area_allowed(organization_id, '/app/connections'))
+  with check (public.fn_managed_area_allowed(organization_id, '/app/connections'));
+drop policy if exists managed_channel_sessions_delete on public.channel_sessions;
+create policy managed_channel_sessions_delete on public.channel_sessions as restrictive for delete to authenticated
+  using (public.fn_managed_area_allowed(organization_id, '/app/connections'));
+
+-- Quatro tabelas de anúncios são server-only: sem grants e sem policies.
+drop policy if exists managed_area_gate on public.ad_platform_connections;
+drop policy if exists managed_area_gate on public.ad_conversion_dispatches;
+drop policy if exists managed_area_gate on public.ad_insights_connections;
+drop policy if exists managed_area_gate on public.ad_hierarchy_cache;
+
+-- Reconciliar as travas de suporte após o REVOKE de llm_calls na 0412.
+-- Na primeira aplicação e no reapply o conjunto final deve ser idêntico.
+do $f$ begin perform public.fn_aplicar_travas_de_suporte(); end $f$;

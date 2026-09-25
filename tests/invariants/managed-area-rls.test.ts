@@ -5,7 +5,7 @@ import { buildManagedAreaPolicy } from "@/lib/managed-clients/policy";
 import { countAs, lastLine, sql, writeCountAs } from "./gov-helpers";
 
 const org = randomUUID(), otherOrg = randomUUID();
-const agent = randomUUID(), manager = randomUUID(), outsider = randomUUID();
+const agent = randomUUID(), manager = randomUUID(), operator = randomUUID(), outsider = randomUUID();
 const session = randomUUID(), aiAgent = randomUUID(), version = randomUUID();
 const areas = JSON.stringify(buildManagedAreaPolicy("managed/aesthetic-clinic").areas);
 const gateMigration = readFileSync("supabase/migrations/20260925120000_0412_areas_administrativas_no_postgrest.sql", "utf8");
@@ -17,6 +17,7 @@ beforeAll(() => {
     insert into auth.users(id, email) values
       ('${agent}', 'managed-agent@invariant.test'),
       ('${manager}', 'managed-manager@invariant.test'),
+      ('${operator}', 'managed-operator@invariant.test'),
       ('${outsider}', 'managed-outsider@invariant.test');
     insert into public.organizations(id, slug, legal_name, display_name) values
       ('${org}', '${org}', 'Clínica de teste', 'Clínica de teste'),
@@ -24,6 +25,7 @@ beforeAll(() => {
     insert into public.user_organizations(organization_id, user_id, role, accepted_at) values
       ('${org}', '${agent}', 'agent', now()),
       ('${org}', '${manager}', 'admin', now()),
+      ('${org}', '${operator}', 'manager', now()),
       ('${otherOrg}', '${outsider}', 'agent', now());
     insert into public.managed_client_policies(organization_id, business_type, management_mode, preset_id, preset_version, areas, applied_by)
       values ('${org}', 'aesthetic_clinic', 'managed', 'managed/aesthetic-clinic', '1.0.0', '${areas}'::jsonb, '${manager}');
@@ -115,6 +117,15 @@ describe("RLS da política gerenciada", () => {
     expect(countAs(agent, `select count(*) from public.managed_client_policies where organization_id = '${otherOrg}';`)).toBe(0);
   });
 
+  it("permite ler etapas operacionais, mas nega sua administração ao manager da clínica", () => {
+    const stageCount = countAs(operator, `select count(*) from public.crm_stages where organization_id = '${org}';`);
+    expect(stageCount).toBeGreaterThan(0);
+    expect(writeCountAs(operator, `update public.crm_stages set name = 'Alterada pela clínica' where organization_id = '${org}'`)).toBe(0);
+    expect(writeCountAs(manager, `update public.crm_stages set name = name where organization_id = '${org}'`)).toBe(stageCount);
+    expect(countAs(agent, `select count(*) from public.crm_stages where organization_id = '${org}';`)).toBe(stageCount);
+    expect(countAs(outsider, `select count(*) from public.crm_stages where organization_id = '${org}';`)).toBe(0);
+  });
+
   it("nega autoelevação do membership e leitura de tokens administrativos via PostgREST", () => {
     expect(writeCountAs(agent, `update public.user_organizations set role = 'admin'
       where organization_id = '${org}' and user_id = '${agent}'`)).toBe(0);
@@ -125,6 +136,8 @@ describe("RLS da política gerenciada", () => {
 
   it("permite só a projeção operacional do seletor, sem prompt/configuração", () => {
     expect(countAs(agent, `select count(*) from public.ai_agent_assignable_directory where organization_id = '${org}';`)).toBe(1);
+    expect(countAs(manager, `select count(*) from public.ai_agent_assignable_directory where organization_id = '${org}';`)).toBe(1);
+    expect(countAs(outsider, `select count(*) from public.ai_agent_assignable_directory where organization_id = '${org}';`)).toBe(0);
     const columns = sql(`select column_name from information_schema.columns where table_schema = 'public' and table_name = 'ai_agent_assignable_directory' order by column_name;`);
     expect(columns).not.toContain("system_prompt");
     expect(columns).not.toContain("credential_id");
