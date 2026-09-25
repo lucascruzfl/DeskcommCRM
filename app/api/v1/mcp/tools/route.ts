@@ -25,6 +25,7 @@ import { modulosLigados } from "@/lib/instalacao/modulos";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { juntarCatalogoComHandlers } from "@/lib/mcp/tools/catalogo-servido";
 import { domainOf } from "@/lib/mcp/policy";
+import { managedAreaAllowedForActor } from "@/lib/managed-clients/server";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,9 @@ export async function GET(_req: NextRequest): Promise<Response> {
   if (!authUser) return fail("unauthenticated", "Auth required.", 401, { requestId });
   const activeOrg = await resolveActiveOrg(authUser);
   if (!activeOrg) return fail("forbidden_tenant", "Sem organização ativa.", 403, { requestId });
+  if (!(await managedAreaAllowedForActor(activeOrg.orgId, authUser.id, "/app/ai/agents"))) {
+    return fail("forbidden_area", "Área indisponível para esta função.", 403, { requestId });
+  }
 
   let servidas;
   try {

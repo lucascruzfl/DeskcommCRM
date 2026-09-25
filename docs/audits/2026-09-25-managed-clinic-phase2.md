@@ -121,6 +121,8 @@ Bloqueio estrutural confirmado: a policy `orgs_select` ainda entrega a linha int
 
 Verificação deste lote: testes direcionados de política/rotas 80/80 e 41/41, novo indicador 2/2; `pnpm test:db tests/invariants/managed-area-rls.test.ts` 10/10 com install, reapply, cross-tenant e autoelevação negada; `pnpm typecheck` passou; `pnpm lint` terminou com zero erros e 421 avisos preexistentes. `pnpm cercas` passou 1438/1438 enquanto este lote ainda recebia alterações, logo não é usado como evidência de snapshot final.
 
+O transporte HTTP `POST /api/mcp` foi exercitado com uma sessão de token gerenciado injetada no teste: `tools/list` incluiu operações do cliente e omitiu pedidos Nuvemshop, Webhooks e Skills; `tools/call` direto de `crm_list_orders` recebeu erro de tool ausente. A verificação de bearer e a consulta real ao banco foram substituídas nesse teste; ainda falta um teste integrado com token persistido. A rota de catálogo da tela de Agentes (`/api/v1/mcp/tools`) agora consulta a área Agentes antes de servir definições administrativas; teste confirma 403 antes de montar o catálogo.
+
 O picker operacional `/api/v1/ai/agents/assignable` passou a ler a projeção RLS `ai_agent_assignable_directory`, com os mesmos campos de resposta e sem `service_role`. A RLS nega a tabela completa de agentes ao cliente e permite apenas o diretório necessário ao Funil.
 
 `created_by` do token MCP não concede privilégio: num tenant gerenciado, a sessão do token consulta o membership atual do provisionador e recusa role acima dele. Isso não converte o token em cross-organization. Nenhum token é criado pelo preset.
