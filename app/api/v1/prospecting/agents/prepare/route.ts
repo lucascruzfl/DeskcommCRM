@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   const support = await requireSupportWrite();
   if (support) return support;
   const requestId = randomUUID();
-  const auth = await requireRole("admin", { requestId, resource: "ai_agents" });
+  const auth = await requireRole("admin", { requestId, resource: "prospecting" });
   if (!auth.ok) return auth.response;
   const parsed = prospectingAgentSetupSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success)

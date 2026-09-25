@@ -15,6 +15,7 @@ import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { buildAuthorizeUrl } from "@/lib/nuvemshop/oauth";
 import { getConfig } from "@/lib/nuvemshop/config";
 import { issueState } from "@/lib/nuvemshop/state";
+import { managedAreaAllowedForActor } from "@/lib/managed-clients/server";
 
 export type ConnectResult =
   | { ok: false; error: "auth_required" | "no_active_org" | "forbidden" | "not_configured" };
@@ -30,6 +31,9 @@ export async function connectNuvemshop(): Promise<ConnectResult> {
   // Only `admin` can wire up integrations (RBAC). `manager`/`agent`/`viewer`
   // see the UI read-only.
   if (activeOrg.role !== "admin" && !user.is_platform_admin) {
+    return { ok: false, error: "forbidden" };
+  }
+  if (!(await managedAreaAllowedForActor(activeOrg.orgId, user.id, "/app/integrations/nuvemshop"))) {
     return { ok: false, error: "forbidden" };
   }
 

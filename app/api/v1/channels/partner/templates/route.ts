@@ -92,7 +92,10 @@ async function contexto(
 ): Promise<{ ok: true; ctx: Contexto } | { ok: false; res: Response }> {
   // O papel ANTES da conexão: o 404 de "sem conexão" diria a quem não pode
   // nada se a organização tem ou não o canal.
-  const authz = await requireRole(papel, { requestId, resource: "channel_templates" });
+  const authz = await requireRole(papel, {
+    requestId,
+    resource: papel === "agent" ? "channel_templates_read" : "channel_templates",
+  });
   if (!authz.ok) return { ok: false, res: authz.response };
   const { user, org } = authz;
   const t = (texto: string) => traduzir(texto, user.idioma);

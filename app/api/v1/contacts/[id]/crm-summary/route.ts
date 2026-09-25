@@ -35,6 +35,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { camposDoFunil, settingsDoEmbed } from "@/lib/leads/campos-do-funil";
 import { createClient } from "@/lib/supabase/server";
 import { nomesDosAtendentes } from "@/lib/users/nome-do-atendente";
+import { managedAreaAllowedForActor } from "@/lib/managed-clients/server";
 
 export const dynamic = "force-dynamic";
 
@@ -92,10 +93,14 @@ export async function GET(
     .select("organization_id, is_anonymized").eq("id", contactId).maybeSingle();
   if (scopeError) return fail("internal_error", scopeError.message, 500, { requestId });
   if (!contactScope) return fail("not_found", "Contato não encontrado.", 404, { requestId });
+  const [canReadProspecting, canReadNuvemshop] = await Promise.all([
+    managedAreaAllowedForActor(contactScope.organization_id, user.id, "/app/prospecting"),
+    managedAreaAllowedForActor(contactScope.organization_id, user.id, "/app/integrations/nuvemshop"),
+  ]);
   // Candidates are worker-only. Authorize the contact through RLS first, then
   // scope this read to that exact contact and organization. Never expose raw data.
   const enrichment = await (async () => {
-    if (contactScope.is_anonymized) return { enrichment: null, enrichment_error: false };
+    if (contactScope.is_anonymized || !canReadProspecting) return { enrichment: null, enrichment_error: false };
     try {
       const result = await createAdminClient().from("prospecting_candidates")
         .select("data, created_at")
@@ -120,12 +125,14 @@ export async function GET(
       .eq("crm_pipelines.is_archived", false)
       .order("updated_at", { ascending: false })
       .limit(3),
-    supabase
-      .from("orders")
-      .select(ORDER_COLS)
-      .eq("contact_id", contactId).eq("organization_id", contactScope.organization_id)
-      .order("created_at", { ascending: false })
-      .limit(3),
+    canReadNuvemshop
+      ? supabase
+          .from("orders")
+          .select(ORDER_COLS)
+          .eq("contact_id", contactId).eq("organization_id", contactScope.organization_id)
+          .order("created_at", { ascending: false })
+          .limit(3)
+      : Promise.resolve({ data: [], error: null }),
     // 12 e não 5. A janela de 5 foi dimensionada quando a timeline não recebia
     // troca de comando: agora um atendimento normal (assumiu → transferiu →
     // liberou → voltou ao automático) gasta QUATRO linhas sozinho, e com 5 o

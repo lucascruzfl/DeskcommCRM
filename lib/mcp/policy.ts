@@ -50,9 +50,8 @@ export function domainScope(tool: McpToolDefinition): string {
 export function authorizeTool(auth: McpAuthResult, tool: McpToolDefinition): void {
   if (auth.managedPolicy) {
     const area = managedAreaOfTool(tool);
-    // Tools without an audited area have no client grant. An admin can still
-    // use existing tenant tools; not_applicable areas remain denied below.
-    if ((!area && auth.role !== "admin") || (area && !canAccessManagedArea(auth.managedPolicy, auth.role, area))) {
+    // A managed tenant grants only tools with an audited area, for every role.
+    if (!area || !canAccessManagedArea(auth.managedPolicy, auth.role, area)) {
       throw new McpAuthError(-32002, 403, `managed_area_denied:${tool.name}`);
     }
   }
@@ -83,6 +82,15 @@ export function authorizeTool(auth: McpAuthResult, tool: McpToolDefinition): voi
 /** Routing from tool domain to the same href keys persisted for UI and RLS. */
 function managedAreaOfTool(tool: McpToolDefinition): NavDestinationId | null {
   const exactToolArea: Partial<Record<string, NavDestinationId>> = {
+    // Pedidos sincronizados pertencem à integração de loja, não ao catálogo
+    // de produtos compartilhado. O token MCP usa service_role e bypassa RLS.
+    crm_list_orders: "/app/integrations/nuvemshop",
+    crm_get_order: "/app/integrations/nuvemshop",
+    crm_list_contact_orders: "/app/integrations/nuvemshop",
+    crm_discover_integrations: "/app/integrations/nuvemshop",
+    crm_prepare_integration_action: "/app/integrations/nuvemshop",
+    crm_list_ai_skill_versions: "/app/ai/skills",
+    crm_restore_ai_skill_version: "/app/ai/skills",
     crm_list_pipelines: "/app/kanban",
     crm_get_pipeline: "/app/kanban",
     crm_list_stages: "/app/kanban",
@@ -97,7 +105,9 @@ function managedAreaOfTool(tool: McpToolDefinition): NavDestinationId | null {
   const areaByDomain: Partial<Record<McpToolDomain, NavDestinationId>> = {
     agents: "/app/ai/agents",
     appointments: "/app/agenda",
+    automations: "/app/ai/followups",
     campaigns: "/app/campaigns",
+    channels: "/app/connections",
     contacts: "/app/contacts",
     conversations: "/app/inbox",
     followups: "/app/ai/followups",

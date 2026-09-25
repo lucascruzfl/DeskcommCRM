@@ -23,7 +23,7 @@ describe("tools/list de token gerenciado", () => {
     for (const name of ["crm_list_leads", "crm_list_tasks", "crm_list_pipelines", "crm_list_at_risk_leads", "crm_assign_conversation", "crm_list_messaging_channels"]) {
       expect(names.has(name), name).toBe(true);
     }
-    for (const name of ["crm_search_knowledge", "crm_get_org_memory", "crm_list_webhook_sources", "crm_list_automation_rules", "crm_list_followups"]) {
+    for (const name of ["crm_search_knowledge", "crm_get_org_memory", "crm_list_webhook_sources", "crm_list_automation_rules", "crm_list_followups", "crm_list_orders", "crm_get_order", "crm_list_contact_orders"]) {
       expect(names.has(name), name).toBe(false);
     }
   });
@@ -46,5 +46,27 @@ describe("tools/list de token gerenciado", () => {
       { href: "/app/campaigns", classification: "client" },
     ]) };
     expect(isToolVisible(changed, tool("campaigns"))).toBe(true);
+  });
+
+  it("nega também a invocação direta das três tools de pedidos sincronizados", () => {
+    for (const name of ["crm_list_orders", "crm_get_order", "crm_list_contact_orders"]) {
+      expect(() => authorizeTool(auth, { ...tool("products"), name })).toThrow(`managed_area_denied:${name}`);
+    }
+  });
+
+  it("nega tools de integração Nuvemshop inclusive ao gestor enquanto a área não se aplica", () => {
+    const manager = { ...auth, role: "admin" as const };
+    const visible = new Set(mcpPublicProfile(manager).map(entry => entry.name));
+    for (const name of ["crm_discover_integrations", "crm_prepare_integration_action"]) {
+      expect(visible.has(name), name).toBe(false);
+      const definition = { ...tool("channels"), name };
+      expect(isToolVisible(manager, definition)).toBe(false);
+      expect(() => authorizeTool(manager, definition)).toThrow(`managed_area_denied:${name}`);
+    }
+  });
+
+  it("nega tools sem área auditada também ao gestor", () => {
+    const manager = { ...auth, role: "admin" as const };
+    expect(() => authorizeTool(manager, tool("settings"))).toThrow("managed_area_denied");
   });
 });

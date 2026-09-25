@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { NAV_CATALOG } from "@/lib/navigation/catalogo";
-import { buildManagedAreaPolicy, canAccessManagedArea, managedAreaForPath } from "./policy";
+import { buildManagedAreaPolicy, canAccessManagedArea, managedAreaForPath, managedAreaForResource } from "./policy";
 
 describe("política canônica das 54 áreas", () => {
   const policy = buildManagedAreaPolicy("managed/aesthetic-clinic");
@@ -46,6 +46,19 @@ describe("política canônica das 54 áreas", () => {
 
   it("não atribui preset aos tenants antigos", () => {
     expect(canAccessManagedArea(null, "agent", "/app/ai/agents")).toBe(true);
+  });
+
+  it("separa leitura operacional de modelos da configuração de canais", () => {
+    for (const resource of ["channel_templates_read", "channels_graph_partner_templates_read"]) {
+      const area = managedAreaForResource(resource);
+      expect(area).toBe("/app/inbox");
+      expect(canAccessManagedArea(policy, "agent", area!)).toBe(true);
+    }
+    for (const resource of ["channel_templates", "channels_graph_partner_templates"]) {
+      const area = managedAreaForResource(resource);
+      expect(area).toBe("/app/connections");
+      expect(canAccessManagedArea(policy, "agent", area!)).toBe(false);
+    }
   });
 
   it("classifica toda página de área; hubs e manutenção têm autorização própria", () => {

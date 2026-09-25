@@ -95,7 +95,10 @@ async function contexto(
   if (!canalGraphParceiroLigado()) {
     return { ok: false, res: fail("not_found", "not found", 404, { requestId }) };
   }
-  const authz = await requireRole(papel, { requestId, resource: "channels_graph_partner_templates" });
+  const authz = await requireRole(papel, {
+    requestId,
+    resource: papel === "agent" ? "channels_graph_partner_templates_read" : "channels_graph_partner_templates",
+  });
   if (!authz.ok) return { ok: false, res: authz.response };
   const t = (texto: string) => traduzir(texto, authz.user.idioma);
   const orgId = authz.org.orgId;
