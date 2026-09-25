@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readdirSync } from "node:fs";
+import { join, dirname } from "node:path";
 import { NAV_CATALOG } from "@/lib/navigation/catalogo";
 import { buildManagedAreaPolicy, canAccessManagedArea, managedAreaForPath } from "./policy";
 
@@ -33,6 +35,10 @@ describe("política canônica das 54 áreas", () => {
   it("nega política incompleta e resolve subrota pela área mais específica", () => {
     expect(managedAreaForPath("/app/ai/cases/avisos/123")).toBe("/app/ai/cases/avisos");
     expect(managedAreaForPath("/app/ai/cases/123")).toBe("/app/ai/cases");
+    expect(managedAreaForPath("/app/pipelines/123")).toBe("/app/kanban");
+    expect(managedAreaForPath("/app/leads/123")).toBe("/app/kanban");
+    expect(managedAreaForPath("/app/settings/canal-oficial")).toBe("/app/connections");
+    expect(managedAreaForPath("/app/settings/templates")).toBe("/app/connections");
     const incomplete = { ...policy, areas: { ...policy.areas } };
     delete (incomplete.areas as Partial<typeof incomplete.areas>)["/app/campaigns"];
     expect(canAccessManagedArea(incomplete, "agent", "/app/campaigns")).toBe(false);
@@ -40,5 +46,17 @@ describe("política canônica das 54 áreas", () => {
 
   it("não atribui preset aos tenants antigos", () => {
     expect(canAccessManagedArea(null, "agent", "/app/ai/agents")).toBe(true);
+  });
+
+  it("classifica toda página de área; hubs e manutenção têm autorização própria", () => {
+    const pages = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
+      .flatMap((entry) => entry.isDirectory()
+        ? pages(join(directory, entry.name))
+        : entry.name === "page.tsx" ? [join(directory, entry.name)] : []);
+    const hubsAndPlatform = new Set(["/app", "/app/ai", "/app/analise", "/app/crm", "/app/settings", "/app/settings/atualizacao"]);
+    const uncovered = pages("app/app")
+      .map((page) => `/${dirname(page).replace(/^app\//, "")}`)
+      .filter((route) => !route.includes("[") && !hubsAndPlatform.has(route) && !managedAreaForPath(route));
+    expect(uncovered).toEqual([]);
   });
 });

@@ -1,12 +1,16 @@
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { buildManagedAreaPolicy } from "@/lib/managed-clients/policy";
-import { countAs, lastLine, sql } from "./gov-helpers";
+import { countAs, lastLine, sql, writeCountAs } from "./gov-helpers";
 
 const org = randomUUID(), otherOrg = randomUUID();
 const agent = randomUUID(), manager = randomUUID(), outsider = randomUUID();
 const session = randomUUID(), aiAgent = randomUUID(), version = randomUUID();
 const areas = JSON.stringify(buildManagedAreaPolicy("managed/aesthetic-clinic").areas);
+const gateMigration = readFileSync("supabase/migrations/20260925120000_0412_areas_administrativas_no_postgrest.sql", "utf8");
+const administrativeGates = [...gateMigration.matchAll(/\('([a-z_]+)', '(\/app\/[a-z/-]+)'\)/g)]
+  .map(([, table, area]) => ({ table, area }));
 
 beforeAll(() => {
   sql(`
@@ -30,10 +34,75 @@ beforeAll(() => {
     insert into public.ai_agent_versions(id, organization_id, agent_id, version_number, system_prompt, provider, model, channel_session_id)
       values ('${version}', '${org}', '${aiAgent}', 1, 'segredo de teste', 'anthropic', 'teste', '${session}');
     update public.ai_agents set published_version_id = '${version}' where id = '${aiAgent}';
+    insert into public.llm_calls(organization_id, provider, model, purpose) values
+      ('${org}', 'test', 'test-model', 'agent_turn'),
+      ('${otherOrg}', 'test', 'test-model', 'agent_turn');
   `);
 });
 
 describe("RLS da política gerenciada", () => {
+  it("inventaria tabelas tenant com SELECT e sem RLS", () => {
+    const unprotected = sql(`
+      select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity
+        and exists (select 1 from pg_attribute a where a.attrelid = c.oid
+          and a.attname = 'organization_id' and a.attnum > 0 and not a.attisdropped)
+        and has_table_privilege('authenticated', c.oid, 'SELECT') order by c.relname;
+    `);
+    expect(unprotected).toBe("");
+  });
+
+  it("aplica 0412 sobre esquema anterior com dados e reaplica sem mudar o preset", () => {
+    const before = lastLine(sql(`select areas::text from public.managed_client_policies where organization_id = '${org}';`));
+    sql(administrativeGates.map(({ table }) => `drop policy if exists managed_area_gate on public.${table};`).join("\n"));
+    expect(Number(lastLine(sql(`select count(*) from pg_policies where policyname = 'managed_area_gate';`)))).toBe(9);
+    sql(`set client_min_messages = warning;\n${gateMigration}`);
+    sql(`set client_min_messages = warning;\n${gateMigration}`);
+    const after = lastLine(sql(`select areas::text from public.managed_client_policies where organization_id = '${org}';`));
+    expect(after).toBe(before);
+  });
+
+  it("instala o gate restritivo correto em todas as tabelas administrativas inventariadas", () => {
+    expect(administrativeGates.length).toBeGreaterThan(40);
+    const values = administrativeGates.map(({ table, area }) => `('${table}', '${area}')`).join(",");
+    const count = Number(lastLine(sql(`
+      select count(*) from (values ${values}) as expected(table_name, area_href)
+      join pg_class c on c.oid = to_regclass('public.' || expected.table_name)
+        and c.relrowsecurity
+      join pg_policies p on p.schemaname = 'public'
+        and p.tablename = expected.table_name
+        and p.policyname = 'managed_area_gate'
+        and p.permissive = 'RESTRICTIVE'
+        and p.cmd = 'ALL'
+        and p.qual like '%' || expected.area_href || '%'
+        and p.with_check like '%' || expected.area_href || '%';
+    `)));
+    expect(count).toBe(administrativeGates.length);
+  });
+
+  it("nega leitura e escrita de automações ao cliente e preserva o gestor", () => {
+    const ruleId = randomUUID();
+    expect(writeCountAs(manager, `insert into public.automation_rules(id, organization_id, name, trigger_event)
+      values ('${ruleId}', '${org}', 'Regra privada', 'lead.created')`)).toBe(1);
+    expect(countAs(agent, `select count(*) from public.automation_rules where organization_id = '${org}';`)).toBe(0);
+    expect(countAs(manager, `select count(*) from public.automation_rules where organization_id = '${org}';`)).toBe(1);
+    expect(countAs(outsider, `select count(*) from public.automation_rules where organization_id = '${org}';`)).toBe(0);
+    expect(writeCountAs(agent, `update public.automation_rules set name = 'Alterada pelo cliente' where id = '${ruleId}'`)).toBe(0);
+  });
+
+  it("fecha PostgREST de llm_calls por área e tenant, inclusive grants de escrita", () => {
+    expect(countAs(agent, `select count(*) where public.fn_managed_area_allowed('${org}', '/app/ai/runs');`)).toBe(0);
+    expect(countAs(agent, `select count(*) from public.llm_calls;`)).toBe(0);
+    expect(countAs(manager, `select count(*) from public.llm_calls;`)).toBe(1);
+    expect(countAs(outsider, `select count(*) from public.llm_calls;`)).toBe(1);
+    expect(lastLine(sql(`select has_table_privilege('authenticated', 'public.llm_calls', 'INSERT');`))).toBe("f");
+    expect(lastLine(sql(`select has_table_privilege('anon', 'public.llm_calls', 'SELECT');`))).toBe("f");
+    expect(lastLine(sql(`select permissive from pg_policies where tablename = 'llm_calls' and policyname = 'managed_llm_calls_read';`))).toBe("RESTRICTIVE");
+    sql(`update public.managed_client_policies set areas = jsonb_set(areas, array['/app/ai/runs'], '"client"'::jsonb) where organization_id = '${org}';`);
+    expect(countAs(agent, `select count(*) from public.llm_calls;`)).toBe(0);
+    sql(`update public.managed_client_policies set areas = jsonb_set(areas, array['/app/ai/runs'], '"agency"'::jsonb) where organization_id = '${org}';`);
+  });
+
   it.each(["ai_agents", "ai_agent_versions"])("nega SELECT PostgREST em %s ao cliente", table => {
     expect(countAs(agent, `select count(*) from public.${table} where organization_id = '${org}';`)).toBe(0);
     expect(countAs(manager, `select count(*) from public.${table} where organization_id = '${org}';`)).toBe(1);

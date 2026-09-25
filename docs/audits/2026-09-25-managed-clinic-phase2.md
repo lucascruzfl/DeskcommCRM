@@ -16,13 +16,80 @@ Base `mcp/stable` `0a7511a886f12f5f699bac2aceedf957d179a3d3`; trabalho sobre `45
 | `ai_chunks` | Conhecimento | RLS tenant/role histórica | gate restritivo de Conhecimento | baseline install/reapply; DML específico pendente |
 | `ai_budgets` | Uso e orçamento | RLS tenant/role histórica | gate restritivo de Uso e orçamento | baseline install/reapply; DML específico pendente |
 | `ai_agent_runs` | Execuções | RLS tenant/role histórica | gate restritivo de Execuções | baseline install/reapply; DML específico pendente |
+| `llm_calls` | Execuções / Uso | SELECT de membro isolado por tenant | gate restritivo de Execuções e apenas SELECT autenticado | Postgres real: agent 0, admin 1, outro tenant só o próprio |
 | `api_tokens` | API Tokens | admin tenant | gate restritivo de API Tokens | baseline install/reapply; DML específico pendente |
 | `managed_client_policies` | Política | inexistente | SELECT de membro; mutação só `service_role` após gate da aplicação | Postgres real: `authenticated` não tem UPDATE; isolamento de SELECT |
 | `ai_agent_assignable_directory` | Funis (picker operacional) | inexistente | projeção mínima RLS por membership + área Funis; trigger a mantém | Postgres real: agent 1 linha; sem prompt/credencial; versão sincronizada |
-| Demais tabelas das 29 áreas | Conforme catálogo | diversas | mapear e provar gate por área antes de habilitar criação | **PENDENTE** |
+| Demais tabelas das 29 áreas | Conforme catálogo | diversas | inventário e gate por área ainda incompletos; ver 0412 abaixo | **PARCIAL** |
 | RPCs administrativos | Conforme função | diversas | rever EXECUTE e autorização interna por membership/área | **PENDENTE** |
 
 As policies novas são `AS RESTRICTIVE FOR ALL`: compõem por AND com as policies permissivas históricas. A migration não transforma uma policy de escrita em SELECT por OR.
+
+
+## Inventário adicional da migration 0412
+
+A tabela abaixo registra os 58 gates adicionais. A policy atual após a migration é a RLS anterior da tabela combinada com `managed_area_gate AS RESTRICTIVE FOR ALL`. A policy necessária para o cliente gerenciado é manter o isolamento anterior e exigir `fn_managed_area_allowed(organization_id, área)` em SELECT e mutações. O teste de catálogo consulta `pg_policies` no Postgres descartável para todas as linhas; automações têm ainda teste de leitura, escrita e isolamento com três atores. Isso **não** prova as RPCs ou recursos mistos.
+
+| TABLE | ÁREA | POLICY ATUAL | POLICY NECESSÁRIA | TESTE |
+|---|---|---|---|---|
+| `ai_faq_items` | `/app/ai/knowledge/sources` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `knowledge_searches` | `/app/ai/knowledge/sources` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `ai_invocations` | `/app/ai/runs` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `ai_purpose_bindings` | `/app/ai/providers` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `ai_routers` | `/app/ai/routers` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `ai_router_members` | `/app/ai/routers` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `ai_router_decisions` | `/app/ai/routers` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `org_memory_entries` | `/app/ai/memory` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `org_memory_pointers` | `/app/ai/memory` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `org_memory_versions` | `/app/ai/memory` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `skill_pointers` | `/app/ai/skills` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `skill_versions` | `/app/ai/skills` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `skill_activations` | `/app/ai/skills` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `followup_flow_pointers` | `/app/ai/followups` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `followup_flow_versions` | `/app/ai/followups` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `followup_enrollments` | `/app/ai/followups` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `followup_enrollment_events` | `/app/ai/followups` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `automation_rules` | `/app/ai/followups` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies + DML/RLS |
+| `automation_rule_runs` | `/app/ai/followups` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `config_aviso_de_caso` | `/app/ai/cases/avisos` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `flywheel_distiller_proposals` | `/app/ai/proposals` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `flywheel_judge_verdicts` | `/app/ai/evolution` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `org_guardrail_layers` | `/app/ai/agents` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `playbook_versions` | `/app/ai/agents` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `playbook_pointers` | `/app/ai/agents` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `disclosure_template_versions` | `/app/ai/agents` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `disclosure_template_pointers` | `/app/ai/agents` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `channel_knobs` | `/app/connections` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `reentry_template_versions` | `/app/ai/followups` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `reentry_template_pointers` | `/app/ai/followups` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `reentry_knob_versions` | `/app/ai/followups` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `reentry_knob_pointers` | `/app/ai/followups` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `promise_table_versions` | `/app/ai/followups` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `promise_table_pointers` | `/app/ai/followups` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `campaigns` | `/app/campaigns` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `campaign_recipients` | `/app/campaigns` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `campaign_channel_sessions` | `/app/campaigns` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `campaign_templates` | `/app/campaigns` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `campaign_suppressions` | `/app/campaigns` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `prospecting_settings` | `/app/prospecting` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `prospecting_campaigns` | `/app/prospecting` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `prospecting_candidates` | `/app/prospecting` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `tenant_integrations` | `/app/integrations/nuvemshop` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `orders` | `/app/integrations/nuvemshop` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `nuvemshop_products` | `/app/integrations/nuvemshop` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `webhook_sources` | `/app/webhooks` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `webhook_lead_captures` | `/app/webhooks` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `webhook_events_log` | `/app/webhooks` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `ad_insights_connections` | `/app/ads/meta` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `ad_hierarchy_cache` | `/app/ads/meta` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `ad_platform_connections` | `/app/settings/meta-ads` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `ad_conversion_dispatches` | `/app/settings/conversoes` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `channel_routing_policies` | `/app/settings/atendimento` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `channel_routing_responsibles` | `/app/settings/atendimento` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `external_db_connections` | `/app/integracao-dados` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `organization_extensions` | `/app/extensions` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `voip_trunk_settings` | `/app/settings/voip-trunk` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
+| `api_audit_log` | `/app/audit` | RLS histórica ∧ gate 0412 | membership, role e área | catálogo pg_policies |
 
 ## Portas e lacunas
 
@@ -31,7 +98,7 @@ As policies novas são `AS RESTRICTIVE FOR ALL`: compõem por AND com as policie
 | UI/navigation | Sidebar, hubs, paleta e aviso usam o resolver; matriz unitária percorre 54 áreas | botões e links locais dentro das páginas ainda precisam de varredura |
 | URL direta | `app/app/template.tsx` nega com 404 no servidor para área proibida | E2E autenticado de cada classe representativa pendente |
 | Backend/API/actions | `requireRole` usa o mesmo resolver para recursos administrativos mapeados e role efetivo do banco | mapear rotas/actions sem `resource` e provar leitura/mutação; service role ignora RLS |
-| PostgREST/RLS | 9 tabelas com gate; `ai_agents` e versões provadas no Postgres descartável | demais tabelas e RPCs administrativos pendentes |
+| PostgREST/RLS | 68 tabelas com gate (0410 + 0412); agentes e automações provados no Postgres descartável | recursos mistos, outras tabelas e RPCs administrativos pendentes |
 | MCP | `tools/list` usa área persistida para domínios mapeados; desconhecidos são omitidos ao cliente | revisar tool a tool, domínios mistos e teste com token real |
 
 Snapshot informativo do registry em memória, com role `agent` e scopes `mcp:read`/`mcp:write`: tenant sem preset **78** tools, perfil gerenciado **64**. As 14 omitidas são `crm_list_managed_client_presets`, `crm_preflight_managed_client`, `crm_list_ai_skill_versions`, `crm_search_knowledge`, `crm_list_knowledge_sources`, `crm_list_improvement_proposals`, `crm_get_org_memory`, `crm_describe_external_data`, `crm_query_external_data`, `crm_list_webhook_sources`, `crm_list_webhook_source_events`, `crm_list_automation_rules`, `crm_list_automation_runs`, `crm_list_followups`. O snapshot não substitui `tools/list` autenticado real.
@@ -50,3 +117,13 @@ O picker operacional `/api/v1/ai/agents/assignable` passou a ler a projeção RL
 - Typecheck: passou após aumentar heap para 4 GiB; primeira tentativa com heap padrão abortou por OOM.
 
 **Não foram concluídos:** suíte DB integral, E2E visual, upgrade por sequência de migrations e suíte unitária integral. `pnpm lint` integral passou com 421 warnings e zero erros. Nenhuma ação de produção foi feita.
+
+Atualização 0412: `pnpm test:db tests/invariants/managed-area-rls.test.ts` passou com install, reapply e 9 invariantes, incluindo os 58 gates e DML de automações. `app/app/template.test.tsx` cobre as 54 URLs canônicas em teste unitário de negação no servidor; E2E autenticado ainda pendente. As rotas legadas `/app/pipelines` e `/app/leads` agora são associadas a Funis.
+
+A rota de QR `GET /api/v1/channel-sessions/[id]/qr` exigia apenas sessão e membership e expunha o pareamento de Conexões por URL direta. Agora passa por `requireRole("admin", { resource: "channel_sessions" })`; teste de rota prova 403 antes do acesso ao canal ou WAHA. O proxy também sobrescreve `x-pathname` enviado pelo navegador antes de construir a resposta encaminhada; teste valida o cabeçalho que chega aos Server Components. Duas URLs antigas de canal oficial/templates são resolvidas como Conexões e negadas no template antes do redirect.
+
+`llm_calls` tinha isolamento por tenant da migration 0050, mas sua policy permissiva deixava qualquer membro do tenant ler Execuções pelo PostgREST. A 0412 preserva o isolamento, adiciona gate **restritivo** de Execuções e Uso, revoga `anon` e escrita de `authenticated` e concede só SELECT. O teste Postgres prova que o cliente gerenciado não lê, o gestor lê apenas seu tenant e o membro de outro tenant lê só o próprio. A rota de Uso usa a mesma tabela e permanece classificada como agência no gate HTTP.
+
+A mesma suíte verifica no catálogo que nenhuma tabela pública com `organization_id` e grant SELECT de `authenticated` permanece sem RLS no baseline descartável. Isso é um inventário estrutural; ainda faltam políticas de área nos recursos mistos como `organizations` e `channel_sessions` e a revisão de RPCs `SECURITY DEFINER`.
+
+`llm_calls` serve Execuções e Uso. O gate direto exige ambas as áreas para que liberar apenas uma via override futuro não exponha os dados da outra. Esse override isolado exigirá uma projeção específica para que a API correspondente continue funcional; permanece como gap de produto antes de liberar essa combinação.

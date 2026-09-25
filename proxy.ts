@@ -11,16 +11,18 @@ import {
 const COOKIE_NAME = "sb-deskcomm-auth";
 
 export async function proxy(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+  // Override any caller-supplied value before NextResponse snapshots the
+  // forwarded headers. Server Components use this path for area authorization.
+  request.headers.set("x-pathname", pathname);
   const response = NextResponse.next({ request: { headers: request.headers } });
 
   // Inject X-Request-Id for downstream correlation (audit log, error wrappers).
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
   response.headers.set("x-request-id", requestId);
 
-  const { pathname, search } = request.nextUrl;
   // Expose pathname to Server Components via header (used by onboarding layout).
   response.headers.set("x-pathname", pathname);
-  request.headers.set("x-pathname", pathname);
 
   // EPIC-11: the admin surface is reached by PATH (`/admin/*`) — the self-host kit
   // points `NEXT_PUBLIC_ADMIN_URL` at the same host as the app and maps no `admin.`

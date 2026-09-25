@@ -58,6 +58,11 @@ export function canAccessManagedArea(
 
 /** Longest path wins, so /app/ai/cases/avisos cannot inherit /app/ai/cases. */
 export function managedAreaForPath(pathname: string): NavDestinationId | null {
+  // Detail URLs from older modules live outside the navigation href prefix.
+  // They still belong to the same canonical destination permission.
+  if (pathname === "/app/pipelines" || pathname.startsWith("/app/pipelines/")) return "/app/kanban";
+  if (pathname === "/app/leads" || pathname.startsWith("/app/leads/")) return "/app/kanban";
+  if (pathname === "/app/settings/canal-oficial" || pathname === "/app/settings/templates") return "/app/connections";
   return (NAV_CATALOG.map((area) => area.href)
     .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
     .sort((a, b) => b.length - a.length)[0] ?? null) as NavDestinationId | null;
@@ -78,15 +83,21 @@ const RESOURCE_AREAS: Readonly<Record<string, NavDestinationId>> = {
   ai_usage: "/app/ai/usage",
   ai_budget: "/app/ai/usage",
   ai_evolution: "/app/ai/evolution",
+  ai_style_adjustments: "/app/ai/evolution",
   flywheel_proposals: "/app/ai/proposals",
   followup_flows: "/app/ai/followups",
   followup_enrollments: "/app/ai/followups",
   followup_queue: "/app/ai/followups",
+  followup_promises: "/app/ai/followups",
+  automation_rules: "/app/ai/followups",
   campaign_settings: "/app/campaigns",
   campaign_suppressions: "/app/campaigns",
   campaign_templates: "/app/campaigns",
   campaigns: "/app/campaigns",
   webhook_sources: "/app/webhooks",
+  ads_insights: "/app/ads/meta",
+  ad_platform_connections: "/app/settings/meta-ads",
+  config_aviso_de_caso: "/app/ai/cases/avisos",
   api_tokens: "/app/settings/api-tokens",
   audit: "/app/audit",
   prospecting: "/app/prospecting",
@@ -95,8 +106,19 @@ const RESOURCE_AREAS: Readonly<Record<string, NavDestinationId>> = {
   organization_extensions: "/app/extensions",
   external_db_connections: "/app/integracao-dados",
   voip_trunk_settings: "/app/settings/voip-trunk",
+  channel_sessions: "/app/connections",
+  channels_graph_partner: "/app/connections",
+  channels_official: "/app/connections",
+  channels_official_webhook: "/app/connections",
+  channels_partner: "/app/connections",
+  channels_templates: "/app/connections",
+  channel_templates: "/app/connections",
+  social_connections: "/app/connections",
+  phone_numbers: "/app/connections",
+  org_voice_calls: "/app/connections",
+  pipeline_agent_mapping: "/app/ai/agents",
   settings_routing: "/app/settings/atendimento",
-  channel_knobs: "/app/settings/atendimento",
+  channel_knobs: "/app/connections",
 };
 
 export function managedAreaForResource(resource: string | undefined): NavDestinationId | null {
