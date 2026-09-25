@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { Card } from "@/components/ui/card";
 import type { Role } from "@/lib/auth/types";
+import type { ManagedAreaPolicy } from "@/lib/managed-clients/policy";
 import { permissaoDaCapacidade } from "@/lib/extensions/capacidades";
 import { portasLegiveis } from "@/lib/extensions/portas-legiveis";
 import { localize, type ExtensionManifest } from "@/lib/extensions/manifest";
@@ -15,6 +16,7 @@ import { BookOpen, Lightbulb, ListChecks, Warning } from "@/lib/ui/icons";
 
 interface NavHubProps {
   interfaceSettings?: InterfaceSettings;
+  managedPolicy?: ManagedAreaPolicy | null;
   /** Módulos opcionais ligados na instalação. Ausente = o hub não filtra por módulo. */
   modulosLigados?: readonly ModuloOpcional[];
   group: NavGroupId;
@@ -72,12 +74,13 @@ export function NavHub({
   title,
   subtitle,
   interfaceSettings,
+  managedPolicy,
   modulosLigados,
   locale = IDIOMA_PADRAO,
   extensionGuides = [],
   extensionsUnavailable = false,
 }: NavHubProps) {
-  const secoes = hubSections(group, isPlatformAdmin, role, interfaceSettings, modulosLigados);
+  const secoes = hubSections(group, isPlatformAdmin, role, interfaceSettings, modulosLigados, managedPolicy);
 
   return (
     <div className="flex h-full flex-col gap-8 p-6">

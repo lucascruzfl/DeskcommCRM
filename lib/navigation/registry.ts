@@ -51,6 +51,7 @@ import {
   type NavGroupId,
 } from "./catalogo";
 import type { ModuloOpcional } from "@/lib/instalacao/modulos";
+import type { ManagedAreaPolicy } from "@/lib/managed-clients/policy";
 
 import { destinosDaInterface, type InterfaceSettings } from "./interface";
 export { NAV_GROUPS, GRUPO_NO_RODAPE } from "./catalogo";
@@ -118,9 +119,10 @@ export function sidebarGroups(
   role: Role | null,
   settings?: InterfaceSettings,
   modulos?: readonly ModuloOpcional[],
+  managedPolicy?: ManagedAreaPolicy | null,
 ): Array<{ group: NavGroup; items: NavDestination[] }> {
   const visible = new Set<string>(
-    destinosDaInterface(settings, isPlatformAdmin, role, modulos).map((d) => d.href),
+    destinosDaInterface(settings, isPlatformAdmin, role, modulos, managedPolicy).map((d) => d.href),
   );
   return NAV_GROUPS.map((group) => ({
     group,
@@ -147,10 +149,11 @@ export function hubSections(
   role: Role | null,
   settings?: InterfaceSettings,
   modulos?: readonly ModuloOpcional[],
+  managedPolicy?: ManagedAreaPolicy | null,
 ): Array<{ section: string; items: NavDestination[] }> {
   const porSecao = new Map<string, NavDestination[]>();
   const visible = new Set<string>(
-    destinosDaInterface(settings, isPlatformAdmin, role, modulos).map((d) => d.href),
+    destinosDaInterface(settings, isPlatformAdmin, role, modulos, managedPolicy).map((d) => d.href),
   );
   for (const d of NAV_DESTINATIONS) {
     if (d.group !== group || !visible.has(d.href)) continue;
@@ -168,9 +171,10 @@ export function searchable(
   role: Role | null,
   settings?: InterfaceSettings,
   modulos?: readonly ModuloOpcional[],
+  managedPolicy?: ManagedAreaPolicy | null,
 ): NavDestination[] {
   const visible = new Set<string>(
-    destinosDaInterface(settings, isPlatformAdmin, role, modulos).map((d) => d.href),
+    destinosDaInterface(settings, isPlatformAdmin, role, modulos, managedPolicy).map((d) => d.href),
   );
   return NAV_DESTINATIONS.filter((d) => visible.has(d.href));
 }

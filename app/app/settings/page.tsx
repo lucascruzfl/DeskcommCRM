@@ -36,6 +36,7 @@ export default async function SettingsHubPage() {
       isPlatformAdmin={user.is_platform_admin && !user.support}
       role={activeOrg?.role ?? null}
       interfaceSettings={activeOrg?.interface_settings}
+      managedPolicy={activeOrg?.managed_policy}
       // A porta do banco externo mora neste hub, e só existe com o módulo ligado.
       modulosLigados={await modulosLigados(createAdminClient())}
       title={traduzir("Configurações", idioma)}

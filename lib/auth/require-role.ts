@@ -24,6 +24,8 @@ import { loadAuthUser, mfaEmDivida, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK, type ActiveOrg, type AuthUser, type Role } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { canAccessManagedArea, managedAreaForResource, type ManagedAreaPolicy } from "@/lib/managed-clients/policy";
 
 export type RoleCheck =
   | { ok: true; user: AuthUser; org: ActiveOrg }
@@ -85,7 +87,8 @@ export async function requireRole(min: Role, opts: RequireRoleOpts = {}): Promis
     };
   }
 
-  if (allowPlatformAdmin && user.is_platform_admin && !user.support) {
+  const managedArea = managedAreaForResource(resource);
+  if (allowPlatformAdmin && user.is_platform_admin && !user.support && !managedArea) {
     return { ok: true, user, org };
   }
 
@@ -96,6 +99,26 @@ export async function requireRole(min: Role, opts: RequireRoleOpts = {}): Promis
   });
   if (error) {
     return { ok: false, response: fail("internal_error", error.message, 500, { requestId }) };
+  }
+
+  if (managedArea) {
+    let managedPolicy = org.managed_policy;
+    if (organizationId) {
+      const { data, error } = await createAdminClient()
+        .from("managed_client_policies")
+        .select("business_type, management_mode, preset_id, preset_version, areas, overrides")
+        .eq("organization_id", org.orgId)
+        .maybeSingle();
+      if (error) return { ok: false, response: fail("internal_error", "Política indisponível.", 500, { requestId }) };
+      managedPolicy = data as ManagedAreaPolicy | null;
+    }
+    if (!canAccessManagedArea(managedPolicy, effectiveRole as Role | null, managedArea)) {
+      return { ok: false, response: fail("forbidden_area", "Área indisponível para esta função.", 403, { requestId }) };
+    }
+  }
+
+  if (allowPlatformAdmin && user.is_platform_admin && !user.support) {
+    return { ok: true, user, org };
   }
 
   const rank = effectiveRole ? (ROLE_RANK[effectiveRole as Role] ?? 0) : 0;

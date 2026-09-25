@@ -28,6 +28,7 @@ export default async function AiHubPage() {
       isPlatformAdmin={user.is_platform_admin && !user.support}
       role={activeOrg?.role ?? null}
       interfaceSettings={activeOrg?.interface_settings}
+      managedPolicy={activeOrg?.managed_policy}
       title={traduzir("Agente de IA", idioma)}
       subtitle={traduzir(
         "Tudo que define quem atende por você — e como acompanhar o que ele faz.",

@@ -1,6 +1,7 @@
 import type { InterfaceSettings } from "@/lib/navigation/interface";
 import type { Idioma } from "@/lib/i18n/idiomas";
 import type { ModuloOpcional } from "@/lib/instalacao/modulos";
+import type { ManagedAreaPolicy } from "@/lib/managed-clients/policy";
 
 /**
  * Papéis dentro do tenant.
@@ -149,6 +150,7 @@ export interface AuthUser {
 
 export interface ActiveOrg {
   interface_settings?: InterfaceSettings;
+  managed_policy?: ManagedAreaPolicy | null;
   orgId: string;
   /** Fuso IANA da organização — ver `UserOrgMembership.timezone`. */
   timezone?: string | null;

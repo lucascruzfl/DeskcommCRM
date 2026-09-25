@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ROLE_RANK, type Role } from "@/lib/auth/types";
 import type { ModuloOpcional } from "@/lib/instalacao/modulos";
 import { NAV_CATALOG, type NavMetadata, type NavDestinationId } from "./catalogo";
+import { canAccessManagedArea, type ManagedAreaPolicy } from "@/lib/managed-clients/policy";
 
 const ids = NAV_CATALOG.map((d) => d.href);
 export const interfaceSettingsSchema = z
@@ -104,13 +105,15 @@ export function destinosDaInterface(
   platform: boolean,
   role: Role | null,
   modulos?: readonly ModuloOpcional[],
+  managedPolicy?: ManagedAreaPolicy | null,
 ): NavMetadata[] {
   const { settings } = lerInterface(raw);
   const allowed = permitidos(platform, role, modulos);
   const chosen =
     settings.destinos ?? (settings.preset === "simplificada" ? SIMPLIFICADA : undefined);
   return allowed.filter(
-    (d) => essencial(d, role, platform) || !chosen || chosen.includes(d.href as NavDestinationId),
+    (d) => canAccessManagedArea(managedPolicy, role, d.href as NavDestinationId)
+      && (essencial(d, role, platform) || !chosen || chosen.includes(d.href as NavDestinationId)),
   );
 }
 export function interfaceTemDestino(
@@ -120,8 +123,8 @@ export function interfaceTemDestino(
 ): boolean {
   return destinosDaInterface(settings, platform, role).some((d) => !essencial(d, role, platform));
 }
-export function homeDaInterface(raw: unknown, platform: boolean, role: Role | null): string {
-  const visible = destinosDaInterface(raw, platform, role);
+export function homeDaInterface(raw: unknown, platform: boolean, role: Role | null, managedPolicy?: ManagedAreaPolicy | null): string {
+  const visible = destinosDaInterface(raw, platform, role, undefined, managedPolicy);
   return (
     visible.find((d) => d.href === "/app/inbox")?.href ??
     visible.find((d) => !essencial(d, role, platform))?.href ??

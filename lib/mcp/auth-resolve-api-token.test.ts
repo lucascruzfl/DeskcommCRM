@@ -38,6 +38,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { buildManagedAreaPolicy } from "@/lib/managed-clients/policy";
 
 import { ApiTokenError, McpAuthError, resolveApiToken, validateBearerToken } from "./auth";
 
@@ -88,9 +89,23 @@ type Resposta = { data: LinhaDoToken | null; error: { message: string } | null }
  * pedida; `update(...).eq(...)` é thenable, como o builder real — é assim que o
  * `last_used_at` sem `await` se resolve.
  */
-function adminDeTokens(resposta: Resposta, reg: Registro) {
+function adminDeTokens(resposta: Resposta, reg: Registro, managedRole?: "agent" | "admin" | null) {
   return {
     from: (tabela: string) => {
+      if (tabela === "managed_client_policies") return {
+        select: () => ({ eq: () => ({ maybeSingle: async () => ({
+          data: managedRole === undefined ? null : buildManagedAreaPolicy("managed/aesthetic-clinic"), error: null,
+        }) }) }),
+      };
+      if (tabela === "user_organizations") {
+        const query = {
+          eq: () => query,
+          is: () => query,
+          not: () => query,
+          maybeSingle: async () => ({ data: managedRole ? { role: managedRole } : null, error: null }),
+        };
+        return { select: () => query };
+      }
       if (tabela !== "api_tokens") throw new Error(`tabela inesperada: ${tabela}`);
       return {
         select: (colunas: string) => {
@@ -118,9 +133,9 @@ function adminDeTokens(resposta: Resposta, reg: Registro) {
   };
 }
 
-function armar(resposta: Resposta): Registro {
+function armar(resposta: Resposta, managedRole?: "agent" | "admin" | null): Registro {
   const reg: Registro = { colunas: [], filtros: [], updates: [], idsAtualizados: [] };
-  vi.mocked(createAdminClient).mockReturnValue(adminDeTokens(resposta, reg) as never);
+  vi.mocked(createAdminClient).mockReturnValue(adminDeTokens(resposta, reg, managedRole) as never);
   return reg;
 }
 
@@ -352,6 +367,7 @@ describe("validateBearerToken — a tradução para MCP não mudou", () => {
       apiTokenId: TOKEN_ID,
       provisionedByUserId: CRIADOR_ID,
       scopes: ["mcp:read", "mcp:write"],
+      managedPolicy: null,
     });
   });
 
@@ -373,6 +389,20 @@ describe("validateBearerToken — a tradução para MCP não mudou", () => {
     armar(achou(linhaViva({ scopes: ["mcp:read", 42, null, { a: 1 }] })));
     await expect(validateBearerToken(`Bearer ${PLAINTEXT}`)).resolves.toMatchObject({
       scopes: ["mcp:read"],
+    });
+  });
+
+  it("tenant gerenciado exige membership vigente e limita role do token", async () => {
+    armar(achou(linhaViva({ scopes: ["mcp:read", "role:admin"] })), "agent");
+    await expect(validateBearerToken(`Bearer ${PLAINTEXT}`)).rejects.toMatchObject({
+      httpStatus: 403,
+      message: "Token role exceeds current tenant membership.",
+    });
+    armar(achou(linhaViva({ scopes: ["mcp:read", "role:admin"] })), null);
+    await expect(validateBearerToken(`Bearer ${PLAINTEXT}`)).rejects.toMatchObject({ httpStatus: 403 });
+    armar(achou(linhaViva({ scopes: ["mcp:read", "role:admin"] })), "admin");
+    await expect(validateBearerToken(`Bearer ${PLAINTEXT}`)).resolves.toMatchObject({
+      role: "admin", managedPolicy: { preset_id: "managed/aesthetic-clinic" },
     });
   });
 

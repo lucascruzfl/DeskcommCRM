@@ -1,5 +1,8 @@
 # Migration Manifest — DeskcommCRM
 
+| `20260925100000` | `0410_politica_de_area_gerenciada` | Persiste por organização o snapshot versionado das 54 áreas e overrides; tenants existentes continuam sem política. `fn_managed_area_allowed` consulta membership e classificação; RLS restritiva fecha leitura e escrita direta dos primeiros recursos administrativos mapeados, inclusive `ai_agents` e `ai_agent_versions`. Onboarding segue bloqueado até mapear e provar todas as superfícies. |
+| `20260925110000` | `0411_diretorio_seguro_de_agentes_atribuiveis` | Projeção RLS apenas com nome, id, canal, status e versão publicada para o seletor operacional do Funil; trigger sincroniza a partir de `ai_agents`, sem expor prompt/configuração ao cliente. Backfill idempotente e sem alteração de tenants/preset. |
+
 Migrations applied to Supabase project `rrydmwnporysaiysiztn` (sa-east-1, Postgres 17) via Supabase MCP on 2026-04-28.
 
 ## Nota — renomeação de 4 prefixos em 2026-08-05 (issue #143)

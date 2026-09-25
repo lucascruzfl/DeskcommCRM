@@ -73,7 +73,7 @@ export const MANAGED_CLIENT_PRESETS = {
     label: "Clínica de estética — gerenciada",
     proposed_client_role: "agent",
     agency_manager_role: "admin",
-    /** A aplicação do perfil está bloqueada enquanto os gaps de autorização persistirem. */
+    /** A aplicação do perfil fica bloqueada até todas as superfícies usarem a política. */
     executable: false,
     areas: aestheticClinicAreas,
   },

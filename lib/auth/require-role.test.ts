@@ -13,6 +13,7 @@ import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { audit } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/server";
 import type { AuthUser, Role } from "@/lib/auth/types";
+import { buildManagedAreaPolicy } from "@/lib/managed-clients/policy";
 
 vi.mock("@/lib/auth/server", () => ({
   // Sessão sem dívida de MFA: esta suíte mede rank de papel; o gate de segundo
@@ -115,6 +116,33 @@ describe("requireRole — helper único (spec 13 §4)", () => {
     expect(res.org.orgId).toBe(ORG_ID);
     expect(res.org.role).toBe("manager");
     expect(audit).not.toHaveBeenCalled();
+  });
+
+  it("recurso de agência é negado mesmo quando o rank da rota permitiria", async () => {
+    session("agent");
+    vi.mocked(resolveActiveOrg).mockResolvedValue({
+      orgId: ORG_ID, name: "Clínica", role: "agent",
+      managed_policy: buildManagedAreaPolicy("managed/aesthetic-clinic"),
+    });
+    const denied = await requireRole("agent", { resource: "ai_agents" });
+    expect(denied.ok).toBe(false);
+    if (denied.ok) throw new Error("unreachable");
+    expect((await denied.response.json()).error.code).toBe("forbidden_area");
+
+    session("admin", { dbRole: "agent" });
+    vi.mocked(resolveActiveOrg).mockResolvedValue({
+      orgId: ORG_ID, name: "Clínica", role: "admin",
+      managed_policy: buildManagedAreaPolicy("managed/aesthetic-clinic"),
+    });
+    const staleAdmin = await requireRole("agent", { resource: "ai_agents" });
+    expect(staleAdmin.ok).toBe(false);
+
+    session("admin");
+    vi.mocked(resolveActiveOrg).mockResolvedValue({
+      orgId: ORG_ID, name: "Clínica", role: "admin",
+      managed_policy: buildManagedAreaPolicy("managed/aesthetic-clinic"),
+    });
+    expect((await requireRole("agent", { resource: "ai_agents" })).ok).toBe(true);
   });
 
   it("fail-closed: fn_user_role_in_org null (membership revogado) → 403", async () => {

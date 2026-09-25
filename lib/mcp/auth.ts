@@ -20,6 +20,7 @@ import { registrarFalhaDeToken, tokenFailureLimited } from "@/lib/auth/rate-limi
 import type { Role } from "@/lib/auth/types";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { ManagedAreaPolicy } from "@/lib/managed-clients/policy";
 
 export interface McpAuthResult {
   organizationId: string;
@@ -28,6 +29,7 @@ export interface McpAuthResult {
   apiTokenId: string;
   provisionedByUserId?: string;
   scopes: string[];
+  managedPolicy?: ManagedAreaPolicy | null;
 }
 
 export class McpAuthError extends Error {
@@ -214,6 +216,28 @@ export async function validateBearerToken(
 
   const role = scopesRole(resolved.scopes);
   const actor = deriveActor(resolved.scopes, resolved.id);
+  const admin = createAdminClient();
+  const { data: managedPolicy, error: policyError } = await admin
+    .from("managed_client_policies")
+    .select("business_type, management_mode, preset_id, preset_version, areas, overrides")
+    .eq("organization_id", resolved.organizationId)
+    .maybeSingle();
+  if (policyError) throw new McpAuthError(-32603, 500, "Managed policy unavailable.");
+  if (managedPolicy) {
+    // A autoria do token identifica apenas quem o emitiu. O privilégio exige
+    // membership ATUAL do provisionador no mesmo tenant, nunca created_by só.
+    const { data: member, error: memberError } = await admin
+      .from("user_organizations")
+      .select("role")
+      .eq("organization_id", resolved.organizationId)
+      .eq("user_id", resolved.createdBy)
+      .is("revoked_at", null)
+      .not("accepted_at", "is", null)
+      .maybeSingle();
+    if (memberError || !member || ROLE_RANK[role] > (ROLE_RANK[member.role as Role] ?? 0)) {
+      throw new McpAuthError(-32002, 403, "Token role exceeds current tenant membership.");
+    }
+  }
 
   return {
     organizationId: resolved.organizationId,
@@ -222,6 +246,7 @@ export async function validateBearerToken(
     apiTokenId: resolved.id,
     provisionedByUserId: resolved.createdBy,
     scopes: resolved.scopes,
+    managedPolicy: managedPolicy as ManagedAreaPolicy | null,
   };
 }
 

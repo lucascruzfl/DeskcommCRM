@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { combinarInterfaces } from "@/lib/navigation/interface";
+import type { ManagedAreaPolicy } from "@/lib/managed-clients/policy";
 /**
  * Server-side auth helpers — load AuthUser, resolve active org, gate routes.
  *
@@ -293,11 +294,18 @@ export const resolveActiveOrg = cache(async (authUser: AuthUser): Promise<Active
   const store = await cookies();
   const ativo = escolherMembroAtivo(authUser.organizations, store.get(ACTIVE_ORG_COOKIE)?.value);
   if (!ativo) return null;
+  const { data: managedPolicy, error: managedPolicyError } = await createAdminClient()
+    .from("managed_client_policies")
+    .select("business_type, management_mode, preset_id, preset_version, areas, overrides")
+    .eq("organization_id", ativo.organization_id)
+    .maybeSingle();
+  if (managedPolicyError) throw new Error(`managed_policy_unavailable: ${managedPolicyError.message}`);
   return {
     orgId: ativo.organization_id,
     name: ativo.organization_name,
     role: ativo.role,
     interface_settings: ativo.interface_settings,
+    managed_policy: managedPolicy as ManagedAreaPolicy | null,
     timezone: ativo.timezone ?? null,
   };
 });
