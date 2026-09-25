@@ -4,6 +4,8 @@ Base `mcp/stable` `0a7511a886f12f5f699bac2aceedf957d179a3d3`; trabalho sobre `45
 
 **Onboarding real permanece bloqueado.** A migration 0410 cria `managed_client_policies` sem backfill; nenhum tenant existente recebe preset. A linha guarda tipo de negócio, modo, preset, versão, snapshot das áreas, overrides, autor e data. O snapshot é produzido por `buildManagedAreaPolicy()` a partir do catálogo tipado de 54 áreas. UI e MCP leem a mesma linha. O banco lê a mesma coluna `areas` em `fn_managed_area_allowed`. `can_execute` continua falso porque não há cobertura completa das rotas, actions, tabelas e RPCs.
 
+Em runtime, `areas` persistido é a autoridade tanto no TypeScript quanto na RLS. `preset_version` registra de qual versão saiu o snapshot; atualizar o código do preset não muda silenciosamente decisões de tenants já criados. Novo onboarding continua exigindo preset válido e versão atual.
+
 ## Matriz TABLE/RPC → área → policy atual → necessária → teste
 
 | TABLE/RPC | Área | Policy anterior | Policy necessária nesta fase | Teste |
@@ -108,6 +110,16 @@ As tools MCP de descoberta e preparação da integração Nuvemshop também usam
 O resumo de contato do Inbox misturava pedidos Nuvemshop (PostgREST) e enriquecimento de Prospecção (`service_role`) com dados operacionais. Agora consulta a política antes de cada seção: para tenant gerenciado com essas áreas não aplicáveis, não consulta `orders` nem `prospecting_candidates`, devolve as seções vazias e preserva o restante do painel. Teste da rota verifica resposta 200 e ausência dessas leituras. Ainda é necessário inventariar os demais recursos mistos.
 
 As rotas de modelos dos canais parceiro e Graph parceiro separam `GET` operacional, usado pelo seletor do Inbox, de `POST` de sincronização/criação em Conexões. O upload de mídia para criar modelo continua vinculado a Conexões. O resolver de recurso e o teste de política cobrem essa divisão; E2E autenticado ainda pendente.
+
+O indicador `GET /api/v1/ai/automatico-ativo` do Inbox não podia mais ler a tabela completa `ai_agents` com o papel de cliente. Ele agora autoriza o recurso operacional pela área Inbox e usa uma leitura interna limitada ao tenant para responder somente `{ ativo: boolean }`. O teste de rota prova 403 antes da consulta quando a área é negada e escopo explícito de `organization_id` quando permitida. A tabela completa continua protegida pela RLS.
+
+Board de Funis, validação de dono IA no lead e nomes de agentes em Atividades deixaram de ler `ai_agents`/`ai_agent_versions` pela sessão do cliente; usam `ai_agent_assignable_directory`, que contém apenas identidade e versão pública operacional, com RLS de Funis. Isso preserva os usos necessários sem reabrir prompts ou configuração de agentes. O diretório e o isolamento por tenant têm teste Postgres; testes de resposta completos dessas três rotas ainda pendentes.
+
+O mapa `resource → área` agora cobre os 87 identificadores literais usados por `requireRole` nas rotas `app/api/v1`. Um teste lê as rotas e falha quando surgir recurso explícito sem área canônica. Isto fecha lacunas de roteamento como `lead_captures` (Webhooks), `ai_operator_metrics` (Agentes) e `crm_stages` (Etapas do funil). A cobertura não substitui a revisão dos handlers que omitem `requireRole` nem a dos dados mistos dentro de uma área.
+
+Bloqueio estrutural confirmado: a policy `orgs_select` ainda entrega a linha inteira de `organizations` a qualquer membro, incluindo `settings`, `ai_budget_cents`, `onboarding_state` e metadados administrativos. A aplicação usa a mesma tabela para nome/fuso/idioma do switcher e para configuração da agência; RLS de linha não separa colunas. É preciso introduzir projeção operacional segura e migrar os consumidores antes de negar a tabela completa ao cliente gerenciado. `channel_sessions` e `crm_stages` têm o mesmo problema de dados operacionais misturados com configuração. Nenhuma dessas três tabelas foi marcada como fechada.
+
+Verificação deste lote: testes direcionados de política/rotas 80/80 e 41/41, novo indicador 2/2; `pnpm test:db tests/invariants/managed-area-rls.test.ts` 10/10 com install, reapply, cross-tenant e autoelevação negada; `pnpm typecheck` passou; `pnpm lint` terminou com zero erros e 421 avisos preexistentes. `pnpm cercas` passou 1438/1438 enquanto este lote ainda recebia alterações, logo não é usado como evidência de snapshot final.
 
 O picker operacional `/api/v1/ai/agents/assignable` passou a ler a projeção RLS `ai_agent_assignable_directory`, com os mesmos campos de resposta e sem `service_role`. A RLS nega a tabela completa de agentes ao cliente e permite apenas o diretório necessário ao Funil.
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { NAV_CATALOG } from "@/lib/navigation/catalogo";
 import { buildManagedAreaPolicy, canAccessManagedArea, managedAreaForPath, managedAreaForResource } from "./policy";
@@ -30,6 +30,12 @@ describe("política canônica das 54 áreas", () => {
     expect(canAccessManagedArea(changed, "agent", "/app/campaigns")).toBe(true);
     expect(policy.areas["/app/campaigns"]).toBe("agency");
     expect(changed.overrides).toEqual({ "/app/campaigns": "client" });
+  });
+
+  it("mantém a decisão do snapshot persistido após evolução da versão do código", () => {
+    const previous = { ...policy, preset_version: "0.9.0" };
+    expect(canAccessManagedArea(previous, "agent", "/app/inbox")).toBe(true);
+    expect(canAccessManagedArea(previous, "agent", "/app/campaigns")).toBe(false);
   });
 
   it("nega política incompleta e resolve subrota pela área mais específica", () => {
@@ -71,5 +77,16 @@ describe("política canônica das 54 áreas", () => {
       .map((page) => `/${dirname(page).replace(/^app\//, "")}`)
       .filter((route) => !route.includes("[") && !hubsAndPlatform.has(route) && !managedAreaForPath(route));
     expect(uncovered).toEqual([]);
+  });
+
+  it("mapeia cada resource explícito das rotas API para uma das 54 áreas", () => {
+    const routes = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
+      .flatMap((entry) => entry.isDirectory()
+        ? routes(join(directory, entry.name))
+        : entry.name === "route.ts" ? [join(directory, entry.name)] : []);
+    const resources = new Set(routes("app/api/v1")
+      .flatMap((file) => Array.from(readFileSync(file, "utf8").matchAll(/resource:\s*["']([^"']+)["']/g), match => match[1])));
+    expect(resources.size).toBeGreaterThan(80);
+    expect([...resources].filter(resource => !managedAreaForResource(resource))).toEqual([]);
   });
 });

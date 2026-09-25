@@ -63,35 +63,18 @@ async function withOwnerAgents(
   if (agentIds.length === 0) return { leads, error: null };
 
   const { data: agents, error: agentsErr } = await supabase
-    .from("ai_agents")
-    .select("id, name, published_version_id")
+    .from("ai_agent_assignable_directory")
+    .select("agent_id, name, version_number")
     .eq("organization_id", organizationId)
-    .in("id", agentIds);
+    .in("agent_id", agentIds);
   if (agentsErr) return { leads, error: agentsErr.message };
 
   const agentRows = (agents ?? []) as Array<{
-    id: string;
+    agent_id: string;
     name: string;
-    published_version_id: string | null;
+    version_number: number | null;
   }>;
-
-  const publishedIds = agentRows
-    .map((a) => a.published_version_id)
-    .filter((v): v is string => !!v);
-  const versionById = new Map<string, number>();
-  if (publishedIds.length > 0) {
-    const { data: versions, error: versionsErr } = await supabase
-      .from("ai_agent_versions")
-      .select("id, version_number")
-      .eq("organization_id", organizationId)
-      .in("id", publishedIds);
-    if (versionsErr) return { leads, error: versionsErr.message };
-    for (const v of (versions ?? []) as Array<{ id: string; version_number: number }>) {
-      versionById.set(v.id, v.version_number);
-    }
-  }
-
-  const byId = new Map(agentRows.map((a) => [a.id, a]));
+  const byId = new Map(agentRows.map((a) => [a.agent_id, a]));
   return {
     leads: leads.map((lead) => {
       if (lead.owner_kind !== "ai" || !lead.owner_agent_id) return lead;
@@ -100,11 +83,9 @@ async function withOwnerAgents(
       return {
         ...lead,
         owner_agent: {
-          id: agent.id,
+          id: agent.agent_id,
           name: agent.name,
-          version_number: agent.published_version_id
-            ? (versionById.get(agent.published_version_id) ?? null)
-            : null,
+          version_number: agent.version_number,
         },
       };
     }),

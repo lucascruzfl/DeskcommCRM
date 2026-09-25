@@ -171,11 +171,11 @@ async function resolveNomes(
     // manda toda query que cruza tabela tenant-aware dizer o inquilino em voz
     // alta em vez de terceirizar o recorte.
     const { data } = await supabase
-      .from("ai_agents")
-      .select("id, name")
+      .from("ai_agent_assignable_directory")
+      .select("agent_id, name")
       .eq("organization_id", orgId)
-      .in("id", idsDeAgente);
-    for (const a of data ?? []) agentes[a.id] = a.name;
+      .in("agent_id", idsDeAgente);
+    for (const a of data ?? []) agentes[a.agent_id] = a.name;
   }
 
   return { usuarios, agentes };

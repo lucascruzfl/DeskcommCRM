@@ -47,8 +47,9 @@ export function canAccessManagedArea(
   href: NavDestinationId,
 ): boolean {
   if (!policy) return true;
-  if (!role || policy.management_mode !== "managed" || !MANAGED_CLIENT_PRESETS[policy.preset_id]) return false;
-  if (policy.preset_version !== MANAGED_CLIENT_PRESETS[policy.preset_id].version) return false;
+  // The persisted snapshot is the authority. Version identifies the policy
+  // applied at onboarding; a later code release must not silently revoke it.
+  if (!role || policy.management_mode !== "managed") return false;
   const classification = policy.areas[href];
   if (!CLASSES.has(classification)) return false;
   if (classification === "not_applicable") return false;
@@ -70,8 +71,46 @@ export function managedAreaForPath(pathname: string): NavDestinationId | null {
 
 /** Existing route/action resource identifiers are routed to the canonical href. */
 const RESOURCE_AREAS: Readonly<Record<string, NavDestinationId>> = {
+  agenda: "/app/agenda",
+  agent_cases: "/app/ai/cases",
+  agent_inbox_items: "/app/inbox",
+  attendant_availability: "/app/team",
+  calendar_connections: "/app/agenda",
+  calendar_event_types: "/app/settings/tenant/agenda",
+  catalog_products: "/app/products",
+  contact: "/app/contacts",
+  contacts: "/app/contacts",
+  conversation_media: "/app/inbox",
+  conversation_notes: "/app/inbox",
+  conversations: "/app/inbox",
+  crm_leads: "/app/kanban",
+  crm_pipelines: "/app/kanban",
+  crm_stages: "/app/settings/tenant/pipelines",
+  crm_tasks: "/app/tasks",
+  demandas: "/app/radar",
+  financeiro: "/app/settings/tenant/financeiro",
+  interface: "/app/settings/profile",
+  lead_captures: "/app/webhooks",
+  leads_at_risk: "/app/radar",
+  lgpd_requests: "/app/lgpd/requests",
+  message_templates: "/app/templates",
+  messages: "/app/inbox",
+  metrics: "/app/metrics",
+  passagens_de_atendimento: "/app/inbox",
+  pipeline_stages: "/app/settings/tenant/pipelines",
+  pipelines: "/app/kanban",
+  push_subscriptions: "/app/settings/notifications",
+  reports: "/app/metrics",
+  settings_tags: "/app/settings/tags",
+  system_instalacao: "/app/settings/tenant",
+  system_instalacao_provar: "/app/ai/credentials",
+  system_relogio_tick: "/app/settings/tenant",
+  team: "/app/team",
+  voice_calls: "/app/calls",
+  ai_operator_metrics: "/app/ai/agents",
   ai_agents: "/app/ai/agents",
   ai_agents_assignable: "/app/kanban",
+  ai_agents_operational_status: "/app/inbox",
   ai_guardrail_layers: "/app/ai/agents",
   ai_routers: "/app/ai/routers",
   ai_credentials: "/app/ai/credentials",

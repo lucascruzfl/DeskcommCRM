@@ -80,9 +80,9 @@ async function ownerPatchOrThrow(
 
   if (result.patch.owner_agent_id !== null) {
     const { data: agent, error: agentErr } = await supabase
-      .from("ai_agents")
-      .select("id")
-      .eq("id", result.patch.owner_agent_id)
+      .from("ai_agent_assignable_directory")
+      .select("agent_id")
+      .eq("agent_id", result.patch.owner_agent_id)
       .eq("organization_id", ctx.organization_id)
       .is("archived_at", null)
       .maybeSingle();

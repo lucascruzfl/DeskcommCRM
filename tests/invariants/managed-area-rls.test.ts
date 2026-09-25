@@ -115,6 +115,14 @@ describe("RLS da política gerenciada", () => {
     expect(countAs(agent, `select count(*) from public.managed_client_policies where organization_id = '${otherOrg}';`)).toBe(0);
   });
 
+  it("nega autoelevação do membership e leitura de tokens administrativos via PostgREST", () => {
+    expect(writeCountAs(agent, `update public.user_organizations set role = 'admin'
+      where organization_id = '${org}' and user_id = '${agent}'`)).toBe(0);
+    expect(lastLine(sql(`select role from public.user_organizations
+      where organization_id = '${org}' and user_id = '${agent}';`))).toBe("agent");
+    expect(countAs(agent, `select count(*) from public.api_tokens where organization_id = '${org}';`)).toBe(0);
+  });
+
   it("permite só a projeção operacional do seletor, sem prompt/configuração", () => {
     expect(countAs(agent, `select count(*) from public.ai_agent_assignable_directory where organization_id = '${org}';`)).toBe(1);
     const columns = sql(`select column_name from information_schema.columns where table_schema = 'public' and table_name = 'ai_agent_assignable_directory' order by column_name;`);

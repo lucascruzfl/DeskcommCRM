@@ -32,16 +32,18 @@ import type { NextRequest } from "next/server";
 import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
 import { agenteAtende } from "@/lib/ai/agents/no-ar";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(_req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
-  const authz = await requireRole("agent", { requestId, resource: "ai_agents" });
+  const authz = await requireRole("agent", { requestId, resource: "ai_agents_operational_status" });
   if (!authz.ok) return authz.response;
 
-  const supabase = await createClient();
+  // Somente o booleano operacional é exposto. A tabela completa de agentes
+  // permanece fechada por RLS ao cliente gerenciado.
+  const supabase = createAdminClient();
   // `head: true` + `count` não serve mais: a régua olha quatro colunas por
   // linha, e uma contagem no banco não sabe respondê-la sem duplicar a regra em
   // SQL — que é como ela se desencontrou da primeira vez.
