@@ -112,6 +112,7 @@ import { PARTE7_OPERATION_TOOLS } from "./parte7-operacoes";
 import { CAMPAIGN_MCP_TOOLS } from "./campanhas";
 import { CAMPAIGN_EXTRA_MCP_TOOLS } from "./campanhas-complementos";
 import { SKILL_VERSION_MCP_TOOLS } from "./skill-versions";
+import { MANAGED_CLIENT_TOOLS } from "./managed-clients";
 
 // Cast via `unknown` porque McpToolDefinition<TInput> nao e covariante
 // em TInput (handler usa TInput em posicao contravariante). Coletar
@@ -119,6 +120,7 @@ import { SKILL_VERSION_MCP_TOOLS } from "./skill-versions";
 // nivel do array — o server core ja recebe args como `Record<string,
 // unknown>` e cada handler valida no Zod do registerTool.
 export const allTools: ReadonlyArray<McpToolDefinition> = [
+  ...MANAGED_CLIENT_TOOLS,
   ...CAMPAIGN_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...CAMPAIGN_EXTRA_MCP_TOOLS.filter((tool) => tool.category === "read"),
   ...AI_MCP_TOOLS,
