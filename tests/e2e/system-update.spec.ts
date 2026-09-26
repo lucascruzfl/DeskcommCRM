@@ -589,7 +589,9 @@ test("rodapé distingue a release MCP da revisão do host", async ({ page, reque
   });
   await loginWithTotp(page, creds.users.dono!.email, creds.dono_totp!.secret);
   await page.goto("/app/inbox");
-  await expect(page.getByText("Versão 42.7.19-mcp", { exact: true })).toBeVisible();
+  const rodape = page.getByTitle("Versão 42.7.19-mcp · Build abc1234", { exact: true });
+  await expect(rodape).toBeVisible();
+  await expect(rodape).toContainText("Versão 42.7.19-mcp");
   await expect(page.getByText("Build abc1234", { exact: true })).toBeVisible();
   await expect(page.getByText("Versão abc1234", { exact: true })).toHaveCount(0);
   await page.screenshot({ path: ".superpowers/evidence/mcp-versao-release-e-build.png" });
