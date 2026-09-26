@@ -203,7 +203,7 @@ function fakeSupabase(linhas: Array<Record<string, unknown>>) {
   const client = {
     from: (tabela: string) => {
       let resultado: Array<Record<string, unknown>> =
-        tabela === "conversations" ? [...linhas] : [];
+        tabela === "operational_conversations" ? [...linhas] : [];
       let teto = Number.POSITIVE_INFINITY;
 
       const cadeia: Record<string, unknown> = new Proxy(

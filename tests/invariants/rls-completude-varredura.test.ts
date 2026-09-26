@@ -75,6 +75,7 @@ interface Excecao {
  * linhas da OUTRA organização, não uma leitura como superusuário.
  */
 const PROVA_PROPRIA: readonly Excecao[] = [
+  { tabela: "operational_inbox_signals", razao: "tests/invariants/managed-postgrest-jwt.test.ts — JWT do cliente A lê o sinal próprio, JWT do cliente B lê zero linhas de A; a resposta não expõe metadados privados." },
   { tabela: "managed_client_policies", razao: "tests/invariants/managed-area-rls.test.ts — cliente com JWT da clínica não lê a política da organização vizinha, e não possui privilégio de UPDATE no preset." },
   { tabela: "ai_agent_assignable_directory", razao: "tests/invariants/managed-area-rls.test.ts — cliente e gestor leem o diretório da própria clínica; membro autenticado da organização vizinha lê zero linhas." },
   { tabela: "prospecting_settings", razao: "tests/invariants/prospecting.test.ts — tabela exclusiva do servidor, ACL e RLS verificadas; FK composta e comandos autenticados cercam a organização." },

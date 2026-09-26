@@ -276,6 +276,11 @@ describe("PostgREST com JWT persistido na sessão HTTP", () => {
     expect(signal.status).toBe(200);
     expect(signal.rows).toHaveLength(1);
     expect(JSON.stringify(signal.rows)).not.toContain("never-expose");
+    const foreignSignal = await getRows(
+      fixture.clientB,
+      `operational_inbox_signals?organization_id=eq.${fixture.orgA}&select=*`,
+    );
+    expect(foreignSignal).toMatchObject({ status: 200, rows: [] });
   });
 
   it("manager sem membership em B não lê nem seleciona B", async () => {

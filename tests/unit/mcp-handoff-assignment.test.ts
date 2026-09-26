@@ -98,7 +98,7 @@ function makeSupabaseStub(state: StubState) {
         else if (table === "conversations" && state.updates.length)
           result = { data: [{ id: CONV_ID }], error: null };
         if (table === "attendant_availability") result = { data: state.attendants, error: null };
-        else if (table === "conversations" && q.count)
+        else if (table === "operational_conversations" && q.count)
           result = { count: state.queuePositionCount, error: null };
         return Promise.resolve(result).then(resolve);
       },

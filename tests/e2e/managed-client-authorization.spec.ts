@@ -94,7 +94,6 @@ test("todas as URLs da agência negam antes de carregar e APIs não dependem do 
   for (const path of [
     "/api/v1/ai/agents",
     "/api/v1/settings/api-tokens",
-    "/api/v1/channel-sessions",
     "/api/v1/ai/routers",
     "/api/v1/ai/credentials",
     "/api/v1/ai/knowledge/sources",
@@ -104,6 +103,9 @@ test("todas as URLs da agência negam antes de carregar e APIs não dependem do 
     const response = await page.request.get(path);
     expect([403, 404], path).toContain(response.status());
   }
+  const channels = await page.request.get("/api/v1/channel-sessions");
+  expect(channels.status()).toBe(200);
+  expect(await channels.text()).not.toContain("never-expose");
   const settings = await page.request.patch(`/api/v1/pipelines/${fixture.clinics.A!.pipeline}`, {
     data: { name: "Indevido" },
   });
@@ -128,7 +130,7 @@ test("gestor usa conta própria, memberships oficiais e switcher com organizaç�
   await expect(page.getByTestId("tenant-switcher")).toContainText("Clínica B Fase 5");
   await page.goto("/app/ai/agents");
   await expect(page).toHaveURL(/\/app\/ai\/agents/);
-  await expect(page.getByRole("heading", { name: /Agentes/i }).first()).toBeVisible({
+  await expect(page.getByRole("heading", { name: /Agents de IA/i }).first()).toBeVisible({
     timeout: 90_000,
   });
   await evidence(page, "gestor-em-b-sem-impersonation");

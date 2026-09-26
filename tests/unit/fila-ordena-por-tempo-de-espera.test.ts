@@ -78,7 +78,7 @@ async function listar(query: Record<string, unknown>) {
  */
 function ordensPedidas(c: Chamada[]): string[] {
   return c
-    .filter((x) => x.tabela === "conversations" && x.metodo === "order")
+    .filter((x) => ["conversations", "operational_conversations"].includes(x.tabela) && x.metodo === "order")
     .map((x) => {
       const [coluna, opcoes] = x.args as [
         string,
@@ -127,7 +127,7 @@ describe("a Fila pede ao banco a ordem por tempo de espera", () => {
     // de organização é a ÚNICA barreira. Uma consulta nova "só para ordenar"
     // nasceria sem barreira nenhuma e devolveria conversa de OUTRO CLIENTE.
     const c = await listar({ comando: ["aguardando"] });
-    expect(c.filter((x) => x.tabela === "conversations" && x.metodo === "eq").map((x) => x.args.join(":"))).toContain(
+    expect(c.filter((x) => x.tabela === "operational_conversations" && x.metodo === "eq").map((x) => x.args.join(":"))).toContain(
       "organization_id:org-1",
     );
     expect(c.filter((x) => x.metodo === "order").length).toBeGreaterThan(0);

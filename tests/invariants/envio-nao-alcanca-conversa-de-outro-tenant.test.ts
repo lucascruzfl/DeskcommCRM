@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import pg from "pg";
 
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
@@ -6,6 +6,8 @@ import type { HandlerCtx } from "@/lib/api/handlers/types";
 import type { SendMessageInput } from "@/lib/schemas";
 
 import { pgComoSupabase } from "../pg-como-supabase";
+
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => db }));
 
 /**
  * QUEM ENVIA POR TOKEN NÃO ALCANÇA A CONVERSA DA ORGANIZAÇÃO VIZINHA.

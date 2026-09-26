@@ -87,7 +87,7 @@ describe("a rota de retenção devolve só o que vale agora", () => {
     vi.useFakeTimers({ now: new Date("2026-09-20T15:00:00Z"), toFake: ["Date"] }); // 12h em São Paulo
     const r = await retencoes({
       before_send_traces: [{ vetoed_code: "daily_cap", created_at: "2026-09-20T10:00:00Z" }],
-      messages: { created_at: "2026-09-20T11:00:00Z" },
+      operational_messages: { created_at: "2026-09-20T11:00:00Z" },
     });
     expect(r).toEqual([]);
   });
@@ -96,7 +96,7 @@ describe("a rota de retenção devolve só o que vale agora", () => {
     vi.useFakeTimers({ now: new Date("2026-09-20T15:00:00Z"), toFake: ["Date"] }); // 12h, janela 7h–22h
     const r = await retencoes({
       before_send_traces: [{ vetoed_code: "outside_window", created_at: "2026-09-20T02:00:00Z" }],
-      messages: null,
+      operational_messages: null,
     });
     expect(r).toEqual([]);
   });
@@ -105,7 +105,7 @@ describe("a rota de retenção devolve só o que vale agora", () => {
     vi.useFakeTimers({ now: new Date("2026-09-20T05:30:00Z"), toFake: ["Date"] }); // 2h30 em São Paulo
     const r = await retencoes({
       before_send_traces: [{ vetoed_code: "outside_window", created_at: "2026-09-20T05:00:00Z" }],
-      messages: { created_at: "2026-09-19T20:00:00Z" },
+      operational_messages: { created_at: "2026-09-19T20:00:00Z" },
     });
     expect(r.map((t) => t.vetoed_code)).toEqual(["outside_window"]);
   });

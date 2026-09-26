@@ -116,7 +116,7 @@ describe("0149 — definer confere a organização de quem chamou", () => {
       `select content from public.retrieve_top_k_chunks('${VIZINHA_ORG}', '${VIZINHA_KBV}', ${EMBEDDING}, 5, -1);`,
     );
     expect(r.ok).toBe(false);
-    expect(r.stderr).toContain("caller_not_authorized_for_org");
+    expect(r.stderr).toContain("managed_area_denied");
     // O segredo não pode ter saído nem junto da mensagem de erro.
     expect(r.stderr).not.toContain(SEGREDO_VIZINHO);
   });

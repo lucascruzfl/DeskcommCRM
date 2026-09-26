@@ -129,8 +129,8 @@ function casoFixture(id: string, conversationId: string, nome: string): Linha {
 
 /**
  * O banco como um atendente restrito o vê: as DUAS conversas têm caso, mas só
- * uma delas passa pela RLS de `conversations` — o dublê omite a outra da tabela
- * `conversations`, que é o que a policy faz.
+ * uma delas passa pela RLS de `operational_conversations` — o dublê omite a outra
+ * da projeção, que é o que a policy faz.
  */
 function bancoDeUmAtendenteRestrito() {
   return bancoFake({
@@ -139,7 +139,7 @@ function bancoDeUmAtendenteRestrito() {
       casoFixture(CASO_ALHEIO, CONV_ALHEIA, "Pedro"),
     ],
     agent_case_events: [],
-    conversations: [{ id: CONV_MINHA, organization_id: ORG }],
+    operational_conversations: [{ id: CONV_MINHA, organization_id: ORG }],
   });
 }
 
@@ -270,16 +270,16 @@ describe("conversasVisiveisDosCasos pergunta ao banco quem vê o quê", () => {
     expect(await conversasVisiveisDosCasos(cliente, ORG)).toEqual([CONV_MINHA]);
   });
 
-  it("o gate é a tabela `conversations`, não `agent_cases`", async () => {
+  it("o gate é a projeção `operational_conversations`, não `agent_cases`", async () => {
     const { cliente, consultas } = bancoDeUmAtendenteRestrito();
 
     await conversasVisiveisDosCasos(cliente, ORG);
 
     // A sabotagem que este caso existe para pegar: devolver as candidatas de
-    // `agent_cases` sem confrontá-las com `conversations` recorta NADA — a
+    // `agent_cases` sem confrontá-las com `operational_conversations` recorta NADA — a
     // policy de `agent_cases` é org-wide — e todos os outros casos deste arquivo
     // continuariam verdes, porque o conjunto ainda "vem da sessão".
-    expect(consultas.map((c) => c.tabela)).toContain("conversations");
+    expect(consultas.map((c) => c.tabela)).toContain("operational_conversations");
     expect(consultas.every((c) => c.eqs.some(([col, v]) => col === "organization_id" && v === ORG))).toBe(
       true,
     );
@@ -296,10 +296,10 @@ describe("conversasVisiveisDosCasos pergunta ao banco quem vê o quê", () => {
     expect(dosCasos?.eqs).toContainEqual(["id", CASO_ALHEIO]);
   });
 
-  it("organização sem caso nenhum devolve conjunto vazio sem ir a `conversations`", async () => {
-    const { cliente, consultas } = bancoFake({ agent_cases: [], conversations: [] });
+  it("organização sem caso nenhum devolve conjunto vazio sem ir à projeção", async () => {
+    const { cliente, consultas } = bancoFake({ agent_cases: [], operational_conversations: [] });
 
     expect(await conversasVisiveisDosCasos(cliente, ORG)).toEqual([]);
-    expect(consultas.map((c) => c.tabela)).not.toContain("conversations");
+    expect(consultas.map((c) => c.tabela)).not.toContain("operational_conversations");
   });
 });

@@ -40,8 +40,10 @@ import type { HandlerCtx } from "@/lib/api/handlers/types";
 import type { SendMessageInput } from "@/lib/schemas";
 import { criarDubleDoHandler } from "../helpers/duble-do-handler";
 
+let adminTransport: ReturnType<typeof criarDubleDoHandler>["supabase"];
+
 vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: () => ({ storage: { from: () => ({ createSignedUrl: vi.fn() }) } }),
+  createAdminClient: () => ({ ...adminTransport, storage: { from: () => ({ createSignedUrl: vi.fn() }) } }),
 }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}) }));
 
@@ -80,7 +82,7 @@ function wahaRespondendo() {
  * bloqueia quando o ator não é pessoa, que é o caso dos dois primeiros testes.
  */
 function duble() {
-  return criarDubleDoHandler({
+  const result = criarDubleDoHandler({
     conversation: {
       id: CONV,
       organization_id: ORG,
@@ -98,6 +100,8 @@ function duble() {
       },
     },
   });
+  adminTransport = result.supabase;
+  return result;
 }
 
 afterEach(() => {
