@@ -151,6 +151,7 @@ describe("GET /api/v1/system/version", () => {
     vi.stubEnv("APP_VERSION", "42.7.19-mcp");
     versionRow.current_version = "fa06399e1";
     versionRow.current_sha = "fa06399e1";
+    versionRow.off_release = true;
     versionRow.latest_version = "v42.7.19-mcp";
     for (const user of [OWNER, MEMBRO]) {
       vi.mocked(loadAuthUser).mockResolvedValue(user as never);
@@ -158,7 +159,10 @@ describe("GET /api/v1/system/version", () => {
       const { data } = await (await GET(get())).json();
       expect(data.current_version).toBe("42.7.19-mcp");
       expect(data.build_revision).toBe("fa06399e1");
-      if (user.is_platform_admin) expect(data.update_available).toBe(false);
+      if (user.is_platform_admin) {
+        expect(data.update_available).toBe(false);
+        expect(data.off_release).toBe(false);
+      }
     }
   });
 

@@ -85,7 +85,7 @@ export function UpdatePanel() {
     );
   }
 
-  const versao = semV(data.current_version);
+  const versao = semV(data.current_version) || t("a confirmar");
   const nova = semV(data.latest_version);
 
   if (rodando) {

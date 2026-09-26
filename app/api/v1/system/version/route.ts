@@ -199,7 +199,9 @@ export async function GET(_req: NextRequest): Promise<Response> {
       Boolean(readyVersion) &&
       readyVersion.replace(/^v/, "") !== running.replace(/^v/, "") &&
       !acabouDeInstalar,
-    off_release: version?.off_release ?? false,
+    off_release: versaoInstalada(process.env.APP_VERSION, "").current_version
+      ? false
+      : (version?.off_release ?? false),
     // Sem isto, a tela lê "sem versão nova anunciada" como "você está em dia" —
     // e uma instalação atrasada cujo host não conseguiu comparar é informada de
     // que está atualizada, em silêncio.
