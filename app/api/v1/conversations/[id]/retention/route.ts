@@ -45,7 +45,7 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
   }
 
   const { data: conv, error: convErr } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select("id, contact_id, channel_session_id")
     .eq("organization_id", activeOrg.orgId)
     .eq("id", id)
@@ -81,9 +81,13 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
       .eq("channel_session_id", conv.channel_session_id)
       .maybeSingle(),
     // Sem fuso no número, o motor avalia a janela no da organização.
-    supabase.from("organizations").select("timezone").eq("id", activeOrg.orgId).maybeSingle(),
     supabase
-      .from("messages")
+      .from("operational_organizations")
+      .select("timezone")
+      .eq("id", activeOrg.orgId)
+      .maybeSingle(),
+    supabase
+      .from("operational_messages")
       .select("created_at")
       .eq("organization_id", activeOrg.orgId)
       .eq("conversation_id", id)
@@ -100,7 +104,10 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
     window_start_hour: knobs?.window_start_hour ?? PACING_DEFAULTS.windowStartHour,
     window_end_hour: knobs?.window_end_hour ?? PACING_DEFAULTS.windowEndHour,
     allow_sunday: knobs?.allow_sunday ?? PACING_DEFAULTS.allowSunday,
-    timezone: fusoDaJanela(knobs?.timezone, (orgRow as { timezone?: string | null } | null)?.timezone),
+    timezone: fusoDaJanela(
+      knobs?.timezone,
+      (orgRow as { timezone?: string | null } | null)?.timezone,
+    ),
   };
 
   // O aviso diz o estado de AGORA, não o histórico:

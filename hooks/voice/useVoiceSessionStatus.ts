@@ -8,7 +8,6 @@ interface VoiceSessionStatus {
   channelSessionId: string | null;
   status: string | null;
   paired: boolean;
-  jid: string | null;
 }
 
 /** Estado do pareamento de chamada de voz da org — decide se o discador aparece. */

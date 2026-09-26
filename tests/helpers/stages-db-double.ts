@@ -127,7 +127,10 @@ export interface Registro {
    * dublê — e dois dublês da mesma tabela divergem no primeiro ajuste, que é
    * exatamente o defeito que a extração da regra existe para evitar.
    */
-  client: { from: (table: string) => unknown; rpc: (nome: string, args: unknown) => Promise<unknown> };
+  client: {
+    from: (table: string) => unknown;
+    rpc: (nome: string, args: unknown) => Promise<unknown>;
+  };
   escritas: Escrita[];
   eventos: string[];
   rpcs: Array<{ nome: string; args: unknown }>;
@@ -177,12 +180,22 @@ export function makeDb(opts: DbOpts = {}): Registro {
     let teto: number | null = null;
 
     const casam = () =>
-      (tables[table] ?? [])
+      (
+        tables[
+          table === "operational_crm_stages"
+            ? "crm_stages"
+            : table === "operational_crm_pipelines"
+              ? "crm_pipelines"
+              : table
+        ] ?? []
+      )
         .filter((r) => filtros.every(([c, v]) => r[c] === v))
         .filter((r) => pertinencias.every(([c, vs]) => vs.includes(r[c])))
         // `neq` em SQL exclui NULL (`NULL <> v` nao e verdadeiro) — o duble
         // segue o banco, nao o JavaScript.
-        .filter((r) => negacoes.every(([c, v]) => r[c] !== null && r[c] !== undefined && r[c] !== v));
+        .filter((r) =>
+          negacoes.every(([c, v]) => r[c] !== null && r[c] !== undefined && r[c] !== v),
+        );
 
     /**
      * Ordena, corta e projeta como o PostgREST faria.
@@ -202,7 +215,7 @@ export function makeDb(opts: DbOpts = {}): Registro {
       // (`moveLeadHandler`) lia `lead.organization_id === undefined` e
       // respondia 404 "Lead não encontrado" mesmo com o lead presente na
       // tabela — media o dublê, não o handler.
-      if (!colunas || colunas.length === 1 && colunas[0] === "*") return rows;
+      if (!colunas || (colunas.length === 1 && colunas[0] === "*")) return rows;
       const chaves = colunas.map((c) => /^(\w+)\(/.exec(c)?.[1] ?? c);
       return rows.map((r) => Object.fromEntries(chaves.map((c) => [c, r[c]])));
     };

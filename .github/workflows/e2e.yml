@@ -812,7 +812,7 @@ jobs:
       # passo "Subir WAHA e o par Redis da VPS fresca") — a jornada de onboarding é exercitada; o que só
       # o Plus tem, não.
       #
-# As CINCO specs da missão "Follow-up Vivo" (`followup-linguagem`,
+      # As CINCO specs da missão "Follow-up Vivo" (`followup-linguagem`,
       # `followup-ramos`, `followup-dossie`, `followup-tempo-adaptativo`,
       # `gatilho-de-etapa`) entraram nas listas de execução, e não aqui, porque a
       # medição não dá motivo para excluí-las: grep de waha/resend/nuvemshop/redis
@@ -1051,6 +1051,7 @@ jobs:
         vps-fresh-onboarding.spec.ts
 
       SPECS_PARTE_5: >-
+        managed-client-authorization.spec.ts
         inbox-busca-e-filtros-dizem-a-verdade.spec.ts
         extensoes-da-instalacao.spec.ts
         admin-credencial-google.spec.ts

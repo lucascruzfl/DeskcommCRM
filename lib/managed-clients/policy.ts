@@ -24,7 +24,11 @@ export function buildManagedAreaPolicy(
   const unique = new Set<string>();
   const overrideMap: Partial<Record<NavDestinationId, ManagedAreaClass>> = {};
   for (const override of overrides) {
-    if (!AREA_IDS.has(override.href) || !CLASSES.has(override.classification) || unique.has(override.href)) {
+    if (
+      !AREA_IDS.has(override.href) ||
+      !CLASSES.has(override.classification) ||
+      unique.has(override.href)
+    ) {
       throw new Error("invalid_managed_area_override");
     }
     unique.add(override.href);
@@ -59,11 +63,14 @@ export function canAccessManagedArea(
 
 /** Longest path wins, so /app/ai/cases/avisos cannot inherit /app/ai/cases. */
 export function managedAreaForPath(pathname: string): NavDestinationId | null {
+  if (pathname === "/onboarding" || pathname.startsWith("/onboarding/"))
+    return "/app/settings/tenant";
   // Detail URLs from older modules live outside the navigation href prefix.
   // They still belong to the same canonical destination permission.
   if (pathname === "/app/pipelines" || pathname.startsWith("/app/pipelines/")) return "/app/kanban";
   if (pathname === "/app/leads" || pathname.startsWith("/app/leads/")) return "/app/kanban";
-  if (pathname === "/app/settings/canal-oficial" || pathname === "/app/settings/templates") return "/app/connections";
+  if (pathname === "/app/settings/canal-oficial" || pathname === "/app/settings/templates")
+    return "/app/connections";
   return (NAV_CATALOG.map((area) => area.href)
     .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
     .sort((a, b) => b.length - a.length)[0] ?? null) as NavDestinationId | null;
@@ -84,7 +91,7 @@ const RESOURCE_AREAS: Readonly<Record<string, NavDestinationId>> = {
   conversation_notes: "/app/inbox",
   conversations: "/app/inbox",
   crm_leads: "/app/kanban",
-  crm_pipelines: "/app/kanban",
+  crm_pipelines: "/app/settings/tenant/pipelines",
   crm_stages: "/app/settings/tenant/pipelines",
   crm_tasks: "/app/tasks",
   demandas: "/app/radar",
@@ -145,6 +152,7 @@ const RESOURCE_AREAS: Readonly<Record<string, NavDestinationId>> = {
   organization_extensions: "/app/extensions",
   external_db_connections: "/app/integracao-dados",
   voip_trunk_settings: "/app/settings/voip-trunk",
+  channels: "/app/connections",
   channel_sessions: "/app/connections",
   channels_graph_partner: "/app/connections",
   channels_official: "/app/connections",
@@ -164,5 +172,5 @@ const RESOURCE_AREAS: Readonly<Record<string, NavDestinationId>> = {
 };
 
 export function managedAreaForResource(resource: string | undefined): NavDestinationId | null {
-  return resource ? RESOURCE_AREAS[resource] ?? null : null;
+  return resource ? (RESOURCE_AREAS[resource] ?? null) : null;
 }

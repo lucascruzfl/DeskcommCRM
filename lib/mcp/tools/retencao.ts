@@ -526,7 +526,7 @@ export const crmProposeReactivation: McpToolDefinition<typeof reativacaoShape> =
     // 0082): uma proposta que vence antes ou depois do prazo do estágio faria o
     // negócio sumir do quadro num ritmo que ninguém configurou.
     const { data: stage } = await ctx.supabase
-      .from("crm_stages")
+      .from("operational_crm_stages")
       .select("expected_duration_hours")
       .eq("organization_id", ctx.organizationId)
       .eq("id", alvo.stage_id)

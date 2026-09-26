@@ -91,7 +91,7 @@ const SELECT_COLS = `
   bot_silenced_until, last_handoff_at,
   comando_da_conversa,
   contacts:contact_id (id, display_name, name, phone_number, is_anonymized, tags, is_blocked, avatar_storage_path, force_human),
-  channel_sessions:channel_session_id (phone_number, display_name, provider, social_platform:metadata->>social_platform)
+  channel_sessions:operational_channel_sessions!channel_session_id (phone_number, display_name, provider, social_platform)
 `;
 
 interface CursorPayload {
@@ -173,7 +173,7 @@ export async function listConversationsHandler(
   const asc = isQueue;
 
   let query = supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select(SELECT_COLS)
     .eq("organization_id", ctx.organization_id)
     .order(sortCol, ordem)
@@ -403,7 +403,7 @@ export async function getConversationHandler(
   conversationId: string,
 ): Promise<Conversation> {
   const { data, error } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select(SELECT_COLS)
     .eq("id", conversationId)
     .eq("organization_id", ctx.organization_id)
@@ -496,8 +496,8 @@ export async function patchConversationHandler(
 
   const query =
     Object.keys(update).length > 0
-      ? supabase.from("conversations").update(update)
-      : supabase.from("conversations");
+      ? supabase.from("operational_conversations").update(update)
+      : supabase.from("operational_conversations");
   const { data, error } = await query
     .select(SELECT_COLS)
     .eq("id", conversationId)
@@ -565,7 +565,7 @@ export async function markConversationReadHandler(
   conversationId: string,
 ): Promise<Conversation> {
   const { data, error } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .update({ unread_count_for_assignee: 0 })
     .eq("id", conversationId)
     .eq("organization_id", ctx.organization_id)

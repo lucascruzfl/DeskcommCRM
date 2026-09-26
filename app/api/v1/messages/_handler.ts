@@ -107,7 +107,7 @@ async function removerEcoDoProprioEnvio(
   // é não conseguir remover, que é exatamente o mundo de antes desta função.
   try {
     const { error } = await supabase
-      .from("messages")
+      .from("operational_messages")
       .delete()
       .eq("organization_id", organizationId)
       .eq("conversation_id", conversationId)
@@ -269,7 +269,7 @@ export async function listMessagesHandler(
   // para trás ao rolar. O cursor, portanto, passa a andar para o passado
   // (`lt`), e não mais para o futuro.
   let query = supabase
-    .from("messages")
+    .from("operational_messages")
     .select(MSG_COLS)
     .eq("conversation_id", conversationId)
     .eq("organization_id", ctx.organization_id)
@@ -392,16 +392,29 @@ export async function sendMessageHandler(
   // conversa dela e enviada pelo canal dela. Medido, não deduzido:
   // `tests/invariants/envio-nao-alcanca-conversa-de-outro-tenant.test.ts`
   // (anti-pattern 10 do CLAUDE.md).
+  // A sessão prova visibilidade antes de resolver transporte técnico. A chave
+  // do canal só chega ao adapter no servidor; nunca entra na resposta operacional.
+  const { data: visibleConversation, error: visibilityError } = await supabase
+    .from("operational_conversations")
+    .select("id")
+    .eq("id", input.conversation_id)
+    .eq("organization_id", ctx.organization_id)
+    .maybeSingle();
+  if (visibilityError)
+    throw new ApiError(500, "internal_error", undefined, ctx.requestId, visibilityError.message);
+  if (!visibleConversation)
+    throw new ApiError(404, "not_found", undefined, ctx.requestId, "Conversa não encontrada.");
+  const transport = createAdminClient();
   const { data: conv, error: convErr } = await queryTolerantToMissingArchived(
     () =>
-      supabase
+      transport
         .from("conversations")
         .select(convSelect(true))
         .eq("id", input.conversation_id)
         .eq("organization_id", ctx.organization_id)
         .maybeSingle(),
     () =>
-      supabase
+      transport
         .from("conversations")
         .select(convSelect(false))
         .eq("id", input.conversation_id)
@@ -581,7 +594,7 @@ export async function sendMessageHandler(
   let citada: { id: string; external_id: string | null } | null = null;
   if (input.reply_to_message_id) {
     const { data: alvo } = await supabase
-      .from("messages")
+      .from("operational_messages")
       .select("id, external_id")
       .eq("id", input.reply_to_message_id)
       .eq("organization_id", ctx.organization_id)
@@ -627,14 +640,14 @@ export async function sendMessageHandler(
   };
 
   let { data: created, error: insErr } = await supabase
-    .from("messages")
+    .from("operational_messages")
     .insert(insertRow)
     .select(MSG_COLS)
     .single();
 
   if (insErr?.code === "23505" && ctx.internalMessageId) {
     const existing = await supabase
-      .from("messages")
+      .from("operational_messages")
       .select(MSG_COLS)
       .eq("organization_id", ctx.organization_id)
       .eq("id", ctx.internalMessageId)
@@ -676,20 +689,40 @@ export async function sendMessageHandler(
 
   // Releitura no sink: o operador pode ter fechado o canal enquanto o modelo
   // gerava a resposta. Envio humano não passa por esta restrição da IA.
-  const acessoAtual = ctx.actor.type === "user" ? null : await decidirPreGoLiveDoCanalViaSupabase(supabase, {
-    organizationId: ctx.organization_id,
-    channelSessionId: c.channel_session_id,
-    contactPhoneNumber: c.contacts?.phone_number ?? "",
-  }).catch(() => ({ permite: false, motivo: "pre_go_live_indisponivel" }));
+  const acessoAtual =
+    ctx.actor.type === "user"
+      ? null
+      : await decidirPreGoLiveDoCanalViaSupabase(supabase, {
+          organizationId: ctx.organization_id,
+          channelSessionId: c.channel_session_id,
+          contactPhoneNumber: c.contacts?.phone_number ?? "",
+        }).catch(() => ({ permite: false, motivo: "pre_go_live_indisponivel" }));
   if (acessoAtual && !acessoAtual.permite) {
-    const { data: updated, error } = await supabase.from("messages").update({
-      status: "failed",
-      error_code: acessoAtual.motivo === "pre_go_live_indisponivel" ? "pre_go_live_indisponivel" : "pre_go_live",
-      error_message: acessoAtual.motivo === "pre_go_live_indisponivel"
-        ? "Não foi possível verificar o acesso da IA. Nenhuma mensagem foi enviada."
-        : "Envio automático bloqueado pelo modo de teste do canal.",
-    }).eq("organization_id", ctx.organization_id).eq("id", message.id).select(MSG_COLS).single();
-    if (error || !updated) throw new ApiError(500, "internal_error", undefined, ctx.requestId, "Não foi possível registrar o bloqueio do envio.");
+    const { data: updated, error } = await supabase
+      .from("operational_messages")
+      .update({
+        status: "failed",
+        error_code:
+          acessoAtual.motivo === "pre_go_live_indisponivel"
+            ? "pre_go_live_indisponivel"
+            : "pre_go_live",
+        error_message:
+          acessoAtual.motivo === "pre_go_live_indisponivel"
+            ? "Não foi possível verificar o acesso da IA. Nenhuma mensagem foi enviada."
+            : "Envio automático bloqueado pelo modo de teste do canal.",
+      })
+      .eq("organization_id", ctx.organization_id)
+      .eq("id", message.id)
+      .select(MSG_COLS)
+      .single();
+    if (error || !updated)
+      throw new ApiError(
+        500,
+        "internal_error",
+        undefined,
+        ctx.requestId,
+        "Não foi possível registrar o bloqueio do envio.",
+      );
     message = updated as unknown as Message;
   } else if (c.channel_sessions?.archived_at) {
     // Canal ARQUIVADO = canal excluído pelo usuário: a sessão já foi deslogada e
@@ -703,7 +736,7 @@ export async function sendMessageHandler(
     // follow-up ficaria retentando contra um número que não existe mais.
     // Vem ANTES de `isConfigured`: um canal excluído não espera configuração.
     const { data: updated } = await supabase
-      .from("messages")
+      .from("operational_messages")
       .update({
         status: "failed",
         error_code: "channel_archived",
@@ -715,7 +748,7 @@ export async function sendMessageHandler(
     if (updated) message = updated as unknown as Message;
   } else if (!adapter.isConfigured()) {
     const { data: updated } = await supabase
-      .from("messages")
+      .from("operational_messages")
       .update({
         metadata: { ...(message.metadata ?? {}), queued_reason: adapter.codes.notConfigured },
       })
@@ -725,7 +758,7 @@ export async function sendMessageHandler(
     if (updated) message = updated as unknown as Message;
   } else if (!chatId) {
     const { data: updated } = await supabase
-      .from("messages")
+      .from("operational_messages")
       .update({
         status: "failed",
         error_code: "missing_phone_number",
@@ -737,7 +770,7 @@ export async function sendMessageHandler(
     if (updated) message = updated as unknown as Message;
   } else if (!c.channel_sessions || c.channel_sessions.status !== "WORKING") {
     const { data: updated } = await supabase
-      .from("messages")
+      .from("operational_messages")
       .update({
         metadata: {
           ...(message.metadata ?? {}),
@@ -754,7 +787,8 @@ export async function sendMessageHandler(
       const checkBoundary = async () => {
         await guardServiceEffect();
         await guardAgendaEffect();
-        if (ctx.prospectingDelivery) await assertProspectingDelivery(supabase, ctx.prospectingDelivery);
+        if (ctx.prospectingDelivery)
+          await assertProspectingDelivery(supabase, ctx.prospectingDelivery);
         if (ctx.meetingDelivery) await assertMeetingDeliverySupabase(supabase, ctx.meetingDelivery);
         if (ctx.proactiveContext) await assertAgendaEffectSupabase(supabase, ctx.proactiveContext);
         if (ctx.serviceBoundary) await assertServiceBoundarySupabase(supabase, ctx.serviceBoundary);
@@ -906,38 +940,50 @@ export async function sendMessageHandler(
         if (ctx.serviceBoundary) await assertServiceBoundarySupabase(supabase, ctx.serviceBoundary);
       }
       if (ctx.approvedReply) {
-        message=await recordApprovedReplyReceiptSupabase(supabase,ctx.approvedReply,message.id,externalId,
-          externalId?(adapter.echoExternalIds?.({externalId,recipient:chatId})??[externalId]):[]) as unknown as Message;
+        message = (await recordApprovedReplyReceiptSupabase(
+          supabase,
+          ctx.approvedReply,
+          message.id,
+          externalId,
+          externalId
+            ? (adapter.echoExternalIds?.({ externalId, recipient: chatId }) ?? [externalId])
+            : [],
+        )) as unknown as Message;
       } else {
-      await removerEcoDoProprioEnvio(
-        supabase,
-        ctx.organization_id,
-        c.id,
-        message.id,
-        externalId,
-        externalId
-          ? (adapter.echoExternalIds?.({ externalId, recipient: chatId }) ?? [externalId])
-          : [],
-      );
-      const { data: updated } = await supabase
-        .from("messages")
-        .update({
-          status: "sent",
-          external_id: externalId,
-          ack: 0,
-          // Colunas só do template — é o que responde custo e conformidade de
-          // janela depois, sem varrer jsonb.
-          ...(input.type === "template"
-            ? { template_name: input.template_name, template_language: input.template_language }
-            : {}),
-        })
-        .eq("id", message.id)
-        .select(MSG_COLS)
-        .maybeSingle();
-      if (updated) message = updated as unknown as Message;
+        await removerEcoDoProprioEnvio(
+          supabase,
+          ctx.organization_id,
+          c.id,
+          message.id,
+          externalId,
+          externalId
+            ? (adapter.echoExternalIds?.({ externalId, recipient: chatId }) ?? [externalId])
+            : [],
+        );
+        const { data: updated } = await supabase
+          .from("operational_messages")
+          .update({
+            status: "sent",
+            external_id: externalId,
+            ack: 0,
+            // Colunas só do template — é o que responde custo e conformidade de
+            // janela depois, sem varrer jsonb.
+            ...(input.type === "template"
+              ? { template_name: input.template_name, template_language: input.template_language }
+              : {}),
+          })
+          .eq("id", message.id)
+          .select(MSG_COLS)
+          .maybeSingle();
+        if (updated) message = updated as unknown as Message;
       }
     } catch (err) {
-      if (err instanceof StaleServiceBoundaryError || err instanceof AgendaDeferredError || err instanceof ApprovedReplyReceiptPersistenceError) throw err;
+      if (
+        err instanceof StaleServiceBoundaryError ||
+        err instanceof AgendaDeferredError ||
+        err instanceof ApprovedReplyReceiptPersistenceError
+      )
+        throw err;
       const msg = err instanceof Error ? err.message : adapter.codes.unknownError;
       // `storage_sign_failed` fica literal: é falha do NOSSO Storage, não do
       // canal — a URL assinada é montada antes de qualquer coisa tocar o adapter.
@@ -958,7 +1004,7 @@ export async function sendMessageHandler(
       // tradução do desfecho acontece aqui.
       if (msg.startsWith(adapter.codes.notConfigured)) {
         const { data: emFila } = await supabase
-          .from("messages")
+          .from("operational_messages")
           .update({
             metadata: { ...(message.metadata ?? {}), queued_reason: adapter.codes.notConfigured },
           })
@@ -970,7 +1016,7 @@ export async function sendMessageHandler(
       }
 
       const { data: updated } = await supabase
-        .from("messages")
+        .from("operational_messages")
         .update({
           status: "failed",
           error_code: code,
@@ -984,55 +1030,54 @@ export async function sendMessageHandler(
   }
 
   if (!ctx.approvedReply) {
-  const conversationUpdate: {
-    last_outbound_at: string;
-    last_message_at: string;
-    last_message_preview: string;
-    unread_count_for_assignee: number;
-    bot_silenced_until?: string;
-    awaiting_since: string | null;
-  } = {
-    last_outbound_at: now,
-    last_message_at: now,
-    last_message_preview: previewFrom({
-      body: input.body,
-      media_url: input.media_url,
-      media_storage_path: input.media_storage_path,
-      type: input.type,
-    }),
-    // Resposta humana/CRM zera pendências — espelha fn_mark_conversation_message
-    // outbound, que o envio pelo CRM não chama (só atualiza colunas à mão).
-    unread_count_for_assignee: 0,
-    // E zera a ESPERA da Fila (issue #990): a régua é `awaiting_since`, e o valor
-    // que a resposta produz é o que `fn_reply_record_receipt` grava —
-    // `awaiting_since = last_inbound_at`, isto é, "a resposta cobre a última
-    // mensagem do cliente". Sem esta linha, o envio pelo CRM (e pelo agente) deixa
-    // a conversa contando a espera que a própria resposta acabou de encerrar.
-    awaiting_since: c.last_inbound_at,
-  };
-  if (ctx.actor.type === "user") {
-    const silenceUntil = extendBotSilence(c.bot_silenced_until, now);
-    if (silenceUntil) conversationUpdate.bot_silenced_until = silenceUntil;
-  }
+    const conversationUpdate: {
+      last_outbound_at: string;
+      last_message_at: string;
+      last_message_preview: string;
+      unread_count_for_assignee: number;
+      bot_silenced_until?: string;
+      awaiting_since: string | null;
+    } = {
+      last_outbound_at: now,
+      last_message_at: now,
+      last_message_preview: previewFrom({
+        body: input.body,
+        media_url: input.media_url,
+        media_storage_path: input.media_storage_path,
+        type: input.type,
+      }),
+      // Resposta humana/CRM zera pendências — espelha fn_mark_conversation_message
+      // outbound, que o envio pelo CRM não chama (só atualiza colunas à mão).
+      unread_count_for_assignee: 0,
+      // E zera a ESPERA da Fila (issue #990): a régua é `awaiting_since`, e o valor
+      // que a resposta produz é o que `fn_reply_record_receipt` grava —
+      // `awaiting_since = last_inbound_at`, isto é, "a resposta cobre a última
+      // mensagem do cliente". Sem esta linha, o envio pelo CRM (e pelo agente) deixa
+      // a conversa contando a espera que a própria resposta acabou de encerrar.
+      awaiting_since: c.last_inbound_at,
+    };
+    if (ctx.actor.type === "user") {
+      const silenceUntil = extendBotSilence(c.bot_silenced_until, now);
+      if (silenceUntil) conversationUpdate.bot_silenced_until = silenceUntil;
+    }
 
-  await supabase.from("conversations").update(conversationUpdate).eq("id", c.id);
+    await supabase.from("operational_conversations").update(conversationUpdate).eq("id", c.id);
 
-  // Envio pelo CRM não passa por `fn_mark_conversation_message` — carimba o
-  // contato aqui para /app/contacts refletir a resposta (migration 0162).
-  //
-  // O `organization_id` entra explícito, e não é redundância: este handler
-  // também é chamado pelo agent-engine com o client de SERVICE ROLE, que
-  // BYPASSA RLS (`lib/agent-engine/edge/crm/mcp-client.ts` diz isso no próprio
-  // cabeçalho: "todo uso filtra organization_id manualmente"). Sem o filtro, a
-  // única coisa entre esta escrita e outro tenant seria a confiança em
-  // `c.contact_id` — e o anti-pattern nº 10 do CLAUDE.md existe justamente
-  // porque essa confiança já falhou antes.
-  await supabase
-    .from("contacts")
-    .update({ last_activity_at: now })
-    .eq("id", c.contact_id)
-    .eq("organization_id", c.organization_id);
-
+    // Envio pelo CRM não passa por `fn_mark_conversation_message` — carimba o
+    // contato aqui para /app/contacts refletir a resposta (migration 0162).
+    //
+    // O `organization_id` entra explícito, e não é redundância: este handler
+    // também é chamado pelo agent-engine com o client de SERVICE ROLE, que
+    // BYPASSA RLS (`lib/agent-engine/edge/crm/mcp-client.ts` diz isso no próprio
+    // cabeçalho: "todo uso filtra organization_id manualmente"). Sem o filtro, a
+    // única coisa entre esta escrita e outro tenant seria a confiança em
+    // `c.contact_id` — e o anti-pattern nº 10 do CLAUDE.md existe justamente
+    // porque essa confiança já falhou antes.
+    await supabase
+      .from("contacts")
+      .update({ last_activity_at: now })
+      .eq("id", c.contact_id)
+      .eq("organization_id", c.organization_id);
   }
   const a = actorAuditPayload(ctx.actor);
   await audit({

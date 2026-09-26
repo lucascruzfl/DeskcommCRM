@@ -80,7 +80,7 @@ export function authorizeTool(auth: McpAuthResult, tool: McpToolDefinition): voi
 }
 
 /** Routing from tool domain to the same href keys persisted for UI and RLS. */
-function managedAreaOfTool(tool: McpToolDefinition): NavDestinationId | null {
+export function managedAreaOfTool(tool: McpToolDefinition): NavDestinationId | null {
   const exactToolArea: Partial<Record<string, NavDestinationId>> = {
     // Pedidos sincronizados pertencem à integração de loja, não ao catálogo
     // de produtos compartilhado. O token MCP usa service_role e bypassa RLS.
@@ -89,6 +89,25 @@ function managedAreaOfTool(tool: McpToolDefinition): NavDestinationId | null {
     crm_list_contact_orders: "/app/integrations/nuvemshop",
     crm_discover_integrations: "/app/integrations/nuvemshop",
     crm_prepare_integration_action: "/app/integrations/nuvemshop",
+    crm_describe_external_data: "/app/integracao-dados",
+    crm_query_external_data: "/app/integracao-dados",
+    crm_get_ai_credential: "/app/ai/credentials",
+    crm_list_ai_credentials: "/app/ai/credentials",
+    crm_get_ai_model: "/app/ai/providers",
+    crm_list_ai_models: "/app/ai/providers",
+    crm_get_ai_provider: "/app/ai/providers",
+    crm_list_ai_providers: "/app/ai/providers",
+    crm_get_ai_skill: "/app/ai/skills",
+    crm_save_ai_skill: "/app/ai/skills",
+    crm_get_ai_skill_import_instructions: "/app/ai/skills",
+    crm_validate_agent_ai_configuration: "/app/ai/agents",
+    crm_get_operational_diagnostics: "/app/settings/tenant",
+    crm_list_managed_client_presets: "/app/settings/tenant",
+    crm_preflight_managed_client: "/app/settings/tenant",
+    crm_prepare_mcp_token_management: "/app/settings/api-tokens",
+    crm_list_message_templates: "/app/templates",
+    crm_get_message_template: "/app/templates",
+    crm_render_message_template: "/app/templates",
     crm_list_ai_skill_versions: "/app/ai/skills",
     crm_restore_ai_skill_version: "/app/ai/skills",
     crm_list_pipelines: "/app/kanban",

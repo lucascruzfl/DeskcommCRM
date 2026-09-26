@@ -55,9 +55,9 @@ function cliente(porTabela: Record<string, unknown>) {
 async function retencoes(tabelas: Record<string, unknown>) {
   vi.mocked(createClient).mockResolvedValue(
     cliente({
-      conversations: { id: "c", contact_id: "k", channel_session_id: CANAL },
+      operational_conversations: { id: "c", contact_id: "k", channel_session_id: CANAL },
       channel_knobs: null,
-      organizations: { timezone: "America/Sao_Paulo" },
+      operational_organizations: { timezone: "America/Sao_Paulo" },
       ...tabelas,
     }),
   );

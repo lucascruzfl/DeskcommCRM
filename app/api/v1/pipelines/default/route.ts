@@ -26,7 +26,7 @@ export async function GET(): Promise<Response> {
   const supabase = await createClient();
 
   const { data: pipeline, error: pipelineErr } = await supabase
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("*")
     .eq("organization_id", org.orgId)
     .eq("is_archived", false)
@@ -42,15 +42,12 @@ export async function GET(): Promise<Response> {
   }
 
   const { data: stages, error: stagesErr } = await supabase
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("*")
     .eq("pipeline_id", (pipeline as Pipeline).id)
     .eq("is_archived", false)
     .order("position");
   if (stagesErr) return fail("internal_error", stagesErr.message, 500, { requestId });
 
-  return ok(
-    { pipeline: pipeline as Pipeline, stages: (stages ?? []) as Stage[] },
-    { requestId },
-  );
+  return ok({ pipeline: pipeline as Pipeline, stages: (stages ?? []) as Stage[] }, { requestId });
 }

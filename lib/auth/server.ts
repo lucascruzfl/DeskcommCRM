@@ -88,10 +88,10 @@ function escolherMembroAtivo(
  * Loads the AuthUser for the current request. Returns null if unauthenticated.
  * Use only in Server Components / Route Handlers / Server Actions.
  *
- * Uses the user-scoped server client (cookie session). RLS policies allow:
- * - user_organizations: user_id = auth.uid() (user_orgs_select)
- * - organizations: id IN fn_user_org_ids()  (orgs_select)
- * - platform_admins: only platform admins read (so non-admins get null — correct)
+ * Validates the cookie session with getUser(). Memberships then use the admin
+ * client with an explicit user_id filter so the organization switcher can read
+ * its two narrow embeds after managed clients lose base organizations SELECT.
+ * platform_admins remains user-scoped.
  */
 /**
  * "Não havia sessão nenhuma" — o estado NORMAL, não um incidente.
@@ -178,7 +178,7 @@ export const loadAuthUser = cache(async (): Promise<AuthUser | null> => {
         .eq("user_id", user.id)
         .is("revoked_at", null)
         .maybeSingle(),
-      supabase
+      createAdminClient()
         .from("user_organizations")
         .select(
           // Dois embeds do MESMO `organizations`, como manda o PostgREST quando a
@@ -299,7 +299,8 @@ export const resolveActiveOrg = cache(async (authUser: AuthUser): Promise<Active
     .select("business_type, management_mode, preset_id, preset_version, areas, overrides")
     .eq("organization_id", ativo.organization_id)
     .maybeSingle();
-  if (managedPolicyError) throw new Error(`managed_policy_unavailable: ${managedPolicyError.message}`);
+  if (managedPolicyError)
+    throw new Error(`managed_policy_unavailable: ${managedPolicyError.message}`);
   return {
     orgId: ativo.organization_id,
     name: ativo.organization_name,

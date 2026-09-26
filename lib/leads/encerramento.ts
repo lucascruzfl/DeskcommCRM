@@ -123,7 +123,7 @@ export async function encerraDemanda(
 
   const colunaTerminal = input.desfecho === "won" ? "is_won" : "is_lost";
   const { data: stage, error: stErr } = await supabase
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("id, name")
     .eq("organization_id", ctx.organization_id)
     .eq("pipeline_id", (lead as { pipeline_id: string }).pipeline_id)
@@ -228,8 +228,7 @@ export async function encerraDemanda(
     // Canônico em português: quem traduz é a LEITURA (`t(item.reason)`). Ver o
     // bloco "vocabulario de dominio persistido" em `lib/i18n/dicionario.ts`.
     reason:
-      input.razaoNaTimeline ??
-      (input.desfecho === "won" ? "Ganho" : `Perdido — ${input.motivo}`),
+      input.razaoNaTimeline ?? (input.desfecho === "won" ? "Ganho" : `Perdido — ${input.motivo}`),
     payload: {
       ...(input.payloadNaTimeline ?? {}),
       desfecho: input.desfecho,

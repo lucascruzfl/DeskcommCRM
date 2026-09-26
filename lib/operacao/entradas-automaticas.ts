@@ -69,7 +69,10 @@ const COLUNAS =
 
 function semSegredo(linha: Record<string, unknown>): FonteVisivel {
   const { secret_encrypted, ...resto } = linha;
-  return { ...(resto as unknown as Omit<FonteVisivel, "has_secret">), has_secret: secret_encrypted !== null };
+  return {
+    ...(resto as unknown as Omit<FonteVisivel, "has_secret">),
+    has_secret: secret_encrypted !== null,
+  };
 }
 
 export async function listarEntradasAutomaticas(
@@ -124,7 +127,7 @@ async function destinoValido(
   stageId: string,
 ): Promise<void> {
   const { data: funil, error: funilErr } = await deps.supabase
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("id")
     .eq("id", pipelineId)
     .eq("organization_id", deps.organizationId)
@@ -143,7 +146,7 @@ async function destinoValido(
   }
 
   const { data: etapa, error: etapaErr } = await deps.supabase
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("id, is_archived")
     .eq("id", stageId)
     .eq("organization_id", deps.organizationId)

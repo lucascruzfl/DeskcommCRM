@@ -19,10 +19,7 @@ import { resolveOwnerPatch } from "@/lib/leads/owner-patch";
 import { emitLeadActivity, stageChangeReason } from "@/lib/leads/activity-emitter";
 import { registraFalhaDeAtividade } from "@/lib/leads/activity-write-failure";
 import { bulkLeadActionSchema, validateRequest } from "@/lib/schemas";
-import {
-  decideMotivoDaPerda,
-  recusaDeMotivoDaPerdaPeloBanco,
-} from "@/lib/leads/motivo-da-perda";
+import { decideMotivoDaPerda, recusaDeMotivoDaPerdaPeloBanco } from "@/lib/leads/motivo-da-perda";
 import { createClient } from "@/lib/supabase/server";
 import { observeServiceOrigin } from "@/lib/atendimento/origem";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -66,7 +63,9 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   if (input.lead_ids.length > MAX_BULK) {
-    return fail("bulk_too_large", `${t("Máximo")} ${MAX_BULK} ${t("leads por bulk.")}`, 422, { requestId });
+    return fail("bulk_too_large", `${t("Máximo")} ${MAX_BULK} ${t("leads por bulk.")}`, 422, {
+      requestId,
+    });
   }
 
   // G3-04: assign é reatribuição de dono em lote → piso ≥manager (spec 04 §6.5,
@@ -131,12 +130,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   const visible = scoped ?? [];
   const first = visible[0];
   if (!first) {
-    return fail(
-      "not_found",
-      t("Nenhum lead acessível na operação."),
-      404,
-      { requestId },
-    );
+    return fail("not_found", t("Nenhum lead acessível na operação."), 404, { requestId });
   }
   const visibleIds = visible.map((r) => r.id);
 
@@ -155,7 +149,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       // tentar. Card que já tem motivo passa: trocar de "Perdido" para outra
       // etapa de perda não é uma perda nova.
       const { data: etapaDeDestino, error: etapaErr } = await supabase
-        .from("crm_stages")
+        .from("operational_crm_stages")
         .select("id, name, is_lost")
         .eq("id", input.params.stage_id)
         .maybeSingle();
@@ -243,7 +237,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       // marca a origem, para quem lê distinguir lote de arrasto à mão.
       const nomesEstagio = new Map<string, string>();
       const { data: stageRows } = await supabase
-        .from("crm_stages")
+        .from("operational_crm_stages")
         .select("id, name")
         .eq("organization_id", organizationId)
         .in("id", [input.params.stage_id, ...movidos.map((r) => r.from_stage_id)]);
@@ -302,7 +296,8 @@ export async function POST(req: NextRequest): Promise<Response> {
               p_organization_id: organizationId,
             })
             .then(({ error: emitError }) => {
-              if (emitError) console.error("[lead.bulk_moved] emit_event failed", emitError.message);
+              if (emitError)
+                console.error("[lead.bulk_moved] emit_event failed", emitError.message);
             }),
         ),
       );
@@ -369,7 +364,8 @@ export async function POST(req: NextRequest): Promise<Response> {
               p_organization_id: organizationId,
             })
             .then(({ error: emitError }) => {
-              if (emitError) console.error("[lead.bulk_tagged] emit_event failed", emitError.message);
+              if (emitError)
+                console.error("[lead.bulk_tagged] emit_event failed", emitError.message);
             });
         }
       }

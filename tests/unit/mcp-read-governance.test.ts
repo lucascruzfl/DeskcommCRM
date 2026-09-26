@@ -22,10 +22,7 @@ vi.mock("@/lib/audit", () => ({
   isServiceRoleConfigured: () => false,
 }));
 
-import {
-  crmListConversations,
-  crmGetConversation,
-} from "@/lib/mcp/tools/conversations";
+import { crmListConversations, crmGetConversation } from "@/lib/mcp/tools/conversations";
 import { crmListLeads, crmGetLead } from "@/lib/mcp/tools/leads";
 import type { McpContext } from "@/lib/mcp/types";
 import { comandoDaConversa } from "@/lib/inbox/comando-da-conversa";
@@ -67,10 +64,7 @@ const QUEUE_ROWS = [
 /** Ordem canônica do inbox (G5-03): awaiting_since ASC, id ASC. */
 function inboxOrder(rows: Array<{ id: string; awaiting_since: string }>): string[] {
   return [...rows]
-    .sort(
-      (a, b) =>
-        a.awaiting_since.localeCompare(b.awaiting_since) || a.id.localeCompare(b.id),
-    )
+    .sort((a, b) => a.awaiting_since.localeCompare(b.awaiting_since) || a.id.localeCompare(b.id))
     .map((r) => r.id);
 }
 
@@ -110,7 +104,10 @@ function makeSupabase(resolve: Resolver) {
       admin: {
         getUserById: (id: string) =>
           Promise.resolve({
-            data: id in USER_NAMES ? { user: { user_metadata: { full_name: USER_NAMES[id] } } } : { user: null },
+            data:
+              id in USER_NAMES
+                ? { user: { user_metadata: { full_name: USER_NAMES[id] } } }
+                : { user: null },
             error: null,
           }),
       },
@@ -184,7 +181,7 @@ function convRow(over: Record<string, unknown>): Record<string, unknown> {
 /** Resolver de conversas: getQueuePositions (select "id") devolve a fila na ordem do inbox. */
 function convResolver(single: Record<string, unknown> | null): Resolver {
   return (q) => {
-    if (q.table === "conversations" && q.select === "id") {
+    if (["conversations", "operational_conversations"].includes(q.table) && q.select === "id") {
       // Emula o ORDER BY do banco: retorna a fila JÁ ordenada (inbox order)…
       //
       // …E O FILTRO. Desde a migration 0203 `getQueuePositions` pede
@@ -199,7 +196,10 @@ function convResolver(single: Record<string, unknown> | null): Resolver {
         .map((id) => ({ id }));
       return { data: ordered, error: null };
     }
-    if (q.table === "conversations" && q.terminal === "maybeSingle") {
+    if (
+      ["conversations", "operational_conversations"].includes(q.table) &&
+      q.terminal === "maybeSingle"
+    ) {
       return { data: single, error: null };
     }
     return { data: single ? [single] : [], error: null };
@@ -296,10 +296,15 @@ describe("crm_list_conversations — coerência queue_position ↔ inbox", () =>
   it("as 3 conversas na fila recebem a posição da ordem do inbox (awaiting_since ASC, id ASC)", async () => {
     // Handler de list retorna as 3 conversas da fila.
     const rows = QUEUE_ROWS.map((r) =>
-      convRow({ id: r.id, status: "open", assigned_to_user_id: null, last_inbound_at: r.last_inbound_at }),
+      convRow({
+        id: r.id,
+        status: "open",
+        assigned_to_user_id: null,
+        last_inbound_at: r.last_inbound_at,
+      }),
     );
     const resolve: Resolver = (q) => {
-      if (q.table === "conversations" && q.select === "id") {
+      if (["conversations", "operational_conversations"].includes(q.table) && q.select === "id") {
         return { data: inboxOrder(QUEUE_ROWS).map((id) => ({ id })), error: null };
       }
       return { data: rows, error: null }; // list (then)
@@ -322,16 +327,32 @@ describe("crm_list_conversations — coerência queue_position ↔ inbox", () =>
   });
 
   it("shape aditivo: campos antigos preservados, novos presentes", async () => {
-    const rows = [convRow({ id: CONV_OLD, status: "claimed", assigned_to_user_id: USER_B, assignee_kind: "user", tags: ["x"] })];
+    const rows = [
+      convRow({
+        id: CONV_OLD,
+        status: "claimed",
+        assigned_to_user_id: USER_B,
+        assignee_kind: "user",
+        tags: ["x"],
+      }),
+    ];
     const res = (await crmListConversations.handler(
       { limit: 10 } as Parameters<typeof crmListConversations.handler>[0],
-      makeCtx((q) =>
-        q.select === "id" ? { data: [], error: null } : { data: rows, error: null },
-      ),
+      makeCtx((q) => (q.select === "id" ? { data: [], error: null } : { data: rows, error: null })),
     )) as { conversations: Array<Record<string, unknown>> };
     const c = res.conversations[0]!;
     // antigos:
-    for (const k of ["id", "contact_id", "channel", "status", "assigned_to_user_id", "last_message_preview", "last_message_at", "unread_count", "is_group"]) {
+    for (const k of [
+      "id",
+      "contact_id",
+      "channel",
+      "status",
+      "assigned_to_user_id",
+      "last_message_preview",
+      "last_message_at",
+      "unread_count",
+      "is_group",
+    ]) {
       expect(c).toHaveProperty(k);
     }
     // novos:
@@ -367,7 +388,7 @@ function leadRow(over: Record<string, unknown>): Record<string, unknown> {
 
 function leadResolver(rows: Array<Record<string, unknown>>): Resolver {
   return (q) => {
-    if (q.table === "crm_stages") {
+    if (q.table === "operational_crm_stages") {
       return { data: [{ id: STAGE_1, name: "Qualificação" }], error: null };
     }
     if (q.table === "crm_leads" && q.terminal === "maybeSingle") {

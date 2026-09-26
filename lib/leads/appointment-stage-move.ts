@@ -83,7 +83,7 @@ export async function moverLeadParaEtapaDeAgendamento(
   }
 
   const { data: etapaData, error: erroEtapa } = await admin
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("id, name")
     .eq("pipeline_id", leadRow.pipeline_id)
     .eq("slug", slugAlvo)
@@ -100,7 +100,7 @@ export async function moverLeadParaEtapaDeAgendamento(
   let etapa = etapaData;
   if (!etapa && slugAlvo.includes("-")) {
     const { data: etapaLegada, error: erroLegada } = await admin
-      .from("crm_stages")
+      .from("operational_crm_stages")
       .select("id, name")
       .eq("pipeline_id", leadRow.pipeline_id)
       .eq("slug", slugAlvo.replace(/-/g, "_"))
@@ -130,7 +130,7 @@ export async function moverLeadParaEtapaDeAgendamento(
   // Nome da origem só enfeita o texto da timeline — erro descartado de
   // propósito, mesmo raciocínio de `agent-stage-sync.ts` e `handoff-stage-move.ts`.
   const { data: origem } = await admin
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("name")
     .eq("id", leadRow.stage_id)
     .maybeSingle();
@@ -165,7 +165,11 @@ export async function moverLeadParaEtapaDeAgendamento(
     sourceId: leadRow.id,
     actor: { type: "webhook_source", id: "appointment-stage-move" },
     reason: stageChangeReason((origem as { name: string } | null)?.name ?? null, etapaRow.name),
-    payload: { motivo_do_movimento: `agendamento:${input.transicao}`, de: leadRow.stage_id, para: etapaRow.id },
+    payload: {
+      motivo_do_movimento: `agendamento:${input.transicao}`,
+      de: leadRow.stage_id,
+      para: etapaRow.id,
+    },
   });
   if (!atividade.ok) {
     await registraFalhaDeAtividade(admin, {
@@ -180,20 +184,27 @@ export async function moverLeadParaEtapaDeAgendamento(
   // Mesmo evento que `agent-stage-sync.ts` e `handoff-stage-move.ts` emitem ao
   // mover o card — para que regras de automação e follow-up que escutam
   // `lead.stage_changed` reajam igual, seja qual for a mão que moveu o card.
-  const { error: erroEvento } = await admin.rpc("emit_event" as never, {
-    p_event_type: "lead.stage_changed",
-    p_entity_kind: "crm_lead",
-    p_entity_id: leadRow.id,
-    p_payload: {
-      service_origin: serviceOrigin,
-      pipeline_id: leadRow.pipeline_id,
-      from_stage_id: leadRow.stage_id,
-      to_stage_id: etapaRow.id,
-      status: leadRow.status,
-    },
-    p_metadata: { actor_kind: "system", source: "appointment-stage-move", transicao: input.transicao },
-    p_organization_id: input.organizationId,
-  } as never);
+  const { error: erroEvento } = await admin.rpc(
+    "emit_event" as never,
+    {
+      p_event_type: "lead.stage_changed",
+      p_entity_kind: "crm_lead",
+      p_entity_id: leadRow.id,
+      p_payload: {
+        service_origin: serviceOrigin,
+        pipeline_id: leadRow.pipeline_id,
+        from_stage_id: leadRow.stage_id,
+        to_stage_id: etapaRow.id,
+        status: leadRow.status,
+      },
+      p_metadata: {
+        actor_kind: "system",
+        source: "appointment-stage-move",
+        transicao: input.transicao,
+      },
+      p_organization_id: input.organizationId,
+    } as never,
+  );
   if (erroEvento) {
     logger.error("[appointment-stage-move] emit_event lead.stage_changed falhou", {
       lead_id: leadRow.id,

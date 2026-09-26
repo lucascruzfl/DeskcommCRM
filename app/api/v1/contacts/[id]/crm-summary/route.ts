@@ -32,7 +32,7 @@ import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/wrappers";
-import { camposDoFunil, settingsDoEmbed } from "@/lib/leads/campos-do-funil";
+import { camposDoFunil } from "@/lib/leads/campos-do-funil";
 import { createClient } from "@/lib/supabase/server";
 import { nomesDosAtendentes } from "@/lib/users/nome-do-atendente";
 import { managedAreaAllowedForActor } from "@/lib/managed-clients/server";
@@ -40,13 +40,13 @@ import { managedAreaAllowedForActor } from "@/lib/managed-clients/server";
 export const dynamic = "force-dynamic";
 
 /**
- * Sem o embed do funil o painel não consegue montar os campos customizados.
+ * O funil operacional fornece os campos customizados sem publicar a linha base.
  * Nome do funil e da etapa entram porque dois leads de mesmo título em funis
- * diferentes ficavam idênticos na lista (#943). `!inner` para filtrar funil
- * arquivado no banco, antes do `limit(3)` — `pipeline_id` é NOT NULL.
+ * diferentes ficavam idênticos na lista (#943). Os IDs de funis ativos são
+ * filtrados antes do `limit(3)` — `pipeline_id` é NOT NULL.
  */
 const LEAD_COLS =
-  "id, title, status, value_cents, currency, updated_at, pipeline_id, custom_fields, crm_pipelines!inner(name, settings, is_archived), crm_stages(name)";
+  "id, title, status, value_cents, currency, updated_at, pipeline_id, stage_id, custom_fields";
 const ORDER_COLS = "id, external_id, status, total_cents, currency, created_at";
 /** Acompanha o que a timeline mostra — `reason` e `actor_kind` inclusive. */
 /**
@@ -89,47 +89,72 @@ export async function GET(
     return fail("unauthenticated", "Auth required.", 401, { requestId });
   }
 
-  const { data: contactScope, error: scopeError } = await supabase.from("contacts")
-    .select("organization_id, is_anonymized").eq("id", contactId).maybeSingle();
+  const { data: contactScope, error: scopeError } = await supabase
+    .from("contacts")
+    .select("organization_id, is_anonymized")
+    .eq("id", contactId)
+    .maybeSingle();
   if (scopeError) return fail("internal_error", scopeError.message, 500, { requestId });
   if (!contactScope) return fail("not_found", "Contato não encontrado.", 404, { requestId });
   const [canReadProspecting, canReadNuvemshop] = await Promise.all([
     managedAreaAllowedForActor(contactScope.organization_id, user.id, "/app/prospecting"),
-    managedAreaAllowedForActor(contactScope.organization_id, user.id, "/app/integrations/nuvemshop"),
+    managedAreaAllowedForActor(
+      contactScope.organization_id,
+      user.id,
+      "/app/integrations/nuvemshop",
+    ),
   ]);
   // Candidates are worker-only. Authorize the contact through RLS first, then
   // scope this read to that exact contact and organization. Never expose raw data.
   const enrichment = await (async () => {
-    if (contactScope.is_anonymized || !canReadProspecting) return { enrichment: null, enrichment_error: false };
+    if (contactScope.is_anonymized || !canReadProspecting)
+      return { enrichment: null, enrichment_error: false };
     try {
-      const result = await createAdminClient().from("prospecting_candidates")
+      const result = await createAdminClient()
+        .from("prospecting_candidates")
         .select("data, created_at")
-        .eq("organization_id", contactScope.organization_id).eq("contact_id", contactId)
-        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        .eq("organization_id", contactScope.organization_id)
+        .eq("contact_id", contactId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
       if (result.error) return { enrichment: null, enrichment_error: true };
       if (!result.data) return { enrichment: null, enrichment_error: false };
       const parsed = prospectEnrichmentSchema.safeParse(result.data.data);
       return parsed.success
-        ? { enrichment: { ...parsed.data, collected_at: result.data.created_at }, enrichment_error: false }
+        ? {
+            enrichment: { ...parsed.data, collected_at: result.data.created_at },
+            enrichment_error: false,
+          }
         : { enrichment: null, enrichment_error: true };
     } catch {
       return { enrichment: null, enrichment_error: true };
     }
   })();
+  const pipelines = await supabase
+    .from("operational_crm_pipelines")
+    .select("id, name, settings")
+    .eq("organization_id", contactScope.organization_id)
+    .eq("is_archived", false);
+  if (pipelines.error) return fail("internal_error", pipelines.error.message, 500, { requestId });
+  const pipelineIds = (pipelines.data ?? []).map((pipeline) => pipeline.id);
   const [leads, orders, activities, demandas, fatos, historico] = await Promise.all([
-    supabase
-      .from("crm_leads")
-      .select(LEAD_COLS)
-      .eq("contact_id", contactId).eq("organization_id", contactScope.organization_id)
-      // Arquivar o funil não fecha os leads; sem isto eles seguiam aqui como abertos.
-      .eq("crm_pipelines.is_archived", false)
-      .order("updated_at", { ascending: false })
-      .limit(3),
+    pipelineIds.length
+      ? supabase
+          .from("crm_leads")
+          .select(LEAD_COLS)
+          .eq("contact_id", contactId)
+          .eq("organization_id", contactScope.organization_id)
+          .in("pipeline_id", pipelineIds)
+          .order("updated_at", { ascending: false })
+          .limit(3)
+      : Promise.resolve({ data: [], error: null }),
     canReadNuvemshop
       ? supabase
           .from("orders")
           .select(ORDER_COLS)
-          .eq("contact_id", contactId).eq("organization_id", contactScope.organization_id)
+          .eq("contact_id", contactId)
+          .eq("organization_id", contactScope.organization_id)
           .order("created_at", { ascending: false })
           .limit(3)
       : Promise.resolve({ data: [], error: null }),
@@ -141,7 +166,8 @@ export async function GET(
     supabase
       .from("crm_lead_activities")
       .select(ACTIVITY_COLS)
-      .eq("contact_id", contactId).eq("organization_id", contactScope.organization_id)
+      .eq("contact_id", contactId)
+      .eq("organization_id", contactScope.organization_id)
       .order("performed_at", { ascending: false })
       .limit(12),
     // Só as ABERTAS: demanda encerrada é histórico e já vive na timeline. Da
@@ -151,20 +177,54 @@ export async function GET(
     supabase
       .from("demandas")
       .select(DEMANDA_COLS)
-      .eq("contact_id", contactId).eq("organization_id", contactScope.organization_id)
+      .eq("contact_id", contactId)
+      .eq("organization_id", contactScope.organization_id)
       .is("fechada_em", null)
       .order("aberta_em", { ascending: true })
       .limit(5),
-    supabase.from("lead_notes").select("id, headline, body").eq("contact_id", contactId).eq("organization_id", contactScope.organization_id).order("created_at", { ascending: false }).limit(20),
-    supabase.from("demandas").select("id, desfecho, fechada_em").eq("contact_id", contactId).eq("organization_id", contactScope.organization_id).not("fechada_em", "is", null).order("fechada_em", { ascending: false }).limit(5),
+    supabase
+      .from("lead_notes")
+      .select("id, headline, body")
+      .eq("contact_id", contactId)
+      .eq("organization_id", contactScope.organization_id)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("demandas")
+      .select("id, desfecho, fechada_em")
+      .eq("contact_id", contactId)
+      .eq("organization_id", contactScope.organization_id)
+      .not("fechada_em", "is", null)
+      .order("fechada_em", { ascending: false })
+      .limit(5),
   ]);
 
   // A falha SOBE. Engolir aqui devolveria lista vazia ao cliente e recriaria,
   // do lado do servidor, exatamente a mentira que esta rota veio desfazer.
-  const falha = leads.error ?? orders.error ?? activities.error ?? demandas.error ?? fatos.error ?? historico.error;
+  const falha =
+    leads.error ??
+    orders.error ??
+    activities.error ??
+    demandas.error ??
+    fatos.error ??
+    historico.error;
   if (falha) {
     return fail("internal_error", falha.message, 500, { requestId });
   }
+  const leadRows = (leads.data ?? []) as Record<string, unknown>[];
+  const stageIds = leadRows
+    .map((lead) => lead.stage_id)
+    .filter((id): id is string => typeof id === "string");
+  const stages = stageIds.length
+    ? await supabase
+        .from("operational_crm_stages")
+        .select("id, name")
+        .eq("organization_id", contactScope.organization_id)
+        .in("id", stageIds)
+    : { data: [], error: null };
+  if (stages.error) return fail("internal_error", stages.error.message, 500, { requestId });
+  const pipelinesById = new Map((pipelines.data ?? []).map((pipeline) => [pipeline.id, pipeline]));
+  const stagesById = new Map((stages.data ?? []).map((stage) => [stage.id, stage.name]));
 
   // QUEM agiu, e não só "uma pessoa". O lookup roda sobre os autores DISTINTOS
   // da janela (12 linhas, quase sempre 1 ou 2 pessoas), e degrada declarado
@@ -178,7 +238,7 @@ export async function GET(
   return ok(
     {
       ...enrichment,
-      leads: (leads.data ?? []).map((row) => comCamposDoFunil(row as Record<string, unknown>)),
+      leads: leadRows.map((row) => comCamposDoFunil(row, pipelinesById, stagesById)),
       orders: orders.data ?? [],
       activities: linhas.map((a) => ({
         ...a,
@@ -187,24 +247,23 @@ export async function GET(
           : null,
       })),
       demandas: demandas.data ?? [],
-      fatos: fatos.data ?? [], historico: historico.data ?? [],
+      fatos: fatos.data ?? [],
+      historico: historico.data ?? [],
     },
     { requestId },
   );
 }
 
-function comCamposDoFunil(row: Record<string, unknown>) {
-  const { crm_pipelines, crm_stages, ...lead } = row;
+function comCamposDoFunil(
+  lead: Record<string, unknown>,
+  pipelines: ReadonlyMap<string, { name: string; settings: unknown }>,
+  stages: ReadonlyMap<string, string>,
+) {
+  const pipeline = pipelines.get(String(lead.pipeline_id));
   return {
     ...lead,
-    field_defs: camposDoFunil(settingsDoEmbed(crm_pipelines)),
-    funil_nome: nomeDoEmbed(crm_pipelines),
-    etapa_nome: nomeDoEmbed(crm_stages),
+    field_defs: camposDoFunil(pipeline?.settings as Record<string, unknown> | null),
+    funil_nome: pipeline?.name ?? null,
+    etapa_nome: stages.get(String(lead.stage_id)) ?? null,
   };
-}
-
-function nomeDoEmbed(embed: unknown): string | null {
-  const alvo = Array.isArray(embed) ? embed[0] : embed;
-  const nome = (alvo as { name?: unknown } | null)?.name;
-  return typeof nome === "string" ? nome : null;
 }

@@ -53,7 +53,7 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
   // Client de sessão: RLS garante que a mensagem pertence a uma org do usuário.
   // Filtro explícito de organization_id por doutrina (defense-in-depth).
   const { data: msg, error } = await supabase
-    .from("messages")
+    .from("operational_messages")
     .select("id, media_url, media_mime, media_storage_path, channel_session_id")
     .eq("id", messageId)
     .eq("organization_id", activeOrg.orgId)

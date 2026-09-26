@@ -36,7 +36,7 @@ export async function GET(req: Request) {
   const conversations =
     input.data.contact_id && result.data.length
       ? await db
-          .from("conversations")
+          .from("operational_conversations")
           .select("id,created_at,status")
           .eq("organization_id", auth.org.orgId)
           .eq("contact_id", input.data.contact_id)

@@ -1,15 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
+import ts from "typescript";
 import { NAV_CATALOG } from "@/lib/navigation/catalogo";
-import { buildManagedAreaPolicy, canAccessManagedArea, managedAreaForPath, managedAreaForResource } from "./policy";
+import {
+  buildManagedAreaPolicy,
+  canAccessManagedArea,
+  managedAreaForPath,
+  managedAreaForResource,
+} from "./policy";
 
 describe("política canônica das 54 áreas", () => {
   const policy = buildManagedAreaPolicy("managed/aesthetic-clinic");
 
   it("o snapshot contém exatamente os 54 destinos do CRM", () => {
     expect(NAV_CATALOG).toHaveLength(54);
-    expect(Object.keys(policy.areas).sort()).toEqual(NAV_CATALOG.map(area => area.href).sort());
+    expect(Object.keys(policy.areas).sort()).toEqual(NAV_CATALOG.map((area) => area.href).sort());
   });
 
   it.each(NAV_CATALOG.map((area) => [area.href, policy.areas[area.href]] as const))(
@@ -41,6 +47,7 @@ describe("política canônica das 54 áreas", () => {
   it("nega política incompleta e resolve subrota pela área mais específica", () => {
     expect(managedAreaForPath("/app/ai/cases/avisos/123")).toBe("/app/ai/cases/avisos");
     expect(managedAreaForPath("/app/ai/cases/123")).toBe("/app/ai/cases");
+    expect(managedAreaForPath("/onboarding/funil")).toBe("/app/settings/tenant");
     expect(managedAreaForPath("/app/pipelines/123")).toBe("/app/kanban");
     expect(managedAreaForPath("/app/leads/123")).toBe("/app/kanban");
     expect(managedAreaForPath("/app/settings/canal-oficial")).toBe("/app/connections");
@@ -67,26 +74,109 @@ describe("política canônica das 54 áreas", () => {
     }
   });
 
+  it("separa a listagem de funis da administração do funil", () => {
+    expect(managedAreaForResource("pipelines")).toBe("/app/kanban");
+    expect(managedAreaForResource("crm_pipelines")).toBe("/app/settings/tenant/pipelines");
+    expect(canAccessManagedArea(policy, "agent", managedAreaForResource("pipelines")!)).toBe(true);
+    expect(canAccessManagedArea(policy, "agent", managedAreaForResource("crm_pipelines")!)).toBe(
+      false,
+    );
+  });
+
+  it("separa o uso operacional de tags da administração do vocabulário", () => {
+    expect(policy.areas["/app/settings/tags"]).toBe("agency");
+    expect(canAccessManagedArea(policy, "agent", managedAreaForResource("conversations")!)).toBe(true);
+    expect(canAccessManagedArea(policy, "agent", managedAreaForResource("settings_tags")!)).toBe(false);
+  });
+
   it("classifica toda página de área; hubs e manutenção têm autorização própria", () => {
-    const pages = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
-      .flatMap((entry) => entry.isDirectory()
-        ? pages(join(directory, entry.name))
-        : entry.name === "page.tsx" ? [join(directory, entry.name)] : []);
-    const hubsAndPlatform = new Set(["/app", "/app/ai", "/app/analise", "/app/crm", "/app/settings", "/app/settings/atualizacao"]);
+    const pages = (directory: string): string[] =>
+      readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>
+        entry.isDirectory()
+          ? pages(join(directory, entry.name))
+          : entry.name === "page.tsx"
+            ? [join(directory, entry.name)]
+            : [],
+      );
+    const hubsAndPlatform = new Set([
+      "/app",
+      "/app/ai",
+      "/app/analise",
+      "/app/crm",
+      "/app/settings",
+      "/app/settings/atualizacao",
+    ]);
     const uncovered = pages("app/app")
       .map((page) => `/${dirname(page).replace(/^app\//, "")}`)
-      .filter((route) => !route.includes("[") && !hubsAndPlatform.has(route) && !managedAreaForPath(route));
+      .filter(
+        (route) =>
+          !route.includes("[") && !hubsAndPlatform.has(route) && !managedAreaForPath(route),
+      );
     expect(uncovered).toEqual([]);
   });
 
   it("mapeia cada resource explícito das rotas API para uma das 54 áreas", () => {
-    const routes = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
-      .flatMap((entry) => entry.isDirectory()
-        ? routes(join(directory, entry.name))
-        : entry.name === "route.ts" ? [join(directory, entry.name)] : []);
-    const resources = new Set(routes("app/api/v1")
-      .flatMap((file) => Array.from(readFileSync(file, "utf8").matchAll(/resource:\s*["']([^"']+)["']/g), match => match[1])));
+    const routes = (directory: string): string[] =>
+      readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>
+        entry.isDirectory()
+          ? routes(join(directory, entry.name))
+          : entry.name === "route.ts"
+            ? [join(directory, entry.name)]
+            : [],
+      );
+    const resources = new Set(
+      routes("app/api/v1").flatMap((file) =>
+        Array.from(
+          readFileSync(file, "utf8").matchAll(/resource:\s*["']([^"']+)["']/g),
+          (match) => match[1],
+        ),
+      ),
+    );
     expect(resources.size).toBeGreaterThan(80);
-    expect([...resources].filter(resource => !managedAreaForResource(resource))).toEqual([]);
+    expect([...resources].filter((resource) => !managedAreaForResource(resource))).toEqual([]);
+  });
+
+  it("não deixa requireRole sem recurso de área nas rotas do tenant", () => {
+    const uncovered: string[] = [];
+    for (const file of routesOfTenant("app/api/v1")) {
+      const ast = ts.createSourceFile(
+        file,
+        readFileSync(file, "utf8"),
+        ts.ScriptTarget.Latest,
+        true,
+      );
+      const visit = (node: ts.Node): void => {
+        if (
+          ts.isCallExpression(node) &&
+          ts.isIdentifier(node.expression) &&
+          node.expression.text === "requireRole"
+        ) {
+          const opts = node.arguments[1];
+          const hasResource =
+            opts &&
+            ts.isObjectLiteralExpression(opts) &&
+            opts.properties.some(
+              (property) =>
+                ts.isPropertyAssignment(property) &&
+                ts.isIdentifier(property.name) &&
+                property.name.text === "resource",
+            );
+          if (!hasResource) uncovered.push(file);
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(ast);
+    }
+    expect(uncovered).toEqual([]);
   });
 });
+
+function routesOfTenant(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory()
+      ? routesOfTenant(join(directory, entry.name))
+      : entry.name === "route.ts"
+        ? [join(directory, entry.name)]
+        : [],
+  );
+}

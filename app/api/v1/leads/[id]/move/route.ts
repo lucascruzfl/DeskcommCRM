@@ -19,10 +19,7 @@ import { moveLeadSchema, validateRequest } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 import { emitLeadActivity, stageChangeReason } from "@/lib/leads/activity-emitter";
 import { registraFalhaDeAtividade } from "@/lib/leads/activity-write-failure";
-import {
-  decideMotivoDaPerda,
-  recusaDeMotivoDaPerdaPeloBanco,
-} from "@/lib/leads/motivo-da-perda";
+import { decideMotivoDaPerda, recusaDeMotivoDaPerdaPeloBanco } from "@/lib/leads/motivo-da-perda";
 import { RECUSA_DE_TROCA_DE_FUNIL } from "@/lib/leads/clonar-para-funil";
 import { traduzir } from "@/lib/i18n/dicionario";
 
@@ -75,7 +72,7 @@ export async function POST(
   // Fetch target stage to validate same pipeline (P-01) — e `is_lost`, que é o
   // que decide se esta escrita precisa do motivo da perda (issue #917).
   const { data: stage, error: stageErr } = await supabase
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("id, pipeline_id, name, is_lost")
     .eq("id", input.stage_id)
     .maybeSingle();
@@ -87,12 +84,10 @@ export async function POST(
     return fail("not_found", t("Stage não encontrado."), 404, { requestId });
   }
   if (stage.pipeline_id !== lead.pipeline_id) {
-    return fail(
-      "pipeline_immutable_use_clone",
-      t(RECUSA_DE_TROCA_DE_FUNIL),
-      422,
-      { requestId, details: { use: "/api/v1/leads/{id}/clone" } },
-    );
+    return fail("pipeline_immutable_use_clone", t(RECUSA_DE_TROCA_DE_FUNIL), 422, {
+      requestId,
+      details: { use: "/api/v1/leads/{id}/clone" },
+    });
   }
 
   // ── O MOTIVO DA PERDA (issue #917) ──────────────────────────────────────────
@@ -158,7 +153,7 @@ export async function POST(
   // (lib/leads/activity-emitter), para os quatro caminhos escreverem a mesma
   // linha na timeline.
   const { data: fromStage } = await supabase
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("name")
     .eq("id", lead.stage_id)
     .maybeSingle();

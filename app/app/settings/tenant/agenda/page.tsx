@@ -40,7 +40,8 @@ export default async function TiposDeAgendamentoPage() {
   // `viewer` vê a lista (é informação de operação: quanto dura uma consulta);
   // criar e alterar é `manager`, e a rota cobra de novo — a tela esconder não é
   // autorização, é cortesia.
-  const podeEditar = (user.is_platform_admin && !user.support) || ROLE_RANK[activeOrg.role] >= ROLE_RANK.manager;
+  const podeEditar =
+    (user.is_platform_admin && !user.support) || ROLE_RANK[activeOrg.role] >= ROLE_RANK.manager;
 
   const supabase = await createClient();
   const [{ data: tipos }, { data: pessoas }, { data: org }] = await Promise.all([
@@ -60,7 +61,11 @@ export default async function TiposDeAgendamentoPage() {
     // A regra "Clientes pela agenda" mora em `organizations.settings.crm`. LER
     // pela sessão funciona (a policy de leitura é de membro); gravar é só pela
     // RPC, que a action chama.
-    supabase.from("organizations").select("settings").eq("id", activeOrg.orgId).maybeSingle(),
+    supabase
+      .from("operational_organizations")
+      .select("settings")
+      .eq("id", activeOrg.orgId)
+      .maybeSingle(),
   ]);
 
   // O NOME DE GENTE, e não o fragmento de UUID.
@@ -83,7 +88,9 @@ export default async function TiposDeAgendamentoPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">{t("Tipos de agendamento")}</h1>
         <p className="mt-1 text-sm text-text-muted">
-          {t("O que se pode marcar, quanto dura e quem atende. É isto que a tela de marcar e o agente de IA oferecem ao cliente.")}
+          {t(
+            "O que se pode marcar, quanto dura e quem atende. É isto que a tela de marcar e o agente de IA oferecem ao cliente.",
+          )}
         </p>
       </header>
       <TiposDeAgendamentoClient

@@ -11,8 +11,10 @@ import {
   atualizarPipeline,
   criarPipeline,
   obterPipeline,
+  obterPipelineOperacional,
 } from "@/lib/pipelines/operations";
 import { customFieldSchema } from "@/lib/schemas/settings";
+import { canAccessManagedArea } from "@/lib/managed-clients/policy";
 
 function operationContext(ctx: Parameters<typeof obterPipeline>[0]) {
   return ctx;
@@ -33,7 +35,19 @@ export const crmGetPipeline: McpToolDefinition<typeof getPipelineShape> = {
   requiresRole: "agent",
   requiresScope: "mcp:read",
   domain: "pipelines",
-  handler: (input, ctx) => obterPipeline(operationContext({ supabase: ctx.supabase, organizationId: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId, apiTokenId: ctx.apiTokenId }), input.pipeline_id),
+  handler: (input, ctx) => {
+    const operation = operationContext({
+      supabase: ctx.supabase,
+      organizationId: ctx.organizationId,
+      actor: ctx.actor,
+      requestId: ctx.requestId,
+      apiTokenId: ctx.apiTokenId,
+    });
+    return ctx.managedPolicy &&
+      !canAccessManagedArea(ctx.managedPolicy, ctx.role, "/app/settings/tenant/pipelines")
+      ? obterPipelineOperacional(operation, input.pipeline_id)
+      : obterPipeline(operation, input.pipeline_id);
+  },
 };
 
 const createPipelineShape = {
@@ -50,8 +64,21 @@ export const crmCreatePipeline: McpToolDefinition<typeof createPipelineShape> = 
   requiresRole: "manager",
   requiresScope: "mcp:write",
   domain: "pipelines",
-  auditResource: (_input, result) => ({ type: "crm_pipeline", id: (result as { id?: string } | undefined)?.id }),
-  handler: (input, ctx) => criarPipeline({ supabase: ctx.supabase, organizationId: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId, apiTokenId: ctx.apiTokenId }, input),
+  auditResource: (_input, result) => ({
+    type: "crm_pipeline",
+    id: (result as { id?: string } | undefined)?.id,
+  }),
+  handler: (input, ctx) =>
+    criarPipeline(
+      {
+        supabase: ctx.supabase,
+        organizationId: ctx.organizationId,
+        actor: ctx.actor,
+        requestId: ctx.requestId,
+        apiTokenId: ctx.apiTokenId,
+      },
+      input,
+    ),
 };
 
 const updatePipelineShape = {
@@ -76,7 +103,17 @@ export const crmUpdatePipeline: McpToolDefinition<typeof updatePipelineShape> = 
   auditResource: (input) => ({ type: "crm_pipeline", id: input.pipeline_id }),
   handler: (input, ctx) => {
     const { pipeline_id, ...patch } = input;
-    return atualizarPipeline({ supabase: ctx.supabase, organizationId: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId, apiTokenId: ctx.apiTokenId }, pipeline_id, patch);
+    return atualizarPipeline(
+      {
+        supabase: ctx.supabase,
+        organizationId: ctx.organizationId,
+        actor: ctx.actor,
+        requestId: ctx.requestId,
+        apiTokenId: ctx.apiTokenId,
+      },
+      pipeline_id,
+      patch,
+    );
   },
 };
 
@@ -93,17 +130,29 @@ export const crmArchivePipeline: McpToolDefinition<typeof archivePipelineShape> 
   domain: "pipelines",
   capabilities: ["destructive_operations"],
   auditResource: (input) => ({ type: "crm_pipeline", id: input.pipeline_id }),
-  handler: (input, ctx) => arquivarPipeline({ supabase: ctx.supabase, organizationId: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId, apiTokenId: ctx.apiTokenId }, input.pipeline_id),
+  handler: (input, ctx) =>
+    arquivarPipeline(
+      {
+        supabase: ctx.supabase,
+        organizationId: ctx.organizationId,
+        actor: ctx.actor,
+        requestId: ctx.requestId,
+        apiTokenId: ctx.apiTokenId,
+      },
+      input.pipeline_id,
+    ),
 };
 
 const configPipelineShape = {
   pipeline_id: z.string().uuid(),
-  vocabulary: z.object({
-    lead: z.string().min(1).max(40).optional(),
-    deal: z.string().min(1).max(40).optional(),
-    won: z.string().min(1).max(40).optional(),
-    lost: z.string().min(1).max(40).optional(),
-  }).optional(),
+  vocabulary: z
+    .object({
+      lead: z.string().min(1).max(40).optional(),
+      deal: z.string().min(1).max(40).optional(),
+      won: z.string().min(1).max(40).optional(),
+      lost: z.string().min(1).max(40).optional(),
+    })
+    .optional(),
   fields: z.array(customFieldSchema).max(50).optional(),
   lost_reasons: z.array(z.string().min(1).max(80)).max(50).optional(),
 };
@@ -120,7 +169,17 @@ export const crmUpdatePipelineSchema: McpToolDefinition<typeof configPipelineSha
   auditResource: (input) => ({ type: "crm_pipeline", id: input.pipeline_id }),
   handler: (input, ctx) => {
     const { pipeline_id, ...patch } = input;
-    return atualizarConfiguracaoDoPipeline({ supabase: ctx.supabase, organizationId: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId, apiTokenId: ctx.apiTokenId }, pipeline_id, patch);
+    return atualizarConfiguracaoDoPipeline(
+      {
+        supabase: ctx.supabase,
+        organizationId: ctx.organizationId,
+        actor: ctx.actor,
+        requestId: ctx.requestId,
+        apiTokenId: ctx.apiTokenId,
+      },
+      pipeline_id,
+      patch,
+    );
   },
 };
 
@@ -134,6 +193,20 @@ export const crmListPipelines: McpToolDefinition<typeof listInputShape> = {
   requiresScope: "mcp:read",
   domain: "pipelines",
   handler: async (input, ctx) => {
+    if (
+      ctx.managedPolicy &&
+      !canAccessManagedArea(ctx.managedPolicy, ctx.role, "/app/settings/tenant/pipelines")
+    ) {
+      let query = ctx.supabase
+        .from("operational_crm_pipelines")
+        .select("id, organization_id, name, slug, description, is_default, is_archived, position")
+        .eq("organization_id", ctx.organizationId)
+        .order("position", { ascending: true });
+      if (!input.include_archived) query = query.eq("is_archived", false);
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      return { pipelines: data ?? [] };
+    }
     const result = await listPipelinesHandler(
       ctx.supabase,
       {

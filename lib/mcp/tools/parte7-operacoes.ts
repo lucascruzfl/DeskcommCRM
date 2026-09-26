@@ -254,7 +254,7 @@ async function previewBulk(input: z.infer<z.ZodObject<typeof bulkShape>>, ctx: M
   if (input.action === "move") {
     if (!input.stage_id) falhar("validation_error", "stage_id é obrigatório para mover em lote.");
     const { data: stage } = await ctx.supabase
-      .from("crm_stages")
+      .from("operational_crm_stages")
       .select("id, name, pipeline_id, is_won, is_lost, is_archived")
       .eq("organization_id", ctx.organizationId)
       .eq("id", input.stage_id)

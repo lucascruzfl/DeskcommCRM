@@ -44,6 +44,12 @@ function fakeDb(seed: Record<string, Row[]>) {
   const tables = seed;
 
   function from(table: string) {
+    const source =
+      table === "operational_crm_pipelines"
+        ? "crm_pipelines"
+        : table === "operational_crm_stages"
+          ? "crm_stages"
+          : table;
     const filters: [string, unknown][] = [];
     const orders: [string, boolean][] = [];
     let limit = Number.POSITIVE_INFINITY;
@@ -51,7 +57,7 @@ function fakeDb(seed: Record<string, Row[]>) {
     let patch: Row | null = null;
     let pending: Row | null = null;
 
-    const rows = (): Row[] => (tables[table] ??= []);
+    const rows = (): Row[] => (tables[source] ??= []);
     const matches = () => rows().filter((row) => filters.every(([c, v]) => row[c] === v));
 
     function selectRows(): Row[] {
@@ -77,7 +83,9 @@ function fakeDb(seed: Record<string, Row[]>) {
           Object.assign(row, patch);
           // O banco fecha pelo trigger `fn_crm_lead_close_on_stage`: quem manda o
           // desfecho é a ETAPA, não um campo `status` no patch.
-          const etapa = (tables.crm_stages ?? []).find((candidate) => candidate.id === row.stage_id);
+          const etapa = (tables.crm_stages ?? []).find(
+            (candidate) => candidate.id === row.stage_id,
+          );
           if (etapa?.is_won === true) {
             row.status = "won";
             row.closed_at ??= "2026-09-15T10:05:00.000Z";
@@ -124,9 +132,7 @@ function fakeDb(seed: Record<string, Row[]>) {
       // `await` direto no builder é select de LISTA — e é assim que `encerraDemanda`
       // aplica o update (sem `.select()`), então o update precisa valer aqui também.
       then: async (resolve: (value: unknown) => unknown) =>
-        resolve(
-          operation === "select" ? { data: selectRows(), error: null } : resolveOne(false),
-        ),
+        resolve(operation === "select" ? { data: selectRows(), error: null } : resolveOne(false)),
     };
 
     return builder;
@@ -142,11 +148,56 @@ function seed() {
       { id: P2, organization_id: ORG_ID, name: "Suporte" },
     ],
     crm_stages: [
-      { id: S1_A, organization_id: ORG_ID, pipeline_id: P1, name: "Novo", position: 1000, is_won: false, is_lost: false, is_archived: false },
-      { id: S1_LOST, organization_id: ORG_ID, pipeline_id: P1, name: "Perdido", position: 9000, is_won: false, is_lost: true, is_archived: false },
-      { id: S2_A, organization_id: ORG_ID, pipeline_id: P2, name: "Triagem", position: 1000, is_won: false, is_lost: false, is_archived: false },
-      { id: S2_B, organization_id: ORG_ID, pipeline_id: P2, name: "Em análise", position: 2000, is_won: false, is_lost: false, is_archived: false },
-      { id: S2_LOST, organization_id: ORG_ID, pipeline_id: P2, name: "Perdido", position: 9000, is_won: false, is_lost: true, is_archived: false },
+      {
+        id: S1_A,
+        organization_id: ORG_ID,
+        pipeline_id: P1,
+        name: "Novo",
+        position: 1000,
+        is_won: false,
+        is_lost: false,
+        is_archived: false,
+      },
+      {
+        id: S1_LOST,
+        organization_id: ORG_ID,
+        pipeline_id: P1,
+        name: "Perdido",
+        position: 9000,
+        is_won: false,
+        is_lost: true,
+        is_archived: false,
+      },
+      {
+        id: S2_A,
+        organization_id: ORG_ID,
+        pipeline_id: P2,
+        name: "Triagem",
+        position: 1000,
+        is_won: false,
+        is_lost: false,
+        is_archived: false,
+      },
+      {
+        id: S2_B,
+        organization_id: ORG_ID,
+        pipeline_id: P2,
+        name: "Em análise",
+        position: 2000,
+        is_won: false,
+        is_lost: false,
+        is_archived: false,
+      },
+      {
+        id: S2_LOST,
+        organization_id: ORG_ID,
+        pipeline_id: P2,
+        name: "Perdido",
+        position: 9000,
+        is_won: false,
+        is_lost: true,
+        is_archived: false,
+      },
     ],
     crm_leads: [
       {
@@ -444,7 +495,10 @@ describe("POST /api/v1/leads/[id]/clone", () => {
       ...base,
       crm_pipelines: (base.crm_pipelines ?? []).map((funil) =>
         funil.id === P2
-          ? { ...funil, settings: { fields: [{ key: "metragem", label: "Metragem", type: "text" }] } }
+          ? {
+              ...funil,
+              settings: { fields: [{ key: "metragem", label: "Metragem", type: "text" }] },
+            }
           : funil,
       ),
     });

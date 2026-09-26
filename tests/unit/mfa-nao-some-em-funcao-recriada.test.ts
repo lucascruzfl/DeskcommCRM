@@ -66,16 +66,21 @@ interface Definicao {
 
 /**
  * As definições de função de um arquivo SQL, na ordem em que o Postgres as
- * executa. O corpo termina no primeiro `$$;` depois da abertura: parar ali
- * evita capturar o portão da função SEGUINTE e concluir que esta o tem.
+ * executa. O corpo termina no delimitador dollar-quoted declarado pelo AS (inclusive
+ * `$function$` e `$fn$`). Usar sempre `$$;` captura o portão da função seguinte.
  */
 function definicoesDe(sql: string, origem: string, base: number): Definicao[] {
   const achados: Definicao[] = [];
   ABERTURA.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = ABERTURA.exec(sql)) !== null) {
-    const fim = sql.indexOf("$$;", m.index);
-    const corpo = sql.slice(m.index, fim === -1 ? sql.length : fim);
+    const restante = sql.slice(m.index);
+    const aberturaDoCorpo = /\bas\s+(\$[a-z0-9_]*\$)/i.exec(restante);
+    if (!aberturaDoCorpo) throw new Error(`Corpo SQL indisponível: ${m[1]}`);
+    const inicio = m.index + aberturaDoCorpo.index + aberturaDoCorpo[0].length;
+    const fim = sql.indexOf(aberturaDoCorpo[1]!, inicio);
+    if (fim < 0) throw new Error(`Delimitador SQL não fechado: ${m[1]}`);
+    const corpo = sql.slice(inicio, fim);
     achados.push({
       funcao: m[1]!,
       origem,
@@ -136,6 +141,14 @@ const definicoesDasMigrations = arquivosDeMigration.flatMap((arquivo, i) =>
 );
 
 describe("recriar uma função não apaga o portão de MFA dela", () => {
+  it("delimitador nomeado não herda o MFA da próxima função", () => {
+    const texto = "create or replace function public.fn_sem() returns void language plpgsql as $function$ begin return; end $function$;\n"
+      + "create or replace function public.fn_com() returns void language plpgsql as $fn$ begin perform public.fn_session_mfa_proven(); end $fn$;";
+    expect(definicoesDe(texto, "controle", 0).map(d => [d.funcao, d.temPortao]))
+      .toEqual([["fn_sem", false], ["fn_com", true]]);
+    const removido = texto + "create or replace function public.fn_com() returns void language plpgsql as $$ begin return; end $$;";
+    expect(perdas(definicoesDe(removido, "controle", 0)).map(d => d.funcao)).toEqual(["fn_com"]);
+  });
   it("o instrumento enxerga: há portões a perder nos dois artefatos", () => {
     // CONTROLE DE VACUIDADE. Sem ele, um regex quebrado (ou um rename de
     // `fn_session_mfa_proven`) faria os dois casos abaixo passarem medindo o

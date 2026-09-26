@@ -1,0 +1,1877 @@
+{
+  "scope": "Catálogo revisado para token persistido de usuário agent; mcp:read/write e capacidades de envio/handoff/destrutivas não concedem áreas administrativas. A prova usa PostgREST descartável.",
+  "tools": [
+    {
+      "name": "crm_activate_ai_agent",
+      "domain": "agents",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_add_campaign_suppression",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_add_case_note",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_archive_ai_agent",
+      "domain": "agents",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_archive_knowledge_source",
+      "domain": "knowledge",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_archive_pipeline",
+      "domain": "pipelines",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_archive_stage",
+      "domain": "pipelines",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_assign_conversation",
+      "domain": "routing",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_book_appointment",
+      "domain": "appointments",
+      "role": "ai_operator",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_cancel_appointment",
+      "domain": "appointments",
+      "role": "ai_operator",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_cancel_campaign",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_cancel_followup",
+      "domain": "followups",
+      "role": "ai_operator",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_close_conversation",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_close_demand",
+      "domain": "leads",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_close_human_case",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_confirm_appointment",
+      "domain": "appointments",
+      "role": "ai_operator",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_continue_on_another_number",
+      "domain": "conversations",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_control_followup_enrollment",
+      "domain": "followups",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_ai_agent",
+      "domain": "agents",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_ai_agent_version",
+      "domain": "agents",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_automation_rule",
+      "domain": "automations",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_availability_exception",
+      "domain": "appointments",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_campaign_draft",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_campaign_template",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_contact",
+      "domain": "contacts",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_create_event_type",
+      "domain": "appointments",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_followup_flow",
+      "domain": "followups",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_internal_note",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_create_knowledge_source",
+      "domain": "knowledge",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_lead",
+      "domain": "leads",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_create_message_template",
+      "domain": "templates",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_pipeline",
+      "domain": "pipelines",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_product",
+      "domain": "products",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_stage",
+      "domain": "pipelines",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_create_task",
+      "domain": "leads",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_create_webhook_source",
+      "domain": "webhooks",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_delete_automation_rule",
+      "domain": "automations",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_delete_availability_exception",
+      "domain": "appointments",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_delete_campaign_template",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_delete_contact",
+      "domain": "contacts",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_delete_followup_flow",
+      "domain": "followups",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_delete_internal_note",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_delete_message_template",
+      "domain": "templates",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_delete_product",
+      "domain": "products",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_delete_task",
+      "domain": "leads",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_delete_webhook_source",
+      "domain": "webhooks",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_describe_external_data",
+      "domain": "ai",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_discover_automation_actions",
+      "domain": "automations",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_discover_automation_triggers",
+      "domain": "automations",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_discover_integrations",
+      "domain": "channels",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_duplicate_ai_agent",
+      "domain": "agents",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_duplicate_automation_rule",
+      "domain": "automations",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_duplicate_campaign",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_duplicate_followup_flow",
+      "domain": "followups",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_duplicate_message_template",
+      "domain": "templates",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_enroll_followup_flow",
+      "domain": "followups",
+      "role": "ai_operator",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_find_and_book_appointment",
+      "domain": "appointments",
+      "role": "ai_operator",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_find_free_slots",
+      "domain": "appointments",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_ai_agent",
+      "domain": "agents",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_ai_agent_run",
+      "domain": "agents",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_ai_agent_version",
+      "domain": "agents",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_ai_credential",
+      "domain": "ai",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_ai_model",
+      "domain": "ai",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_ai_provider",
+      "domain": "ai",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_ai_skill",
+      "domain": "ai",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_ai_skill_import_instructions",
+      "domain": "ai",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_automation_rule",
+      "domain": "automations",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_automation_run",
+      "domain": "automations",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_campaign",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_campaign_metrics",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_campaign_settings",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_channel_admin",
+      "domain": "channels",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_contact",
+      "domain": "contacts",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_contact_import_instructions",
+      "domain": "contacts",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_contact_timeline",
+      "domain": "contacts",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_conversation",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_conversation_history",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_conversation_media_upload_instructions",
+      "domain": "messages",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_event_type",
+      "domain": "appointments",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_followup_enrollment",
+      "domain": "followups",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_followup_flow",
+      "domain": "followups",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_human_case",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_knowledge_source",
+      "domain": "knowledge",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_knowledge_upload_instructions",
+      "domain": "knowledge",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_lead",
+      "domain": "leads",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_lead_import_instructions",
+      "domain": "leads",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_lead_timeline",
+      "domain": "leads",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_message",
+      "domain": "messages",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_message_template",
+      "domain": "templates",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_operational_diagnostics",
+      "domain": "operations",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_order",
+      "domain": "products",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_org_memory",
+      "domain": "knowledge",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_pipeline",
+      "domain": "pipelines",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_privacy_export_status",
+      "domain": "privacy",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_product",
+      "domain": "products",
+      "role": "viewer",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_product_import_instructions",
+      "domain": "products",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_published_ai_agent_version",
+      "domain": "agents",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_queue_status",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_routing_config",
+      "domain": "routing",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_task",
+      "domain": "leads",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_team_member",
+      "domain": "team",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_template_media_upload_instructions",
+      "domain": "templates",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_get_webhook_source",
+      "domain": "webhooks",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_invite_team_member",
+      "domain": "team",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_ai_agent_runs",
+      "domain": "agents",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_ai_agent_versions",
+      "domain": "agents",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_ai_agents",
+      "domain": "agents",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_ai_credentials",
+      "domain": "ai",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_ai_models",
+      "domain": "ai",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_ai_providers",
+      "domain": "ai",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_ai_skill_versions",
+      "domain": "ai",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_appointments",
+      "domain": "appointments",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_at_risk_leads",
+      "domain": "followups",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_automation_rules",
+      "domain": "automations",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_automation_runs",
+      "domain": "automations",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_availability",
+      "domain": "appointments",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_availability_exceptions",
+      "domain": "appointments",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_available_attendants",
+      "domain": "team",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_campaign_recipients",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_campaign_suppressions",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_campaign_templates",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_campaigns",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_contact_orders",
+      "domain": "contacts",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_conversations",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_event_types",
+      "domain": "appointments",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_external_message_templates",
+      "domain": "templates",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_followup_enrollments",
+      "domain": "followups",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_followup_flows",
+      "domain": "followups",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_followups",
+      "domain": "followups",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_handoff_history",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_human_cases",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_improvement_proposals",
+      "domain": "knowledge",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_internal_notes",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_knowledge_sources",
+      "domain": "knowledge",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_leads",
+      "domain": "leads",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_managed_client_presets",
+      "domain": "settings",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_message_templates",
+      "domain": "messages",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_messaging_channels",
+      "domain": "channels",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_orders",
+      "domain": "products",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_pipelines",
+      "domain": "pipelines",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_privacy_requests",
+      "domain": "privacy",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_products",
+      "domain": "products",
+      "role": "viewer",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_routing_destinations",
+      "domain": "routing",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_stages",
+      "domain": "pipelines",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_tag_vocabulary",
+      "domain": "contacts",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_tags",
+      "domain": "contacts",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_tasks",
+      "domain": "leads",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_team_invites",
+      "domain": "team",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_team_members",
+      "domain": "team",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_list_webhook_source_events",
+      "domain": "webhooks",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_list_webhook_sources",
+      "domain": "webhooks",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_manage_tags",
+      "domain": "contacts",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_mark_conversation_read",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_merge_or_delete_tag",
+      "domain": "contacts",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_move_lead_pipeline",
+      "domain": "leads",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_move_lead_stage",
+      "domain": "leads",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_pause_ai_agent",
+      "domain": "agents",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_pause_campaign",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_preflight_ai_agent_version",
+      "domain": "agents",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_preflight_automation_rule",
+      "domain": "automations",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_preflight_followup_flow",
+      "domain": "followups",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_preflight_managed_client",
+      "domain": "settings",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_prepare_audit_export",
+      "domain": "audit",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_prepare_campaign",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_prepare_campaign_launch",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_prepare_channel_action",
+      "domain": "channels",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_prepare_integration_action",
+      "domain": "channels",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_prepare_lead_bulk_action",
+      "domain": "leads",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_prepare_mcp_token_management",
+      "domain": "settings",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_preview_campaign",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_preview_lead_bulk_action",
+      "domain": "leads",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_propose_contact_field",
+      "domain": "contacts",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_propose_reactivation",
+      "domain": "leads",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_publish_ai_agent_version",
+      "domain": "agents",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_publish_followup_flow",
+      "domain": "followups",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_query_external_data",
+      "domain": "ai",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_reactivate_team_member",
+      "domain": "team",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_reindex_knowledge_source",
+      "domain": "knowledge",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_remove_campaign_suppression",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_render_message_template",
+      "domain": "messages",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_reopen_conversation",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_replace_knowledge_faq",
+      "domain": "knowledge",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_reply_message",
+      "domain": "messages",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_request_human_handoff",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "handoff",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_reschedule_appointment",
+      "domain": "appointments",
+      "role": "ai_operator",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_resend_team_invite",
+      "domain": "team",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_restore_ai_skill_version",
+      "domain": "ai",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_resume_ai_attendance",
+      "domain": "conversations",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_revoke_team_invite",
+      "domain": "team",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_revoke_team_member",
+      "domain": "team",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_save_ai_skill",
+      "domain": "ai",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_save_org_memory",
+      "domain": "knowledge",
+      "role": "ai_operator",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_schedule_followup",
+      "domain": "followups",
+      "role": "ai_operator",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_search_contacts",
+      "domain": "contacts",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_search_knowledge",
+      "domain": "knowledge",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_search_products",
+      "domain": "products",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_send_whatsapp_message",
+      "domain": "messages",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_set_appointment_outcome",
+      "domain": "appointments",
+      "role": "ai_operator",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_set_automation_rule_active",
+      "domain": "automations",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_set_custom_field_values",
+      "domain": "leads",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_set_event_type_active",
+      "domain": "appointments",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_set_followup_flow_active",
+      "domain": "followups",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_set_webhook_source_active",
+      "domain": "webhooks",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_simulate_automation_rule",
+      "domain": "automations",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_simulate_routing",
+      "domain": "routing",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_start_conversation_and_send",
+      "domain": "messages",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_test_ai_agent_version",
+      "domain": "agents",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_ai_agent",
+      "domain": "agents",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_ai_agent_version",
+      "domain": "agents",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_automation_rule",
+      "domain": "automations",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_availability",
+      "domain": "appointments",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_campaign_draft",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_campaign_pacing",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_campaign_settings",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_campaign_template",
+      "domain": "campaigns",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_channel_ai_access",
+      "domain": "channels",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_channel_routing",
+      "domain": "routing",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_contact",
+      "domain": "contacts",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_update_event_type",
+      "domain": "appointments",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_followup_flow",
+      "domain": "followups",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_knowledge_source",
+      "domain": "knowledge",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_lead",
+      "domain": "leads",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_update_message_template",
+      "domain": "templates",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_pipeline",
+      "domain": "pipelines",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_pipeline_schema",
+      "domain": "pipelines",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_product",
+      "domain": "products",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_routing_config",
+      "domain": "routing",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_stage",
+      "domain": "pipelines",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_tag",
+      "domain": "contacts",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_task",
+      "domain": "leads",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_update_team_member_interface",
+      "domain": "team",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_team_member_role",
+      "domain": "team",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_update_webhook_source",
+      "domain": "webhooks",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_validate_agent_ai_configuration",
+      "domain": "ai",
+      "role": "manager",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
+    }
+  ]
+}

@@ -29,8 +29,8 @@ describe("o tipo da view de ocupação do Google", () => {
   });
 
   it("segue com a ocupação que a tela lê (controle: o tipo não virou vazio)", () => {
-    expectTypeOf<LinhaDaView>().toHaveProperty("starts_at").toEqualTypeOf<string>();
-    expectTypeOf<LinhaDaView>().toHaveProperty("ends_at").toEqualTypeOf<string>();
+    expectTypeOf<LinhaDaView>().toHaveProperty("starts_at").toEqualTypeOf<string | null>();
+    expectTypeOf<LinhaDaView>().toHaveProperty("ends_at").toEqualTypeOf<string | null>();
     expectTypeOf<LinhaDaView>().toHaveProperty("status");
     expectTypeOf<LinhaDaView>().toHaveProperty("transparency");
     expectTypeOf<LinhaDaView>().toHaveProperty("connection_id");

@@ -57,13 +57,15 @@ export function usePassagensDaConversa(conversationId: string | null): PassagemD
   }, [qc, conversationId]);
 
   useRealtimeChannel({
-    name: conversationId ? `conversation-passagens-${conversationId}` : "conversation-passagens-disabled",
+    name: conversationId
+      ? `conversation-passagens-${conversationId}`
+      : "conversation-passagens-disabled",
     postgresChanges: conversationId
       ? {
-          event: "UPDATE",
+          event: "*",
           schema: "public",
-          table: "conversations",
-          filter: `id=eq.${conversationId}`,
+          table: "operational_inbox_signals",
+          filter: `conversation_id=eq.${conversationId}`,
         }
       : undefined,
     onChange,

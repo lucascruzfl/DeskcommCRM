@@ -119,7 +119,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   // escolheu como a sua palavra. Sem isto, a tela cairia num literal ("Negócio")
   // e o produto deixaria de servir cinco nichos com o mesmo código.
   const { data: funil } = await supabase
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("vocabulary")
     .eq("organization_id", activeOrg.orgId)
     .eq("is_default", true)
@@ -158,9 +158,7 @@ async function resolveNomes(
       idsDeUsuario.map(async (id) => {
         const { data } = await admin.auth.admin.getUserById(id);
         usuarios[id] =
-          (data?.user?.user_metadata?.full_name as string | undefined) ??
-          data?.user?.email ??
-          null;
+          (data?.user?.user_metadata?.full_name as string | undefined) ?? data?.user?.email ?? null;
       }),
     );
   }

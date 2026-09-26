@@ -79,7 +79,7 @@ function bancoFalso(statusDepoisDoUpdate = "open") {
   });
 
   const from = (tabela: string) => {
-    if (tabela === "crm_stages") {
+    if (tabela === "operational_crm_stages") {
       const chain: Record<string, unknown> = {};
       chain.select = () => chain;
       chain.eq = (_col: string, id: string) => {

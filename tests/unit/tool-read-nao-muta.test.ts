@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
+import ts from "typescript";
 
 import { describe, expect, it } from "vitest";
 
@@ -50,8 +51,15 @@ const DIR = path.join(RAIZ, "lib/mcp/tools");
 
 /** Infra do catálogo — não declaram tools. */
 const NAO_SAO_DOMINIO = new Set([
-  "index.ts", "catalog.ts", "catalogo-servido.ts", "pacotes.ts",
-  "selecao-por-pacote.ts", "types.ts", "audit.ts", "recusa-para-o-modelo.ts", "tipos.ts",
+  "index.ts",
+  "catalog.ts",
+  "catalogo-servido.ts",
+  "pacotes.ts",
+  "selecao-por-pacote.ts",
+  "types.ts",
+  "audit.ts",
+  "recusa-para-o-modelo.ts",
+  "tipos.ts",
 ]);
 
 const MUTA = /\.(insert|update|delete|upsert)\s*\(/;
@@ -69,23 +77,40 @@ function definicoesDeTool(): Definicao[] {
     if (!arquivo.endsWith(".ts") || arquivo.endsWith(".test.ts")) continue;
     if (NAO_SAO_DOMINIO.has(arquivo)) continue;
     const txt = readFileSync(path.join(DIR, arquivo), "utf8");
-    // Factories locais também declaram tools; cortar só em `export const`
-    // colava várias definições e atribuía a mutação de uma escrita à leitura anterior.
-    for (const bloco of txt.split(/(?=(?:export )?const \w+: McpToolDefinition)/)) {
-      const nome = /name:\s*"([^"]+)"/.exec(bloco);
-      const cat = /category:\s*"(\w+)"/.exec(bloco);
-      if (!nome || !cat) continue;
-      achadas.push({ name: nome[1]!, category: cat[1]!, corpo: bloco, arquivo });
-    }
-    // `ia.ts` usa os factories tipados `read()`/`write()` para não repetir a
-    // política nas 25 tools. A varredura anterior enxergava só a primeira e o
-    // controle passou a falhar assim que comparou com o catálogo completo.
-    for (const bloco of txt.split(/(?=const \w+ = (?:read|write)\(\{)/)) {
-      const factory = /^const \w+ = (read|write)\(\{/.exec(bloco)?.[1];
-      const nome = /name:\s*"([^"]+)"/.exec(bloco);
-      if (!factory || !nome || achadas.some((item) => item.name === nome[1])) continue;
-      achadas.push({ name: nome[1]!, category: factory, corpo: bloco, arquivo });
-    }
+    const source = ts.createSourceFile(arquivo, txt, ts.ScriptTarget.Latest, true);
+    const visit = (node: ts.Node): void => {
+      if (ts.isObjectLiteralExpression(node)) {
+        const property = (key: string) =>
+          node.properties.find(
+            (item) =>
+              ts.isPropertyAssignment(item) &&
+              item.name.getText(source).replace(/["']/g, "") === key,
+          ) as ts.PropertyAssignment | undefined;
+        const name = property("name")?.initializer;
+        const category = property("category")?.initializer;
+        const handler = property("handler");
+        const parent = node.parent;
+        const factory =
+          ts.isCallExpression(parent) &&
+          ts.isIdentifier(parent.expression) &&
+          ["read", "write"].includes(parent.expression.text)
+            ? parent.expression.text
+            : null;
+        if (name && ts.isStringLiteral(name) && (handler || factory)) {
+          const selectedCategory =
+            category && ts.isStringLiteral(category) ? category.text : factory;
+          if (selectedCategory)
+            achadas.push({
+              name: name.text,
+              category: selectedCategory,
+              corpo: node.getText(source),
+              arquivo,
+            });
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(source);
   }
   return achadas;
 }
@@ -98,7 +123,9 @@ describe("tool declarada read não grava no banco", () => {
     // abaixo passaria varrendo o vazio — verde por instrumento morto, indistinguível
     // de verde por estar tudo certo. Este número já me pegou uma vez: uma janela de
     // regex truncou uma entrada em silêncio e a contagem saiu menor que a real.
-    expect(definicoes.length).toBe(TOOL_CATALOG.length);
+    expect(definicoes.map((item) => item.name).sort()).toEqual(
+      TOOL_CATALOG.map((item) => item.name).sort(),
+    );
   });
 
   it("CONTROLE: o detector reconhece mutação quando ela existe", () => {

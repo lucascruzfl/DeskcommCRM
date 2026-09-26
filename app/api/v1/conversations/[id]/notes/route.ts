@@ -35,7 +35,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams): Promise<R
 
   const supabase = await createClient();
   const { data: conversation } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select("id")
     .eq("id", id)
     .eq("organization_id", org.orgId)
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest, { params }: RouteParams): Promise<R
 
   const supabase = await createClient();
   const { data: conversation } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select("id")
     .eq("id", id)
     .eq("organization_id", org.orgId)
@@ -125,7 +125,9 @@ async function emitirMencoesDaNota(input: {
     .select("user_id")
     .eq("organization_id", input.organizationId)
     .is("revoked_at", null);
-  const ids = ((members ?? []) as Array<{ user_id: string }>).map((m) => m.user_id).filter((id) => id !== input.fromUserId);
+  const ids = ((members ?? []) as Array<{ user_id: string }>)
+    .map((m) => m.user_id)
+    .filter((id) => id !== input.fromUserId);
   const preview = input.body.trim().slice(0, 140);
   await Promise.all(
     ids.map(async (userId) => {
@@ -134,7 +136,8 @@ async function emitirMencoesDaNota(input: {
       if (!u?.email) return;
       const fullName =
         (typeof u.user_metadata?.full_name === "string" ? u.user_metadata.full_name : null) ?? null;
-      if (!mencaoAtingeUsuario(input.body, { id: userId, email: u.email, full_name: fullName })) return;
+      if (!mencaoAtingeUsuario(input.body, { id: userId, email: u.email, full_name: fullName }))
+        return;
       await admin.rpc("emit_event", {
         p_event_type: "user.mentioned",
         p_entity_kind: "conversation_note",

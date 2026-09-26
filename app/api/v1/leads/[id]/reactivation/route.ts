@@ -46,7 +46,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   const requestId = randomUUID();
   const { id: leadId } = await ctx.params;
 
-  const guard = await requireRole("agent", { requestId });
+  const guard = await requireRole("agent", { requestId, resource: "crm_leads" });
   if (!guard.ok) return guard.response;
   const t = (texto: string) => traduzir(texto, guard.user.idioma);
   const orgId = guard.org.orgId;
@@ -91,7 +91,9 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       return fail(
         "reactivation_not_pending",
         `${t("Esta sugestão já foi")} ${
-          (existe as { status: string }).status === "expired" ? t("encerrada pelo prazo") : t("decidida")
+          (existe as { status: string }).status === "expired"
+            ? t("encerrada pelo prazo")
+            : t("decidida")
         }.`,
         409,
         { requestId },

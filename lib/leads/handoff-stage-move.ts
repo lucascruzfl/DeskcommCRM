@@ -82,7 +82,7 @@ export async function moverLeadParaEtapaDeHandoff(
   }
 
   const { data: etapaData, error: erroEtapa } = await admin
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("id, name")
     .eq("pipeline_id", leadRow.pipeline_id)
     .eq("slug", SLUG_ETAPA_HANDOFF)
@@ -99,7 +99,7 @@ export async function moverLeadParaEtapaDeHandoff(
   let etapa = etapaData;
   if (!etapa && SLUG_ETAPA_HANDOFF.includes("-")) {
     const { data: etapaLegada, error: erroLegada } = await admin
-      .from("crm_stages")
+      .from("operational_crm_stages")
       .select("id, name")
       .eq("pipeline_id", leadRow.pipeline_id)
       .eq("slug", SLUG_ETAPA_HANDOFF.replace(/-/g, "_"))
@@ -129,13 +129,17 @@ export async function moverLeadParaEtapaDeHandoff(
   // Nome da origem só enfeita o texto da timeline — erro descartado de
   // propósito, mesmo raciocínio de `agent-stage-sync.ts`.
   const { data: origem } = await admin
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("name")
     .eq("id", leadRow.stage_id)
     .maybeSingle();
 
   if (input.serviceBoundary) {
-    if (input.serviceBoundary.organization_id !== input.organizationId || input.serviceBoundary.contact_id !== leadRow.contact_id) throw new StaleServiceBoundaryError();
+    if (
+      input.serviceBoundary.organization_id !== input.organizationId ||
+      input.serviceBoundary.contact_id !== leadRow.contact_id
+    )
+      throw new StaleServiceBoundaryError();
     await assertServiceBoundarySupabase(admin, input.serviceBoundary);
   }
   const serviceOrigin = input.serviceBoundary
@@ -185,20 +189,27 @@ export async function moverLeadParaEtapaDeHandoff(
   // Mesmo evento que `agent-stage-sync.ts` emite ao mover pelo agente — para
   // que regras de automação e follow-up que escutam `lead.stage_changed`
   // reajam igual, tenha o card se movido pela mão, pelo agente ou por handoff.
-  const { error: erroEvento } = await admin.rpc("emit_event" as never, {
-    p_event_type: "lead.stage_changed",
-    p_entity_kind: "crm_lead",
-    p_entity_id: leadRow.id,
-    p_payload: {
-      service_origin: serviceOrigin,
-      pipeline_id: leadRow.pipeline_id,
-      from_stage_id: leadRow.stage_id,
-      to_stage_id: etapaRow.id,
-      status: leadRow.status,
-    },
-    p_metadata: { actor_kind: "system", source: "handoff-stage-move", motivo_do_handoff: input.reason },
-    p_organization_id: input.organizationId,
-  } as never);
+  const { error: erroEvento } = await admin.rpc(
+    "emit_event" as never,
+    {
+      p_event_type: "lead.stage_changed",
+      p_entity_kind: "crm_lead",
+      p_entity_id: leadRow.id,
+      p_payload: {
+        service_origin: serviceOrigin,
+        pipeline_id: leadRow.pipeline_id,
+        from_stage_id: leadRow.stage_id,
+        to_stage_id: etapaRow.id,
+        status: leadRow.status,
+      },
+      p_metadata: {
+        actor_kind: "system",
+        source: "handoff-stage-move",
+        motivo_do_handoff: input.reason,
+      },
+      p_organization_id: input.organizationId,
+    } as never,
+  );
   if (erroEvento) {
     logger.error("[handoff-stage-move] emit_event lead.stage_changed falhou", {
       lead_id: leadRow.id,

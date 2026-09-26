@@ -65,7 +65,7 @@ export function useMessagesRealtime(conversationId: string | null) {
       ? {
           event: "*",
           schema: "public",
-          table: "messages",
+          table: "operational_inbox_signals",
           filter: `conversation_id=eq.${conversationId}`,
         }
       : undefined,

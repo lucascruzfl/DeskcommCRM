@@ -8,6 +8,7 @@
  * (grava o que a pessoa aprovou). Fazer as duas num clique economizaria uma tela
  * e trocaria o quadro do dono por um texto que ele nunca viu.
  */
+import { z } from "zod";
 import { redirect } from "next/navigation";
 import { generateText } from "ai";
 
@@ -22,8 +23,17 @@ import {
   validarProposta,
   type PropostaDeFunil,
 } from "@/lib/onboarding/proposta-de-funil";
-import { escolherPacotePorTexto, sugerirFunil, type Sugestao } from "@/lib/onboarding/sugerir-funil";
-import { requireOnboardingCtx, patchOnboardingState, loadOnboardingState, OnboardingError } from "./_shared";
+import {
+  escolherPacotePorTexto,
+  sugerirFunil,
+  type Sugestao,
+} from "@/lib/onboarding/sugerir-funil";
+import {
+  requireOnboardingCtx,
+  patchOnboardingState,
+  loadOnboardingState,
+  OnboardingError,
+} from "./_shared";
 
 /** O funil que o gatilho semeou — o que a pessoa tem antes deste passo. */
 export interface QuadroAtual {
@@ -126,6 +136,13 @@ export interface DadosDoPasso {
  * primeiro seria cobrar um passo a mais para chegar ao mesmo lugar.
  */
 export async function dadosDoPasso(orgId: string, negocio: string): Promise<DadosDoPasso> {
+  const input = z
+    .object({ orgId: z.uuid(), negocio: z.string().trim().min(1).max(256) })
+    .safeParse({ orgId, negocio });
+  if (!input.success) throw new OnboardingError("forbidden", "Organização indisponível.");
+  const actor = await requireOnboardingCtx();
+  if (actor.orgId !== input.data.orgId)
+    throw new OnboardingError("forbidden", "Organização indisponível.");
   const admin = createAdminClient();
   const atual = await carregarQuadroAtual(admin, orgId);
 
@@ -192,7 +209,8 @@ export async function aplicarQuadro(formData: FormData): Promise<ResultadoDoQuad
   try {
     ctx = await requireOnboardingCtx();
   } catch (err) {
-    if (err instanceof OnboardingError) return { ok: false, erro: "Sua sessão expirou. Entre de novo." };
+    if (err instanceof OnboardingError)
+      return { ok: false, erro: "Sua sessão expirou. Entre de novo." };
     throw err;
   }
 
@@ -257,7 +275,11 @@ export async function aplicarQuadro(formData: FormData): Promise<ResultadoDoQuad
       funil: { pipeline_id: atual.pipelineId, origem, etapas: proposta.etapas.length },
     });
   } catch (err) {
-    if (err instanceof OnboardingError) return { ok: false, erro: "Salvei o quadro, mas não consegui registrar o passo. Tente continuar de novo." };
+    if (err instanceof OnboardingError)
+      return {
+        ok: false,
+        erro: "Salvei o quadro, mas não consegui registrar o passo. Tente continuar de novo.",
+      };
     throw err;
   }
 

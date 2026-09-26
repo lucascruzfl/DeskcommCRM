@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildManagedAreaPolicy } from "@/lib/managed-clients/policy";
 import type { McpAuthResult } from "./auth";
-import { authorizeTool, isToolVisible } from "./policy";
+import { authorizeTool, isToolVisible, managedAreaOfTool } from "./policy";
 import type { McpToolDefinition } from "./types";
+import { allTools } from "./tools";
 import { mcpPublicProfile } from "./registry";
 
 const managedPolicy = buildManagedAreaPolicy("managed/aesthetic-clinic");
@@ -18,6 +19,15 @@ function tool(domain: McpToolDefinition["domain"]): McpToolDefinition {
 }
 
 describe("tools/list de token gerenciado", () => {
+  it("toda tool real tem área explícita e o gestor mantém as áreas administrativas", () => {
+    expect(allTools.filter(tool => !managedAreaOfTool(tool)).map(tool => tool.name)).toEqual([]);
+    const manager = { ...auth, role: "admin" as const };
+    const visible = new Set(mcpPublicProfile(manager).map(entry => entry.name));
+    for (const name of ["crm_list_ai_credentials", "crm_list_ai_models", "crm_get_ai_skill", "crm_preflight_managed_client", "crm_query_external_data"]) {
+      expect(visible.has(name), name).toBe(true);
+    }
+  });
+
   it("o registry real preserva operação e omite administração do cliente", () => {
     const names = new Set(mcpPublicProfile(auth).map(entry => entry.name));
     for (const name of ["crm_list_leads", "crm_list_tasks", "crm_list_pipelines", "crm_list_at_risk_leads", "crm_assign_conversation", "crm_list_messaging_channels"]) {

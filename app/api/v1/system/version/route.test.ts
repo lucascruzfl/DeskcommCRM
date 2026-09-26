@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 import { loadAuthUser } from "@/lib/auth/server";
@@ -12,7 +12,11 @@ vi.mock("@/lib/auth/server", () => ({
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => undefined) }));
 
-const OWNER = { id: "11111111-1111-4111-8111-111111111111", email: "dono@x.com", is_platform_admin: true };
+const OWNER = {
+  id: "11111111-1111-4111-8111-111111111111",
+  email: "dono@x.com",
+  is_platform_admin: true,
+};
 const MEMBRO = { ...OWNER, id: "22222222-2222-4222-8222-222222222222", is_platform_admin: false };
 
 let versionRow: Record<string, unknown>;
@@ -42,6 +46,8 @@ let runSelectError: { message: string } | null;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv(["DESK", "COMM_UPDATE_CHANNEL"].join(""), "official");
+  vi.stubEnv("APP_VERSION", "1.0.0");
   inserted = null;
   runRow = null;
   runUpdatePatch = null;
@@ -115,6 +121,8 @@ beforeEach(() => {
     },
   } as never);
 });
+
+afterEach(() => vi.unstubAllEnvs());
 
 function get() {
   return new NextRequest("http://localhost/api/v1/system/version");
@@ -741,7 +749,9 @@ describe("POST /api/v1/system/update", () => {
       requested_by: OWNER.id,
     });
     expect(versionUpdatePatch).toBeNull();
-    expect(audit).toHaveBeenCalledWith(expect.objectContaining({ action: "system.update_requested" }));
+    expect(audit).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "system.update_requested" }),
+    );
   });
 
   it("recusa um segundo pedido enquanto há run em andamento", async () => {
@@ -772,7 +782,11 @@ describe("POST /api/v1/system/update", () => {
     const res = await POST(post());
     expect(res.status).toBe(200);
     expect(runUpdatePatch).toMatchObject({ status: "failed" });
-    expect(inserted).toMatchObject({ from_version: "1.0.0", to_version: "1.1.0", status: "dispatched" });
+    expect(inserted).toMatchObject({
+      from_version: "1.0.0",
+      to_version: "1.1.0",
+      status: "dispatched",
+    });
   });
 
   it("recusa quando já está na última versão", async () => {
@@ -790,7 +804,11 @@ describe("POST /api/v1/system/update", () => {
     // precisa tratar isso como o MESMO estado de negócio do check acima, não
     // deixar vazar como 500.
     vi.mocked(loadAuthUser).mockResolvedValue(OWNER as never);
-    insertError = { code: "23505", message: 'duplicate key value violates unique constraint "uniq_system_update_runs_dispatched"' };
+    insertError = {
+      code: "23505",
+      message:
+        'duplicate key value violates unique constraint "uniq_system_update_runs_dispatched"',
+    };
     const { POST } = await import("../update/route");
     const res = await POST(post());
     expect(res.status).toBe(409);

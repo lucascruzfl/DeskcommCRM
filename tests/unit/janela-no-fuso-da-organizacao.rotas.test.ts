@@ -89,22 +89,27 @@ describe("o fuso da organização chega à tela", () => {
         body: JSON.stringify({ channel_session_id: CANAL, window_start_hour: 8 }),
       }),
     );
-    const corpo = (await res.json()) as { data: { effective: { timezone: string; windowStartHour: number } } };
+    const corpo = (await res.json()) as {
+      data: { effective: { timezone: string; windowStartHour: number } };
+    };
     expect(corpo.data.effective).toMatchObject({ timezone: "Europe/Lisbon", windowStartHour: 8 });
   });
 
   it("retenção: o contexto diz em que fuso a janela segurou o envio", async () => {
     vi.mocked(createClient).mockResolvedValue(
       cliente({
-        conversations: { id: "c", contact_id: "k", channel_session_id: CANAL },
+        operational_conversations: { id: "c", contact_id: "k", channel_session_id: CANAL },
         before_send_traces: [],
         channel_knobs: null,
-        organizations: { timezone: "Europe/Lisbon" },
+        operational_organizations: { timezone: "Europe/Lisbon" },
       }),
     );
-    const res = await getRetention(new NextRequest("http://localhost/api/v1/conversations/c/retention"), {
-      params: Promise.resolve({ id: "c" }),
-    });
+    const res = await getRetention(
+      new NextRequest("http://localhost/api/v1/conversations/c/retention"),
+      {
+        params: Promise.resolve({ id: "c" }),
+      },
+    );
     const corpo = (await res.json()) as { data: { context: { timezone: string } } };
     expect(corpo.data.context.timezone).toBe("Europe/Lisbon");
   });

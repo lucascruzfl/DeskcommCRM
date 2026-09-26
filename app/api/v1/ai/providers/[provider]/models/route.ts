@@ -6,9 +6,10 @@
  */
 import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
+import { z } from "zod";
 
 import { ok, fail } from "@/lib/api/wrappers";
-import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
+import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { ehProvedorSuportado } from "@/lib/ai/pontos/provedores";
 
@@ -21,30 +22,26 @@ export const dynamic = "force-dynamic";
 
 const MODEL_COLUMNS =
   "id, provider, model_id, display_name, description, context_window, input_price_per_million_cents, output_price_per_million_cents, supports_tools, is_default_for_provider, deprecated_at, released_at";
+const providerSchema = z.string().refine(ehProvedorSuportado);
 
 export async function GET(
   _req: NextRequest,
   ctx: { params: Promise<{ provider: string }> },
 ): Promise<Response> {
   const requestId = randomUUID();
-  const { provider } = await ctx.params;
+  const parsed = providerSchema.safeParse((await ctx.params).provider);
 
-  if (!ehProvedorSuportado(provider)) {
+  if (!parsed.success) {
     return fail("not_found", "Provider desconhecido.", 404, { requestId });
   }
-
-  const authUser = await loadAuthUser();
-  if (!authUser) return fail("unauthenticated", "Auth required.", 401, { requestId });
-  const activeOrg = await resolveActiveOrg(authUser);
-  if (!activeOrg) {
-    return fail("forbidden_tenant", "Sem organização ativa.", 403, { requestId });
-  }
+  const authz = await requireRole("manager", { requestId, resource: "ai_providers" });
+  if (!authz.ok) return authz.response;
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("ai_models")
     .select(MODEL_COLUMNS)
-    .eq("provider", provider)
+    .eq("provider", parsed.data)
     .is("deprecated_at", null)
     .order("is_default_for_provider", { ascending: false })
     .order("input_price_per_million_cents", { ascending: true });

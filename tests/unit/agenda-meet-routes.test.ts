@@ -114,9 +114,9 @@ it("detalhe consulta o telefone real e formata o destino no idioma de quem lê",
             google_local_revision: "1",
             google_synced_local_revision: "0",
           }
-        : table === "conversations"
+        : table === "operational_conversations"
           ? [{ id, created_at: "2030-01-02T13:00:00Z", contacts: contact }]
-          : table === "messages"
+          : table === "operational_messages"
             ? []
             : null;
     const query = {

@@ -23,7 +23,12 @@ import {
 import { cloneLeadSchema, createLeadSchema, updateLeadSchema } from "@/lib/schemas/leads";
 import { resolveUserNames } from "./_users";
 import type { McpContext, McpToolDefinition } from "../types";
-import { TIMELINE_COLS, decodeCursor, eixoDoDossie, encodeCursor } from "@/lib/leads/timeline-query";
+import {
+  TIMELINE_COLS,
+  decodeCursor,
+  eixoDoDossie,
+  encodeCursor,
+} from "@/lib/leads/timeline-query";
 import { ApiError } from "@/lib/api/types";
 import { moverLeadParaOutroFunil } from "@/lib/leads/mover-para-funil";
 
@@ -51,7 +56,7 @@ async function enrichLeads(
   const stageById = new Map<string, { id: string; name: string }>();
   if (stageIds.length > 0) {
     const { data } = await ctx.supabase
-      .from("crm_stages")
+      .from("operational_crm_stages")
       .select("id, name")
       .eq("organization_id", ctx.organizationId)
       .in("id", stageIds);
@@ -62,9 +67,7 @@ async function enrichLeads(
 
   return leads.map((l) => ({
     ...l,
-    owner_user_name: l.owner_user_id
-      ? (names.get(l.owner_user_id as string) ?? null)
-      : null,
+    owner_user_name: l.owner_user_id ? (names.get(l.owner_user_id as string) ?? null) : null,
     stage: l.stage_id ? (stageById.get(l.stage_id as string) ?? null) : null,
   }));
 }
@@ -198,7 +201,7 @@ export const crmCreateLead: McpToolDefinition<typeof createInputShape> = {
   domain: "leads",
   auditResource: (_input, result) => ({
     type: "crm_lead",
-    id: ((result as { lead?: { id?: string } } | undefined)?.lead?.id) ?? null,
+    id: (result as { lead?: { id?: string } } | undefined)?.lead?.id ?? null,
   }),
   handler: async (input, ctx) => {
     const parsed = createLeadSchema.parse({
@@ -381,25 +384,48 @@ export const crmGetLeadTimeline: McpToolDefinition<typeof timelineShape> = {
   requiresScope: "mcp:read",
   domain: "leads",
   handler: async (input, ctx) => {
-    const lead = await getLeadHandler(ctx.supabase, {
-      organization_id: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId,
-    }, input.lead_id);
+    const lead = await getLeadHandler(
+      ctx.supabase,
+      {
+        organization_id: ctx.organizationId,
+        actor: ctx.actor,
+        requestId: ctx.requestId,
+      },
+      input.lead_id,
+    );
     const cursor = input.cursor ? decodeCursor(input.cursor) : null;
-    if (input.cursor && !cursor) throw new ApiError(400, "invalid_cursor", undefined, ctx.requestId, "Cursor inválido.");
-    let q = ctx.supabase.from("crm_lead_activities").select(TIMELINE_COLS)
+    if (input.cursor && !cursor)
+      throw new ApiError(400, "invalid_cursor", undefined, ctx.requestId, "Cursor inválido.");
+    let q = ctx.supabase
+      .from("crm_lead_activities")
+      .select(TIMELINE_COLS)
       .eq("organization_id", ctx.organizationId)
-      .order("performed_at", { ascending: false }).order("id", { ascending: false })
+      .order("performed_at", { ascending: false })
+      .order("id", { ascending: false })
       .limit(input.limit + 1);
-    const eixo = eixoDoDossie(input.lead_id, (lead as { contact_id?: string | null }).contact_id ?? null);
+    const eixo = eixoDoDossie(
+      input.lead_id,
+      (lead as { contact_id?: string | null }).contact_id ?? null,
+    );
     q = eixo ? q.or(eixo) : q.eq("lead_id", input.lead_id);
     if (input.types?.length) q = q.in("type", input.types);
-    if (cursor) q = q.or(`performed_at.lt.${cursor.performed_at},and(performed_at.eq.${cursor.performed_at},id.lt.${cursor.id})`);
+    if (cursor)
+      q = q.or(
+        `performed_at.lt.${cursor.performed_at},and(performed_at.eq.${cursor.performed_at},id.lt.${cursor.id})`,
+      );
     const { data, error } = await q;
     if (error) throw new ApiError(500, "internal_error", undefined, ctx.requestId, error.message);
     const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
     const hasMore = rows.length > input.limit;
     const page = hasMore ? rows.slice(0, input.limit) : rows;
     const last = page.at(-1);
-    return { activities: page, has_more: hasMore, cursor: hasMore && last ? encodeCursor({ performed_at: String(last.performed_at), id: String(last.id) }) : null };
+    return {
+      activities: page,
+      has_more: hasMore,
+      cursor:
+        hasMore && last
+          ? encodeCursor({ performed_at: String(last.performed_at), id: String(last.id) })
+          : null,
+    };
   },
 };

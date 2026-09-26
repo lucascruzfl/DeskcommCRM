@@ -134,7 +134,7 @@ export const crmInviteTeamMember: McpToolDefinition<typeof inviteShape> = {
       falhar("validation_error", "Selecione ao menos uma área permitida ao papel.");
     const actor = await atorAdministrador(c);
     const { data: org } = await c.supabase
-      .from("organizations")
+      .from("operational_organizations")
       .select("display_name")
       .eq("id", c.organizationId)
       .maybeSingle();
@@ -223,7 +223,7 @@ export const crmResendTeamInvite: McpToolDefinition<{ invite_id: typeof uuid }> 
     if (row.accepted_at || row.revoked_at) falhar("conflict", "O convite não está pendente.");
     const actor = await atorAdministrador(c);
     const { data: org } = await c.supabase
-      .from("organizations")
+      .from("operational_organizations")
       .select("display_name")
       .eq("id", c.organizationId)
       .maybeSingle();

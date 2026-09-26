@@ -43,7 +43,7 @@ export async function getQueueStatus(
 ): Promise<QueueStatus> {
   const naFila = comandosDaFila(await orgTemAutomatico(supabase, organizationId));
   const { data: queueRows } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select("awaiting_since")
     .eq("organization_id", organizationId)
     .in("comando_da_conversa", naFila);
@@ -60,7 +60,9 @@ export async function getQueueStatus(
   }
   const avgWaitSeconds = queueSize === 0 ? 0 : Math.round(totalWaitMs / queueSize / 1000);
 
-  const eligibles = await loadEligibleAttendants(supabase, organizationId, now, { kind: "organization_summary" });
+  const eligibles = await loadEligibleAttendants(supabase, organizationId, now, {
+    kind: "organization_summary",
+  });
 
   return {
     queue_size: queueSize,
@@ -83,7 +85,7 @@ export async function getQueuePositions(
 ): Promise<Map<string, number>> {
   const naFila = comandosDaFila(await orgTemAutomatico(supabase, organizationId));
   const { data } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select("id")
     .eq("organization_id", organizationId)
     .in("comando_da_conversa", naFila)
@@ -116,7 +118,7 @@ export async function getQueuePosition(
   const naFila = comandosDaFila(await orgTemAutomatico(supabase, organizationId));
   const ref = awaitingSince ?? now.toISOString();
   const { count } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select("id", { count: "exact", head: true })
     .eq("organization_id", organizationId)
     .in("comando_da_conversa", naFila)

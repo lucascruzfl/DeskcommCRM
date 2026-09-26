@@ -18,7 +18,7 @@ vi.mock("@/lib/supabase/server", () => ({
     },
     from: (table: string) => {
       const q: Record<string, unknown> = {};
-      for (const name of ["select", "eq", "order", "limit", "is", "not"]) q[name] = () => q;
+      for (const name of ["select", "eq", "order", "limit", "is", "not", "in"]) q[name] = () => q;
       q.maybeSingle = async () => ({ data: state.contact, error: null });
       q.then = (resolve: (v: unknown) => unknown) =>
         Promise.resolve({ data: table === "contacts" ? state.contact : [], error: null }).then(
@@ -42,6 +42,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   },
 }));
 vi.mock("@/lib/users/nome-do-atendente", () => ({ nomesDosAtendentes: async () => new Map() }));
+vi.mock("@/lib/managed-clients/server", () => ({ managedAreaAllowedForActor: async () => true }));
 import { GET } from "@/app/api/v1/contacts/[id]/crm-summary/route";
 const prospect = {
   name: "Clínica exemplo",

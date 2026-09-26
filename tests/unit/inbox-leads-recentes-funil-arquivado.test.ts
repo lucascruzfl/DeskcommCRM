@@ -8,19 +8,8 @@ import { createClient } from "@/lib/supabase/server";
  * Arquivar só marca `crm_pipelines.is_archived`; o lead segue `open` e a rota
  * `crm-summary` o devolvia como qualquer outro. Mesma causa do Radar (#940).
  *
- * O banco falso APLICA os filtros, inclusive o do recurso embutido
- * (`crm_pipelines.is_archived`): um dublê que os ignorasse passaria com ou sem
- * o conserto. E o filtro precisa estar NO BANCO, antes do `limit(3)`: filtrar
- * depois esvaziaria a lista de quem tem leads antigos em funil arquivado.
- *
- * ⚠️ O dublê resolve `crm_pipelines.is_archived` por CAMINHO dentro da linha,
- * com ou sem `!inner` — e o `!inner` é a metade load-bearing do conserto. No
- * PostgREST real, filtro em recurso EMBUTIDO sem `!inner` não derruba a linha-
- * pai: ele anula o embed. Sem a asserção sobre a string do `select`, apagar o
- * `!inner` devolveria o lead de funil arquivado à lista — agora com
- * `funil_nome: null`, pior que o estado de antes — e este arquivo ficaria
- * verde. Por isso o `select` é espionado. Mesmo padrão de
- * `app/api/v1/ai/evolution/route.test.ts`, que assere sobre os pares de `.eq`.
+ * O filtro de funis ativos vem da projeção operacional e entra no SELECT de
+ * leads ANTES do `limit(3)`. O dublê aplica esse filtro para guardar a ordem.
  */
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -50,9 +39,24 @@ function bancoFalso(tabelas: Record<string, Linha[]>) {
     let limite = Infinity;
     const chain = {
       select: (cols: string) => (selects.push(cols), trilha.push("select"), chain),
-      eq: (col: string, val: unknown) => ((linhas = linhas.filter((l) => valor(l, col) === val)), trilha.push("eq"), chain),
-      is: (col: string, val: unknown) => ((linhas = linhas.filter((l) => (valor(l, col) ?? null) === val)), chain),
-      not: (col: string, _op: string, val: unknown) => ((linhas = linhas.filter((l) => (valor(l, col) ?? null) !== val)), chain),
+      eq: (col: string, val: unknown) => (
+        (linhas = linhas.filter((l) => valor(l, col) === val)),
+        trilha.push("eq"),
+        chain
+      ),
+      in: (col: string, vals: unknown[]) => (
+        (linhas = linhas.filter((l) => vals.includes(valor(l, col)))),
+        trilha.push("in"),
+        chain
+      ),
+      is: (col: string, val: unknown) => (
+        (linhas = linhas.filter((l) => (valor(l, col) ?? null) === val)),
+        chain
+      ),
+      not: (col: string, _op: string, val: unknown) => (
+        (linhas = linhas.filter((l) => (valor(l, col) ?? null) !== val)),
+        chain
+      ),
       order: () => chain,
       limit: (n: number) => ((limite = n), trilha.push("limit"), chain),
       maybeSingle: async () => ({ data: linhas[0] ?? null, error: null }),
@@ -69,13 +73,19 @@ function bancoFalso(tabelas: Record<string, Linha[]>) {
   };
 }
 
-function lead(id: string, funil: { name: string; is_archived: boolean }, etapa: string): Linha {
+function lead(id: string): Linha {
   return {
-    id, organization_id: ORG, contact_id: CONTATO, title: "Felipe", status: "open",
-    value_cents: null, currency: null, updated_at: "2026-09-15T12:00:00.000Z",
-    pipeline_id: `p-${id}`, custom_fields: {},
-    crm_pipelines: { ...funil, settings: {} },
-    crm_stages: { name: etapa },
+    id,
+    organization_id: ORG,
+    contact_id: CONTATO,
+    title: "Felipe",
+    status: "open",
+    value_cents: null,
+    currency: null,
+    updated_at: "2026-09-15T12:00:00.000Z",
+    pipeline_id: `p-${id}`,
+    stage_id: "stage-novo",
+    custom_fields: {},
   };
 }
 
@@ -83,10 +93,17 @@ describe("crm-summary: leads recentes", () => {
   it("não devolve lead de funil arquivado e diz funil e etapa dos outros", async () => {
     const banco = bancoFalso({
       contacts: [{ id: CONTATO, organization_id: ORG }],
-      crm_leads: [
-        lead("lead-arquivado", { name: "Funil antigo", is_archived: true }, "Novo"),
-        lead("lead-ativo", { name: "GMN Advogados", is_archived: false }, "Novo"),
+      operational_crm_pipelines: [
+        {
+          id: "p-lead-ativo",
+          organization_id: ORG,
+          name: "GMN Advogados",
+          settings: { fields: [] },
+          is_archived: false,
+        },
       ],
+      operational_crm_stages: [{ id: "stage-novo", organization_id: ORG, name: "Novo" }],
+      crm_leads: [lead("lead-arquivado"), lead("lead-ativo")],
     });
     vi.mocked(createClient).mockResolvedValue(banco as never);
 
@@ -100,12 +117,8 @@ describe("crm-summary: leads recentes", () => {
     expect(body.data.leads.map((l) => [l.id, l.funil_nome, l.etapa_nome])).toEqual([
       ["lead-ativo", "GMN Advogados", "Novo"],
     ]);
-    // Sem `!inner` o PostgREST real não derruba o lead: anula o embed.
-    expect(banco.selects.join("|")).toContain("crm_pipelines!inner");
-    // A etapa é o dado NOVO da linha (#943) e o dublê a serve da fixture, com
-    // ou sem o embed pedido: sem esta asserção, apagar `crm_stages(name)` do
-    // `select` deixa o arquivo verde e a tela volta a dizer só o funil.
-    expect(banco.selects.join("|")).toContain("crm_stages(name)");
+    expect(banco.selects.join("|")).not.toContain("crm_pipelines!inner");
+    expect(banco.trilhas.operational_crm_stages).toContain("select");
     // Filtrar NO BANCO, antes do `limit(3)`, é a metade que o comentário da
     // rota declara — e que nenhuma asserção sobre o RESULTADO alcança, porque
     // com dois leads os dois arranjos devolvem a mesma lista. Mover o `.eq` do
@@ -113,6 +126,6 @@ describe("crm-summary: leads recentes", () => {
     // recentes e SÓ ENTÃO descartar os arquivados: quem tem lead velho em funil
     // arquivado veria a lista encolher em vez de completar.
     const trilha = banco.trilhas.crm_leads ?? [];
-    expect(trilha.lastIndexOf("eq")).toBeLessThan(trilha.indexOf("limit"));
+    expect(trilha.indexOf("in")).toBeLessThan(trilha.indexOf("limit"));
   });
 });

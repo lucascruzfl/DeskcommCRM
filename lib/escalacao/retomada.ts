@@ -94,7 +94,7 @@ export async function devolverAtendimentoAoAgente(
   const { supabase, organizationId } = deps;
 
   const { data: convData, error: convErr } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select("id, contact_id, status, assigned_to_user_id, assignee_kind, bot_silenced_until")
     .eq("id", input.conversationId)
     .eq("organization_id", organizationId)
@@ -111,11 +111,7 @@ export async function devolverAtendimentoAoAgente(
   // A continuidade é lida ANTES de mexer em qualquer coisa: depois da devolução o
   // chamado pode ser fechado por outro caminho e o rastro do que a pessoa fez
   // ficaria mais pobre justamente no momento em que ele importa.
-  const continuidade = await lerContinuidadeHumana(
-    supabase,
-    organizationId,
-    input.conversationId,
-  );
+  const continuidade = await lerContinuidadeHumana(supabase, organizationId, input.conversationId);
 
   // (1) Solta o dono humano pela regra que já existe (UPDATE + evento de
   // atribuição na MESMA transação). `p_enforce_expected: false` porque soltar é
@@ -143,7 +139,7 @@ export async function devolverAtendimentoAoAgente(
     ? "ai_handling"
     : (conv.status ?? "open");
   const { data: atualizada, error: updErr } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .update({
       bot_silenced_until: null,
       last_handoff_at: null,
@@ -341,7 +337,7 @@ async function emitirAtividadeDeRetomada(
     .eq("organization_id", deps.organizationId)
     .eq("contact_id", contactId);
   const { data: defaultPipeline } = await deps.supabase
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("id")
     .eq("organization_id", deps.organizationId)
     .eq("is_default", true)

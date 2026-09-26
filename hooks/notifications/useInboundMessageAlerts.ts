@@ -75,7 +75,9 @@ async function contatoDaRota(contactId: string): Promise<Record<string, unknown>
 
 async function contactNotifyBits(contactId: string): Promise<{ title: string; icon?: string }> {
   const row = await contatoDaRota(contactId);
-  const title = nomeDoContato(row as { display_name?: string | null; name?: string | null } | null) ?? "Nova mensagem";
+  const title =
+    nomeDoContato(row as { display_name?: string | null; name?: string | null } | null) ??
+    "Nova mensagem";
   let icon: string | undefined;
   try {
     const r = await fetch(`/api/v1/contacts/${contactId}/avatar`, {
@@ -153,9 +155,9 @@ export function useInboundMessageAlerts(): void {
     name: orgId ? `alerts-messages-${orgId}` : "alerts-messages-disabled",
     postgresChanges: orgId
       ? {
-          event: "INSERT",
+          event: "*",
           schema: "public",
-          table: "messages",
+          table: "operational_inbox_signals",
           filter: `organization_id=eq.${orgId}`,
         }
       : undefined,

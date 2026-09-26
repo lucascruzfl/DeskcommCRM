@@ -75,23 +75,31 @@ function makeSupabaseStub(state: StubState) {
             data: {
               id: CONV_ID,
               organization_id: ORG_ID,
-              contact_id: null, channel_session_id: CONV_ID, assigned_to_user_id: null,
+              contact_id: null,
+              channel_session_id: CONV_ID,
+              assigned_to_user_id: null,
               last_inbound_at: null,
             },
             error: null,
           });
         }
-        if (table === "channel_sessions") return Promise.resolve({ data: { id: CONV_ID }, error: null });
-        if (table === "channel_routing_policies") return Promise.resolve({ data: state.allowed ? { id: "policy" } : null, error: null });
+        if (table === "operational_channel_sessions")
+          return Promise.resolve({ data: { id: CONV_ID }, error: null });
+        if (table === "channel_routing_policies")
+          return Promise.resolve({ data: state.allowed ? { id: "policy" } : null, error: null });
         return Promise.resolve({ data: null, error: null }); // crm_leads lookup
       },
       then: (resolve: (v: unknown) => unknown) => {
         let result: { data?: unknown; count?: number; error: null } = { data: [], error: null };
-        if (table === "user_organizations") result = { data: state.attendants.map(a => ({ user_id: a.user_id })), error: null };
-        else if (table === "channel_routing_responsibles") result = { data: (state.allowed ?? []).map(user_id => ({ user_id })), error: null };
-        else if (table === "conversations" && state.updates.length) result = { data: [{ id: CONV_ID }], error: null };
+        if (table === "user_organizations")
+          result = { data: state.attendants.map((a) => ({ user_id: a.user_id })), error: null };
+        else if (table === "channel_routing_responsibles")
+          result = { data: (state.allowed ?? []).map((user_id) => ({ user_id })), error: null };
+        else if (table === "conversations" && state.updates.length)
+          result = { data: [{ id: CONV_ID }], error: null };
         if (table === "attendant_availability") result = { data: state.attendants, error: null };
-        else if (table === "conversations" && q.count) result = { count: state.queuePositionCount, error: null };
+        else if (table === "conversations" && q.count)
+          result = { count: state.queuePositionCount, error: null };
         return Promise.resolve(result).then(resolve);
       },
     };
@@ -101,7 +109,10 @@ function makeSupabaseStub(state: StubState) {
     from,
     rpc: (fn: string, args: Record<string, unknown>) => {
       state.rpcCalls.push({ fn, args });
-      return Promise.resolve({ data: fn === "fn_channel_routing_claim" ? state.claimResult ?? "assigned" : null, error: null });
+      return Promise.resolve({
+        data: fn === "fn_channel_routing_claim" ? (state.claimResult ?? "assigned") : null,
+        error: null,
+      });
     },
   };
 }
@@ -155,8 +166,12 @@ describe("crm_request_human_handoff v2 (INB-12 — roteamento G5 unificado)", ()
       {
         fn: "fn_channel_routing_claim",
         args: {
-          p_org: ORG_ID, p_conversation: CONV_ID, p_channel: CONV_ID, p_user: AGENT_ID,
-          p_reason: "handoff", p_schedule: {},
+          p_org: ORG_ID,
+          p_conversation: CONV_ID,
+          p_channel: CONV_ID,
+          p_user: AGENT_ID,
+          p_reason: "handoff",
+          p_schedule: {},
         },
       },
     ]);
@@ -193,7 +208,9 @@ describe("crm_request_human_handoff v2 (INB-12 — roteamento G5 unificado)", ()
     expect(result.assigned_to).toBeNull();
     expect(result.queued).toBe(true);
     expect(result.position).toBe(4);
-    expect(state.rpcCalls).toEqual([{ fn: "fn_request_channel_routing", args: { p_org: ORG_ID, p_conversation: CONV_ID } }]);
+    expect(state.rpcCalls).toEqual([
+      { fn: "fn_request_channel_routing", args: { p_org: ORG_ID, p_conversation: CONV_ID } },
+    ]);
     expect(state.updates).toContainEqual({
       table: "conversations",
       values: { assignee_kind: null },
@@ -202,17 +219,22 @@ describe("crm_request_human_handoff v2 (INB-12 — roteamento G5 unificado)", ()
   });
   it("alvo fora da política não recebe; lista vazia permanece na fila", async () => {
     const state = stubState({ allowed: [] });
-    const result = await crmRequestHumanHandoff.handler({ ...baseInput, target_user_id: AGENT_ID }, makeCtx(state));
+    const result = await crmRequestHumanHandoff.handler(
+      { ...baseInput, target_user_id: AGENT_ID },
+      makeCtx(state),
+    );
     expect(result).toMatchObject({ assigned_to: null, queued: true });
-    expect(state.rpcCalls.some(c => c.fn === "fn_channel_routing_claim")).toBe(false);
+    expect(state.rpcCalls.some((c) => c.fn === "fn_channel_routing_claim")).toBe(false);
   });
   it("perda por revogação no claim não troca por alguém fora da lista", async () => {
     const state = stubState({ allowed: [AGENT_ID], claimResult: "candidate_revoked" });
-    expect(await crmRequestHumanHandoff.handler(baseInput, makeCtx(state))).toMatchObject({ assigned_to: null, queued: true });
-    expect(state.rpcCalls.filter(c => c.fn === "fn_channel_routing_claim")).toHaveLength(1);
+    expect(await crmRequestHumanHandoff.handler(baseInput, makeCtx(state))).toMatchObject({
+      assigned_to: null,
+      queued: true,
+    });
+    expect(state.rpcCalls.filter((c) => c.fn === "fn_channel_routing_claim")).toHaveLength(1);
     expect(state.rpcCalls.at(-1)?.fn).toBe("fn_request_channel_routing");
   });
-
 });
 
 /**
@@ -276,7 +298,10 @@ describe("crm_request_human_handoff · o contexto para quem assume", () => {
       reason: "requested_human",
       aviso: { avisado: true },
     });
-    const r = (await crmRequestHumanHandoff.handler(baseInput, makeCtx(stubState({ allowed: [] })))) as {
+    const r = (await crmRequestHumanHandoff.handler(
+      baseInput,
+      makeCtx(stubState({ allowed: [] })),
+    )) as {
       next_action: string;
     };
     expect(r.next_action).toContain("já foi avisado");
@@ -289,7 +314,10 @@ describe("crm_request_human_handoff · o contexto para quem assume", () => {
       reason: "requested_human",
       aviso: { avisado: false, porque: "na_fila_canal_fora", motivoCodigo: "na_fila_canal_fora" },
     });
-    const r = (await crmRequestHumanHandoff.handler(baseInput, makeCtx(stubState({ allowed: [] })))) as {
+    const r = (await crmRequestHumanHandoff.handler(
+      baseInput,
+      makeCtx(stubState({ allowed: [] })),
+    )) as {
       next_action: string;
     };
     expect(r.next_action).toContain("Não foi possível avisar o cliente");

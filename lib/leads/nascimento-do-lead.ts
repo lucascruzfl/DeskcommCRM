@@ -54,7 +54,11 @@ import { marcaDaOrigem, origemDeCampanhaDaConversa } from "@/lib/campanhas/orige
 import { logger } from "@/lib/logger";
 
 import { lerClientePelaAgenda } from "@/lib/contacts/cliente-pela-agenda";
-import { ehIdentificadorTecnico, rotuloDoContato, SEM_NOME } from "@/lib/contacts/rotulo-do-contato";
+import {
+  ehIdentificadorTecnico,
+  rotuloDoContato,
+  SEM_NOME,
+} from "@/lib/contacts/rotulo-do-contato";
 
 import { emitLeadActivity } from "./activity-emitter";
 
@@ -140,7 +144,7 @@ async function primeiraEtapa(
   pipelineId: string,
 ): Promise<string | null> {
   const { data: etapa } = await db
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("id")
     .eq("organization_id", organizationId)
     .eq("pipeline_id", pipelineId)
@@ -185,7 +189,7 @@ export async function funilDeEntrada(
 ): Promise<{ pipelineId: string; stageId: string } | { erro: MotivoSemLead }> {
   if (ehCliente) {
     const { data: funilDeClientes } = await db
-      .from("crm_pipelines")
+      .from("operational_crm_pipelines")
       .select("id")
       .eq("organization_id", organizationId)
       .eq("is_client_pipeline", true)
@@ -199,7 +203,7 @@ export async function funilDeEntrada(
   }
 
   const { data: funil } = await db
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("id")
     .eq("organization_id", organizationId)
     .eq("is_default", true)
@@ -232,7 +236,7 @@ async function destinoDaCampanha(
 ): Promise<{ pipelineId: string; stageId: string } | { erro: MotivoSemLead }> {
   if (stageId) return { pipelineId, stageId };
   const { data: etapa } = await db
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("id")
     .eq("organization_id", organizationId)
     .eq("pipeline_id", pipelineId)

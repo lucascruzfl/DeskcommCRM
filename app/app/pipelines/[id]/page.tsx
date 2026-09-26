@@ -5,11 +5,7 @@ import { PipelinePageClient } from "./_client";
 
 export const dynamic = "force-dynamic";
 
-export default async function PipelinePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function PipelinePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireAuth();
   const activeOrg = await resolveActiveOrg(user);
   if (!activeOrg) redirect("/app");
@@ -20,7 +16,7 @@ export default async function PipelinePage({
   // OUTRA organização do mesmo usuário abre, e o quadro monta com as etapas de
   // um lugar e o cabeçalho de outro.
   const { data: pipeline } = await supabase
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("id, name, vocabulary")
     .eq("organization_id", activeOrg.orgId)
     .eq("id", id)

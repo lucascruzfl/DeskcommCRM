@@ -248,12 +248,25 @@ export async function marcarAgendamentoHandler(
     .eq("organization_id", ctx.organization_id)
     .eq("id", input.event_type_id)
     .maybeSingle();
-  if (erroTipo) throw new ApiError(500, "internal_error", undefined, ctx.requestId, erroTipo.message);
+  if (erroTipo)
+    throw new ApiError(500, "internal_error", undefined, ctx.requestId, erroTipo.message);
   if (!tipo) {
-    throw new ApiError(404, "not_found", undefined, ctx.requestId, "Tipo de agendamento não encontrado.");
+    throw new ApiError(
+      404,
+      "not_found",
+      undefined,
+      ctx.requestId,
+      "Tipo de agendamento não encontrado.",
+    );
   }
   if (!tipo.is_active) {
-    throw new ApiError(422, "agenda_tipo_desativado", undefined, ctx.requestId, `"${tipo.name}" está desativado.`);
+    throw new ApiError(
+      422,
+      "agenda_tipo_desativado",
+      undefined,
+      ctx.requestId,
+      `"${tipo.name}" está desativado.`,
+    );
   }
 
   const donoId = input.owner_user_id ?? tipo.default_owner_user_id;
@@ -335,11 +348,30 @@ export async function marcarAgendamentoHandler(
   });
 
   const booking = tipo.location_kind === "google_meet" ? ctx.meetingBooking : undefined;
-  if (booking && (booking.boundary.organization_id !== ctx.organization_id || booking.boundary.contact_id !== input.contact_id || ctx.actor.type !== "ai_agent")) {
-    throw new ApiError(403,"forbidden",undefined,ctx.requestId,"A conversa deste atendimento mudou.");
+  if (
+    booking &&
+    (booking.boundary.organization_id !== ctx.organization_id ||
+      booking.boundary.contact_id !== input.contact_id ||
+      ctx.actor.type !== "ai_agent")
+  ) {
+    throw new ApiError(
+      403,
+      "forbidden",
+      undefined,
+      ctx.requestId,
+      "A conversa deste atendimento mudou.",
+    );
   }
-  const delivery = booking ? { state:"waiting_for_link",generation:randomUUID(),service_boundary:booking.boundary,source_operation_id:booking.sourceJobId,
-    booking_claim:booking.claim,authorized_by:{kind:ctx.actor.type,id:ctx.actor.id} } : {state:"none"};
+  const delivery = booking
+    ? {
+        state: "waiting_for_link",
+        generation: randomUUID(),
+        service_boundary: booking.boundary,
+        source_operation_id: booking.sourceJobId,
+        booking_claim: booking.claim,
+        authorized_by: { kind: ctx.actor.type, id: ctx.actor.id },
+      }
+    : { state: "none" };
   const { data: criado, error: erroInsert } = await supabase
     .from("calendar_appointments")
     .insert({
@@ -434,7 +466,14 @@ export async function alterarAgendamentoHandler(
 
   await exigeDonoDoCompromisso(supabase, ctx, atual);
 
-  if (input.revision !== undefined && input.revision !== Number(atual.revision)) throw new ApiError(409,"conflict",undefined,ctx.requestId,"O compromisso mudou. Recarregue antes de confirmar.");
+  if (input.revision !== undefined && input.revision !== Number(atual.revision))
+    throw new ApiError(
+      409,
+      "conflict",
+      undefined,
+      ctx.requestId,
+      "O compromisso mudou. Recarregue antes de confirmar.",
+    );
   if (atual.status === "cancelled") {
     throw new ApiError(
       422,
@@ -447,10 +486,17 @@ export async function alterarAgendamentoHandler(
 
   const mudanca: Record<string, unknown> = {};
   if (input.status === "completed" || input.status === "no_show") {
-    if (ctx.actor.type !== "user") throw new ApiError(403,"forbidden",undefined,ctx.requestId,"Peça à equipe para confirmar a presença no compromisso. Uma interpretação de texto não registra o fato.");
-    if (input.outcome_message_id) mudanca.outcome_message_id=input.outcome_message_id;
+    if (ctx.actor.type !== "user")
+      throw new ApiError(
+        403,
+        "forbidden",
+        undefined,
+        ctx.requestId,
+        "Peça à equipe para confirmar a presença no compromisso. Uma interpretação de texto não registra o fato.",
+      );
+    if (input.outcome_message_id) mudanca.outcome_message_id = input.outcome_message_id;
   }
-  if(input.confirmation_next_at) mudanca.confirmation_next_at=input.confirmation_next_at;
+  if (input.confirmation_next_at) mudanca.confirmation_next_at = input.confirmation_next_at;
   if (input.notes !== undefined) mudanca.notes = input.notes;
   // Trocar SÓ o convidado não é remarcação nem mudança de situação, então não
   // produz `transicao` — e não deveria: a timeline do lead não ganha notícia
@@ -469,7 +515,13 @@ export async function alterarAgendamentoHandler(
       .eq("id", (atual.event_type_id as string | null) ?? "")
       .maybeSingle();
     if (!tipo) {
-      throw new ApiError(404, "not_found", undefined, ctx.requestId, "O tipo deste agendamento não existe mais.");
+      throw new ApiError(
+        404,
+        "not_found",
+        undefined,
+        ctx.requestId,
+        "O tipo deste agendamento não existe mais.",
+      );
     }
 
     const novoFim = new Date(novoInicio.getTime() + tipo.duration_minutes * 60_000);
@@ -536,7 +588,13 @@ export async function alterarAgendamentoHandler(
 
   if (Object.keys(mudanca).length === 0) return { id: atual.id, inalterado: true };
 
-  const salvo = await alteraComRevisao(supabase,ctx,input.id,input.revision ?? Number(atual.revision),mudanca);
+  const salvo = await alteraComRevisao(
+    supabase,
+    ctx,
+    input.id,
+    input.revision ?? Number(atual.revision),
+    mudanca,
+  );
 
   if (transicao) {
     await fecharOLaco(supabase, ctx, {
@@ -546,20 +604,50 @@ export async function alterarAgendamentoHandler(
       gatilho: gatilhoDaTransicao(atual.status as SituacaoAnterior, transicao),
       transicao,
       fusoDoCompromisso: String(salvo.time_zone),
-      nomeDoTipo: await nomeDoTipoDoCompromisso(supabase, ctx, atual.event_type_id as string | null),
-      outcome: {revision:salvo.revision,source_kind:salvo.outcome_source_kind,message_id:salvo.outcome_message_id,recorded_at:salvo.outcome_recorded_at},
+      nomeDoTipo: await nomeDoTipoDoCompromisso(
+        supabase,
+        ctx,
+        atual.event_type_id as string | null,
+      ),
+      outcome: {
+        revision: salvo.revision,
+        source_kind: salvo.outcome_source_kind,
+        message_id: salvo.outcome_message_id,
+        recorded_at: salvo.outcome_recorded_at,
+      },
     });
 
-    void audit({action: transicao === "rescheduled" ? "agenda.appointment_rescheduled" : transicao === "completed" || transicao === "no_show" ? "agenda.appointment_outcome_recorded" : "agenda.appointment_updated",
-      actorUserId:ctx.actor.type === "user" ? ctx.actor.id : null,organizationId:ctx.organization_id,
-      resourceType:"calendar_appointment",resourceId:input.id,requestId:ctx.requestId,
-      metadata:{status:salvo.status,revision:salvo.revision,outcome_source_kind:salvo.outcome_source_kind,outcome_message_id:salvo.outcome_message_id}});
-
+    void audit({
+      action:
+        transicao === "rescheduled"
+          ? "agenda.appointment_rescheduled"
+          : transicao === "completed" || transicao === "no_show"
+            ? "agenda.appointment_outcome_recorded"
+            : "agenda.appointment_updated",
+      actorUserId: ctx.actor.type === "user" ? ctx.actor.id : null,
+      organizationId: ctx.organization_id,
+      resourceType: "calendar_appointment",
+      resourceId: input.id,
+      requestId: ctx.requestId,
+      metadata: {
+        status: salvo.status,
+        revision: salvo.revision,
+        outcome_source_kind: salvo.outcome_source_kind,
+        outcome_message_id: salvo.outcome_message_id,
+      },
+    });
   }
 
-  if (!transicao) void audit({action:"agenda.appointment_updated",actorUserId:ctx.actor.type==="user"?ctx.actor.id:null,
-    organizationId:ctx.organization_id,resourceType:"calendar_appointment",resourceId:input.id,requestId:ctx.requestId,
-    metadata:{revision:salvo.revision,confirmation_next_at:salvo.confirmation_next_at}});
+  if (!transicao)
+    void audit({
+      action: "agenda.appointment_updated",
+      actorUserId: ctx.actor.type === "user" ? ctx.actor.id : null,
+      organizationId: ctx.organization_id,
+      resourceType: "calendar_appointment",
+      resourceId: input.id,
+      requestId: ctx.requestId,
+      metadata: { revision: salvo.revision, confirmation_next_at: salvo.confirmation_next_at },
+    });
   return salvo as Record<string, unknown>;
 }
 
@@ -595,14 +683,28 @@ export async function cancelarAgendamentoHandler(
 
   // Idempotente: cancelar o que já está cancelado devolve o estado, não erro —
   // quem chamou queria o compromisso desmarcado, e ele está.
-  if (input.revision !== undefined && input.revision !== Number(atual.revision)) throw new ApiError(409,"conflict",undefined,ctx.requestId,"O compromisso mudou. Recarregue antes de confirmar.");
+  if (input.revision !== undefined && input.revision !== Number(atual.revision))
+    throw new ApiError(
+      409,
+      "conflict",
+      undefined,
+      ctx.requestId,
+      "O compromisso mudou. Recarregue antes de confirmar.",
+    );
   if (atual.status === "cancelled") {
     return { id: atual.id, status: "cancelled", ja_estava: true };
   }
 
-  const salvo = await alteraComRevisao(supabase,ctx,input.id,input.revision ?? Number(atual.revision),{
-    status:"cancelled",cancellation_reason:input.reason,
-  });
+  const salvo = await alteraComRevisao(
+    supabase,
+    ctx,
+    input.id,
+    input.revision ?? Number(atual.revision),
+    {
+      status: "cancelled",
+      cancellation_reason: input.reason,
+    },
+  );
 
   await fecharOLaco(supabase, ctx, {
     appointmentId: atual.id as string,
@@ -857,7 +959,13 @@ async function exigeSemSobreposicao(
     ignorarAgendamentoId: args.ignorarAgendamentoId,
   });
   if (!oQueOcupa.ok) {
-    throw new ApiError(500, "internal_error", undefined, ctx.requestId, "Não foi possível conferir a agenda.");
+    throw new ApiError(
+      500,
+      "internal_error",
+      undefined,
+      ctx.requestId,
+      "Não foi possível conferir a agenda.",
+    );
   }
   const pedido = { inicio: args.inicio.getTime(), fim: args.fim.getTime() };
   const cruza = oQueOcupa.ocupados.some((o) => colide(o.inicio.getTime(), o.fim.getTime(), pedido));
@@ -921,7 +1029,7 @@ async function fecharOLaco(
     transicao: Transicao;
     fusoDoCompromisso: string;
     nomeDoTipo: string;
-    outcome?: Record<string,unknown>;
+    outcome?: Record<string, unknown>;
   },
 ): Promise<void> {
   // Pendência Google é derivada da revisão publicável; não emite evento sem consumer.
@@ -1033,7 +1141,7 @@ async function fecharOLaco(
     sourceId: args.appointmentId,
     actor: ctx.actor,
     reason: `${args.nomeDoTipo} — ${args.atividade}`,
-    payload: args.outcome ? {outcome:args.outcome} : {},
+    payload: args.outcome ? { outcome: args.outcome } : {},
     // ⚠️ `sync` não existe no CHECK de `actor_kind`; `autorParaTimeline` mapeia.
     actorKind: autorParaTimeline(ctx.actor.type),
   } as never);
@@ -1059,7 +1167,7 @@ async function leadAtivoDoContato(
       .eq("organization_id", ctx.organization_id)
       .eq("contact_id", contactId),
     supabase
-      .from("crm_pipelines")
+      .from("operational_crm_pipelines")
       .select("id")
       .eq("organization_id", ctx.organization_id)
       .eq("is_default", true)
@@ -1073,10 +1181,40 @@ async function leadAtivoDoContato(
   return rota.routed ? rota.leadId : null;
 }
 
-async function alteraComRevisao(supabase:SB,ctx:HandlerCtx,id:string,revision:number,patch:Record<string,unknown>):Promise<Record<string,unknown>> {
-  const {data,error}=await supabase.rpc("fn_appointment_change",{p_org:ctx.organization_id,p_id:id,p_revision:revision,p_patch:patch});
-  if(error) throw new ApiError(error.code === "40001" ? 409 : error.code === "42501" ? 403 : error.code === "P0002" ? 404 : 422,
-    error.code === "40001" ? "conflict" : error.code === "42501" ? "forbidden" : error.code === "P0002" ? "not_found" : "validation_failed",undefined,ctx.requestId,
-    error.code === "40001" ? "Este compromisso mudou. Atualize os dados antes de confirmar novamente." : "Não foi possível alterar este compromisso. Confira a presença, o horário e a mensagem vinculada.");
-  return data as Record<string,unknown>;
+async function alteraComRevisao(
+  supabase: SB,
+  ctx: HandlerCtx,
+  id: string,
+  revision: number,
+  patch: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const { data, error } = await supabase.rpc("fn_appointment_change", {
+    p_org: ctx.organization_id,
+    p_id: id,
+    p_revision: revision,
+    p_patch: patch,
+  });
+  if (error)
+    throw new ApiError(
+      error.code === "40001"
+        ? 409
+        : error.code === "42501"
+          ? 403
+          : error.code === "P0002"
+            ? 404
+            : 422,
+      error.code === "40001"
+        ? "conflict"
+        : error.code === "42501"
+          ? "forbidden"
+          : error.code === "P0002"
+            ? "not_found"
+            : "validation_failed",
+      undefined,
+      ctx.requestId,
+      error.code === "40001"
+        ? "Este compromisso mudou. Atualize os dados antes de confirmar novamente."
+        : "Não foi possível alterar este compromisso. Confira a presença, o horário e a mensagem vinculada.",
+    );
+  return data as Record<string, unknown>;
 }

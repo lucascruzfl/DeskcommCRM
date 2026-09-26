@@ -146,7 +146,7 @@ describe("GET /api/v1/conversations/[id]/passagens", () => {
   it("devolve as passagens daquela conversa, em ordem cronológica", async () => {
     vi.mocked(createClient).mockResolvedValue(
       bancoFalso({
-        conversations: [{ id: CONVERSA, organization_id: ORG }],
+        operational_conversations: [{ id: CONVERSA, organization_id: ORG }],
         passagens_de_atendimento: [
           passagem({ id: "p2", criado_em: "2026-09-18T11:00:00.000Z" }),
           passagem({ id: "p1", criado_em: "2026-09-18T10:00:00.000Z" }),
@@ -168,7 +168,7 @@ describe("GET /api/v1/conversations/[id]/passagens", () => {
     vi.mocked(createClient).mockResolvedValue(
       bancoFalso(
         {
-          conversations: [{ id: CONVERSA, organization_id: ORG }],
+          operational_conversations: [{ id: CONVERSA, organization_id: ORG }],
           passagens_de_atendimento: [passagem()],
         },
         { espiao },
@@ -186,7 +186,7 @@ describe("GET /api/v1/conversations/[id]/passagens", () => {
     // uma conversa que não é desta organização — vazando a existência dela.
     vi.mocked(createClient).mockResolvedValue(
       bancoFalso({
-        conversations: [{ id: CONVERSA, organization_id: "org-2" }],
+        operational_conversations: [{ id: CONVERSA, organization_id: "org-2" }],
         passagens_de_atendimento: [passagem()],
       }),
     );
@@ -222,7 +222,7 @@ describe("GET /api/v1/conversations/[id]/passagens", () => {
     vi.mocked(createClient).mockResolvedValue(
       bancoFalso(
         {
-          conversations: [{ id: CONVERSA, organization_id: ORG }],
+          operational_conversations: [{ id: CONVERSA, organization_id: ORG }],
           passagens_de_atendimento: [passagem()],
         },
         { espiao },
@@ -239,7 +239,7 @@ describe("GET /api/v1/conversations/[id]/passagens", () => {
     vi.mocked(nomesDosAtendentes).mockResolvedValue(new Map([["u-joana", "Joana"]]));
     vi.mocked(createClient).mockResolvedValue(
       bancoFalso({
-        conversations: [{ id: CONVERSA, organization_id: ORG }],
+        operational_conversations: [{ id: CONVERSA, organization_id: ORG }],
         passagens_de_atendimento: [
           passagem({ reconhecido_em: "2026-09-18T11:00:00.000Z", reconhecido_por: "u-joana" }),
         ],
@@ -259,7 +259,7 @@ describe("GET /api/v1/conversations/[id]/passagens", () => {
     vi.mocked(nomesDosAtendentes).mockResolvedValue(new Map());
     vi.mocked(createClient).mockResolvedValue(
       bancoFalso({
-        conversations: [{ id: CONVERSA, organization_id: ORG }],
+        operational_conversations: [{ id: CONVERSA, organization_id: ORG }],
         passagens_de_atendimento: [
           passagem({ reconhecido_em: "2026-09-18T11:00:00.000Z", reconhecido_por: "u-joana" }),
         ],
@@ -276,7 +276,7 @@ describe("GET /api/v1/conversations/[id]/passagens", () => {
     vi.mocked(createClient).mockResolvedValue(
       bancoFalso(
         {
-          conversations: [{ id: CONVERSA, organization_id: ORG }],
+          operational_conversations: [{ id: CONVERSA, organization_id: ORG }],
           passagens_de_atendimento: [passagem()],
         },
         { erroEm: "passagens_de_atendimento" },

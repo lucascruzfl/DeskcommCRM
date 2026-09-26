@@ -52,6 +52,7 @@ import {
   listarRegrasAutomaticas,
 } from "@/lib/operacao/regras-automaticas";
 import type { McpContext, McpToolDefinition } from "../types";
+import { canAccessManagedArea } from "@/lib/managed-clients/policy";
 
 /** O contexto MCP traduzido para o que as operações pedem. */
 function deps(ctx: McpContext): DepsDaOperacao {
@@ -83,6 +84,30 @@ export const crmListStages: McpToolDefinition<typeof listStagesShape> = {
   requiresScope: "mcp:read",
   domain: "pipelines",
   handler: async (input, ctx) => {
+    if (
+      ctx.managedPolicy &&
+      !canAccessManagedArea(ctx.managedPolicy, ctx.role, "/app/settings/tenant/pipelines")
+    ) {
+      const { data: pipeline, error: pipelineError } = await ctx.supabase
+        .from("operational_crm_pipelines")
+        .select("id")
+        .eq("organization_id", ctx.organizationId)
+        .eq("id", input.pipeline_id)
+        .maybeSingle();
+      if (pipelineError)
+        throw new ApiError(500, "internal_error", undefined, ctx.requestId, pipelineError.message);
+      if (!pipeline)
+        throw new ApiError(404, "not_found", undefined, ctx.requestId, "Funil não encontrado.");
+      const { data, error } = await ctx.supabase
+        .from("operational_crm_stages")
+        .select("id, name, slug, position, is_won, is_lost")
+        .eq("organization_id", ctx.organizationId)
+        .eq("pipeline_id", input.pipeline_id)
+        .eq("is_archived", false)
+        .order("position", { ascending: true });
+      if (error) throw new ApiError(500, "internal_error", undefined, ctx.requestId, error.message);
+      return { etapas: data ?? [] };
+    }
     const etapas = await lerFunil(ctx.supabase, ctx.organizationId, input.pipeline_id);
     if (!etapas) {
       throw new ApiError(404, "not_found", undefined, ctx.requestId, "Funil não encontrado.");

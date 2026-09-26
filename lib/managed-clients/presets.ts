@@ -51,7 +51,7 @@ const aestheticClinicAreas = {
   "/app/settings/notifications": "client",
   "/app/team": "shared",
   "/app/settings/atendimento": "agency",
-  "/app/settings/tags": "shared",
+  "/app/settings/tags": "agency",
   "/app/settings/tenant": "agency",
   "/app/settings/conversoes": "agency",
   "/app/settings/meta-ads": "agency",

@@ -20,10 +20,7 @@ import { RECUSA_DE_TROCA_DE_FUNIL } from "@/lib/leads/clonar-para-funil";
 import { ORIGEM_DA_PLANILHA } from "@/lib/leads/planilha";
 import { registraFalhaDeAtividade } from "@/lib/leads/activity-write-failure";
 import { moedaDaOrganizacao } from "@/lib/catalogo/moeda-da-org";
-import {
-  decideMotivoDaPerda,
-  recusaDeMotivoDaPerdaPeloBanco,
-} from "@/lib/leads/motivo-da-perda";
+import { decideMotivoDaPerda, recusaDeMotivoDaPerdaPeloBanco } from "@/lib/leads/motivo-da-perda";
 import type { CreateLeadInput, UpdateLeadInput } from "@/lib/schemas";
 import { ehCorrecaoDeMovimentoDaIa } from "@/lib/leads/correcao-humana";
 
@@ -50,7 +47,10 @@ async function ownerPatchOrThrow(
       "validation_failed",
       undefined,
       ctx.requestId,
-      traduzir("Um lead tem um dono: informe owner_user_id OU owner_agent_id.", ctx.idioma ?? "pt-BR"),
+      traduzir(
+        "Um lead tem um dono: informe owner_user_id OU owner_agent_id.",
+        ctx.idioma ?? "pt-BR",
+      ),
     );
   }
   if (!result.patch) return null;
@@ -302,7 +302,7 @@ export async function createLeadHandler(
 ): Promise<Record<string, unknown>> {
   // Validate stage belongs to pipeline within active org.
   const { data: stage, error: stageErr } = await supabase
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("id, pipeline_id, organization_id")
     .eq("id", input.stage_id)
     .maybeSingle();
@@ -364,7 +364,13 @@ export async function createLeadHandler(
   // Sentry) em vez de lançar.
   const currency = input.currency ?? (await moedaDaOrganizacao(supabase, ctx.organization_id));
 
-  const serviceOrigin = ctx.serviceOrigin ?? await observeServiceOrigin(createAdminClient(), ctx.organization_id, input.contact_id ?? null);
+  const serviceOrigin =
+    ctx.serviceOrigin ??
+    (await observeServiceOrigin(
+      createAdminClient(),
+      ctx.organization_id,
+      input.contact_id ?? null,
+    ));
   const { data: lead, error: insErr } = await supabase
     .from("crm_leads")
     .insert({
@@ -377,8 +383,7 @@ export async function createLeadHandler(
       value_cents: input.value_cents ?? null,
       currency,
       ...ownerPatch,
-      assigned_at:
-        ownerPatch.owner_kind === null ? null : new Date().toISOString(),
+      assigned_at: ownerPatch.owner_kind === null ? null : new Date().toISOString(),
       expected_close_date: input.expected_close_date ?? null,
       tags: input.tags ?? [],
       source: input.source,
@@ -503,7 +508,9 @@ export async function updateLeadHandler(
   if (input.tags !== undefined) patch.tags = input.tags;
   if (input.custom_fields !== undefined) {
     const prev =
-      existing.custom_fields && typeof existing.custom_fields === "object" && !Array.isArray(existing.custom_fields)
+      existing.custom_fields &&
+      typeof existing.custom_fields === "object" &&
+      !Array.isArray(existing.custom_fields)
         ? (existing.custom_fields as Record<string, unknown>)
         : {};
     patch.custom_fields = { ...prev, ...input.custom_fields };
@@ -512,9 +519,15 @@ export async function updateLeadHandler(
   // O filtro entra AQUI TAMBÉM, e não só no SELECT acima: entre ler e escrever
   // há uma janela, e defesa que depende de uma leitura anterior é defesa que
   // some quando alguém reordena o código.
-  const tagServiceOrigin = input.tags !== undefined
-    ? ctx.serviceOrigin ?? await observeServiceOrigin(createAdminClient(), ctx.organization_id, input.contact_id ?? existing.contact_id)
-    : null;
+  const tagServiceOrigin =
+    input.tags !== undefined
+      ? (ctx.serviceOrigin ??
+        (await observeServiceOrigin(
+          createAdminClient(),
+          ctx.organization_id,
+          input.contact_id ?? existing.contact_id,
+        )))
+      : null;
   const { data: updated, error: updErr } = await supabase
     .from("crm_leads")
     .update(patch)
@@ -554,31 +567,34 @@ export async function updateLeadHandler(
   // dossie e clicar Salvar geraria "Dados do negocio alterados" com a lista
   // vazia — ruido na timeline exatamente na superficie que promete contar a
   // vida do negocio.
-  const atividadeEdicao = fields.length === 0 ? { ok: true as const } : await emitLeadActivity(supabase, {
-    organizationId: existing.organization_id,
-    leadId,
-    contactId: (updated as { contact_id?: string | null }).contact_id ?? null,
-    type: "lead_edited",
-    sourceModule: "crm",
-    sourceId: leadId,
-    actor: ctx.actor,
-    // ⚠️ O REASON NOMEIA OS CAMPOS, NUNCA OS VALORES. Se você veio aqui para
-    // deixar a timeline "mais informativa" pondo o antes-e-depois — pare: neste
-    // produto o TÍTULO É O NOME DO CLIENTE ("Carlos — Clínica Vida Odonto"), e
-    // `custom_fields` é dado arbitrário do tenant, sem limite conhecido. O
-    // reason é RENDERIZADO NA TELA e vai junto em captura, exportação e ticket
-    // de suporte; o §9 proíbe PII nova em log, reason ou evidence.
-    //
-    // Quem precisa do valor anterior tem `api_audit_log`, que já registra a
-    // mutação SOB CONTROLE DE ACESSO. Duplicar aqui criaria um segundo lugar
-    // com o mesmo dado e menos proteção.
-    //
-    // NÃO confunda com a atividade de autorização vencida (wave 4), que mostra
-    // antes-e-depois DE PROPÓSITO: lá o texto é a proposta do PRÓPRIO AGENTE,
-    // escrita por máquina. A origem do texto é que decide, não a forma da frase.
-    reason: `Alterou ${listaLegivel(fields)}`,
-    payload: { fields },
-  });
+  const atividadeEdicao =
+    fields.length === 0
+      ? { ok: true as const }
+      : await emitLeadActivity(supabase, {
+          organizationId: existing.organization_id,
+          leadId,
+          contactId: (updated as { contact_id?: string | null }).contact_id ?? null,
+          type: "lead_edited",
+          sourceModule: "crm",
+          sourceId: leadId,
+          actor: ctx.actor,
+          // ⚠️ O REASON NOMEIA OS CAMPOS, NUNCA OS VALORES. Se você veio aqui para
+          // deixar a timeline "mais informativa" pondo o antes-e-depois — pare: neste
+          // produto o TÍTULO É O NOME DO CLIENTE ("Carlos — Clínica Vida Odonto"), e
+          // `custom_fields` é dado arbitrário do tenant, sem limite conhecido. O
+          // reason é RENDERIZADO NA TELA e vai junto em captura, exportação e ticket
+          // de suporte; o §9 proíbe PII nova em log, reason ou evidence.
+          //
+          // Quem precisa do valor anterior tem `api_audit_log`, que já registra a
+          // mutação SOB CONTROLE DE ACESSO. Duplicar aqui criaria um segundo lugar
+          // com o mesmo dado e menos proteção.
+          //
+          // NÃO confunda com a atividade de autorização vencida (wave 4), que mostra
+          // antes-e-depois DE PROPÓSITO: lá o texto é a proposta do PRÓPRIO AGENTE,
+          // escrita por máquina. A origem do texto é que decide, não a forma da frase.
+          reason: `Alterou ${listaLegivel(fields)}`,
+          payload: { fields },
+        });
   if (!atividadeEdicao.ok) {
     // Rastro de mutação já ocorrida: falha BAIXO, mas contada (ver
     // lib/leads/activity-write-failure.ts).
@@ -702,7 +718,7 @@ export async function moveLeadHandler(
   }
 
   const { data: stage, error: stageErr } = await supabase
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("id, pipeline_id, organization_id, name, is_lost")
     .eq("id", input.to_stage_id)
     .maybeSingle();
@@ -755,7 +771,9 @@ export async function moveLeadHandler(
     throw new ApiError(422, veredito.codigo, undefined, ctx.requestId, veredito.mensagem);
   }
 
-  const serviceOrigin = ctx.serviceOrigin ?? await observeServiceOrigin(createAdminClient(), ctx.organization_id, lead.contact_id);
+  const serviceOrigin =
+    ctx.serviceOrigin ??
+    (await observeServiceOrigin(createAdminClient(), ctx.organization_id, lead.contact_id));
   const nowIso = new Date().toISOString();
   const { data: updated, error: updErr } = await supabase
     .from("crm_leads")
@@ -819,7 +837,7 @@ export async function moveLeadHandler(
   // reason ser legível ("Movido de Avaliação para Proposta enviada") em vez de
   // dois UUIDs.
   const { data: fromStage } = await supabase
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("name")
     .eq("id", lead.stage_id)
     .maybeSingle();
@@ -859,12 +877,14 @@ export async function moveLeadHandler(
         .order("performed_at", { ascending: false })
         .limit(5);
 
-      const anteriores = ((historico ?? []) as Array<{
-        actor_kind: string | null;
-        actor_agent_id: string | null;
-        payload: { from_stage_id?: string; to_stage_id?: string } | null;
-        performed_at: string;
-      }>)
+      const anteriores = (
+        (historico ?? []) as Array<{
+          actor_kind: string | null;
+          actor_agent_id: string | null;
+          payload: { from_stage_id?: string; to_stage_id?: string } | null;
+          performed_at: string;
+        }>
+      )
         // A atividade que ACABOU de ser emitida está aqui: descartá-la é o que
         // impede o movimento de se comparar consigo mesmo e virar "correção".
         .filter((h) => h.performed_at < new Date(Date.now() - 500).toISOString())

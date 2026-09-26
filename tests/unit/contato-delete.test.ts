@@ -118,7 +118,7 @@ describe("deleteContactHandler", () => {
       CONTATO,
     );
     expect(out).toEqual({ id: CONTATO });
-    expect(chamadas.map((c) => c.tabela)).toEqual(["messages", "conversations", "contacts"]);
+    expect(chamadas.map((c) => c.tabela)).toEqual(["operational_messages", "operational_conversations", "contacts"]);
     // A pré-checagem da #752 conta o vínculo com os DOIS filtros (contato +
     // organização): sem o de organização, contato de outra org bloquearia.
     expect(contagens).toEqual([
@@ -153,7 +153,7 @@ describe("deleteContactHandler", () => {
     await expect(
       deleteContactHandler(clienteFalso({ fkNaFicha: true }) as never, ctxFalso(), CONTATO),
     ).rejects.toMatchObject({ status: 409, code: "state_conflict" });
-    expect(chamadas.map((c) => c.tabela)).toEqual(["messages", "conversations", "contacts"]);
+    expect(chamadas.map((c) => c.tabela)).toEqual(["operational_messages", "operational_conversations", "contacts"]);
     // Se o RESTRICT escapar da pré-checagem (corrida, RLS, tabela nova), o
     // estrago fica registrado em vez de sumir.
     expect(ultimaAuditoria()).toMatchObject({

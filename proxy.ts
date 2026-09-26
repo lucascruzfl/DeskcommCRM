@@ -3,6 +3,7 @@ import { cookieSecure } from "@/lib/supabase/cookie-secure";
 import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 import { isPublicPath } from "@/lib/auth/public-paths";
+import { managedAreaForPath } from "@/lib/managed-clients/policy";
 import {
   verifyImpersonateCookieEdge,
   IMPERSONATE_COOKIE_NAME_EDGE,
@@ -106,6 +107,45 @@ export async function proxy(request: NextRequest) {
           `[middleware] impersonate cookie invalid (${result.reason ?? "unknown"}) — clearing`,
         );
         response.cookies.delete(IMPERSONATE_COOKIE_NAME_EDGE);
+      }
+    }
+  }
+
+  // Negação antes de executar a página: template/handlers continuam como
+  // defesa em profundidade, mas um deep link não inicia uma área proibida.
+  const managedArea =
+    pathname.startsWith("/app/") ||
+    pathname === "/onboarding" ||
+    pathname.startsWith("/onboarding/")
+      ? managedAreaForPath(pathname)
+      : null;
+  if (managedArea) {
+    const { data: support, error: supportError } = await supabase.rpc("fn_support_context");
+    const { data: memberships, error: membershipError } = await supabase
+      .from("user_organizations")
+      .select("organization_id, accepted_at")
+      .eq("user_id", user.id)
+      .is("revoked_at", null)
+      .not("accepted_at", "is", null)
+      .order("accepted_at", { ascending: true })
+      .order("organization_id", { ascending: true });
+    const requestedOrg = request.cookies.get("active_org")?.value;
+    const ownOrg =
+      memberships?.find((member) => member.organization_id === requestedOrg) ?? memberships?.[0];
+    const orgId = support?.organization_id ?? ownOrg?.organization_id;
+    if (supportError || membershipError) {
+      return NextResponse.redirect(new URL("/403", request.url));
+    }
+    if (orgId) {
+      const { data: permitted, error } = await supabase.rpc("fn_managed_area_allowed", {
+        p_org: orgId,
+        p_area: managedArea,
+      });
+      if (error || permitted !== true) {
+        const denied = NextResponse.redirect(new URL("/403", request.url));
+        denied.headers.set("x-request-id", requestId);
+        response.cookies.getAll().forEach((cookie) => denied.cookies.set(cookie));
+        return denied;
       }
     }
   }

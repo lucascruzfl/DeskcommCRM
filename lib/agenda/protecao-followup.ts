@@ -96,7 +96,11 @@ export async function protecaoAgendaSupabase(
       appointments.push(...page.data);
       after = last;
     }
-    const organization = await db.from("organizations").select("settings").eq("id", org).single();
+    const organization = await db
+      .from("operational_organizations")
+      .select("settings")
+      .eq("id", org)
+      .single();
     if (organization.error) throw organization.error;
     return new Map(
       contatos.map((id) => [

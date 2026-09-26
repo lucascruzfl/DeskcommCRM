@@ -52,7 +52,11 @@ export async function POST(req: NextRequest): Promise<Response> {
   // Pela sessão do navegador não há teto: quem digita é uma pessoa.
   if (authz.via === "token") {
     const tokenId = actor.type === "ai_agent" ? (actor.api_token_id ?? actor.id) : actor.id;
-    const teto = await checkRateLimit(`messages:tok:${tokenId}`, MCP_RATE_LIMITS.writesPerTokenPerMinute, MCP_RATE_LIMITS.windowSeconds);
+    const teto = await checkRateLimit(
+      `messages:tok:${tokenId}`,
+      MCP_RATE_LIMITS.writesPerTokenPerMinute,
+      MCP_RATE_LIMITS.windowSeconds,
+    );
     if (!teto.allowed) {
       return fail("rate_limited", "Too many requests.", 429, {
         requestId,
@@ -117,20 +121,23 @@ export async function POST(req: NextRequest): Promise<Response> {
     // reenviar e duplicar a mensagem).
     if (authz.via === "session" && actor.type === "user" && message.status !== "failed") {
       try {
-        const { data: org, error: orgError } = await supabase
+        const { data: org, error: orgError } = await createAdminClient()
           .from("organizations")
           .select("settings")
           .eq("id", organizationId)
           .maybeSingle();
         if (orgError) throw orgError;
         if (conversaFicaComQuemAtendeu(org?.settings)) {
-          const { data: claimed, error: claimError } = await supabase.rpc("fn_conversation_assign", {
-            p_organization_id: organizationId,
-            p_conversation_id: message.conversation_id,
-            p_to_user_id: actor.id,
-            p_reason: "claim",
-            p_enforce_expected: true,
-          });
+          const { data: claimed, error: claimError } = await supabase.rpc(
+            "fn_conversation_assign",
+            {
+              p_organization_id: organizationId,
+              p_conversation_id: message.conversation_id,
+              p_to_user_id: actor.id,
+              p_reason: "claim",
+              p_enforce_expected: true,
+            },
+          );
           if (claimError) throw claimError;
           if (claimed?.[0]) {
             await audit({

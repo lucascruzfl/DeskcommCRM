@@ -62,7 +62,7 @@ const CONV_ALHEIA = "66666666-6666-4666-8666-666666666666";
  */
 function sessaoComVisibilidade(opts: { casos?: string[]; visiveis: string[] }) {
   const linhasPorTabela = (tabela: string) =>
-    tabela === "conversations"
+    tabela === "operational_conversations"
       ? opts.visiveis.map((id) => ({ id }))
       : (opts.casos ?? opts.visiveis).map((conversation_id) => ({ conversation_id }));
 

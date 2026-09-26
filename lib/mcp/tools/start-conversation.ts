@@ -36,7 +36,11 @@ import { comIdempotencia } from "@/lib/api/idempotency";
 import { transportaMensagem } from "@/lib/channels/capabilities";
 import { openSharedContactConversation } from "@/lib/messaging/open-shared-contact-conversation";
 import { validateOutboundMedia } from "@/lib/messaging/media/upload-validation";
-import { depsDoRitmo, registrarEnvioPorToken, segurarEnvioPorToken } from "@/lib/messaging/ritmo-do-envio-por-token";
+import {
+  depsDoRitmo,
+  registrarEnvioPorToken,
+  segurarEnvioPorToken,
+} from "@/lib/messaging/ritmo-do-envio-por-token";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendMessageSchema } from "@/lib/schemas/messaging";
 import { McpToolError } from "../errors";
@@ -78,14 +82,18 @@ export const crmContinueOnAnotherNumber: McpToolDefinition<typeof continueShape>
     }
 
     const { data: target, error: targetError } = await ctx.supabase
-      .from("channel_sessions")
+      .from("operational_channel_sessions")
       .select("id, status, phone_number, provider")
       .eq("id", input.channel_session_id)
       .eq("organization_id", ctx.organizationId)
       .maybeSingle();
     if (targetError) throw new Error(targetError.message);
-    if (!target || target.status !== "WORKING" || !target.phone_number ||
-        !transportaMensagem(target.provider)) {
+    if (
+      !target ||
+      target.status !== "WORKING" ||
+      !target.phone_number ||
+      !transportaMensagem(target.provider)
+    ) {
       throw new McpToolError("validation_error", "target_number_unavailable");
     }
 

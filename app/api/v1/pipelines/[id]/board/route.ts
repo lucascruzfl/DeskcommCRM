@@ -130,9 +130,7 @@ async function avisaAmbiguas(
       "ref_id",
       ambiguas.map((a) => a.contact_id),
     );
-  const abertos = new Set(
-    ((jaAbertos ?? []) as Array<{ ref_id: string }>).map((r) => r.ref_id),
-  );
+  const abertos = new Set(((jaAbertos ?? []) as Array<{ ref_id: string }>).map((r) => r.ref_id));
 
   const novos = ambiguas
     .filter((a) => !abertos.has(a.contact_id))
@@ -242,8 +240,10 @@ async function withConversas(
   if (contactIds.length === 0) return { leads, error: null };
 
   const { data, error } = await supabase
-    .from("conversations")
-    .select("id, contact_id, last_message_preview, last_message_at, unread_count_for_assignee, tags")
+    .from("operational_conversations")
+    .select(
+      "id, contact_id, last_message_preview, last_message_at, unread_count_for_assignee, tags",
+    )
     .eq("organization_id", organizationId)
     .in("contact_id", contactIds)
     .order("last_message_at", { ascending: false, nullsFirst: false });
@@ -325,7 +325,9 @@ async function withMarcadoresDoContato(
     .in("id", contactIds);
   if (error) return { leads: leadsDoQuadro, error: error.message };
 
-  const linhas = (data ?? []) as Array<{ id: string; tags: string[] | null } & LinhaDoContatoNoQuadro>;
+  const linhas = (data ?? []) as Array<
+    { id: string; tags: string[] | null } & LinhaDoContatoNoQuadro
+  >;
   const leads = anexarDadosDoContato(leadsDoQuadro, linhas);
 
   const porContato = new Map<string, string[]>();
@@ -350,9 +352,7 @@ async function withNextActions(
   leads: Lead[],
   defaultPipelineId: string | null,
 ): Promise<{ leads: Lead[]; error: string | null }> {
-  const contactIds = [
-    ...new Set(leads.map((l) => l.contact_id).filter((c): c is string => !!c)),
-  ];
+  const contactIds = [...new Set(leads.map((l) => l.contact_id).filter((c): c is string => !!c))];
   if (contactIds.length === 0) return { leads, error: null };
 
   const [{ data: estados, error: estadosErr }, { data: candidatos, error: candErr }] =
@@ -421,9 +421,9 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
     { data: stages, error: stagesErr },
     { data: leads, error: leadsErr },
   ] = await Promise.all([
-    supabase.from("crm_pipelines").select("*").eq("id", pipelineId).maybeSingle(),
+    supabase.from("operational_crm_pipelines").select("*").eq("id", pipelineId).maybeSingle(),
     supabase
-      .from("crm_stages")
+      .from("operational_crm_stages")
       .select("*")
       .eq("pipeline_id", pipelineId)
       .eq("is_archived", false)
@@ -439,7 +439,8 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
   if (pipelineErr) return fail("internal_error", pipelineErr.message, 500, { requestId });
   if (stagesErr) return fail("internal_error", stagesErr.message, 500, { requestId });
   if (leadsErr) return fail("internal_error", leadsErr.message, 500, { requestId });
-  if (!pipeline) return fail("resource_not_found", t("Pipeline não encontrado."), 404, { requestId });
+  if (!pipeline)
+    return fail("resource_not_found", t("Pipeline não encontrado."), 404, { requestId });
 
   const leadsWithOwner = await withOwnerAgents(
     supabase,
@@ -451,7 +452,7 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
   }
 
   const { data: pipelinePadrao } = await supabase
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("id")
     .eq("organization_id", (pipeline as Pipeline).organization_id)
     .eq("is_default", true)

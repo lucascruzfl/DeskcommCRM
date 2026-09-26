@@ -40,7 +40,10 @@ function bancoFalso(tabelas: Record<string, Linha[]>, registro: ChamadaIn[] = []
     const chain = {
       select: () => chain,
       eq: (col: string, val: unknown) => ((linhas = linhas.filter((l) => l[col] === val)), chain),
-      is: (col: string, val: unknown) => ((linhas = linhas.filter((l) => (l[col] ?? null) === val)), chain),
+      is: (col: string, val: unknown) => (
+        (linhas = linhas.filter((l) => (l[col] ?? null) === val)),
+        chain
+      ),
       in: (col: string, vals: unknown[]) => {
         registro.push({ tabela, coluna: col, quantos: vals.length });
         linhas = linhas.filter((l) => vals.includes(l[col]));
@@ -58,7 +61,8 @@ function bancoFalso(tabelas: Record<string, Linha[]>, registro: ChamadaIn[] = []
       // duas — que é a diferença que o comentário do módulo afirma existir.
       limit: (n: number) => ((linhas = linhas.slice(0, n)), chain),
       maybeSingle: async () => ({ data: linhas[0] ?? null, error: null }),
-      then: (res: (v: unknown) => unknown) => Promise.resolve({ data: linhas, error: null }).then(res),
+      then: (res: (v: unknown) => unknown) =>
+        Promise.resolve({ data: linhas, error: null }).then(res),
     };
     return chain;
   };
@@ -67,25 +71,61 @@ function bancoFalso(tabelas: Record<string, Linha[]>, registro: ChamadaIn[] = []
 
 function banco() {
   return bancoFalso({
-    crm_pipelines: [
+    operational_crm_pipelines: [
       { id: "funil-ativo", organization_id: ORG, is_archived: false },
       { id: "funil-arquivado", organization_id: ORG, is_archived: true },
     ],
     crm_leads: [
       {
-        id: "lead-ativo", organization_id: ORG, status: "open", title: "Ativo", pipeline_id: "funil-ativo",
-        contact_id: null, owner_user_id: null, owner_kind: null, owner_agent_id: null, stage_id: null,
-        last_activity_at: HA_MUITO, created_at: HA_MUITO,
+        id: "lead-ativo",
+        organization_id: ORG,
+        status: "open",
+        title: "Ativo",
+        pipeline_id: "funil-ativo",
+        contact_id: null,
+        owner_user_id: null,
+        owner_kind: null,
+        owner_agent_id: null,
+        stage_id: null,
+        last_activity_at: HA_MUITO,
+        created_at: HA_MUITO,
       },
       {
-        id: "lead-arquivado", organization_id: ORG, status: "open", title: "Arquivado", pipeline_id: "funil-arquivado",
-        contact_id: null, owner_user_id: null, owner_kind: null, owner_agent_id: null, stage_id: null,
-        last_activity_at: HA_MUITO, created_at: HA_MUITO,
+        id: "lead-arquivado",
+        organization_id: ORG,
+        status: "open",
+        title: "Arquivado",
+        pipeline_id: "funil-arquivado",
+        contact_id: null,
+        owner_user_id: null,
+        owner_kind: null,
+        owner_agent_id: null,
+        stage_id: null,
+        last_activity_at: HA_MUITO,
+        created_at: HA_MUITO,
       },
     ],
     demandas: [
-      { id: "demanda-ativa", organization_id: ORG, lead_id: "lead-ativo", contact_id: "c-1", aberta_em: HA_MUITO, origem: "x", fechada_em: null, proximo_passo: null },
-      { id: "demanda-arquivada", organization_id: ORG, lead_id: "lead-arquivado", contact_id: "c-2", aberta_em: HA_MUITO, origem: "x", fechada_em: null, proximo_passo: null },
+      {
+        id: "demanda-ativa",
+        organization_id: ORG,
+        lead_id: "lead-ativo",
+        contact_id: "c-1",
+        aberta_em: HA_MUITO,
+        origem: "x",
+        fechada_em: null,
+        proximo_passo: null,
+      },
+      {
+        id: "demanda-arquivada",
+        organization_id: ORG,
+        lead_id: "lead-arquivado",
+        contact_id: "c-2",
+        aberta_em: HA_MUITO,
+        origem: "x",
+        fechada_em: null,
+        proximo_passo: null,
+      },
     ],
   });
 }
@@ -109,12 +149,21 @@ describe("radar de risco e funil arquivado", () => {
     // `lib/leads/radar-de-risco.ts` afirma no comentário do corte, e até aqui
     // nada media.
     const arquivadosEmMassa = Array.from({ length: SCAN_CAP }, (_, i) => ({
-      id: `arq-${i}`, organization_id: ORG, status: "open", title: `Arquivado ${i}`,
-      pipeline_id: "funil-arquivado", contact_id: null, owner_user_id: null, owner_kind: null,
-      owner_agent_id: null, stage_id: null, last_activity_at: HA_MUITO, created_at: HA_MUITO,
+      id: `arq-${i}`,
+      organization_id: ORG,
+      status: "open",
+      title: `Arquivado ${i}`,
+      pipeline_id: "funil-arquivado",
+      contact_id: null,
+      owner_user_id: null,
+      owner_kind: null,
+      owner_agent_id: null,
+      stage_id: null,
+      last_activity_at: HA_MUITO,
+      created_at: HA_MUITO,
     }));
     const db = bancoFalso({
-      crm_pipelines: [
+      operational_crm_pipelines: [
         { id: "funil-ativo", organization_id: ORG, is_archived: false },
         { id: "funil-arquivado", organization_id: ORG, is_archived: true },
       ],
@@ -123,9 +172,18 @@ describe("radar de risco e funil arquivado", () => {
       crm_leads: [
         ...arquivadosEmMassa,
         {
-          id: "lead-ativo", organization_id: ORG, status: "open", title: "Ativo",
-          pipeline_id: "funil-ativo", contact_id: null, owner_user_id: null, owner_kind: null,
-          owner_agent_id: null, stage_id: null, last_activity_at: HA_MUITO, created_at: HA_MUITO,
+          id: "lead-ativo",
+          organization_id: ORG,
+          status: "open",
+          title: "Ativo",
+          pipeline_id: "funil-ativo",
+          contact_id: null,
+          owner_user_id: null,
+          owner_kind: null,
+          owner_agent_id: null,
+          stage_id: null,
+          last_activity_at: HA_MUITO,
+          created_at: HA_MUITO,
         },
       ],
       demandas: [],
@@ -141,31 +199,64 @@ describe("radar de risco e funil arquivado", () => {
     // o radar inteiro viraria 500 para a organização com mais demandas abertas.
     const quantas = 250;
     const leadsArquivados = Array.from({ length: quantas }, (_, i) => ({
-      id: `arq-${i}`, organization_id: ORG, status: "open", title: `Arquivado ${i}`,
-      pipeline_id: "funil-arquivado", contact_id: null, owner_user_id: null, owner_kind: null,
-      owner_agent_id: null, stage_id: null, last_activity_at: HA_MUITO, created_at: HA_MUITO,
+      id: `arq-${i}`,
+      organization_id: ORG,
+      status: "open",
+      title: `Arquivado ${i}`,
+      pipeline_id: "funil-arquivado",
+      contact_id: null,
+      owner_user_id: null,
+      owner_kind: null,
+      owner_agent_id: null,
+      stage_id: null,
+      last_activity_at: HA_MUITO,
+      created_at: HA_MUITO,
     }));
     const registro: ChamadaIn[] = [];
     const db = bancoFalso(
       {
-        crm_pipelines: [
+        operational_crm_pipelines: [
           { id: "funil-ativo", organization_id: ORG, is_archived: false },
           { id: "funil-arquivado", organization_id: ORG, is_archived: true },
         ],
         crm_leads: [
           ...leadsArquivados,
           {
-            id: "lead-ativo", organization_id: ORG, status: "open", title: "Ativo",
-            pipeline_id: "funil-ativo", contact_id: null, owner_user_id: null, owner_kind: null,
-            owner_agent_id: null, stage_id: null, last_activity_at: HA_MUITO, created_at: HA_MUITO,
+            id: "lead-ativo",
+            organization_id: ORG,
+            status: "open",
+            title: "Ativo",
+            pipeline_id: "funil-ativo",
+            contact_id: null,
+            owner_user_id: null,
+            owner_kind: null,
+            owner_agent_id: null,
+            stage_id: null,
+            last_activity_at: HA_MUITO,
+            created_at: HA_MUITO,
           },
         ],
         demandas: [
           ...leadsArquivados.map((l, i) => ({
-            id: `d-arq-${i}`, organization_id: ORG, lead_id: l.id, contact_id: null,
-            aberta_em: HA_MUITO, origem: "x", fechada_em: null, proximo_passo: null,
+            id: `d-arq-${i}`,
+            organization_id: ORG,
+            lead_id: l.id,
+            contact_id: null,
+            aberta_em: HA_MUITO,
+            origem: "x",
+            fechada_em: null,
+            proximo_passo: null,
           })),
-          { id: "demanda-ativa", organization_id: ORG, lead_id: "lead-ativo", contact_id: null, aberta_em: HA_MUITO, origem: "x", fechada_em: null, proximo_passo: null },
+          {
+            id: "demanda-ativa",
+            organization_id: ORG,
+            lead_id: "lead-ativo",
+            contact_id: null,
+            aberta_em: HA_MUITO,
+            origem: "x",
+            fechada_em: null,
+            proximo_passo: null,
+          },
         ],
       },
       registro,

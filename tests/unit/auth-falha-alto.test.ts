@@ -29,7 +29,26 @@ const consultas: { platformAdmins: unknown; memberships: unknown } = {
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: () => undefined, getAll: () => [], set: () => {} }),
 }));
-vi.mock("next/navigation", () => ({ redirect: () => { throw new Error("redirect"); } }));
+vi.mock("next/navigation", () => ({
+  redirect: () => {
+    throw new Error("redirect");
+  },
+}));
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({
+    from: () => {
+      const chain = {
+        select: () => chain,
+        eq: () => chain,
+        is: () => chain,
+        order: () => chain,
+        then: (resolve: (value: unknown) => unknown) =>
+          Promise.resolve(consultas.memberships).then(resolve),
+      };
+      return chain;
+    },
+  }),
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({

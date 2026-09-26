@@ -67,7 +67,7 @@ export async function moverLeadParaOutroFunil(
   if (!origem) erro(404, "not_found", t("Lead não encontrado."), ctx);
 
   const { data: pipelineDestino, error: pipeErr } = await supabase
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("id, name")
     .eq("id", input.pipeline_id)
     .eq("organization_id", ctx.organization_id)
@@ -82,7 +82,7 @@ export async function moverLeadParaOutroFunil(
   if (recusa) erro(recusa.status, recusa.code, t(recusa.texto), ctx);
 
   const { data: pipelineOrigem, error: origemPipeErr } = await supabase
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("settings, name")
     .eq("id", origemTipada.pipeline_id)
     .eq("organization_id", ctx.organization_id)
@@ -97,7 +97,7 @@ export async function moverLeadParaOutroFunil(
   if (motivoRecusado) erro(422, motivoRecusado.codigo, motivoRecusado.mensagem, ctx);
 
   const { data: etapas, error: stagesErr } = await supabase
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("id, pipeline_id, position, is_won, is_lost, is_archived")
     .eq("organization_id", ctx.organization_id)
     .eq("pipeline_id", input.pipeline_id)
@@ -105,14 +105,11 @@ export async function moverLeadParaOutroFunil(
     .order("position", { ascending: true });
   if (stagesErr) erro(500, "internal_error", stagesErr.message, ctx);
 
-  const destino = escolheEtapaDeDestino(
-    (etapas ?? []) as EtapaDoFunil[],
-    input.stage_id ?? null,
-  );
+  const destino = escolheEtapaDeDestino((etapas ?? []) as EtapaDoFunil[], input.stage_id ?? null);
   if (!destino.ok) erro(destino.status, destino.code, t(destino.texto), ctx);
 
   const { data: etapaDePerdaDaOrigem, error: perdaErr } = await supabase
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("id")
     .eq("organization_id", ctx.organization_id)
     .eq("pipeline_id", origemTipada.pipeline_id)

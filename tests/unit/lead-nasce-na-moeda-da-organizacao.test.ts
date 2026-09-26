@@ -55,10 +55,10 @@ function supabaseCom(moedaDaOrg: string | null) {
 
   const cadeia = (tabela: string) => {
     const resposta = () => {
-      if (tabela === "crm_stages") {
+      if (tabela === "operational_crm_stages") {
         return { data: { id: ETAPA, pipeline_id: PIPELINE, organization_id: ORG }, error: null };
       }
-      if (tabela === "organizations") {
+      if (tabela === "operational_organizations") {
         return { data: moedaDaOrg === null ? null : { currency: moedaDaOrg }, error: null };
       }
       // crm_leads: a leitura do MAX(position_in_stage) de uma etapa vazia.
@@ -178,7 +178,12 @@ describe("createLeadHandler — moeda", () => {
 
     await crmCreateLead.handler(
       { pipeline_id: PIPELINE, stage_id: ETAPA, title: "Negócio aberto pelo agente" },
-      { supabase: cliente, organizationId: ORG, actor: { type: "user", id: "user-1" }, requestId: "req-1" } as never,
+      {
+        supabase: cliente,
+        organizationId: ORG,
+        actor: { type: "user", id: "user-1" },
+        requestId: "req-1",
+      } as never,
     );
 
     expect(inseridos[0]).toMatchObject({ currency: "EUR" });

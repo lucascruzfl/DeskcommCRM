@@ -11,12 +11,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Actor } from "@/lib/api/handlers/types";
 import type { Role } from "@/lib/auth/types";
+import type { ManagedAreaPolicy } from "@/lib/managed-clients/policy";
 
 export interface McpContext {
   /** Somente o runtime in-process fornece o job original, nunca o cliente MCP. */
   meetingBooking?: MeetingBookingContext;
   organizationId: string;
   role: Role;
+  /** Snapshot persistido resolvido pela autenticação do token. */
+  managedPolicy?: ManagedAreaPolicy | null;
   actor: Actor;
   apiTokenId: string;
   /** Usuário humano que provisionou o token; usado em FKs/auditoria, nunca como ator atual. */

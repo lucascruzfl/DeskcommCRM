@@ -70,7 +70,7 @@ export async function POST(_req: NextRequest, ctx: RouteCtx): Promise<Response> 
   // o `visibility_mode`, e ler com service role aqui deixaria um agent fora de
   // escopo pausar o automático de uma conversa que ele nem enxerga.
   const { data: convData, error: convErr } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select("id, contact_id, status, assigned_to_user_id, bot_silenced_until")
     .eq("id", id)
     .eq("organization_id", org.orgId)
@@ -126,7 +126,7 @@ export async function POST(_req: NextRequest, ctx: RouteCtx): Promise<Response> 
   // `update.sh` aplica o baseline, mas nada garante que este código não chegou
   // primeiro.
   const { data: atualizada, error: updErr } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .update({ bot_silenced_until: SILENCIO_DURAVEL, last_handoff_reason: MOTIVO })
     .eq("id", id)
     .eq("organization_id", org.orgId)

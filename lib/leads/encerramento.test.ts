@@ -39,7 +39,7 @@ function makeDb({
 } = {}) {
   const tables: Record<string, Row[]> = {
     crm_leads: leads,
-    crm_stages: stages,
+    operational_crm_stages: stages,
     crm_lead_activities: [],
   };
   const updates: Row[] = [];
@@ -150,9 +150,37 @@ function baseLead(overrides: Row = {}): Row {
 
 function baseStages(overrides: Row = {}) {
   return [
-    { id: OPEN_STAGE, organization_id: ORG, pipeline_id: PIPELINE, is_won: false, is_lost: false, is_archived: false, position: 1, name: "Aberto" },
-    { id: WON_STAGE, organization_id: ORG, pipeline_id: PIPELINE, is_won: true, is_lost: false, is_archived: false, position: 2, name: "Pago", ...overrides },
-    { id: LOST_STAGE, organization_id: ORG, pipeline_id: PIPELINE, is_won: false, is_lost: true, is_archived: false, position: 3, name: "Perdido" },
+    {
+      id: OPEN_STAGE,
+      organization_id: ORG,
+      pipeline_id: PIPELINE,
+      is_won: false,
+      is_lost: false,
+      is_archived: false,
+      position: 1,
+      name: "Aberto",
+    },
+    {
+      id: WON_STAGE,
+      organization_id: ORG,
+      pipeline_id: PIPELINE,
+      is_won: true,
+      is_lost: false,
+      is_archived: false,
+      position: 2,
+      name: "Pago",
+      ...overrides,
+    },
+    {
+      id: LOST_STAGE,
+      organization_id: ORG,
+      pipeline_id: PIPELINE,
+      is_won: false,
+      is_lost: true,
+      is_archived: false,
+      position: 3,
+      name: "Perdido",
+    },
   ];
 }
 
@@ -193,9 +221,36 @@ describe("encerraDemanda", () => {
     const db = makeDb({
       leads: [baseLead()],
       stages: [
-        { id: OPEN_STAGE, organization_id: ORG, pipeline_id: PIPELINE, is_won: false, is_lost: false, is_archived: false, position: 1, name: "Aberto" },
-        { id: SEGUNDA_GANHO, organization_id: ORG, pipeline_id: PIPELINE, is_won: true, is_lost: false, is_archived: false, position: 9, name: "Pago parcial" },
-        { id: WON_STAGE, organization_id: ORG, pipeline_id: PIPELINE, is_won: true, is_lost: false, is_archived: false, position: 2, name: "Pago" },
+        {
+          id: OPEN_STAGE,
+          organization_id: ORG,
+          pipeline_id: PIPELINE,
+          is_won: false,
+          is_lost: false,
+          is_archived: false,
+          position: 1,
+          name: "Aberto",
+        },
+        {
+          id: SEGUNDA_GANHO,
+          organization_id: ORG,
+          pipeline_id: PIPELINE,
+          is_won: true,
+          is_lost: false,
+          is_archived: false,
+          position: 9,
+          name: "Pago parcial",
+        },
+        {
+          id: WON_STAGE,
+          organization_id: ORG,
+          pipeline_id: PIPELINE,
+          is_won: true,
+          is_lost: false,
+          is_archived: false,
+          position: 2,
+          name: "Pago",
+        },
       ],
     });
 
@@ -208,14 +263,23 @@ describe("encerraDemanda", () => {
     const db = makeDb({
       leads: [
         baseLead(),
-        baseLead({ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", stage_id: WON_STAGE, position_in_stage: 4000, status: "won" }),
+        baseLead({
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          stage_id: WON_STAGE,
+          position_in_stage: 4000,
+          status: "won",
+        }),
       ],
       stages: baseStages(),
     });
 
     const result = await encerraDemanda(db.client as never, ctx, { leadId: LEAD, desfecho: "won" });
 
-    expect(result.lead).toMatchObject({ status: "won", stage_id: WON_STAGE, position_in_stage: 5000 });
+    expect(result.lead).toMatchObject({
+      status: "won",
+      stage_id: WON_STAGE,
+      position_in_stage: 5000,
+    });
     expect(db.updates[0]).toMatchObject({ stage_id: WON_STAGE, position_in_stage: 5000 });
     expect(db.rpcs).toEqual([]);
   });
@@ -233,7 +297,11 @@ describe("encerraDemanda", () => {
   });
 
   it("é idempotente quando o lead já está ganho", async () => {
-    const lead = baseLead({ status: "won", stage_id: WON_STAGE, closed_at: "2026-08-19T00:00:00.000Z" });
+    const lead = baseLead({
+      status: "won",
+      stage_id: WON_STAGE,
+      closed_at: "2026-08-19T00:00:00.000Z",
+    });
     const db = makeDb({ leads: [lead], stages: baseStages() });
 
     const result = await encerraDemanda(db.client as never, ctx, { leadId: LEAD, desfecho: "won" });

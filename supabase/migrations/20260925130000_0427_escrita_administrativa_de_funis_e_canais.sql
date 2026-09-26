@@ -44,14 +44,14 @@ create policy managed_channel_sessions_delete on public.channel_sessions
   using (public.fn_managed_area_allowed(organization_id, '/app/connections'));
 
 -- Estas quatro tabelas de anúncios são server-only: authenticated/anon não
--- recebem nenhum grant e a RLS não tem policy. A 0412 lhes acrescentou um
+-- recebem nenhum grant e a RLS não tem policy. A 0426 lhes acrescentou um
 -- gate redundante, quebrando o contrato deny-all verificado pelos invariantes.
 drop policy if exists managed_area_gate on public.ad_platform_connections;
 drop policy if exists managed_area_gate on public.ad_conversion_dispatches;
 drop policy if exists managed_area_gate on public.ad_insights_connections;
 drop policy if exists managed_area_gate on public.ad_hierarchy_cache;
 
--- 0412 revoga a escrita de llm_calls depois da varredura do baseline anterior.
+-- 0426 revoga a escrita de llm_calls depois da varredura do baseline anterior.
 -- Recalcular aqui remove as travas de suporte obsoletas dessa tabela server-only
--- tanto no upgrade 0410→0413 quanto na primeira instalação.
+-- tanto no upgrade 0425→0427 quanto na primeira instalação.
 do $f$ begin perform public.fn_aplicar_travas_de_suporte(); end $f$;

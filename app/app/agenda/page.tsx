@@ -225,7 +225,7 @@ export default async function AgendaPage() {
   // então o ramo "Agenda conectada" era código morto e o botão "Conectar Google"
   // não sumia depois de conectar. Segunda conexão era um clique no mesmo botão.
   const { data: conexoes } = await supabase
-    .from("calendar_connections")
+    .from("operational_calendar_connections")
     .select("account_email, status")
     .eq("organization_id", activeOrg.orgId)
     .eq("user_id", user.id)

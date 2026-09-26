@@ -38,7 +38,7 @@ function supabaseCom(
 ) {
   return {
     from: (tabela: string) => {
-      if (tabela === "organizations") {
+      if (tabela === "operational_organizations") {
         return {
           select: () => ({
             eq: () => ({
@@ -128,9 +128,7 @@ describe("POST /api/v1/products/import — reimportar não pisa a moeda de quem 
     vi.mocked(createClient).mockResolvedValue(supabaseCom("USD", ["AND-01"]) as never);
     const { POST } = await import("./route");
 
-    await POST(
-      pedido(csv("IP15,iPhone 15,5499,00\nAND-01,Galaxy S24,3999,00")),
-    );
+    await POST(pedido(csv("IP15,iPhone 15,5499,00\nAND-01,Galaxy S24,3999,00")));
 
     const todas = upserts.flat();
     const novo = todas.find((l) => l.codigo === "IP15");
@@ -185,7 +183,10 @@ describe("POST /api/v1/products/import — o código não diferencia maiúsculas
   });
 
   it("confere o catálogo INTEIRO, não só a primeira página", async () => {
-    const catalogo = [...Array.from({ length: 1000 }, (_, i) => `A${String(i).padStart(4, "0")}`), "IP15"];
+    const catalogo = [
+      ...Array.from({ length: 1000 }, (_, i) => `A${String(i).padStart(4, "0")}`),
+      "IP15",
+    ];
     const { corpo } = await importar(catalogo, "ip15,iPhone 15,4999");
 
     expect(upserts.flat()).toEqual([]);
@@ -207,7 +208,7 @@ describe("POST /api/v1/products/import — o código não diferencia maiúsculas
 
 // Este teste isola o handler; autoridade de suporte é exercitada na suíte própria.
 vi.mock("@/lib/impersonate/support", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/lib/impersonate/support")>(),
+  ...(await importOriginal<typeof import("@/lib/impersonate/support")>()),
   requireSupportWrite: vi.fn(async () => null),
   authenticatedSessionId: vi.fn(async () => "f2200000-0000-4000-8000-000000000099"),
 }));

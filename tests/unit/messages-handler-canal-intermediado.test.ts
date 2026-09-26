@@ -83,6 +83,7 @@ const credencialDaSessao: {
   decifravel: boolean;
 } = { token: null, porOrg: null, erro: null, decifravel: true };
 
+const transporteDoTeste = vi.hoisted(() => ({ client: null as SupabaseClient | null }));
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     storage: {
@@ -97,7 +98,9 @@ vi.mock("@/lib/supabase/admin", () => ({
     // identificador do provider E `archived_at is null` (issue #236 /
     // migration 0165). Um stub em que `eq()` já entrega `maybeSingle` deixa de
     // casar com o código real — e mock que não casa testa o mock.
-    from: () => {
+    from: (tabela: string) => {
+      if (["conversations", "operational_conversations"].includes(tabela))
+        return transporteDoTeste.client!.from(tabela);
       const filtros: Record<string, unknown> = {};
       const alvo: Record<string, unknown> = {
         maybeSingle: async () => {
@@ -133,7 +136,9 @@ vi.mock("@/lib/supabase/admin", () => ({
         return { data: null, error: null };
       }
       const cifrado = String(args?.ciphertext ?? "");
-      const daOrg = Object.values(credencialDaSessao.porOrg ?? {}).find((s) => s.cifrado === cifrado);
+      const daOrg = Object.values(credencialDaSessao.porOrg ?? {}).find(
+        (s) => s.cifrado === cifrado,
+      );
       return {
         data: daOrg?.token ?? (credencialDaSessao.porOrg ? null : credencialDaSessao.token),
         error: null,
@@ -181,7 +186,10 @@ function colunasDoSelect(select: string): string[] {
 function colunasDoEmbed(select: string, apelido: string): string[] {
   const m = new RegExp(`${apelido}\\s*:[^(]*\\(([^)]*)\\)`).exec(select);
   if (m === null) return [];
-  return m[1]!.split(",").map((c) => c.trim()).filter(Boolean);
+  return m[1]!
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean);
 }
 
 function projetar(linha: Row, select: string): Row {
@@ -206,7 +214,12 @@ function conversaCompleta(forma: Forma = {}): Row {
     is_group: false,
     group_chat_id: null,
     provider_conversation_id: forma.providerConversationId ?? null,
-    contacts: { phone_number: "+595991733685", wa_identity: null, wa_lid: "999888", is_blocked: false },
+    contacts: {
+      phone_number: "+595991733685",
+      wa_identity: null,
+      wa_lid: "999888",
+      is_blocked: false,
+    },
     channel_sessions: {
       provider,
       waha_session_name: provider === "waha" ? "default" : null,
@@ -232,16 +245,16 @@ function makeSupabase(linhaCompleta: Row, espelhoDoModelo: Row | null = null) {
   } = { message: null, selects: [], contactPatch: null, contactFilters: {} };
   const client = {
     from(tabela: string) {
-      if (tabela === "conversations") {
+      if (["conversations", "operational_conversations"].includes(tabela)) {
         return {
           select: (cols: string) => {
-            estado.selects.push(cols);
-              // Encadeável SEM LIMITE de propósito: a consulta da conversa filtra
-              // por id E por `organization_id` (este handler também roda com o
-              // client de service role, que bypassa RLS). Um dublê que fixa a
-              // quantidade de `eq` quebra quando a consulta ganha o filtro que
-              // fecha o vazamento entre organizações — com um erro que não fala
-              // do comportamento sob teste.
+            if (tabela === "conversations") estado.selects.push(cols);
+            // Encadeável SEM LIMITE de propósito: a consulta da conversa filtra
+            // por id E por `organization_id` (este handler também roda com o
+            // client de service role, que bypassa RLS). Um dublê que fixa a
+            // quantidade de `eq` quebra quando a consulta ganha o filtro que
+            // fecha o vazamento entre organizações — com um erro que não fala
+            // do comportamento sob teste.
             const cadeia: Record<string, unknown> = {
               eq: () => cadeia,
               maybeSingle: async () => ({ data: projetar(linhaCompleta, cols), error: null }),
@@ -286,7 +299,7 @@ function makeSupabase(linhaCompleta: Row, espelhoDoModelo: Row | null = null) {
         };
         return { select: () => cadeia };
       }
-      if (tabela === "messages") {
+      if (["messages", "operational_messages"].includes(tabela)) {
         return {
           insert: (row: Row) => {
             estado.message = {
@@ -298,14 +311,18 @@ function makeSupabase(linhaCompleta: Row, espelhoDoModelo: Row | null = null) {
               ...row,
             };
             return {
-              select: () => ({ single: async () => ({ data: { ...estado.message }, error: null }) }),
+              select: () => ({
+                single: async () => ({ data: { ...estado.message }, error: null }),
+              }),
             };
           },
           update: (patch: Row) => {
             estado.message = { ...estado.message, ...patch };
             return {
               eq: () => ({
-                select: () => ({ maybeSingle: async () => ({ data: { ...estado.message }, error: null }) }),
+                select: () => ({
+                  maybeSingle: async () => ({ data: { ...estado.message }, error: null }),
+                }),
               }),
             };
           },
@@ -340,7 +357,8 @@ function makeSupabase(linhaCompleta: Row, espelhoDoModelo: Row | null = null) {
     },
     rpc: async () => ({ error: null }),
   };
-  return { supabase: client as unknown as SupabaseClient, estado };
+  transporteDoTeste.client = client as unknown as SupabaseClient;
+  return { supabase: transporteDoTeste.client, estado };
 }
 
 const ctx: HandlerCtx = {
@@ -406,7 +424,10 @@ describe("o projetor do dublê é discriminante (guarda de vacuidade)", () => {
     vi.stubGlobal("fetch", respostaOk("wamid.LID"));
     const { supabase, estado } = makeSupabase(conversaCompleta({ providerConversationId: THREAD }));
     await sendMessageHandler(supabase, ctx, texto());
-    expect(estado.selects.length, "guarda de vacuidade: o handler consultou a conversa").toBeGreaterThan(0);
+    expect(
+      estado.selects.length,
+      "guarda de vacuidade: o handler consultou a conversa",
+    ).toBeGreaterThan(0);
     expect(estado.selects.every((sel) => colunasDoEmbed(sel, "contacts").includes("wa_lid"))).toBe(
       true,
     );
@@ -439,9 +460,9 @@ describe("a thread do provider atravessa os três elos até o transporte", () =>
     expect(url).not.toContain("595991733685");
     // E a coluna foi de fato PEDIDA — a prova de que o elo existe, sem depender
     // de onde ela aparece na string.
-    expect(estado.selects.every((s) => colunasDoSelect(s).includes("provider_conversation_id"))).toBe(
-      true,
-    );
+    expect(
+      estado.selects.every((s) => colunasDoSelect(s).includes("provider_conversation_id")),
+    ).toBe(true);
   });
 
   it("mídia passa pela MESMA thread — os dois call sites, não só o de texto", async () => {
@@ -571,11 +592,18 @@ describe("nenhum desfecho diz `sent` sem nada ter saído", () => {
     await sendMessageHandler(
       supabase,
       ctx,
-      texto({ type: "template", body: undefined, template_name: "cuenta_activa", template_language: "es" }),
+      texto({
+        type: "template",
+        body: undefined,
+        template_name: "cuenta_activa",
+        template_language: "es",
+      }),
     );
 
     const urls = fetchMock.mock.calls.map((c) => String(c[0]));
-    expect(urls.join(" "), "o modelo saiu pela Graph API da Meta").not.toMatch(/graph\.facebook\.com/);
+    expect(urls.join(" "), "o modelo saiu pela Graph API da Meta").not.toMatch(
+      /graph\.facebook\.com/,
+    );
     expect(urls.join(" ")).toMatch(/zernio/);
   });
 
@@ -614,7 +642,9 @@ describe("canal oficial conectado pela TELA — a credencial da sessão manda (#
     expect(msg.external_id).toBe("wamid.M1");
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(String(url)).toContain("/1103328999528818/messages");
-    expect((init as { headers: Record<string, string> }).headers.Authorization).toBe("Bearer tok-da-sessao");
+    expect((init as { headers: Record<string, string> }).headers.Authorization).toBe(
+      "Bearer tok-da-sessao",
+    );
   });
 
   it("sessão ausente e sem ambiente: `queued` com `meta_not_configured`, nada na rede", async () => {
@@ -747,7 +777,10 @@ describe("o MODELO do canal oficial sai pela credencial da sessão, não pelo .e
     expect(msg.status).toBe("sent");
     expect(msg.external_id).toBe("wamid.MODELO");
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }];
+    const [url, init] = fetchMock.mock.calls[0] as [
+      string,
+      RequestInit & { headers: Record<string, string> },
+    ];
     expect(String(url)).toContain(`/${NUMERO_DA_SESSAO}/messages`);
     expect(String(url)).not.toContain(NUMERO_DO_ENV);
     expect(init.headers.Authorization).toBe("Bearer tok-da-sessao");

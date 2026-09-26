@@ -1,0 +1,2445 @@
+{
+  "scope": "Todas as funções de public, excluindo extensões; catálogo aplicado em banco descartável. Não substitui provas de comportamento e UI.",
+  "functions": [
+    {
+      "signature": "activate_kb_version(uuid,uuid)",
+      "name": "activate_kb_version",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "c6507168e7403340f88d077d28635797b6c84a20623160eaa57822ad7cc4cde6",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "comando_da_conversa(conversations)",
+      "name": "comando_da_conversa",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "70643820444678868712ee056f30e851a6cacfbba8fc5600a230df6d95fac6e5",
+      "status": "SAFE",
+      "reason": "SECURITY INVOKER: queries sujeitas à RLS do chamador; filtros de organization_id/referência revisados; retorno operacional."
+    },
+    {
+      "signature": "emit_event(text,text,uuid,jsonb,jsonb,uuid)",
+      "name": "emit_event",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "81c23504d3196ecd1aae6b582bde5fbaf8b2d9625db43199c6e08d3226cf9710",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_accept_team_invite(uuid,uuid,text,uuid,timestamp with time zone,timestamp with time zone)",
+      "name": "fn_accept_team_invite",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "73d9c31022f214d37d0e2b377a5ebbda284cdd0261bcec5ce1c3ee1e9f414216",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_accept_team_invite(uuid,uuid,text,uuid,timestamp with time zone,timestamp with time zone,jsonb)",
+      "name": "fn_accept_team_invite",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "3ea48ec7164cffae6bdf9d42c64e20b8a4d5de11f77bb144ffb7c0f76c2a12a5",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_activity_report(uuid,timestamp with time zone,timestamp with time zone,text,integer)",
+      "name": "fn_activity_report",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "f3733600fd611eb9aee056cd97c03425a7e9cd63640a735050bb90f6315d1024",
+      "status": "SAFE",
+      "reason": "SECURITY INVOKER: queries sujeitas à RLS do chamador; filtros de organization_id/referência revisados; retorno operacional."
+    },
+    {
+      "signature": "fn_adotar_tipos_de_agendamento_sem_dono()",
+      "name": "fn_adotar_tipos_de_agendamento_sem_dono",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "04d5125e775992b33ad6e1626360657ec5eb81774694cfbfedc08d6f67af6881",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_agenda_conexoes_google_do_dono(uuid,uuid)",
+      "name": "fn_agenda_conexoes_google_do_dono",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "71cf4e06921dce1fc0b26049aa2daf297c6e28d6c08b6700406506beba1368b1",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_agenda_minutes(jsonb,text,integer)",
+      "name": "fn_agenda_minutes",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "25947d2ea6ee8a8a5d536699aaec262591fb8e2d15156d45f23b796fd135f2db",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_agenda_ocupacao_google_do_dono(uuid,uuid,timestamp with time zone,timestamp with time zone)",
+      "name": "fn_agenda_ocupacao_google_do_dono",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "b83c9eb9375307db9bc137ede4cb629458b915cfedbca34ce52cb19d9075f5c6",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_agenda_settings(uuid,jsonb)",
+      "name": "fn_agenda_settings",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "10f018db57a67a3f3f44085d66495ebe3b6b3aadc1336c7fbfbfc039e23630ee",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_agent_legacy_notice(uuid,uuid,text,text,text)",
+      "name": "fn_agent_legacy_notice",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "d7c92209cff9e1bc54918957569576325015821d7d9af288b386bbf14631990c",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_agent_legacy_published()",
+      "name": "fn_agent_legacy_published",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "2bf98d2eaa46decb3894dca021573e22ed3543fa1ff84f298d4eedcf91cfae85",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_agent_provisioning_origin()",
+      "name": "fn_agent_provisioning_origin",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "2196e9c794086b249f09fa86d68bd83f438051555c3e7a7f25632ca1d770cd78",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_agent_tool_usage(uuid,uuid,timestamp with time zone)",
+      "name": "fn_agent_tool_usage",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "c00a42da3716378a1f5374bcb4ca6fc8cf595b5fa02a72e5004c7a7b8bae030c",
+      "status": "ADMIN-ONLY",
+      "reason": "Papel mínimo manager/admin com membership e área persistida antes do efeito; fn_agent_tool_usage é invoker e depende de tabelas privadas bloqueadas por RLS."
+    },
+    {
+      "signature": "fn_agent_versions_immutable()",
+      "name": "fn_agent_versions_immutable",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "0710ecd3c12f84a682efb9364875c171ef94424e3dd4cdf5bb2309ff379cde75",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_agora()",
+      "name": "fn_agora",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "5c9e9c70265bbf4ec08deec5b762f2c99f07bf7399c85df612434da8c42f0253",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_ai_agent_version_content_immutable()",
+      "name": "fn_ai_agent_version_content_immutable",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "cd88e615bf910ca879fed705c6c1f42ed5a596f97ced96ef6ffcfdaf7f663c3a",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_apaga_propostas_de_contato_anonimizado()",
+      "name": "fn_apaga_propostas_de_contato_anonimizado",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "b842df3817f54bf23512de7e1e54c3ecd0916bf2410a4dbc2ad5fce7dcbe4939",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_aplicar_quadro_do_onboarding(uuid,uuid,text,text,jsonb)",
+      "name": "fn_aplicar_quadro_do_onboarding",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "e4cf5843bc6c55e5881964efe8d6843ae9f32310d9beb55f2b68b0282f30bb94",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_aplicar_travas_de_suporte()",
+      "name": "fn_aplicar_travas_de_suporte",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "404c4efc615720682a30e72dbfa9c4f430907b539b8aec05464a759d05a67f3e",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_appointment_change(uuid,uuid,bigint,jsonb)",
+      "name": "fn_appointment_change",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "1df3c066a35ede0bf72171231a3072e138faf0fb6c864e397740a3a8d13d7fac",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_appointment_change_core(uuid,uuid,bigint,jsonb,boolean,jsonb)",
+      "name": "fn_appointment_change_core",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "76e9118d1d816c0ae1c7f65d74ae05889786f1d21cdbce2c40f6e84a3737c707",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_appointment_confirmation_sweep(integer,timestamp with time zone)",
+      "name": "fn_appointment_confirmation_sweep",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "57fd8d1df4e4e1b01a103f085a2657b2803c966345cf5bc9d999badb8b7bc78a",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_appointment_enrollment_current(uuid,uuid,text)",
+      "name": "fn_appointment_enrollment_current",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "00bd9c30d9642a5a00cebb5e61e632578e9208c57f6493dceeeb6384ab785961",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_appointment_inbound()",
+      "name": "fn_appointment_inbound",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "e25e42ee26e945a00a18fbdd1821b59dd89a2a1166ec95dc9fa400fb533a9ebe",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_appointment_recover(uuid,uuid)",
+      "name": "fn_appointment_recover",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "99043eb3f929bcbaff36960a62a7893ab10967d474112ca387712a94ea7f13c5",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_appointment_stamp()",
+      "name": "fn_appointment_stamp",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "9d96f503de534bec3ae3ca6ee95d187b8133f0793fba7aa81e4716369eea3429",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_atrito_jaccard(text,text)",
+      "name": "fn_atrito_jaccard",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "1df818cf2eb5ab341e7a971593a870ce7dd961a4c30d5ed54a552ec5edf5fa45",
+      "status": "SAFE",
+      "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
+    },
+    {
+      "signature": "fn_atrito_metrics(uuid,timestamp with time zone,timestamp with time zone,integer,double precision,integer)",
+      "name": "fn_atrito_metrics",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "9e7c32c56054562131636b37fff93de41e235a4f0078e8a9401b6a4f7ece7cc5",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_attendant_metrics(uuid,timestamp with time zone,timestamp with time zone,uuid)",
+      "name": "fn_attendant_metrics",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "c2f98b6901d60ffba7bebf7a424aa50858e5cf554915646d101fe7649781d43a",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_audit_log_row()",
+      "name": "fn_audit_log_row",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "a9db0a45bddc020d4f9698d3f8626301b95e9fceb4693ff6b383b1de9dce2104",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_aviso_de_caso_coerente()",
+      "name": "fn_aviso_de_caso_coerente",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "bb99b6c55ebd8bffb40917e5488288d0fbdfc7ce96e844447ae6c9d64a905fd6",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_buscar_trechos_das_fontes(uuid,uuid[],vector,integer,real,text)",
+      "name": "fn_buscar_trechos_das_fontes",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "c0d956737a75d2b37926a068e22b30033cd132a56818b51f5be41a64b83fcd66",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_campanha_sincroniza_ack()",
+      "name": "fn_campanha_sincroniza_ack",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "7d8c74230bdd5d78ec28115e9926505d331d9e9082b19204ad79bc33a5bfa269",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_can_view_conversation(uuid,uuid)",
+      "name": "fn_can_view_conversation",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "030c34975da05aa1e97840e2b71ae9e63e12b46f6d847147727c3fca8426eb6d",
+      "status": "SAFE",
+      "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
+    },
+    {
+      "signature": "fn_can_view_lead(uuid,uuid)",
+      "name": "fn_can_view_lead",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "c257a0a9e02ebe2a5360cf6ac3412271a78ca7a9e0b1bbec1f352c71aadec214",
+      "status": "SAFE",
+      "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
+    },
+    {
+      "signature": "fn_carimba_detected_at()",
+      "name": "fn_carimba_detected_at",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "a6194562370124dd03f8481290df532f6f51845892497b4f762c1f566b945d3f",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_carimba_proposta_de_dado()",
+      "name": "fn_carimba_proposta_de_dado",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "3290d112e0a076328b83f2a92a5e297e04d3703da02172650b395c692bfc0e0e",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_carimba_reativacao()",
+      "name": "fn_carimba_reativacao",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "3290d112e0a076328b83f2a92a5e297e04d3703da02172650b395c692bfc0e0e",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_carimbar_ida_ao_google()",
+      "name": "fn_carimbar_ida_ao_google",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "e7e8e758ccb4e475c9abeb25bd6820307800ce9ea6b3571c4cf1c6829bc74ecd",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_case_service_boundary()",
+      "name": "fn_case_service_boundary",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "260f377979b283a6593fac2a969b8b0b7892098eb174bf47a99b0df9a3724f08",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_channel_routing_claim(uuid,uuid,uuid,uuid,jsonb,text)",
+      "name": "fn_channel_routing_claim",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "bc32cfda9092a492b93f21fbaf20ed4e547730dff535fd8d1d5d7045575bc3ba",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_claim_due_followup_enrollments(integer,integer)",
+      "name": "fn_claim_due_followup_enrollments",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "11ae1da7bea142aa567d4012620e2b8ac06cbc2f82e811d9af73b77a7d3f7cf5",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_colegas_podem_mexer_na_agenda(uuid)",
+      "name": "fn_colegas_podem_mexer_na_agenda",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "c8c3616fc2f55f27cfa2434663fbd2f7199fac9099f1e59df5506bce0cb5bc5a",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_colunas_de_cliente_sao_do_sistema()",
+      "name": "fn_colunas_de_cliente_sao_do_sistema",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "4dfa8d0836e4efadadd72ba9e38b195c45499e2e98ab514e019dbf0fda7f0de1",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_comando_da_conversa(text,uuid,timestamp with time zone,boolean,boolean,timestamp with time zone)",
+      "name": "fn_comando_da_conversa",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "14b76e7fb5f16340eda05d45cb51e71e6b44e718465532cf77ffc6c2c9a0c3e3",
+      "status": "SAFE",
+      "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
+    },
+    {
+      "signature": "fn_conferir_modulos_instalados()",
+      "name": "fn_conferir_modulos_instalados",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "c7a7414c49f9f2dcd5b78a404cac3a99a0b1ec057c4494600afe3c0b1450f688",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_configurar_pre_go_live_canal(uuid,uuid,text,text[])",
+      "name": "fn_configurar_pre_go_live_canal",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "0efcb178b3addc0e3262ddab42e4e8534d038274b64828b16a9fcf24e9278095",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_contact_redaction_lock()",
+      "name": "fn_contact_redaction_lock",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "2df34f491f433c19352bffd104a7809679c3e81ea94f6a22d259ed1481a70ba3",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_contar_mensagem_ignorada(uuid)",
+      "name": "fn_contar_mensagem_ignorada",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "afc4cee580d6414020684336f6105dbec555d48e92221feca66532b232842cbe",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_contato_anonimizado_encerra_roteiro()",
+      "name": "fn_contato_anonimizado_encerra_roteiro",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "7826fd94e8aa8de8f2e60a776677ec15b4b9f181d393934993ee2b5099a09804",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_contato_anonimizado_limpa_campos_personalizados()",
+      "name": "fn_contato_anonimizado_limpa_campos_personalizados",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "9e5a6c5d2e426df8b292c06b7bfac8797c4efc33dbc0eb6d03ce3e4d6153fb0b",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_contato_encerra_roteiro_com_humano_ou_opt_out()",
+      "name": "fn_contato_encerra_roteiro_com_humano_ou_opt_out",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "40e7b6c0ef5e999fe6aa195ce72dd4067c751e703ae955dc9807b1ec050401d6",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_conversation_assign(uuid,uuid,uuid,text,uuid,boolean)",
+      "name": "fn_conversation_assign",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "d7b812feff841ad6a62a428c0e6ddf4519b9ce90823394d659dbd6e62f644dd5",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_corpos_de_lembrete_validos(jsonb)",
+      "name": "fn_corpos_de_lembrete_validos",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "586c24142074cf219110131c6e419de69a0f388c1134f77742c147c14a35d432",
+      "status": "SAFE",
+      "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
+    },
+    {
+      "signature": "fn_create_tenant_with_owner(uuid,uuid,jsonb,text)",
+      "name": "fn_create_tenant_with_owner",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "e12dfb757bcc199a16d385a39d7466dc35a727236ca011d1df4be61143a84b6f",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_crm_lead_close_on_stage()",
+      "name": "fn_crm_lead_close_on_stage",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "12b0c5fe97846ba5e529a7055038aeb159c54356fc3aaa2327c88a0b7ae2b927",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_decrypt_oauth(bytea)",
+      "name": "fn_decrypt_oauth",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "b403603a958ddd815d8935a0624b2c90adccad78507066bacaae5c69df2075a1",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_definir_aviso_de_caso(uuid,uuid,text,text,boolean,boolean)",
+      "name": "fn_definir_aviso_de_caso",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "1e657eef5a2ee2cf69e3d38b27d8aab9f8a849cdaab5a86326cc4e2da749e115",
+      "status": "ADMIN-ONLY",
+      "reason": "Papel mínimo manager/admin com membership e área persistida antes do efeito; fn_agent_tool_usage é invoker e depende de tabelas privadas bloqueadas por RLS."
+    },
+    {
+      "signature": "fn_definir_cliente_pela_agenda(uuid,boolean)",
+      "name": "fn_definir_cliente_pela_agenda",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "b85716db251fc8e463f4bf9d330efb64752c6bdb4c7b08e72942143abece6d08",
+      "status": "ADMIN-ONLY",
+      "reason": "Papel mínimo manager/admin com membership e área persistida antes do efeito; fn_agent_tool_usage é invoker e depende de tabelas privadas bloqueadas por RLS."
+    },
+    {
+      "signature": "fn_definir_colegas_podem_mexer_na_agenda(uuid,boolean)",
+      "name": "fn_definir_colegas_podem_mexer_na_agenda",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "1ade55b44f991212df4b7b4813718963953e4152cb0cbe8251380efcd677e10a",
+      "status": "ADMIN-ONLY",
+      "reason": "Papel mínimo manager/admin com membership e área persistida antes do efeito; fn_agent_tool_usage é invoker e depende de tabelas privadas bloqueadas por RLS."
+    },
+    {
+      "signature": "fn_definir_logo_da_organizacao(uuid,uuid,text)",
+      "name": "fn_definir_logo_da_organizacao",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "4dd4b6a9512da4f2fb96f6bb510493dd0acd7fbd7727bb879d3431f4081db93c",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_definir_marca_da_organizacao(uuid,uuid,jsonb)",
+      "name": "fn_definir_marca_da_organizacao",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "f1fbc6c19376ee020af07d8803f150fb18ca2879297b77d228ab54a3420a82af",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_degraus_de_lembrete_validos(integer[])",
+      "name": "fn_degraus_de_lembrete_validos",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "5d76359846675933c6bf1f59c9a6b152b438d9a4bdeb539a1f1f17f7f20b49f6",
+      "status": "SAFE",
+      "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
+    },
+    {
+      "signature": "fn_demanda_abre_no_inbound()",
+      "name": "fn_demanda_abre_no_inbound",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "56c4b2d3a88313fe84ec231f6f02e7a061a705470f6a0e6fe3df04af5407719a",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_demanda_encerrar(uuid,uuid,bigint,text,uuid)",
+      "name": "fn_demanda_encerrar",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "fb96d0d60905bb92eb3583948d8cf4d4bb119c75d24400b86728f1da2eece91f",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_demanda_fecha_com_conversa()",
+      "name": "fn_demanda_fecha_com_conversa",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "6b45d9382fd077d7b08379e5f4d8803cc360b69a7e5d340205e4c1c01908dd0a",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_demanda_revision()",
+      "name": "fn_demanda_revision",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "95a2f7e1275de083bc86a719d2c37d3444099a3ec72a843899fb150ea1c898ea",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_emit_agent_case_event()",
+      "name": "fn_emit_agent_case_event",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "42eb7f4ea4ce174c28063b3f6ad5544f83fda012b62922353c86a21c2546fcdc",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_emit_channel_session_status_changed()",
+      "name": "fn_emit_channel_session_status_changed",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "db0393b26288af5115abb167f1ab6d29081e0d98984d3e2fee36d82c516bfaff",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_emit_conversation_routing()",
+      "name": "fn_emit_conversation_routing",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "50c2048bb603d77c9a8dad90ca4b7400948ec7a341152d9209272c7ca05e3859",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_emit_event_on_lead_change()",
+      "name": "fn_emit_event_on_lead_change",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "b813a1c52a0ee56cc507d4b2ffa0f767b137ef205ca8b097b0d158fec8f9b476",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_emit_message_event()",
+      "name": "fn_emit_message_event",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "3de31e867fe91001aee6e5d35fdd6b6d00d4444b9e55e4e8524d82847e60b2ad",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_encerrar_roteiros_vencidos(integer)",
+      "name": "fn_encerrar_roteiros_vencidos",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "a72e9bcb2017f2401ffb564ef4510ee4bb472260b91c0808422d9c082dfe40b8",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_encrypt_oauth(text)",
+      "name": "fn_encrypt_oauth",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "fa31c04aba3b74095ee802f5502386643158fff18ab1c0d57f0129ce304752c7",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_end_support(uuid,uuid)",
+      "name": "fn_end_support",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "60910de6a1aa72af47fecc8989d0a26b85e01486ca75c6b857725a5f21b10375",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_enrollment_superficie_coerente()",
+      "name": "fn_enrollment_superficie_coerente",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "cc4c0209aecd9a05ea814c34998a62a48bfc2daa4e3cc20f310e41d9f1edc9d3",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_estampar_atribuicao_de_anuncio(uuid,uuid,text,jsonb)",
+      "name": "fn_estampar_atribuicao_de_anuncio",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "076db4a3cd10482fcbf6da1a2c34d5bc077194c201fb9d97d5709b850e055520",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_estornar_comanda(uuid,uuid,text)",
+      "name": "fn_estornar_comanda",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "ff36ae154f6ecda844b3b99c9f09dd4ab40f3326b7f6f5508ee5b81ece69e76f",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_event_log_e_registro(text)",
+      "name": "fn_event_log_e_registro",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "bd4ebc8c1ed94f1e901d45fb22e8c3fe2fbaac5a562d7d693bcaa39a4220c9ce",
+      "status": "SAFE",
+      "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
+    },
+    {
+      "signature": "fn_event_log_marca_registro()",
+      "name": "fn_event_log_marca_registro",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "390d49eb2347bd2f7d0424eec55f641fcd204c6044232004fe2a859738373df3",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_expurgar_auditoria_vencida(integer,integer)",
+      "name": "fn_expurgar_auditoria_vencida",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "6b53b9765287dec283248abb0ca8e377b439ecb8da5806d665961f705af2e01e",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_expurgar_avisos_de_caso_vencidos(integer,integer)",
+      "name": "fn_expurgar_avisos_de_caso_vencidos",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "41a103fe4cf2aae899fb6f222f3b370597a888d68c3c9add00dd21daf3854d9d",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_expurgar_conversa_do_caso_vencida(integer,integer)",
+      "name": "fn_expurgar_conversa_do_caso_vencida",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "c67284f485470d7c10d71487493b4299c767d177587a23fe9d92c6922a7fc7cc",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_expurgar_espelho_da_agenda(integer,integer)",
+      "name": "fn_expurgar_espelho_da_agenda",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "980f5a1e117f417b87c8ee7c95e698da3a0f4559585544eedaeabad93bf9f2b7",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_expurgar_nonces_de_oauth(integer,integer)",
+      "name": "fn_expurgar_nonces_de_oauth",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "7be7d28674c66310a8e5b0c5e77744dcdbdf4b68e7a19d6d94acfc43c1909e08",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_expurgar_passagens_vencidas(integer,integer)",
+      "name": "fn_expurgar_passagens_vencidas",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "ee3f06c339d0d170aafbb1d2a19fdf05bfdd41e099639b592c4bdc906331cd76",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_admit_catalog(uuid,uuid,jsonb,text)",
+      "name": "fn_extensions_admit_catalog",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "6e0110e87dbbd525a52d1a46c94030a403879a0ac9b7f76b9ab1623e68015829",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_assert_actor(uuid,uuid)",
+      "name": "fn_extensions_assert_actor",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "adf2852d2c761711e45fd0ec216fdc70b9072a8b4dbb24b010857e0eb08c637b",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_cancel_install(uuid,uuid)",
+      "name": "fn_extensions_cancel_install",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "7c7f20fa6d51e1364d49b0ef50302ae1fd64c9506a3e3c69bfce1ec08be6d72e",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_configure(uuid,uuid,uuid,uuid,integer,boolean,jsonb)",
+      "name": "fn_extensions_configure",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "659f85f00839443d396a0019226a83a79a7ab6586e47036c6447773c41334fac",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_core_update_in_progress()",
+      "name": "fn_extensions_core_update_in_progress",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "fffb2055dc8dcb4e8a848cb89a98a6c326a73887e0484a62a6bf5892eecd8713",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_fail_install(uuid,uuid,text)",
+      "name": "fn_extensions_fail_install",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "1a894a71fc1f1ce91d5f214eb229c96ad7e90dd221735fa9aa5ded198477b432",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_fingerprint(jsonb)",
+      "name": "fn_extensions_fingerprint",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "5f578b3ec8e6e4c6ab603ff1a7642cef17d20ba586ede83fe3d7e847cb3b4781",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_finish_install(uuid,uuid,jsonb,text,integer,text)",
+      "name": "fn_extensions_finish_install",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "2e4feddd64e17a8efb27978cafc9864b1314ddf06bba333d5cc8df9a2f50c32c",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_guard_core_update()",
+      "name": "fn_extensions_guard_core_update",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "f7b3d939254730c79d0c56d6af0358b93d964c3666605ce9f31e2a75b67c3a71",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_installation_counts(uuid)",
+      "name": "fn_extensions_installation_counts",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "dbae56fce735fb9d0e37ee4cd140e6feabb3430b931e6f644fb8ded478116840",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_permissoes_validas(jsonb)",
+      "name": "fn_extensions_permissoes_validas",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "39983236d01385ed3b245a31bce0d9238fdccaab8657be2c8cc9df12cfc7ba04",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_prepare_install(uuid,uuid,uuid,text,text,text,integer)",
+      "name": "fn_extensions_prepare_install",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "c222b75b34e1189d48034d96b7e19fe1b3590187179a81dfc21a5064edea5983",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_remove_installation(uuid,uuid,uuid,integer)",
+      "name": "fn_extensions_remove_installation",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "918d76b6b319601b72a9e58ba6a5c7767f65d549112c4ac02900fc222b247a82",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_extensions_revert_install(uuid,uuid,uuid,integer)",
+      "name": "fn_extensions_revert_install",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "225200c670957651e053cd0b0356ab41bdc26293baf44355b6ef9a2fa816fdff",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_finalizar_comanda(uuid,uuid,uuid,integer)",
+      "name": "fn_finalizar_comanda",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "232cbc174ea1dd9a75709d3dad332bd0fdd5b753fd9179ea386f13c7a3d4e40d",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_finish_channel_connection(uuid,uuid,uuid,text,text,boolean)",
+      "name": "fn_finish_channel_connection",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "0a634cfbe7ce412e0dd773b9611dd57713299614b8e005607512d6e3d8cce4fb",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_followup_apply_step(uuid,uuid,bigint,jsonb,jsonb)",
+      "name": "fn_followup_apply_step",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "422a7eed65ce90e4773f9bdb6c0d70e7ef1300d6d13e72a257106a62a1abb7ad",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_followup_claim_current(uuid,uuid,text,timestamp with time zone)",
+      "name": "fn_followup_claim_current",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "c94aaee8d9741cefbbe6c1c82909b130a4c796d0caa8fa7c9cfcc0d469a65df7",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_followup_generation_write()",
+      "name": "fn_followup_generation_write",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "f8f69c39e6495528229c5ec834f3d6f8f16ee45375f19418956a13779ef47390",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_followup_inline_settle(uuid,uuid,text,boolean,text,timestamp with time zone,boolean,timestamp with time zone)",
+      "name": "fn_followup_inline_settle",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "6fa9a84add8121823f3794971cad6bdaac32fac1a68f16c8b3dfc158a4ef00cc",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_followup_job_current(uuid,uuid,uuid,text)",
+      "name": "fn_followup_job_current",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "6a79423a435ac081bb20b7a4d3dcb1914f2ef23aa3ec13c97bf39b0bc970362d",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_followup_patch(uuid,uuid,bigint,jsonb)",
+      "name": "fn_followup_patch",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "4e0a007024210eddd68e2bdc9da5139090203b8cfc760c62b16d4ff42bc7bfc9",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_followup_revision()",
+      "name": "fn_followup_revision",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "a4dc67479cdb58f2c4873f5e37a72f6f8133146ec64017db2473cfc2f1347aac",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_gasto_de_ia_do_mes(uuid)",
+      "name": "fn_gasto_de_ia_do_mes",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "0dd62e96cc6543fc0aa436ba80a2fcf2c5d5fb21fe7b18beaab0160c30bc07c9",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_google_appointment(uuid,uuid,text,jsonb)",
+      "name": "fn_google_appointment",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "1c9eee342eb9c2dd424618e7b642fd377179d5ca2ee7ff3c0b158b5b2bb2e0bc",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_google_calendar(uuid,uuid,text,jsonb)",
+      "name": "fn_google_calendar",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "ac52a956a1e753344d0734f160b6aa7a6f98502ff148f2bc34c2d514f05267cf",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_google_calendar_fence(uuid,uuid,jsonb,jsonb)",
+      "name": "fn_google_calendar_fence",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "76e66d07f039854fbe11172336f01b389fe43cd7030d2194b999ecc89c06bc20",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_google_catalog(uuid,uuid,jsonb,text)",
+      "name": "fn_google_catalog",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "8c184d75f085edf8c031c5adae9d352c67219d15da946e145db753498280874b",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_google_counts_for_conflicts(uuid,uuid,text)",
+      "name": "fn_google_counts_for_conflicts",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "cbae90e00e38a8943d8d2e7cd7e534fc091f27224fef7d3edfd5319d574147a6",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_google_coverage(uuid,uuid,timestamp with time zone,timestamp with time zone)",
+      "name": "fn_google_coverage",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "9da10e93576428122e5def884ea61fd9fec6728f681be8dae683378ff558d7c4",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_google_projection_stamp()",
+      "name": "fn_google_projection_stamp",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "ccd94be7ff888ca02d50481177dc83599de8fe5d7b924bfe5a4e2e772b43811a",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_google_redact_contact()",
+      "name": "fn_google_redact_contact",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "3870384226e618ec6c15945ebe4dddc84b3e61426a75695a89fdf8c6d965e19d",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_google_resolve(uuid,uuid,text,text,text,text)",
+      "name": "fn_google_resolve",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "e98e0153e2a05824172d106e4c65801957dbfda4264f764a5358afb614985410",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_google_selection(uuid,jsonb,uuid[],uuid)",
+      "name": "fn_google_selection",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "537523d909928f1ced2b756bd7dada287955bc29e6d3312af9d1d6f7e2a781ec",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_is_platform_admin()",
+      "name": "fn_is_platform_admin",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "2008bee68af2c98609bedbce9e9e902a2645ea0fef0602fa9c8c36e70cc32f02",
+      "status": "SAFE",
+      "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
+    },
+    {
+      "signature": "fn_job_service_boundary()",
+      "name": "fn_job_service_boundary",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "709dba0e02f85c6f6351739df9a640b63271e41ed9adb0163f92da58ac1ab777",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_lancamento_pago_e_imutavel()",
+      "name": "fn_lancamento_pago_e_imutavel",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "ce490a25599d1fb116ba10da73ccdf9274630ca875c1e6e81de867f33d48da86",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_lgpd_anonymize_contact(uuid,uuid)",
+      "name": "fn_lgpd_anonymize_contact",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "2cec616226e098cead492d996d22a14975b2017dc349cab7aa81e31f25b09bb8",
+      "status": "ADMIN-ONLY",
+      "reason": "Papel mínimo manager/admin com membership e área persistida antes do efeito; fn_agent_tool_usage é invoker e depende de tabelas privadas bloqueadas por RLS."
+    },
+    {
+      "signature": "fn_lgpd_cascade_redact_contact(uuid,uuid,uuid)",
+      "name": "fn_lgpd_cascade_redact_contact",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "0a5b352f3d147faf2231f44ae9dedd485a9cf16d9ae5fa7c6f8af5973300625e",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_liberar_leads_do_agente()",
+      "name": "fn_liberar_leads_do_agente",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "b46b257218fb73007331ba080255bdaa6796db0bc03249ef1370ed6a51a3b174",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_limpar_vinculos_do_agendamento()",
+      "name": "fn_limpar_vinculos_do_agendamento",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "7f7973935992f025c974fdd933cdf56cff1ef3011cf58a6274c592dd278bec30",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_log_event(uuid,text,jsonb)",
+      "name": "fn_log_event",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "517f86aa68b1c5205665ca6571bfa2f87258c29997ea3c66588195d2f14b285e",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_managed_area_allowed(uuid,text)",
+      "name": "fn_managed_area_allowed",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "f2e36dd5874c46d7e2910cb3eb4917d05adbbd72057c188f963f17d0596929fb",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_marcar_contato_como_cliente()",
+      "name": "fn_marcar_contato_como_cliente",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "66da82f7752aeb9ad67079ff41788627cdbcc7a58765a7ac55546406ce066f94",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_mark_conversation_message(uuid,text,text,timestamp with time zone)",
+      "name": "fn_mark_conversation_message",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "b26a24e1ebbc1df59b2a234c16c37b8fcfd7e03063dc5b075696343ed3abd60c",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_meet_action(uuid,uuid,text,uuid,text,uuid)",
+      "name": "fn_meet_action",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "ecae7dbef2c024427f9d8d184d3d3c231ffdeef570ded9686c6ea2cf8d8e17a6",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_meet_boundary_current(jsonb)",
+      "name": "fn_meet_boundary_current",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "075d1b7c3f0bec6db815a4dd3212bff5cca054a8073e21b23eb24d88700d167c",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_meet_delivery_current(uuid,uuid,text,timestamp with time zone)",
+      "name": "fn_meet_delivery_current",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "268d587454dfe3a3f132fe7c6bffe99ee12c6e90f549347ee78791cc6ae88a3f",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_meet_delivery_enqueue()",
+      "name": "fn_meet_delivery_enqueue",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "79e5c73af1722c70c89a56cf77dd939c1c22c443c16f22370766b20c9bac73fa",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_meet_delivery_policy(uuid,uuid,text,timestamp with time zone)",
+      "name": "fn_meet_delivery_policy",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "ad95c676e1bb6f3edfc16873764cf04855a5090982cbb6237972c50a5f4526e2",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_meet_delivery_settle(uuid,uuid,text,timestamp with time zone,text,timestamp with time zone)",
+      "name": "fn_meet_delivery_settle",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "1758a3626c6e98b16660c30ec1800ff8a14ad93c32b5dd933715991b79a5be8b",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_meet_minimize_runtime()",
+      "name": "fn_meet_minimize_runtime",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "057ac1f53d76783a3902a14ac0513728c6287147ddf6b65c6d8a79e4c640cfdd",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_meet_notice(uuid,uuid,text)",
+      "name": "fn_meet_notice",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "e700398c00948b831a3b3506db13e62a6c420fff246b3a645b781c3234cb2faf",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_meet_observe(uuid,uuid,jsonb)",
+      "name": "fn_meet_observe",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "19cfda3273dfc6ce0d967d037411db3051eabd7809b7e9d66ca563287f5afcae",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_meet_redact_contact()",
+      "name": "fn_meet_redact_contact",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "a2be41124f6d57d10fb0607adda2d56474af1acd66f718c48ec4e8d12f644934",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_meet_stamp()",
+      "name": "fn_meet_stamp",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "af25669c82b71abf721dafaab655a102e4c4f8d3b23754762d9ef59b786e227d",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_member_role_in_org(uuid,uuid)",
+      "name": "fn_member_role_in_org",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "24e8538b2698c53c321cb352d004f450dd9b72a6f540620ecb8fffe525692c59",
+      "status": "SAFE",
+      "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
+    },
+    {
+      "signature": "fn_mesclar_contatos(uuid,uuid,uuid[])",
+      "name": "fn_mesclar_contatos",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "f1e6cf4b2a089365b55826084e10110a8092460c37ba928782737af0a7bc8c83",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_message_service_lock()",
+      "name": "fn_message_service_lock",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "d5b4efea04c12157e50eb0f506830265651d5a968c4c4b213aac2ab08a77a75f",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_modulo_instalar(uuid,uuid,text)",
+      "name": "fn_modulo_instalar",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "58260b1e47e97fcf424d12f87877b0e8be560852ac8f52d5a492794c32365fc2",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_mover_leads_em_lote(uuid,uuid[],uuid,text)",
+      "name": "fn_mover_leads_em_lote",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "62f0f7c8c18c263876cf668dbc913f85a230eac73b075181eaf2f0e9ded56d18",
+      "status": "SAFE",
+      "reason": "SECURITY INVOKER: queries sujeitas à RLS do chamador; filtros de organization_id/referência revisados; retorno operacional."
+    },
+    {
+      "signature": "fn_nascer_lead_da_conversa(uuid,uuid,uuid,uuid,text,text,jsonb,text[])",
+      "name": "fn_nascer_lead_da_conversa",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "3fd094fde493c888005d5af4ae79d44a96349965a10d216493c770202c897708",
+      "status": "SAFE",
+      "reason": "SECURITY INVOKER: queries sujeitas à RLS do chamador; filtros de organization_id/referência revisados; retorno operacional."
+    },
+    {
+      "signature": "fn_operational_message_metadata(jsonb)",
+      "name": "fn_operational_message_metadata",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "a79532dd6f4ae4cd8d75e29c8a25e460d13521931990c1726bd5fb393d050b88",
+      "status": "SAFE",
+      "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
+    },
+    {
+      "signature": "fn_passagem_devolvida(uuid,uuid)",
+      "name": "fn_passagem_devolvida",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "0398c89d27a2ae553ddec00a10d5a98dff665fd63b071687fe8ebdcac45170ff",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_passagem_reconhecida()",
+      "name": "fn_passagem_reconhecida",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "65942f9599241b1ce416951d18e69611e536e73f9517e3843a428fff69fcb420",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_pgrst_recusar_replay_do_gateway()",
+      "name": "fn_pgrst_recusar_replay_do_gateway",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "cfd09321ee778442648c624ca84b7ba07435c7ea40b3800fa4a323f7adf95af9",
+      "status": "SAFE",
+      "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
+    },
+    {
+      "signature": "fn_podar_fila_de_jobs(integer,integer)",
+      "name": "fn_podar_fila_de_jobs",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "8f15ed34a8c5806d44f746e9356b403d7366e2abfe6026bb48ed99e04ee1bf7d",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_prospecting_refuse_erased_candidate()",
+      "name": "fn_prospecting_refuse_erased_candidate",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "19c45647f6ff37d7b8d422ce2e75d77b34916fff3803595e62b0792282d682b6",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_proteger_modulo_provisionado()",
+      "name": "fn_proteger_modulo_provisionado",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "fccdd2e2ba93e69b00dcbacdb0e805b163290e2991fa65dbcca6cce4c99dc1f8",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_proteger_tabelas_de_organizacao()",
+      "name": "fn_proteger_tabelas_de_organizacao",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "a076481c50f95d5c2ebf5e3f1356be4473baa533218cdbe4eb67b89920157592",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_proximo_numero_de_comanda(uuid)",
+      "name": "fn_proximo_numero_de_comanda",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "cde040544a7a7b921e51237bdbdb16de3ba7cf0e163fe425a6b181100b31315d",
+      "status": "SAFE",
+      "reason": "SECURITY INVOKER: queries sujeitas à RLS do chamador; filtros de organization_id/referência revisados; retorno operacional."
+    },
+    {
+      "signature": "fn_publish_ai_agent_version(uuid,uuid,uuid)",
+      "name": "fn_publish_ai_agent_version",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "550318d344e840cfbef60a6ac817e063059c3d6c17eed64aff957583ef0529b6",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_publish_ai_agent_version(uuid,uuid,uuid,boolean)",
+      "name": "fn_publish_ai_agent_version",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "87176686c73d921f0da717847f41f4bcc54334d288bded3b3edf358ed9e60dca",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_publish_ai_agent_version(uuid,uuid,uuid,boolean,text)",
+      "name": "fn_publish_ai_agent_version",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "a6db487ea0e9c3beeb3dcabde6a4b788eac1902ddbf65b743ed7d7027baeb0c9",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_publish_followup_flow_version(uuid,uuid,jsonb,uuid)",
+      "name": "fn_publish_followup_flow_version",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "18b3336ae0a3298a9b2672275a886a49f0bcdc7c68f534b2053184d34fb99c27",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reaplicar_modulos_instalados()",
+      "name": "fn_reaplicar_modulos_instalados",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "2c158eaf815f01f26ef2e712feefe9f4895ea25ce6e883daa9d2a4c904a370f7",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_recalcular_cliente_do_contato(uuid,uuid,boolean)",
+      "name": "fn_recalcular_cliente_do_contato",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "6f5a78170ef74b81d65bbb2418299741708b5e15d559653b362872fa11e5c1d8",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_redigir_agenda_do_contato_anonimizado()",
+      "name": "fn_redigir_agenda_do_contato_anonimizado",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "107cae994a92fe4d22019b8fbcfdd3060b928f995073f1defd5e16151903e30e",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_redigir_campanhas_do_contato_anonimizado()",
+      "name": "fn_redigir_campanhas_do_contato_anonimizado",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "8db75e67c077fae9f2ce99ed76a8f73d9ca88baa0fb247575f90b87302e6ecf5",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_redigir_captacoes_do_contato_anonimizado()",
+      "name": "fn_redigir_captacoes_do_contato_anonimizado",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "49141ac3adad45003bf2f07944eb9f708293bb623bb6f7ace9d2ed0e56f9cd43",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_redigir_conversas_ao_anonimizar()",
+      "name": "fn_redigir_conversas_ao_anonimizar",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "fb8e567dd90c094c1669acb5fe2783605e0f03230ad596e752743a3da8b6be73",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_redigir_exclusoes_do_contato_anonimizado()",
+      "name": "fn_redigir_exclusoes_do_contato_anonimizado",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "13237dfe598f58955e02aae19e6252c0ee3692f36237e881d32b6ee0fe422645",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_redigir_tarefas_do_contato_anonimizado()",
+      "name": "fn_redigir_tarefas_do_contato_anonimizado",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "8a19f3c73bfceb0136e0906225891f561bea3cd8c98442e4697ca5bb830d91c8",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_registrar_jid_do_aviso(uuid,text)",
+      "name": "fn_registrar_jid_do_aviso",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "f5b9ec5dbed519960dde66f124cef0562a5f4dcfad7aacbbce92b94aea320c7a",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_relatorio_financeiro(uuid,date,date)",
+      "name": "fn_relatorio_financeiro",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "7b830995c350b5f9669bfd387837ca38fd4b4a69eee6ba2ac95ff6cb62bbd5c5",
+      "status": "SAFE",
+      "reason": "SECURITY INVOKER: queries sujeitas à RLS do chamador; filtros de organization_id/referência revisados; retorno operacional."
+    },
+    {
+      "signature": "fn_remarcar_corrige_o_envio()",
+      "name": "fn_remarcar_corrige_o_envio",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "1e345d59d623d1e91db525aeb51b24be46c01221d2ef268b9961e23437c6dceb",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_replace_knowledge_faq_items(uuid,uuid,jsonb)",
+      "name": "fn_replace_knowledge_faq_items",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "d2405f83538f100a85cc747986ff830aa1eb39e4507fdd99d38795b4f078ec87",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reply_action(uuid,uuid,text,text,text,text)",
+      "name": "fn_reply_action",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "c0c247182d3838719865afd30e11d574c5a8b9ffe0333c9b788db594891ccd0d",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_reply_agent_revision()",
+      "name": "fn_reply_agent_revision",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "db0b7e5d926b5d4b0856256a810360125d62cc337ae8544506808bb95f48e695",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reply_begin(uuid,uuid,uuid,uuid,uuid)",
+      "name": "fn_reply_begin",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "05248571ffbf678d904d692b3d93821cb9c59eaac1427c18a38d003d84e416e1",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reply_channel_revision()",
+      "name": "fn_reply_channel_revision",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "e0ddd82728627260f33739bcc705ef74eeaf709ceb1f7a64ef0316aece7a4fc4",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reply_context_current(uuid,uuid)",
+      "name": "fn_reply_context_current",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "83ad5c15cb7139378c98a252d48bdc60a75cb6c476c9f9d73c7ba95166fad85e",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reply_conversation_revision()",
+      "name": "fn_reply_conversation_revision",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "97b5748a10b351a04771e90bc11dabf80d393b0dde8049da07693164909453bd",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reply_delivery_policy(uuid,uuid,text,timestamp with time zone)",
+      "name": "fn_reply_delivery_policy",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "fb23803202802ff453ba475baa08c92aa1e6ed1d1a736c3a8b42daa717e2be0c",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reply_inbound_revision()",
+      "name": "fn_reply_inbound_revision",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "8c52fc5a1e9e16aa3d55f7a96b0162f063244688be213fc0e7cfd8795a6185b7",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reply_prepare(uuid,uuid,text,timestamp with time zone)",
+      "name": "fn_reply_prepare",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "80e421b4279a80273ffda8aac50e1b097b1e6f2641624889aaa0d48303e66878",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reply_receipt_policy(uuid,uuid,text,timestamp with time zone)",
+      "name": "fn_reply_receipt_policy",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "a2e81cc1e001d5fb9e0754be57b3115103fc7986d8bb71999f730c76ec207698",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reply_record_receipt(uuid,uuid,text,timestamp with time zone,uuid,text,text[])",
+      "name": "fn_reply_record_receipt",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "6e573e31f8b40ed7e8265b2e399f05cc9beffbb8d9fdb9d4d2170dfaeead4b71",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reply_redact()",
+      "name": "fn_reply_redact",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "fc0dcfaac41c73d6d0ced9a6f90d60a7eaca722c72db3dcfa53e5ccacec4c49d",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reply_settle(uuid,uuid,text,timestamp with time zone,text,text)",
+      "name": "fn_reply_settle",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "8258ace22752c029ab0f3103f7d5573fa22721ba325b6b7953d7571daaea9b9a",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_request_channel_routing(uuid,uuid)",
+      "name": "fn_request_channel_routing",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "98e74d52b740955d28053def741e9189ea902dcd321e9e25a2e85024369309b2",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_reserve_channel_connection(uuid,uuid,text,text,boolean)",
+      "name": "fn_reserve_channel_connection",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "6fef420d2cfbec078f524b080d8bd93c9504651a491d9122e157f19afa276f99",
+      "status": "ADMIN-ONLY",
+      "reason": "Papel mínimo manager/admin com membership e área persistida antes do efeito; fn_agent_tool_usage é invoker e depende de tabelas privadas bloqueadas por RLS."
+    },
+    {
+      "signature": "fn_resolve_inbound_number(text)",
+      "name": "fn_resolve_inbound_number",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "919ecda3a15feaee5da0c75ae92ab5dd1937019f962c7d2d1c36f9cae9a3ab0d",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_role_at_least(uuid,text)",
+      "name": "fn_role_at_least",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "7bc09a9b93fc900aa72a34e89ed4bb44d83c83f02d3342159e72d2e1af1a7ef0",
+      "status": "SAFE",
+      "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
+    },
+    {
+      "signature": "fn_routing_assignment_changed()",
+      "name": "fn_routing_assignment_changed",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "8a1f0c343c22f6fe4c376bf6eb4566f827557b4d72ad1df5110c963d9aec6445",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_routing_availability_changed()",
+      "name": "fn_routing_availability_changed",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "7d024fa68c1c9dab4443c3074a56af30f107d3312aaa6ae02c0441896989ab12",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_routing_member_revoked()",
+      "name": "fn_routing_member_revoked",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "bbb0d99820a5495129a63d30f00b7ab6f9b1b0eab1a22199c695e36168211867",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_routing_unassigned_notice(uuid,uuid,text)",
+      "name": "fn_routing_unassigned_notice",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "ca795f5a3c2bf3fa4dd8dd1932de83aa2fe78896f31f32d9938d7a843e78e423",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_saldo_de_fidelidade(uuid,uuid)",
+      "name": "fn_saldo_de_fidelidade",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "169e11b0f5190e4cc9c263c475930f65a08e7d93635699e187ced302e8ffdf6b",
+      "status": "SAFE",
+      "reason": "SECURITY INVOKER: queries sujeitas à RLS do chamador; filtros de organization_id/referência revisados; retorno operacional."
+    },
+    {
+      "signature": "fn_seed_default_pipeline_for_org()",
+      "name": "fn_seed_default_pipeline_for_org",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "e9eb11bb428556b2c6075332d3c781fdf501fc29897d971e66d7f08b0111e713",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_seed_org_llm_defaults()",
+      "name": "fn_seed_org_llm_defaults",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "3a83943308d19968d88ec69f86f38b5d759608c3766901180a730b37a7ad2cc4",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_semear_tipos_de_agendamento(uuid)",
+      "name": "fn_semear_tipos_de_agendamento",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "f2ad2f969914cfebf9bf7de754579dead7ba3ee00f44e8c6e992e4bceaac8080",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_semear_tipos_de_agendamento_na_org_nova()",
+      "name": "fn_semear_tipos_de_agendamento_na_org_nova",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "754463a0c3a84c1ae69f0d5294cb87ab67e83aaf19a4b264af4e855dff9dca8b",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_service_begin(uuid,uuid,uuid,jsonb)",
+      "name": "fn_service_begin",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "d6b601dc98853ec697ba70db40ab3ecc26d9ad9c34733b5ac11853aefdd66ce3",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_service_boundary(uuid,uuid)",
+      "name": "fn_service_boundary",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "c9c6e5ff3592da537f8f10959e66806df58ead36370187aaab2a014f4c4bc4a7",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_service_event_origin(uuid,uuid,uuid,uuid)",
+      "name": "fn_service_event_origin",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "10608baabd184b7d81523054f8ce90b4826df64b84581cee817964abb67c22d8",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_service_inbound(uuid)",
+      "name": "fn_service_inbound",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "93aecc65d799d7f5ec4b85d83d7e5d5739bc93f70cbc4de774c9e2aa748245ea",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_service_lock(uuid,uuid)",
+      "name": "fn_service_lock",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "75714801359a5febeceb7bb8d606968be08c59270b1a8ba21a431af476ffd80a",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_service_observe(uuid,uuid)",
+      "name": "fn_service_observe",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "2cfe89c0875c812f1fe817808e1f0645a02ba93643213647f694401d1e6a9eca",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_service_observe_command(uuid,uuid)",
+      "name": "fn_service_observe_command",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "e5c771925fc67de689f196317a4c7cfbee03cd7a69f06f2ba0f82d847ec986f9",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_service_stamp_status()",
+      "name": "fn_service_stamp_status",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "5aafe59b431661c62468de0d427b06e7e38f5522f5cc02661766c132ef4c10f4",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_service_status(uuid,uuid,text,bigint)",
+      "name": "fn_service_status",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "31a10529beeeafbb4986dc2fa9edbf4621a90a84a4638d93efde8afbf978837b",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_session_mfa_proven()",
+      "name": "fn_session_mfa_proven",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "316d7ffbffda137d7feb82729bbceb11215fcb32c91f1ec743ed966d9a080dca",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_set_channel_routing(uuid,uuid,uuid[],boolean)",
+      "name": "fn_set_channel_routing",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "ffa009c271ada8cf432eabaf8e8ac87d4ff49492ad1741998020af74b96853cc",
+      "status": "ADMIN-ONLY",
+      "reason": "Papel mínimo manager/admin com membership e área persistida antes do efeito; fn_agent_tool_usage é invoker e depende de tabelas privadas bloqueadas por RLS."
+    },
+    {
+      "signature": "fn_set_updated_at()",
+      "name": "fn_set_updated_at",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "841a7f70d98dd76c757140230eb8eac2a7d14eaf6c6136bc73ade388165ce43a",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_signal_operational_inbox()",
+      "name": "fn_signal_operational_inbox",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "58c85db1446b5f02e80f6ec37987b7adc80d6edd338888ddd9ff04d7ec2eb3cc",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_situacao_conta_como_atendimento(text)",
+      "name": "fn_situacao_conta_como_atendimento",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "d67588b26ce0392e3124ccf6cdb6030af4c33d62e232ca356f8d376064439469",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_stamp_stage_changed_at()",
+      "name": "fn_stamp_stage_changed_at",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "d7d332d8784db6fe5fda4b610806d3191a960dfe014b6dd7987cdfabb56c75a3",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_start_support(uuid,uuid,uuid,uuid,text,integer)",
+      "name": "fn_start_support",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "0031efb45ea360c20fbee94d967a1bf418ce41178aae70b4e421faeac7f45313",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_superficie_do_fluxo_imutavel()",
+      "name": "fn_superficie_do_fluxo_imutavel",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "03b59c5447ebe1cac2227476aacb28ff39910f3b6a4f58061c52b0082abed505",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_support_callback_write_allowed(uuid,uuid,uuid)",
+      "name": "fn_support_callback_write_allowed",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "979ea5b39e683b0ffbb1e6e3a188b4df688310d3fee7ac2ad0c12b3ea4276bc8",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_support_context()",
+      "name": "fn_support_context",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "d656d08322bce2eed21ffb5a6068363206389fae6e53d10d80020fba532b7de3",
+      "status": "SAFE",
+      "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
+    },
+    {
+      "signature": "fn_support_storage_write_allowed(text)",
+      "name": "fn_support_storage_write_allowed",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "7caebede045cd062153c3f356930fe95ee65d447da48651e5f8c178f04d20582",
+      "status": "SAFE",
+      "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
+    },
+    {
+      "signature": "fn_support_write_allowed(uuid)",
+      "name": "fn_support_write_allowed",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "f9f64a9db45b3e59d637f7c5a2a154451f25cdc64d54a4f45394a56748de1522",
+      "status": "SAFE",
+      "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
+    },
+    {
+      "signature": "fn_sync_ai_agent_assignable_directory()",
+      "name": "fn_sync_ai_agent_assignable_directory",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "c9f51236bfec2c694366a6dd6d4fcf3f68ee0b9a715b2b7e03f491bdbb4124bf",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_tags_de_conversa_em_uso(uuid)",
+      "name": "fn_tags_de_conversa_em_uso",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "e1803abb6c4ffba0daefa66153a3e587fd2483eab78bc50b91e7aadb195090c5",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_tags_normalizar(text[],text,text,boolean)",
+      "name": "fn_tags_normalizar",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "91fbe4d8ebb6852d9125c05c168ba258fe26575b2fd9baccab0baebd1498affe",
+      "status": "SAFE",
+      "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
+    },
+    {
+      "signature": "fn_telefone_variantes(text)",
+      "name": "fn_telefone_variantes",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "87f93b7131c0766a88da00e66d8300e4ea6b484752ab894bc9ab8518896e0386",
+      "status": "SAFE",
+      "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
+    },
+    {
+      "signature": "fn_touch_updated_at()",
+      "name": "fn_touch_updated_at",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "841a7f70d98dd76c757140230eb8eac2a7d14eaf6c6136bc73ade388165ce43a",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_update_budget_consumption()",
+      "name": "fn_update_budget_consumption",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "c0662f000d7df3ea3a109a282d7b4d32a9cee508980329033ff6b754d0ccb86a",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_update_last_activity_at()",
+      "name": "fn_update_last_activity_at",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "a051d6bae35cccb8a13c393b39f84f30821f24c36090487b62791dd9a4034ff3",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_upsert_wa_contact(uuid,text,text,text,text,text)",
+      "name": "fn_upsert_wa_contact",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "d01c8288ba5d552ea9d6aaccc114f34a36e856dc1a6918a11e5ceee5241358ae",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_upsert_wa_conversation(uuid,uuid,uuid)",
+      "name": "fn_upsert_wa_conversation",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "a56e32e6f4993218df535b2eb5069b968e4d7c475676d69786a0490e50302c9b",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_user_org_ids()",
+      "name": "fn_user_org_ids",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "f27a86b7e1b1e271c820917c79168dc59d2e4716bb42d59850e52ed20fa558f6",
+      "status": "SAFE",
+      "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
+    },
+    {
+      "signature": "fn_user_role_in(uuid)",
+      "name": "fn_user_role_in",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "727ed1de31ad272119aaa7e10cfe712cd98c2c3f9bc097a8cb1e996e4947d5d3",
+      "status": "SAFE",
+      "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
+    },
+    {
+      "signature": "fn_user_role_in_org(uuid)",
+      "name": "fn_user_role_in_org",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "28dd5b8b558450858debb46380d6903ab55463c62548cedaf9b20e87f54495cc",
+      "status": "SAFE",
+      "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
+    },
+    {
+      "signature": "fn_validate_activity_lead_org()",
+      "name": "fn_validate_activity_lead_org",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "30662f43137d2dfece644a0e8520399635dbd67eb5cdc67afc2f87ddb8f11b79",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_validate_lost_reason_required()",
+      "name": "fn_validate_lost_reason_required",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "747f6230658c7874d3248298d3071d0fec2b5db0663a9856c1d9bbca807d69c9",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+    },
+    {
+      "signature": "fn_vocabulario_de_tags(uuid)",
+      "name": "fn_vocabulario_de_tags",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "e0b4487e9a531016cd9f1929eb0fe123c9625c112bb825886102b61c7e80558b",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_vocabulario_de_tags_operar(uuid,text,text,text,text)",
+      "name": "fn_vocabulario_de_tags_operar",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "f673c93ce3dbe82b580a5e7b8501e88ae9ef0c9328bef9f272663b093c0d111f",
+      "status": "ADMIN-ONLY",
+      "reason": "Papel mínimo manager/admin com membership e área persistida antes do efeito; fn_agent_tool_usage é invoker e depende de tabelas privadas bloqueadas por RLS."
+    },
+    {
+      "signature": "fn_wake_channel_routing(uuid,uuid)",
+      "name": "fn_wake_channel_routing",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "f4f670e62d3b9a1751656fc719f726cf19d6bf3b7c787e5934b11f97fc7475c3",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_write_operational_inbox()",
+      "name": "fn_write_operational_inbox",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "d511ee5674b520eb806a37ea7ea7086e3e2f6310566b09e4ebc9d27368291cf9",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "midpoint(numeric,numeric)",
+      "name": "midpoint",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": true,
+      "body_sha256": "94d3f4414de2cf1ec2f1e912d882db2f9f14970ee0215f55ca07b3f17a40e7bb",
+      "status": "SAFE",
+      "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
+    },
+    {
+      "signature": "retrieve_top_k_chunks(uuid,uuid,vector,integer,real)",
+      "name": "retrieve_top_k_chunks",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "7e3db315a22ba8a61d5b1d0ebfc90bc05b3046b322e9169e095d19ed3863f065",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "social_platform(operational_channel_sessions)",
+      "name": "social_platform",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "4c25d6120d6e1c8bee830b1680ae52f66bf6fa4b6afc1671790397a14a50642b",
+      "status": "FIXED",
+      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "tags_do_contato(conversations)",
+      "name": "tags_do_contato",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "acb10bb275bf0d7c7b2b0219ea1a013984e55e8e40f9357526907adeaa153623",
+      "status": "SAFE",
+      "reason": "SECURITY INVOKER: queries sujeitas à RLS do chamador; filtros de organization_id/referência revisados; retorno operacional."
+    }
+  ]
+}
