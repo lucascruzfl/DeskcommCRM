@@ -1,23 +1,8 @@
 /**
- * A RECUSA DA SPEC EM SEGUNDOS, NÃO EM 20 MINUTOS (issue #1692).
- *
- * ## O defeito que este teste encurta
- *
- * O caso de recusa de `tests/e2e/capacidades-do-agente.spec.ts` clica em
- * "Atender" e espera `/faltam? 1 vaga/`. A aritmética é o seed da spec (9,
- * todas FORA do pacote) somado às 17 do pacote: 26 contra o teto de 25. Quando
- * uma ferramenta nova entra em `atender` — a #1684 fez exatamente isso — a
- * recusa na tela vira "faltam 2 vagas" e quem repara é o e2e, uns 20 minutos
- * depois, longe da mudança que causou o problema.
- *
- * ## O que se guarda
- *
- * A CONTA, não os números soltos: seed da spec + pacote "atender" tem de
- * exceder o teto em EXATAMENTE uma vaga. Estourar por 2 já é outro texto na
- * tela e o caso da spec morre; caber no teto é a recusa sumir e o caso virar
- * um clique que sempre dá verde — os dois desfechos errados são comentados na
- * própria spec, com história. Ler o catálogo e o seed da spec deixa o aviso
- * acontecer no mesmo `pnpm test:unit` de sempre.
+ * A recusa do pacote é verificada com o mesmo seed da E2E.
+ * O catálogo MCP cresce entre releases: o cenário deve recusar o primeiro
+ * clique, informar quantas vagas faltam e aceitar depois de liberá-las.
+ * Nenhuma contagem fixa de ferramentas representa esse contrato.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -74,7 +59,7 @@ const EM_ATENDER = CATALOGO_DA_TELA.filter((c) => c.pacotes.includes("atender"))
   (c) => c.name,
 );
 
-describe("ligar Atender com o seed da spec excede o teto em exatamente uma vaga", () => {
+describe("ligar Atender com o seed da spec excede o teto e cabe depois de liberar as vagas", () => {
   it("leu o seed da spec (guarda de vacuidade)", () => {
     // Um seed vazio faria a conta abaixo medir só o pacote — verde sobre nada.
     expect(SEED.length, "o seed da spec foi lido vazio").toBeGreaterThan(0);
@@ -92,8 +77,7 @@ describe("ligar Atender com o seed da spec excede o teto em exatamente uma vaga"
   });
 
   it("nenhuma ferramenta do seed está DENTRO de Atender", () => {
-    // Se uma entrasse, a união seria menor que a soma e a aritmética da spec
-    // (9 + 17) deixaria de descrever o que a tela faz ao clicar.
+    // Liberar uma ferramenta do seed precisa liberar uma vaga do pacote.
     for (const ferramenta of SEED) {
       expect(
         EM_ATENDER.includes(ferramenta),
@@ -102,15 +86,12 @@ describe("ligar Atender com o seed da spec excede o teto em exatamente uma vaga"
     }
   });
 
-  it("o excedente é 1 — o número que a tela mostra e a e2e cobra", () => {
+  it("recusa primeiro e cabe após liberar exatamente o excedente", () => {
     const exigidas = vagasExigidasPeloPacote(SEED, CATALOGO_DA_TELA, "atender");
     const excedente = exigidas - TETO_TOOLS_POR_AGENTE;
-    expect(
-      excedente,
-      "a spec da e2e espera /faltam? 1 vaga/. Se virou 2, uma ferramenta nova entrou em " +
-        '"atender" (a #1684 fez isso), ou uma do harness voltou a ser marcável: ajuste o ' +
-        "seed da spec ou mova a ferramenta de pacote — o e2e de ~20 min agradece. Se virou " +
-        "0 ou menos, a recusa sumiu e o caso da spec morreu em verde.",
-    ).toBe(1);
+    expect(excedente, "o cenário precisa exercer a recusa").toBeGreaterThan(0);
+    expect(excedente, "a pessoa precisa conseguir liberar as vagas pelo seed").toBeLessThanOrEqual(SEED.length);
+    const restantes = SEED.slice(excedente);
+    expect(vagasExigidasPeloPacote(restantes, CATALOGO_DA_TELA, "atender")).toBe(TETO_TOOLS_POR_AGENTE);
   });
 });

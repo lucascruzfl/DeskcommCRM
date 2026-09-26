@@ -107,3 +107,10 @@ em produção, conforme o contexto certificado informado pelo operador.
 - Publicação antes de promover stable: dispatch explícito de candidato exige
   os cinco checks verdes no mesmo commit. Falha, cancelamento, skip e ausência
   de check bloqueiam. O gate de build-and-size passa a cobrir PRs para mcp/stable.
+- CI b9bcc083c encontrou duas falhas unitárias: validação antiga do responsável
+  com client de sessão impedia reenviar o dono desligado já atribuído ao lead;
+  removida a checagem duplicada, preservando a validação oficial admin por org,
+  vínculo ativo e papel acima de viewer para qualquer nova atribuição. A outra
+  falha prendia o cenário de recusa do pacote à contagem de uma release antiga;
+  o unitário agora mede recusa, possibilidade de liberar vagas e aceitação após
+  liberar exatamente o excedente, como a E2E. Recheck: 28 testes PASS.

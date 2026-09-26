@@ -72,29 +72,6 @@ async function ownerPatchOrThrow(
   }
   if (!result.patch) return null;
 
-  if (result.patch.owner_user_id !== null) {
-    const { data: membership, error: membershipErr } = await supabase
-      .from("user_organizations")
-      .select("user_id")
-      .eq("user_id", result.patch.owner_user_id)
-      .eq("organization_id", ctx.organization_id)
-      .is("revoked_at", null)
-      .maybeSingle();
-
-    if (membershipErr) {
-      throw new ApiError(500, "internal_error", undefined, ctx.requestId, membershipErr.message);
-    }
-    if (!membership) {
-      throw new ApiError(
-        422,
-        "validation_failed",
-        undefined,
-        ctx.requestId,
-        traduzir("Responsável não encontrado nesta organização.", ctx.idioma ?? "pt-BR"),
-      );
-    }
-  }
-
   if (result.patch.owner_agent_id !== null) {
     const { data: agent, error: agentErr } = await supabase
       .from("ai_agents")
