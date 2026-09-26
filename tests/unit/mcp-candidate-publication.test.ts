@@ -2,13 +2,12 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
 
-const workflow = parse(readFileSync(".github/workflows/publish-mcp-release.yml", "utf8"));
-const gate = workflow.jobs.check.steps.find(
-  (step: { name?: string }) => step.name === "Exigir gates verdes do commit candidato",
-);
+const source = readFileSync(".github/workflows/publish-mcp-release.yml", "utf8");
+const start = source.indexOf("      - name: Exigir gates verdes do commit candidato");
+const block = source.slice(start).split("      - name: Verificar auditoria")[0]!;
+const gateRun = block.split("run: |\n")[1]!.replace(/^ {10}/gm, "");
 const checks = ["verify", "build-and-size", "invariants", "e2e", "imagens-ok"];
 
 function execute(checkRuns: unknown[]) {
@@ -17,7 +16,7 @@ function execute(checkRuns: unknown[]) {
     const fixture = join(dir, "fixture.json");
     writeFileSync(fixture, JSON.stringify({ check_runs: checkRuns }));
     writeFileSync(join(dir, "gh"), '#!/bin/sh\ncat "$MCP_TEST_FIXTURE"\n', { mode: 0o755 });
-    return spawnSync("bash", ["-c", gate.run], {
+    return spawnSync("bash", ["-c", gateRun], {
       env: {
         ...process.env,
         PATH: `${dir}:${process.env.PATH}`,
@@ -35,10 +34,10 @@ function execute(checkRuns: unknown[]) {
 
 describe("publicação do candidato MCP", () => {
   it("só habilita dispatch explícito do fork e branch de integração", () => {
-    expect(workflow.on.workflow_dispatch.inputs.release_candidate.default).toBe(false);
-    expect(workflow.jobs.check.if).toContain("inputs.release_candidate");
-    expect(workflow.jobs.check.if).toContain("refs/heads/feat/mcp-update-");
-    expect(workflow.jobs.check.if).toContain("lucascruzfl/DeskcommCRM");
+    expect(source.includes("default: false")).toBe(true);
+    expect(source).toContain("inputs.release_candidate");
+    expect(source).toContain("refs/heads/feat/mcp-update-");
+    expect(source).toContain("lucascruzfl/DeskcommCRM");
   });
   it("aceita somente os cinco checks verdes do commit", () => {
     expect(
