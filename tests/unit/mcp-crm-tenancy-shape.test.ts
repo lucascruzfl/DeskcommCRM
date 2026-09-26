@@ -4,7 +4,13 @@ import { describe, expect, it } from "vitest";
 describe("tenancy dos caminhos canônicos usados pelo MCP CRM", () => {
   it("responsável humano do lead exige membership ativo na organização", () => {
     const source = readFileSync("app/api/v1/leads/_handler.ts", "utf8");
-    expect(source).toMatch(/from\("user_organizations"\)[\s\S]*eq\("user_id", result\.patch\.owner_user_id\)[\s\S]*eq\("organization_id", ctx\.organization_id\)[\s\S]*is\("revoked_at", null\)/);
+    // O upstream valida pelo admin porque RLS esconde colegas do atendente.
+    // Atribuição nova exige org, vínculo ativo e papel; reenviar o dono atual
+    // é edição, coberta pelo teste comportamental lead-so-liga-contato-… .
+    expect(source).toContain("const responsavel = result.patch.owner_user_id");
+    expect(source).toContain("responsavel !== null && responsavel !== responsavelAtual");
+    expect(source).toMatch(/createAdminClient\(\)[\s\S]*from\("user_organizations"\)[\s\S]*eq\("organization_id", ctx\.organization_id\)[\s\S]*eq\("user_id", responsavel\)[\s\S]*is\("revoked_at", null\)/);
+    expect(source).toContain('!membro || membro.role === "viewer"');
   });
 
   it("serviços novos filtram toda referência pela organização do contexto", () => {
