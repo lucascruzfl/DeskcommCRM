@@ -85,3 +85,25 @@ byte a byte e os timestamps oficiais. O escape documentado
 sem renomear migrations oficiais já publicadas. A branch managed será reconciliada
 antes de seu próprio merge/revalidação; nenhuma migration managed foi aplicada
 em produção, conforme o contexto certificado informado pelo operador.
+
+### Gates locais executados
+
+- Versão/API/rodapé e runtime MCP: 48 testes passaram em quatro arquivos.
+- MCP e rotas afetadas: 295 testes passaram em 33 arquivos.
+- Verificador migration/MANIFEST: nove testes passaram; colisão contra mcp/stable: PASS.
+- Runtime tools/list usa os handlers reais pelo InMemoryTransport do SDK; zero duplicatas.
+  Allowlist de leitura reduz a lista e chamada direta de retomada fora dela é negada.
+- Baseline fresco e reaplicação vazia: PASS (ON_ERROR_STOP=1).
+- Upgrade com dados desde o baseline da v1.47.0-mcp: PASS, dez linhas preservadas,
+  oito objetos mantêm identidade; nova reaplicação preserva a view migrada.
+- test:shell: PASS, incluindo installer, custom-mcp e fail-closed.
+- Lint: zero erros; avisos preexistentes da suíte permanecem.
+- Python MCP upstream/manifest: nove casos PASS.
+- CI inicial c123a0e07 detectou imports automesclados em auth-dual usando nomes
+  antigos de rate-limit e requestId faltante no erro de Idempotency-Key. Correção
+  reutiliza MCP_RATE_LIMITS e correlaciona o erro. Sem alteração dos limites.
+- Controle negativo da versão: retirando a prioridade APP_VERSION, exatamente
+  três dos seis casos ficaram vermelhos. Fonte restaurada após o ensaio.
+- Publicação antes de promover stable: dispatch explícito de candidato exige
+  os cinco checks verdes no mesmo commit. Falha, cancelamento, skip e ausência
+  de check bloqueiam. O gate de build-and-size passa a cobrir PRs para mcp/stable.

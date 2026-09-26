@@ -68,7 +68,7 @@ async function handle(req: NextRequest): Promise<Response> {
 
   const idempotencyKey = chaveDaRequisicao(req);
   if (idempotencyKey !== null && !z.string().uuid().safeParse(idempotencyKey).success) {
-    return jsonRpcError(-32602, "Idempotency-Key deve ser UUID", 400);
+    return jsonRpcError(-32602, "Idempotency-Key deve ser UUID", 400, requestId);
   }
 
   const transport = new WebStandardStreamableHTTPServerTransport({});

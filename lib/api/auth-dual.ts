@@ -40,7 +40,7 @@ import {
   extractBearer,
   validateBearerToken,
 } from "@/lib/mcp/auth";
-import { JANELA_SEGUNDOS, TETO_DE_ESCRITA, TETO_POR_ORGANIZACAO } from "@/lib/mcp/rate-limit";
+import { MCP_RATE_LIMITS } from "@/lib/mcp/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -174,22 +174,26 @@ export async function tetoDeEscritaDoToken(
 
   // Sequencial de propósito: `checkRateLimit` INCREMENTA ao consultar, e a
   // chamada já recusada pelo teto do token não deve gastar a cota da org.
-  const teto = await checkRateLimit(`${recurso}:tok:${tokenId}`, TETO_DE_ESCRITA, JANELA_SEGUNDOS);
+  const teto = await checkRateLimit(
+    `${recurso}:tok:${tokenId}`,
+    MCP_RATE_LIMITS.writesPerTokenPerMinute,
+    MCP_RATE_LIMITS.windowSeconds,
+  );
   if (!teto.allowed) {
     return fail("rate_limited", "Too many requests.", 429, {
       requestId,
-      headers: { "Retry-After": String(JANELA_SEGUNDOS) },
+      headers: { "Retry-After": String(MCP_RATE_LIMITS.windowSeconds) },
     });
   }
   const tetoOrg = await checkRateLimit(
     `${recurso}:org:${organizationId}`,
-    TETO_POR_ORGANIZACAO,
-    JANELA_SEGUNDOS,
+    MCP_RATE_LIMITS.organizationPerMinute,
+    MCP_RATE_LIMITS.windowSeconds,
   );
   if (!tetoOrg.allowed) {
     return fail("rate_limited", "Too many requests for organization.", 429, {
       requestId,
-      headers: { "Retry-After": String(JANELA_SEGUNDOS) },
+      headers: { "Retry-After": String(MCP_RATE_LIMITS.windowSeconds) },
     });
   }
   return null;

@@ -324,7 +324,8 @@ export function UpdatePanel() {
   if (!data.update_available && !data.off_release) {
     if (data.update_channel === "custom-mcp") {
       const instaladaValidada =
-        Boolean(data.latest_version) && data.latest_version === data.current_version;
+        Boolean(data.latest_version) &&
+        semV(data.latest_version ?? "") === semV(data.current_version);
       return (
         <Layout
           titulo={
