@@ -65,16 +65,16 @@ const DIR = join(process.cwd(), ".github/workflows");
  */
 const GATILHO_ESPERADO: Record<string, { condicao: string | null; efeito: string }> = {
   "publish-mcp-release.yml::check": {
-    condicao: "github.repository == 'lucascruzfl/DeskcommCRM' && github.ref == 'refs/heads/mcp/stable'",
-    efeito: "Verifica a versão apenas na branch MCP estável do fork; outra ref não pode iniciar publicação.",
+    condicao: "github.repository == 'lucascruzfl/DeskcommCRM' && (github.ref == 'refs/heads/mcp/stable' || (github.event_name == 'workflow_dispatch' && inputs.release_candidate && startsWith(github.ref, 'refs/heads/feat/mcp-update-')))",
+    efeito: "Verifica a linha estável ou candidato do fork em branch de integração, por dispatch explícito e com cinco checks verdes do mesmo commit antes de publicar.",
   },
   "publish-mcp-release.yml::validate": {
     condicao: "needs.check.outputs.needed == 'yes'",
     efeito: "Valida auditoria e contratos da versão nova; pular sem motivo impede a publicação.",
   },
   "publish-mcp-release.yml::blocked-summary": {
-    condicao: "always() && github.repository == 'lucascruzfl/DeskcommCRM' && github.ref == 'refs/heads/mcp/stable' && (needs.check.result != 'success' || (needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'))",
-    efeito: "Explica falha de conferência, validação ou publicação somente na linha MCP estável.",
+    condicao: "always() && github.repository == 'lucascruzfl/DeskcommCRM' && (github.ref == 'refs/heads/mcp/stable' || inputs.release_candidate) && (needs.check.result != 'success' || (needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'))",
+    efeito: "Explica falha de conferência, validação ou publicação na linha MCP estável ou no candidato explícito, sem liberar a publicação.",
   },
   "publish-mcp-release.yml::publish": {
     condicao: null,
