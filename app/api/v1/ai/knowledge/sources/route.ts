@@ -16,7 +16,6 @@ import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 import { z } from "zod";
 import { ok, fail } from "@/lib/api/wrappers";
-import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -74,20 +73,14 @@ const SELECT_COLUNAS =
 export async function GET(_req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
 
-  const authUser = await loadAuthUser();
-  if (!authUser) {
-    return fail("unauthenticated", "Auth required.", 401, { requestId });
-  }
-  const activeOrg = await resolveActiveOrg(authUser);
-  if (!activeOrg) {
-    return fail("forbidden", "Nenhuma organização ativa.", 403, { requestId });
-  }
+  const authz = await requireRole("viewer", { requestId, resource: "ai_knowledge" });
+  if (!authz.ok) return authz.response;
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("ai_knowledge_sources")
     .select(SELECT_COLUNAS)
-    .eq("organization_id", activeOrg.orgId)
+    .eq("organization_id", authz.org.orgId)
     .order("created_at", { ascending: false });
 
   if (error) {
