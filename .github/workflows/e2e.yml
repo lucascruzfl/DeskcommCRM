@@ -35,7 +35,7 @@ on:
   pull_request:
     branches: [main, mcp/stable]
   push:
-    branches: [main]
+    branches: [main, feat/managed-aesthetic-clinic-onboarding]
 
 # O GITHUB_TOKEN deste job serve a `actions/checkout` (clone) e a
 # `actions/setup-node` (manifest de `actions/node-versions`, repo público).
@@ -184,7 +184,9 @@ jobs:
       # uma rodada por parte.
       fail-fast: false
       matrix:
-        parte: [1, 2, 3, 4, 5]
+        # A branch de certificação mede só a spec managed; PRs e main mantêm
+        # a matriz completa. O mesmo job prepara Supabase, env e build.
+        parte: ${{ fromJSON(github.ref == 'refs/heads/feat/managed-aesthetic-clinic-onboarding' && '[5]' || '[1,2,3,4,5]') }}
     # ─────────────────────────────────────────────────────────────────────────
     # A COBERTURA DEIXA DE SER PROSA DIGITADA À MÃO.
     #
@@ -1163,6 +1165,14 @@ jobs:
 
       - uses: actions/checkout@v7
 
+      - name: Verificar migrations antes do preparo pesado
+        if: github.ref == 'refs/heads/feat/managed-aesthetic-clinic-onboarding'
+        run: |
+          set -euo pipefail
+          git remote add upstream https://github.com/melgarafael/DeskcommCRM.git
+          git fetch --no-tags --depth=1 upstream main:refs/remotes/upstream/main
+          bash scripts/checar-colisao-de-migration.sh upstream/main
+
       # ─── As portas do Supabase saem da faixa efêmera do kernel ─────────────
       #
       # O `supabase start` publica portas FIXAS no host — as de
@@ -1784,6 +1794,9 @@ jobs:
             5) LISTA="$SPECS_PARTE_5" ;;
             *) echo "::error::parte ${{ matrix.parte }} sem lista"; exit 1 ;;
           esac
+          if [ "$GITHUB_REF" = 'refs/heads/feat/managed-aesthetic-clinic-onboarding' ]; then
+            LISTA='managed-client-authorization.spec.ts'
+          fi
           # Falha alto se a variável vier vazia: sem isto, um typo no nome faria
           # o playwright rodar a suíte INTEIRA (ou nenhuma) e o job ficaria
           # verde medindo outra coisa.
