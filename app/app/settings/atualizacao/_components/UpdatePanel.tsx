@@ -206,7 +206,9 @@ export function UpdatePanel() {
             "que é a que está no ar agora, e os seus dados estão intactos. O banco de dados já tinha sido atualizado e permanece assim — isso é seguro, a versão",
           )}{" "}
           {anterior}{" "}
-          {t("funciona com ele. Se quiser desfazer também o banco, use a cópia de segurança feita antes da tentativa (")}
+          {t(
+            "funciona com ele. Se quiser desfazer também o banco, use a cópia de segurança feita antes da tentativa (",
+          )}
           <code>bash hostgator-setup-kit/restore.sh</code>).
         </p>
         {contaDoBanco ? (
@@ -237,12 +239,8 @@ export function UpdatePanel() {
     return (
       <Layout titulo={`${t("A atualização para a versão")} ${alvo} ${t("não deu certo")}`}>
         <p className="text-sm">
-          {t("E eu")} <strong>{t("não consegui")}</strong>{" "}
-          {t("voltar sozinho para a versão")} {anterior}:{" "}
-          {t(
-            "o sistema pode estar rodando a versão",
-          )}{" "}
-          {alvo}{" "}
+          {t("E eu")} <strong>{t("não consegui")}</strong> {t("voltar sozinho para a versão")}{" "}
+          {anterior}: {t("o sistema pode estar rodando a versão")} {alvo}{" "}
           {t(
             "com defeito, ou fora do ar. Seus dados estão intactos e a cópia de segurança feita antes da tentativa continua guardada no servidor.",
           )}
@@ -310,10 +308,8 @@ export function UpdatePanel() {
           {t(
             ") com a última publicada — normalmente é internet instável ou falta de espaço em disco na hora da checagem.",
           )}{" "}
-          <strong>
-            {t("Não quer dizer que esteja desatualizado, nem que esteja em dia")}
-          </strong>
-          : {t("quer dizer que eu não sei.")}
+          <strong>{t("Não quer dizer que esteja desatualizado, nem que esteja em dia")}</strong>:{" "}
+          {t("quer dizer que eu não sei.")}
         </p>
         <p className="mt-3 text-sm">
           {t(
@@ -327,13 +323,22 @@ export function UpdatePanel() {
 
   if (!data.update_available && !data.off_release) {
     if (data.update_channel === "custom-mcp") {
-      const instaladaValidada = Boolean(data.latest_version) && data.latest_version === data.current_version;
+      const instaladaValidada =
+        Boolean(data.latest_version) && data.latest_version === data.current_version;
       return (
-        <Layout titulo={instaladaValidada ? t("Versão MCP validada instalada") : t("Canal MCP aguardando release validada")}>
+        <Layout
+          titulo={
+            instaladaValidada
+              ? t("Versão MCP validada instalada")
+              : t("Canal MCP aguardando release validada")
+          }
+        >
           <p className="text-sm text-muted-foreground">
             {instaladaValidada
               ? t("Esta instalação está na release MCP validada mais recente.")
-              : t("O painel só oferece uma atualização depois que o build MCP e suas imagens passam nos testes e são publicados.")}
+              : t(
+                  "O painel só oferece uma atualização depois que o build MCP e suas imagens passam nos testes e são publicados.",
+                )}
           </p>
         </Layout>
       );
@@ -363,7 +368,9 @@ export function UpdatePanel() {
       return (
         <Layout titulo={t("Aguardando build MCP compatível")}>
           <p className="text-sm text-muted-foreground">
-            {t("Uma versão oficial sem release MCP validada não pode ser instalada por este botão.")}
+            {t(
+              "Uma versão oficial sem release MCP validada não pode ser instalada por este botão.",
+            )}
           </p>
         </Layout>
       );
@@ -375,8 +382,7 @@ export function UpdatePanel() {
             {t(
               "Este projeto ainda não tem nenhuma versão publicada para comparar com a sua instalação — normal em um fork novo ou recém-criado a partir do código-fonte.",
             )}{" "}
-            <strong>{t("Não há nada a atualizar agora")}</strong>,{" "}
-            {t("e isso não é um problema.")}
+            <strong>{t("Não há nada a atualizar agora")}</strong>, {t("e isso não é um problema.")}
           </p>
           <p className="mt-3 text-sm">
             {t(
@@ -411,7 +417,9 @@ export function UpdatePanel() {
     <Layout titulo={`${t("Versão")} ${nova} ${t("disponível")}`}>
       {data.off_release && (
         <p className="mb-4 rounded-md border border-warning bg-warning-bg p-3 text-sm text-warning-fg">
-          {t("Sua instalação está numa versão de desenvolvimento. Atualizar vai levá-la para a versão publicada")}{" "}
+          {t(
+            "Sua instalação está numa versão de desenvolvimento. Atualizar vai levá-la para a versão publicada",
+          )}{" "}
           {nova}.
         </p>
       )}
@@ -439,7 +447,9 @@ export function UpdatePanel() {
         <p className="mb-4 text-sm text-muted-foreground">
           {t("Este histórico começa na versão")} {data.notes.sections.at(-1)?.version}{" "}
           {t("e pode não alcançar a que você tem instalada")} ({versao}) —{" "}
-          {t("a última parte pode estar cortada. O texto completo está no arquivo CHANGELOG.md do projeto.")}
+          {t(
+            "a última parte pode estar cortada. O texto completo está no arquivo CHANGELOG.md do projeto.",
+          )}
         </p>
       )}
 
@@ -453,7 +463,11 @@ export function UpdatePanel() {
           só junta as versões presentes no texto: pode estar faltando aviso, e
           esse parágrafo é a única pista disso. */}
       <div className="mb-6">
-        <BotaoAtualizar mutate={() => atualizar.mutate()} isPending={atualizar.isPending} erro={erro} />
+        <BotaoAtualizar
+          mutate={() => atualizar.mutate()}
+          isPending={atualizar.isPending}
+          erro={erro}
+        />
       </div>
 
       {data.notes?.sections.length ? (
@@ -465,7 +479,7 @@ export function UpdatePanel() {
                   lista não virar um muro de texto num salto de várias versões.
                   Só o CORPO é recolhido — o aviso delas já está lá em cima. */}
               {i === 0 ? (
-                <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">
+                <pre className="font-sans text-sm whitespace-pre-wrap text-muted-foreground">
                   {markdownParaTextoSimples(secao.body)}
                 </pre>
               ) : (
@@ -473,7 +487,7 @@ export function UpdatePanel() {
                   <summary className="cursor-pointer text-sm font-medium">
                     {t("Versão")} {secao.version}
                   </summary>
-                  <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-muted-foreground">
+                  <pre className="mt-2 font-sans text-sm whitespace-pre-wrap text-muted-foreground">
                     {markdownParaTextoSimples(secao.body)}
                   </pre>
                 </details>
@@ -536,7 +550,10 @@ function AguardandoOServidor({
         {t(" — ela se mexe sozinha assim que o servidor começar.")}
       </p>
       {segundos !== null && (
-        <p className="mt-3 text-sm tabular-nums text-muted-foreground" data-testid="espera-decorrida">
+        <p
+          className="mt-3 text-sm text-muted-foreground tabular-nums"
+          data-testid="espera-decorrida"
+        >
           {t("Esperando há")} {formataEspera(segundos)}.
         </p>
       )}
@@ -633,7 +650,7 @@ function DetalhesTecnicos({ texto }: { texto: string | undefined }) {
       <summary className="cursor-pointer px-3 py-2 text-sm text-muted-foreground">
         {t("Detalhes técnicos (útil se for pedir ajuda)")}
       </summary>
-      <pre className="max-h-72 overflow-auto whitespace-pre-wrap px-3 pb-3 font-mono text-xs text-muted-foreground">
+      <pre className="max-h-72 overflow-auto px-3 pb-3 font-mono text-xs whitespace-pre-wrap text-muted-foreground">
         {texto}
       </pre>
     </details>
@@ -643,7 +660,7 @@ function DetalhesTecnicos({ texto }: { texto: string | undefined }) {
 function Layout({ titulo, children }: { titulo?: string; children: React.ReactNode }) {
   const t = useT();
   const { data } = useSystemVersion();
-  const crmVersion = data?.current_version?.replace(/^v/, "").replace(/-mcp$/, "");
+  const crmVersion = data?.current_version?.replace(/^v/, "");
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
       <header>
@@ -653,8 +670,13 @@ function Layout({ titulo, children }: { titulo?: string; children: React.ReactNo
       </header>
       {data?.is_owner && data.update_channel === "custom-mcp" ? (
         <div className="grid gap-1 text-sm text-muted-foreground">
-          <p>{t("Versão do CRM")}: {crmVersion}</p>
-          <p>{t("Build MCP")}: {data.mcp_build?.includes("-mcp") ? data.mcp_build : t("a confirmar")}</p>
+          <p>
+            {t("Versão do CRM")}: {crmVersion || t("a confirmar")}
+          </p>
+          {data.build_revision ? <p>Build: {data.build_revision}</p> : null}
+          <p>
+            {t("Build MCP")}: {data.mcp_build?.includes("-mcp") ? data.mcp_build : t("a confirmar")}
+          </p>
           <p>{t("Canal de atualização")}: MCP</p>
         </div>
       ) : null}
@@ -679,7 +701,9 @@ function Comando({ comando }: { comando: string }) {
   const [copiado, setCopiado] = useState(false);
   return (
     <div className="mt-3 flex items-center gap-2">
-      <code className="flex-1 overflow-x-auto rounded-md bg-muted px-3 py-2 text-xs">{comando}</code>
+      <code className="flex-1 overflow-x-auto rounded-md bg-muted px-3 py-2 text-xs">
+        {comando}
+      </code>
       <Button
         variant="outline"
         size="sm"

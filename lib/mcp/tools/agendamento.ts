@@ -558,6 +558,8 @@ export const crmBookAppointment: McpToolDefinition<typeof marcarShape> = {
           actor: ctx.actor,
           requestId: ctx.requestId,
           meetingBooking: ctx.meetingBooking,
+          ...(ctx.idempotencyKey !== undefined ? { idempotencyKey: ctx.idempotencyKey } : {}),
+          ...(ctx.sourceJobId !== undefined ? { sourceJobId: ctx.sourceJobId } : {}),
         },
         {
           event_type_id: tipo.id,

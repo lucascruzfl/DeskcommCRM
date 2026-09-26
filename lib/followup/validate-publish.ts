@@ -3,6 +3,7 @@ import type { FollowupFlowSurface } from './api-schemas';
 import { branchIdForCondition, nodeBranches } from './graph-schema';
 import { rotuloDoRamo } from './rotulo-do-ramo';
 import type { NomesDeValor } from './vocabulario';
+import { capabilitiesOf, transportaMensagem, type ChannelProvider } from '../channels/capabilities';
 
 /**
  * Structural publish validator for follow-up flow graphs.
@@ -32,6 +33,7 @@ export const PUBLISH_ERROR_CODES = [
   'no_fora_da_superficie',
   'roteiro_ramificado',
   'campo_repetido',
+  'roteiro_em_ciclo',
 ] as const;
 export type PublishErrorCode = (typeof PUBLISH_ERROR_CODES)[number];
 
@@ -56,6 +58,80 @@ export interface ContextoDoPublish {
   etapas?: ReadonlyMap<string, { nome: string; arquivada: boolean }>;
   /** Superfície do pointer. Ausente = follow-up (o que a coluna tem por padrão). */
   surface?: FollowupFlowSurface;
+  /**
+   * Roteiro: o id do que está sendo publicado e, dos OUTROS roteiros ativos da
+   * empresa, para onde o "ao concluir" de cada um encadeia (versão publicada).
+   * Com os dois, a publicação que FECHARIA um ciclo A → B → A é recusada — é
+   * sempre a última publicação do ciclo que o fecha, então conferir só nela basta.
+   */
+  roteiro?: RoteiroDoPublish;
+  /**
+   * Alguma conexão da organização só aceita modelo APROVADO com a janela de 24 h
+   * fechada? Só aí o plano B (`fallback_template_id`) de uma mensagem por IA
+   * depois de 24 h de espera tem o que fazer — em runtime ele só sai com a janela
+   * fechada (`janelaFechada` em followup-turn.ts). Num canal sem janela, exigi-lo
+   * travaria o publish: o seletor do plano B só oferece modelos aprovados, e esse
+   * canal não os tem. Ausente = exige (o comportamento de antes).
+   */
+  exigeModeloForaDaJanela?: boolean;
+}
+
+/**
+ * `true` quando algum dos providers das conexões da organização recusa texto
+ * livre fora da janela. Provider que esta imagem não conhece (ou que não manda
+ * mensagem) não conta: por ele não sai follow-up nenhum.
+ */
+export function algumCanalExigeModeloForaDaJanela(providers: readonly (string | null)[]): boolean {
+  return providers.some(
+    (p) => transportaMensagem(p) && !capabilitiesOf(p as ChannelProvider).freeformOutsideWindow
+  );
+}
+
+export interface RoteiroDoPublish {
+  pointerId: string;
+  encadeamentos: ReadonlyMap<string, { nome: string; proximos: readonly string[] }>;
+}
+
+/** Para onde o "ao concluir" dos Fins de um grafo encadeia (ids de ponteiro). */
+export function proximosDoGrafo(graph: unknown): string[] {
+  const nodes = (graph as { nodes?: unknown } | null)?.nodes;
+  if (!Array.isArray(nodes)) return [];
+  return nodes.flatMap((n) => {
+    const fim = (n as { type?: unknown; config?: { ao_finalizar?: { tipo?: unknown; fluxo?: unknown } } }).config
+      ?.ao_finalizar;
+    return (n as { type?: unknown }).type === 'end' && fim?.tipo === 'proximo_fluxo' && typeof fim.fluxo === 'string'
+      ? [fim.fluxo]
+      : [];
+  });
+}
+
+/**
+ * Caminho do encadeamento que volta ao próprio roteiro (nomes, para a
+ * mensagem), ou `null`. Sem isto dois roteiros que se apontam recomeçam um ao
+ * outro a cada conclusão, e o cliente responde as mesmas perguntas sem fim.
+ */
+function cicloDoEncadeamento(
+  graph: FlowGraph,
+  roteiro: RoteiroDoPublish,
+): string[] | null {
+  const visitados = new Set<string>();
+  const busca = (id: string, caminho: string[]): string[] | null => {
+    if (id === roteiro.pointerId) return caminho;
+    if (visitados.has(id)) return null;
+    visitados.add(id);
+    const outro = roteiro.encadeamentos.get(id);
+    if (!outro) return null;
+    for (const prox of outro.proximos) {
+      const achou = busca(prox, [...caminho, roteiro.encadeamentos.get(prox)?.nome ?? 'este roteiro']);
+      if (achou) return achou;
+    }
+    return null;
+  };
+  for (const prox of proximosDoGrafo(graph)) {
+    const achou = busca(prox, [roteiro.encadeamentos.get(prox)?.nome ?? 'este roteiro']);
+    if (achou) return achou;
+  }
+  return null;
 }
 
 /**
@@ -76,7 +152,12 @@ export const NOS_DA_SUPERFICIE: Record<FollowupFlowSurface, readonly NodeType[]>
 };
 
 /** Regras do roteiro de atendimento que o grafo sozinho não carrega. */
-function validarSuperficie(graph: FlowGraph, surface: FollowupFlowSurface, errors: PublishValidationError[]): void {
+function validarSuperficie(
+  graph: FlowGraph,
+  surface: FollowupFlowSurface,
+  errors: PublishValidationError[],
+  roteiro?: RoteiroDoPublish,
+): void {
   const permitidos = new Set<NodeType>(NOS_DA_SUPERFICIE[surface]);
   for (const n of [...graph.nodes].sort(byId)) {
     if (!permitidos.has(n.type)) {
@@ -124,6 +205,17 @@ function validarSuperficie(graph: FlowGraph, surface: FollowupFlowSurface, error
       });
     } else {
       chaves.set(n.config.key, n.id);
+    }
+  }
+  if (roteiro) {
+    const ciclo = cicloDoEncadeamento(graph, roteiro);
+    if (ciclo) {
+      const fim = [...graph.nodes].sort(byId).find((n) => proximosDoGrafo({ nodes: [n] }).length > 0);
+      errors.push({
+        node_id: fim?.id ?? null,
+        code: 'roteiro_em_ciclo',
+        message: `O "ao concluir" volta a este roteiro pela cadeia (${['este roteiro', ...ciclo].join(' → ')}) — o cliente responderia as mesmas perguntas sem fim. Escolha outro roteiro ou "Nada".`,
+      });
     }
   }
 }
@@ -437,7 +529,7 @@ export function validateFlowForPublish(
 ): PublishValidationResult {
   const { nodes, edges } = graph;
   const errors: PublishValidationError[] = [];
-  validarSuperficie(graph, contexto.surface ?? 'followup', errors);
+  validarSuperficie(graph, contexto.surface ?? 'followup', errors, contexto.roteiro);
   const etapas = contexto.etapas;
   const nomes: NomesDeValor = etapas ? { etapa: (id) => etapas.get(id)?.nome ?? null } : {};
   const nodesById = new Map(nodes.map((n) => [n.id, n]));
@@ -493,7 +585,8 @@ export function validateFlowForPublish(
       nodesById,
       outEdges
     );
-    for (const id of [...longWaitNodeIds].sort()) {
+    const exigeModelo = contexto.exigeModeloForaDaJanela !== false;
+    for (const id of exigeModelo ? [...longWaitNodeIds].sort() : []) {
       errors.push({
         node_id: id,
         code: 'long_wait_needs_template',

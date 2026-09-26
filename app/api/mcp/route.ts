@@ -18,6 +18,8 @@ import { McpAuthError, validateBearerToken } from "@/lib/mcp/auth";
 import { limitMcpRequest } from "@/lib/mcp/rate-limit";
 import { modulosLigados } from "@/lib/instalacao/modulos";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { chaveDaRequisicao } from "@/lib/api/idempotency";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -64,8 +66,18 @@ async function handle(req: NextRequest): Promise<Response> {
     });
   }
 
+  const idempotencyKey = chaveDaRequisicao(req);
+  if (idempotencyKey !== null && !z.string().uuid().safeParse(idempotencyKey).success) {
+    return jsonRpcError(-32602, "Idempotency-Key deve ser UUID", 400);
+  }
+
   const transport = new WebStandardStreamableHTTPServerTransport({});
-  const server = createMcpServer(auth, requestId, await modulosLigados(createAdminClient()));
+  const server = createMcpServer(
+    auth,
+    requestId,
+    await modulosLigados(createAdminClient()),
+    idempotencyKey ?? undefined,
+  );
 
   try {
     await server.connect(transport);

@@ -11,6 +11,7 @@ import { fail, ok } from "@/lib/api/wrappers";
 import { loadAuthUser } from "@/lib/auth/server";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { versaoInstalada } from "@/lib/system/versao-instalada";
 import { extractChangelogRange } from "@/lib/system/changelog";
 import {
   isRunStale,
@@ -37,7 +38,7 @@ export async function GET(_req: NextRequest): Promise<Response> {
   const { data: version, error: versionError } = await db
     .from("system_version")
     .select(
-      "current_version, latest_version, off_release, compare_failed, has_known_release, changelog_raw, agent_last_seen_at, updated_at",
+      "current_version, current_sha, latest_version, off_release, compare_failed, has_known_release, changelog_raw, agent_last_seen_at, updated_at",
     )
     .eq("id", 1)
     .maybeSingle();
@@ -45,7 +46,9 @@ export async function GET(_req: NextRequest): Promise<Response> {
   // Sem checar o erro, uma falha de leitura vira `current = ""` em silêncio —
   // e mais abaixo isso poderia se disfarçar de "sem atualização disponível".
   if (versionError) {
-    logger.error("[system/version] leitura de system_version falhou", { error: versionError.message });
+    logger.error("[system/version] leitura de system_version falhou", {
+      error: versionError.message,
+    });
     return fail("internal_error", "Não consegui ler o estado da atualização.", 500);
   }
 
@@ -71,7 +74,9 @@ export async function GET(_req: NextRequest): Promise<Response> {
     .maybeSingle();
 
   if (runError) {
-    logger.error("[system/version] leitura do run mais recente falhou", { error: runError.message });
+    logger.error("[system/version] leitura do run mais recente falhou", {
+      error: runError.message,
+    });
     return fail("internal_error", "Não consegui ler o estado da atualização.", 500);
   }
 
@@ -94,12 +99,7 @@ export async function GET(_req: NextRequest): Promise<Response> {
   // run, o agente viu o mundo mais recente. Sem o par de datas — run de um
   // agente antigo, sem `finished_at` — fica valendo o run, que continua sendo a
   // informação mais específica que a instalação tem.
-  const rollbackSuperado = rollbackFoiSuperado(
-    version?.updated_at,
-    run?.finished_at,
-    current,
-    run,
-  );
+  const rollbackSuperado = rollbackFoiSuperado(version?.updated_at, run?.finished_at, current, run);
   // A mesma prova vale para a TELA, não só para a versão exibida. Enquanto a
   // falha é o run mais recente, a tela mostra o aviso dela sem o botão de
   // atualizar — e o único jeito de trocar o run mais recente é justamente
@@ -126,10 +126,7 @@ export async function GET(_req: NextRequest): Promise<Response> {
   // ainda não estavam no registry, meia hora depois o mesmo `update.sh --force`
   // instalou a 1.33.0 com o app saudável, e a tela seguiu anunciando a falha —
   // sem botão, bloqueando a 1.35.0 já publicada.
-  const falhaDesmentidaPeloApp = rollbackDesmentidoPeloApp(
-    run,
-    process.env.APP_VERSION,
-  );
+  const falhaDesmentidaPeloApp = rollbackDesmentidoPeloApp(run, process.env.APP_VERSION);
   const falhaSuperada =
     (run?.status === "failed_rolled_back" || run?.status === "failed") &&
     (rollbackSuperado || falhaDesmentidaPeloApp);
@@ -146,17 +143,9 @@ export async function GET(_req: NextRequest): Promise<Response> {
   // depois dela, `sucessoJaInstalado` corta a assunção sozinho.
   const acabouDeInstalar = sucessoJaInstalado(version?.updated_at, run?.finished_at, run, now);
 
-  // Quem pode AFIRMAR versão instalada é o host, e só ele — `current`. O único
-  // run que sobrepõe isso é o rollback: ali o host reporta a versão que QUEBROU
-  // e o run é a única testemunha de qual imagem voltou ao ar.
-  //
-  // O sucesso NÃO entra na lista. Promover o `to_version` de um run
-  // bem-sucedido a "versão no ar" foi o defeito da issue 1101: o `update.sh`
-  // termina bem, o app não sobe na imagem nova, o host nunca mais bate — e a
-  // tela anuncia `1.32.0` indefinidamente com o container rodando `1.23.0`.
-  // Janela de silêncio é uma coisa (`just_updated`, logo abaixo), afirmação de
-  // versão é outra.
-  const running =
+  // Na ausência de metadata da imagem, preserva o fallback de rollback do host.
+  // Um SHA nunca é promovido a versão de release.
+  const versaoConfirmadaPeloHost =
     run?.status === "failed_rolled_back" &&
     run.from_version &&
     !rollbackSuperado &&
@@ -164,12 +153,20 @@ export async function GET(_req: NextRequest): Promise<Response> {
       ? run.from_version
       : current;
 
+  const instalada = versaoInstalada(
+    process.env.APP_VERSION,
+    versaoConfirmadaPeloHost,
+    version?.current_sha,
+  );
+  const running = instalada.current_version;
+
   if (!user.is_platform_admin) {
-    return ok({ current_version: running, is_owner: false });
+    return ok({ ...instalada, is_owner: false });
   }
 
   const latest = version?.latest_version ?? "";
-  const mcpChannel = process.env.DESKCOMM_UPDATE_CHANNEL === "custom-mcp" ||
+  const mcpChannel =
+    process.env.DESKCOMM_UPDATE_CHANNEL === "custom-mcp" ||
     process.env.APP_VERSION?.endsWith("-mcp") === true;
   const readyVersion = mcpChannel && !/^v\d+\.\d+\.\d+-mcp$/.test(latest) ? "" : latest;
   // A faixa INTEIRA entre o que está no ar e o que vai entrar, não só a seção
@@ -180,10 +177,12 @@ export async function GET(_req: NextRequest): Promise<Response> {
   // O limite inferior é `running`, NUNCA `current`: depois de um rollback,
   // `current` nomeia a versão que quebrou, e a faixa sairia vazia justamente
   // para quem mais precisa lê-la.
-  const faixa = readyVersion ? extractChangelogRange(version?.changelog_raw ?? "", readyVersion, running) : null;
+  const faixa = readyVersion
+    ? extractChangelogRange(version?.changelog_raw ?? "", readyVersion, running)
+    : null;
 
   return ok({
-    current_version: running,
+    ...instalada,
     is_owner: true,
     latest_version: readyVersion,
     update_channel: mcpChannel ? "custom-mcp" : "official",
@@ -197,7 +196,9 @@ export async function GET(_req: NextRequest): Promise<Response> {
       // versão confirmada é a antiga, em vez de afirmar a nova e não voltar
       // atrás nunca. `sucessoJaInstalado` fecha a janela sozinho passados
       // `RUN_STALE_AFTER_MS` do fim do run.
-      Boolean(readyVersion) && readyVersion !== running && !acabouDeInstalar,
+      Boolean(readyVersion) &&
+      readyVersion.replace(/^v/, "") !== running.replace(/^v/, "") &&
+      !acabouDeInstalar,
     off_release: version?.off_release ?? false,
     // Sem isto, a tela lê "sem versão nova anunciada" como "você está em dia" —
     // e uma instalação atrasada cujo host não conseguiu comparar é informada de

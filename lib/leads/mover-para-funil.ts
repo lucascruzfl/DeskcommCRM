@@ -17,6 +17,7 @@ import {
   type EtapaDoFunil,
   type OrigemParaClonar,
 } from "@/lib/leads/clonar-para-funil";
+import { modoDeReabertura } from "@/lib/leads/reabertura";
 import { encerraDemanda } from "@/lib/leads/encerramento";
 import {
   motivoDaPerdaDaOrigem,
@@ -78,9 +79,6 @@ export async function moverLeadParaOutroFunil(
   }
 
   const origemTipada = origem as OrigemParaClonar;
-  const recusa = recusaTrocaDeFunil(origemTipada, input.pipeline_id);
-  if (recusa) erro(recusa.status, recusa.code, t(recusa.texto), ctx);
-
   const { data: pipelineOrigem, error: origemPipeErr } = await supabase
     .from("crm_pipelines")
     .select("settings, name")
@@ -88,6 +86,14 @@ export async function moverLeadParaOutroFunil(
     .eq("organization_id", ctx.organization_id)
     .maybeSingle();
   if (origemPipeErr) erro(500, "internal_error", origemPipeErr.message, ctx);
+
+  const recusa = recusaTrocaDeFunil(
+    origemTipada,
+    input.pipeline_id,
+    modoDeReabertura(pipelineOrigem?.settings),
+  );
+  if (recusa) erro(recusa.status, recusa.code, t(recusa.texto), ctx);
+  const origemJaEncerrada = origemTipada.status !== "open";
 
   const motivoRecusado = recusaDeMotivoForaDoVocabulario({
     motivo: input.lost_reason,
@@ -105,24 +111,23 @@ export async function moverLeadParaOutroFunil(
     .order("position", { ascending: true });
   if (stagesErr) erro(500, "internal_error", stagesErr.message, ctx);
 
-  const destino = escolheEtapaDeDestino(
-    (etapas ?? []) as EtapaDoFunil[],
-    input.stage_id ?? null,
-  );
+  const destino = escolheEtapaDeDestino((etapas ?? []) as EtapaDoFunil[], input.stage_id ?? null);
   if (!destino.ok) erro(destino.status, destino.code, t(destino.texto), ctx);
 
-  const { data: etapaDePerdaDaOrigem, error: perdaErr } = await supabase
-    .from("crm_stages")
-    .select("id")
-    .eq("organization_id", ctx.organization_id)
-    .eq("pipeline_id", origemTipada.pipeline_id)
-    .eq("is_lost", true)
-    .eq("is_archived", false)
-    .limit(1)
-    .maybeSingle();
-  if (perdaErr) erro(500, "internal_error", perdaErr.message, ctx);
-  if (!etapaDePerdaDaOrigem) {
-    erro(422, "pipeline_no_lost_stage", t(ORIGEM_SEM_ETAPA_DE_PERDA), ctx);
+  if (!origemJaEncerrada) {
+    const { data: etapaDePerdaDaOrigem, error: perdaErr } = await supabase
+      .from("crm_stages")
+      .select("id")
+      .eq("organization_id", ctx.organization_id)
+      .eq("pipeline_id", origemTipada.pipeline_id)
+      .eq("is_lost", true)
+      .eq("is_archived", false)
+      .limit(1)
+      .maybeSingle();
+    if (perdaErr) erro(500, "internal_error", perdaErr.message, ctx);
+    if (!etapaDePerdaDaOrigem) {
+      erro(422, "pipeline_no_lost_stage", t(ORIGEM_SEM_ETAPA_DE_PERDA), ctx);
+    }
   }
 
   const clone = await createLeadHandler(
@@ -157,18 +162,22 @@ export async function moverLeadParaOutroFunil(
   }
 
   const motivo = motivoDaPerdaDaOrigem(input.lost_reason);
-  const { lead: origemEncerrada } = await encerraDemanda(supabase, ctx, {
-    leadId,
-    desfecho: "lost",
-    motivo,
-    razaoNaTimeline: nomeDoFunilDeDestino
-      ? `Levado para o funil ${nomeDoFunilDeDestino}`
-      : "Levado para outro funil",
-    payloadNaTimeline: {
-      to_pipeline_id: input.pipeline_id,
-      to_lead_id: destination.lead_id,
-    },
-  });
+  const origemEncerrada = origemJaEncerrada
+    ? origem
+    : (
+        await encerraDemanda(supabase, ctx, {
+          leadId,
+          desfecho: "lost",
+          motivo,
+          razaoNaTimeline: nomeDoFunilDeDestino
+            ? `Levado para o funil ${nomeDoFunilDeDestino}`
+            : "Levado para outro funil",
+          payloadNaTimeline: {
+            to_pipeline_id: input.pipeline_id,
+            to_lead_id: destination.lead_id,
+          },
+        })
+      ).lead;
 
   const sourceMetadata = {
     ...(origemTipada.source_metadata ?? {}),
