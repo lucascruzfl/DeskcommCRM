@@ -1,5 +1,5 @@
 {
-  "scope": "Catálogo revisado para token persistido de usuário agent; mcp:read/write e capacidades de envio/handoff/destrutivas não concedem áreas administrativas. A prova usa PostgREST descartável.",
+  "scope": "Catálogo revisado para token persistido de usuário agent; mcp:read/write e capacidades de envio/handoff/destrutivas não concedem áreas administrativas. A prova usa PostgREST descartável. Reconciliado com 1.53: rascunhos e retomada são operacionais; previsão via domínio pipelines continua reservada à gestão.",
   "tools": [
     {
       "name": "crm_activate_ai_agent",
@@ -196,6 +196,14 @@
     {
       "name": "crm_create_contact",
       "domain": "contacts",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_create_conversation_draft",
+      "domain": "conversations",
       "role": "agent",
       "category": "write",
       "public": true,
@@ -744,6 +752,14 @@
       "category": "read",
       "public": true,
       "client_allowed": true
+    },
+    {
+      "name": "crm_get_pipeline_forecast",
+      "domain": "pipelines",
+      "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": false
     },
     {
       "name": "crm_get_privacy_export_status",
@@ -1500,6 +1516,14 @@
     {
       "name": "crm_resume_ai_attendance",
       "domain": "conversations",
+      "role": "agent",
+      "category": "write",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_retomar_lead",
+      "domain": "leads",
       "role": "agent",
       "category": "write",
       "public": true,

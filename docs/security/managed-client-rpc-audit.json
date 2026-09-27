@@ -2517,9 +2517,9 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "d511ee5674b520eb806a37ea7ea7086e3e2f6310566b09e4ebc9d27368291cf9",
+      "body_sha256": "0cfe6d83274a73ca0f25002480593b884a62827b2f2a662e29723f5ee701b70d",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+      "reason": "Trigger de escrita da projeção: exige papel/área operacional, tenant e referências confiáveis; autoria delegada e revisão de serviço imutáveis para JWT de cliente. EXECUTE direto restrito ao service_role."
     },
     {
       "signature": "midpoint(numeric,numeric)",

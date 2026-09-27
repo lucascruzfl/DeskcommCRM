@@ -43,7 +43,7 @@ test("cliente agent entra, usa Inbox/Contatos/Agenda/Funil e move lead sem admin
   const history = await page.request.get(
     `/api/v1/conversations/${fixture.clinics.A!.conversation}/messages`,
   );
-  expect(history.status()).toBe(200);
+  expect(history.status(), await history.text()).toBe(200);
   expect(await history.text()).not.toContain("never-expose");
   await page.getByRole("textbox", { name: "Adicionar tag à conversa" }).fill("fase5");
   await page.getByRole("button", { name: "Adicionar tag", exact: true }).click();

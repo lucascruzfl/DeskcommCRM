@@ -4369,7 +4369,6 @@ GRANT ALL ON FUNCTION "public"."fn_audit_log_row"() TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."fn_crm_lead_close_on_stage"() TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_crm_lead_close_on_stage"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_crm_lead_close_on_stage"() TO "service_role";
 
@@ -4477,7 +4476,6 @@ GRANT ALL ON FUNCTION "public"."fn_validate_activity_lead_org"() TO "service_rol
 
 
 
-GRANT ALL ON FUNCTION "public"."fn_validate_lost_reason_required"() TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_validate_lost_reason_required"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_validate_lost_reason_required"() TO "service_role";
 
@@ -42967,7 +42965,7 @@ as restrictive for select to authenticated
 using (public.fn_managed_area_allowed(organization_id, '/app/ai/knowledge/sources'));
 
 create or replace view public.operational_messages with (security_barrier=true) as
-select m.id, m.organization_id, m.conversation_id, m.channel_session_id, m.contact_id, m.external_id, m.type, m.direction, m.status, m.ack, m.error_code, m.error_message, m.body, m.media_url, m.media_mime, m.media_size_bytes, m.media_storage_path, m.sent_via, m.sent_by_user_id, m.sent_at, m.delivered_at, m.read_at, m.created_at, m.template_name, m.template_language, m.edited_at, m.revoked_at, m.reply_to_message_id, case when public.fn_managed_area_allowed(m.organization_id, '/app/ai/knowledge/sources') then m.metadata else public.fn_operational_message_metadata(m.metadata) end as metadata, m.service_revision
+select m.id, m.organization_id, m.conversation_id, m.channel_session_id, m.contact_id, m.external_id, m.type, m.direction, m.status, m.ack, m.error_code, m.error_message, m.body, m.media_url, m.media_mime, m.media_size_bytes, m.media_storage_path, m.sent_via, m.sent_by_user_id, m.sent_at, m.delivered_at, m.read_at, m.created_at, m.template_name, m.template_language, m.edited_at, m.revoked_at, m.reply_to_message_id, case when public.fn_managed_area_allowed(m.organization_id, '/app/ai/knowledge/sources') then m.metadata else public.fn_operational_message_metadata(m.metadata) end as metadata, m.service_revision, m.sent_on_behalf_of_user_id
 from public.messages m join public.conversations c on c.id=m.conversation_id and c.organization_id=m.organization_id
 where (public.fn_managed_area_allowed(m.organization_id, '/app/inbox') and public.fn_can_view_conversation(c.organization_id, c.assigned_to_user_id))
    or public.fn_is_platform_admin() or current_user in ('postgres','service_role');
@@ -43895,85 +43893,6 @@ $function$;
 revoke all on function public.fn_vocabulario_de_tags(uuid) from public, anon;
 grant execute on function public.fn_vocabulario_de_tags(uuid) to authenticated, service_role;
 
--- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
---
--- ⚠️ DE PROPÓSITO, NENHUMA FUNÇÃO É CRIADA DEPOIS DESTE BLOCO. Apêndice que cria
--- função entra ANTES dele — quem o empurrar para o meio desarma a cura para tudo
--- que vier depois. (O último bloco do arquivo é a chamada das travas do suporte,
--- migration 0274, que não cria função.)
--- Vigiado por `tests/unit/varredura-anon-e-o-ultimo-bloco.test.ts`.
---
--- A 0108 revogou anon numa LISTA de 8 funções, medida num banco instalado do
--- ZERO. Quem ATUALIZA tem outro estado: o `ALTER DEFAULT PRIVILEGES ... GRANT
--- ALL ON FUNCTIONS TO anon` do corpo deste arquivo grava uma entrada em
--- `pg_default_acl` que fica no catálogo PARA SEMPRE, e a partir daí toda função
--- criada em `public` nasce com EXECUTE para anon — inclusive as deste apêndice.
---
--- Medido numa VPS real (2026-08-07), comparando com o que um install fresco
--- produz: 6 definer expostas a anon e 5 a authenticated, entre elas
--- `fn_decrypt_oauth` — alcançável pela anon key, que vai para o browser.
---
--- Lista conserta o estoque e reabre no próximo `create function`. Esta varredura
--- é auto-curativa e roda DEPOIS de tudo que cria função, então cura no mesmo run
--- em que o defeito nasceria. Desfazer o ALTER DEFAULT PRIVILEGES não serve: ele
--- vem do `pg_dump` do Supabase e é reescrito a cada re-aplicação.
---
--- As duas origens de EXECUTE (a mesma lição da 0108): grant DIRETO a anon, que
--- `revoke from public` não remove; e grant a PUBLIC, do qual anon HERDA, que
--- `revoke from anon` não remove. O privilégio EFETIVO de authenticated e
--- service_role é medido ANTES e devolvido depois — tira anon sem tirar leitura.
-do $$
-declare
-  f record;
-  tinha_auth boolean;
-  tinha_service boolean;
-begin
-  if to_regrole('anon') is null then
-    return;
-  end if;
-
-  for f in
-    select p.oid, p.oid::regprocedure as assinatura
-      from pg_proc p
-      join pg_namespace n on n.oid = p.pronamespace
-     where n.nspname = 'public'
-       and p.prosecdef
-  loop
-    tinha_auth := to_regrole('authenticated') is not null
-                  and has_function_privilege('authenticated', f.oid, 'EXECUTE');
-    tinha_service := to_regrole('service_role') is not null
-                     and has_function_privilege('service_role', f.oid, 'EXECUTE');
-
-    execute format('revoke execute on function %s from public, anon', f.assinatura);
-
-    if tinha_auth then
-      execute format('grant execute on function %s to authenticated', f.assinatura);
-    end if;
-    if tinha_service then
-      execute format('grant execute on function %s to service_role', f.assinatura);
-    end if;
-  end loop;
-end $$;
-
--- regra 2 (authenticated): as 5 que o update abriu e o install não abre. Aqui não
--- cabe varredura — `authenticated` PRECISA de EXECUTE nos helpers de RLS e em
--- `retrieve_top_k_chunks` (num install fresco ele tem). É julgamento por função,
--- e o alvo de cada linha é o valor que um install fresco produz, medido.
-revoke execute on function public.fn_audit_log_row() from authenticated;
-revoke execute on function public.fn_decrypt_oauth(bytea) from authenticated;
-revoke execute on function public.fn_encrypt_oauth(text) from authenticated;
-revoke execute on function public.fn_lgpd_cascade_redact_contact(uuid, uuid, uuid) from authenticated;
-revoke execute on function public.fn_update_budget_consumption() from authenticated;
-
-grant execute on function public.fn_audit_log_row() to service_role;
-grant execute on function public.fn_decrypt_oauth(bytea) to service_role;
-grant execute on function public.fn_encrypt_oauth(text) to service_role;
-grant execute on function public.fn_lgpd_cascade_redact_contact(uuid, uuid, uuid) to service_role;
-grant execute on function public.fn_update_budget_consumption() to service_role;
-
--- Tabelas novas também recebem as travas de suporte, após todo o apêndice.
-do $f$ begin perform public.fn_aplicar_travas_de_suporte(); end $f$;
-
 -- ---- 0452 — reconciliar RPC managed com upstream 1.53 ----
 -- 0452 — reconciliar funções managed com o comportamento oficial da 1.53.
 -- Mantém projeção operacional, portões de área, tenancy e ACL; recupera a
@@ -44415,3 +44334,205 @@ revoke all on function public.fn_validate_lost_reason_required() from public, an
 grant execute on function public.fn_validate_lost_reason_required() to authenticated, service_role;
 
 notify pgrst, 'reload schema';
+
+-- ---- 0453 — autoria operacional da mensagem 1.53 ----
+-- 0453 — autoria operacional acrescentada pelo upstream 1.53.
+-- A coluna é um UUID de autoria, sem token/configuração. Preserva filtros,
+-- metadata higienizada, OID e trigger de escrita da projeção certificada.
+create or replace view public.operational_messages with (security_barrier=true) as
+select m.id, m.organization_id, m.conversation_id, m.channel_session_id, m.contact_id, m.external_id, m.type, m.direction, m.status, m.ack, m.error_code, m.error_message, m.body, m.media_url, m.media_mime, m.media_size_bytes, m.media_storage_path, m.sent_via, m.sent_by_user_id, m.sent_at, m.delivered_at, m.read_at, m.created_at, m.template_name, m.template_language, m.edited_at, m.revoked_at, m.reply_to_message_id, case when public.fn_managed_area_allowed(m.organization_id, '/app/ai/knowledge/sources') then m.metadata else public.fn_operational_message_metadata(m.metadata) end as metadata, m.service_revision, m.sent_on_behalf_of_user_id
+from public.messages m join public.conversations c on c.id=m.conversation_id and c.organization_id=m.organization_id
+where (public.fn_managed_area_allowed(m.organization_id, '/app/inbox') and public.fn_can_view_conversation(c.organization_id, c.assigned_to_user_id))
+   or public.fn_is_platform_admin() or current_user in ('postgres','service_role');
+alter view public.operational_messages owner to postgres;
+revoke all on public.operational_messages from public, anon;
+grant select, insert, update, delete on public.operational_messages to authenticated, service_role;
+-- Autoria delegada vem do ingresso autenticado de serviço, nunca do PATCH do cliente.
+create or replace function public.fn_write_operational_inbox()
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $fn$
+declare
+  v_row jsonb;
+  v_org uuid;
+  v_id uuid;
+  v_conv uuid;
+  v_owner uuid;
+  v_table text := tg_argv[0];
+  v_keys text[];
+  v_set text;
+  v_columns text;
+  v_values text;
+  v_private_metadata jsonb;
+begin
+  if v_table not in ('conversations','messages') then raise exception 'invalid_surface' using errcode='42501'; end if;
+  v_row := case when tg_op='DELETE' then to_jsonb(old) else to_jsonb(new) end;
+  v_org := (v_row->>'organization_id')::uuid;
+  v_id := coalesce((v_row->>'id')::uuid,gen_random_uuid());
+  if auth.uid() is not null then
+    if not public.fn_role_at_least(v_org,'agent') or not public.fn_managed_area_allowed(v_org,'/app/inbox')
+       or not public.fn_support_write_allowed(v_org) then
+      raise exception 'managed_operational_write_denied' using errcode='42501';
+    end if;
+  elsif current_setting('role',true) not in ('service_role','none') then
+    raise exception 'actor_required' using errcode='42501';
+  end if;
+  if auth.uid() is not null and v_table='messages' then
+    if (tg_op='INSERT' and v_row->>'service_revision' is not null)
+       or (tg_op='UPDATE' and (to_jsonb(old)->>'service_revision') is distinct from (v_row->>'service_revision')) then
+      raise exception 'immutable_service_revision' using errcode='42501';
+    end if;
+    if (tg_op='INSERT' and v_row->>'sent_on_behalf_of_user_id' is not null)
+       or (tg_op='UPDATE' and (to_jsonb(old)->>'sent_on_behalf_of_user_id') is distinct from (v_row->>'sent_on_behalf_of_user_id')) then
+      raise exception 'immutable_message_authorship' using errcode='42501';
+    end if;
+  end if;
+  if tg_op<>'INSERT' and ((to_jsonb(old)->>'id')::uuid is distinct from v_id
+      or (to_jsonb(old)->>'organization_id')::uuid is distinct from v_org) then
+    raise exception 'immutable_tenant' using errcode='42501';
+  end if;
+  v_conv := case when v_table='conversations' then v_id else (v_row->>'conversation_id')::uuid end;
+  if v_table='messages' or tg_op<>'INSERT' then
+    select assigned_to_user_id into v_owner from public.conversations where id=v_conv and organization_id=v_org for no key update;
+    if not found or (auth.uid() is not null and not public.fn_can_view_conversation(v_org,v_owner)) then
+      raise exception 'conversation_not_visible' using errcode='42501';
+    end if;
+  end if;
+  if tg_op='DELETE' then
+    execute format('delete from public.%I where id=$1 and organization_id=$2',v_table) using v_id,v_org;
+  else
+    if not exists(select 1 from public.contacts where id=(v_row->>'contact_id')::uuid and organization_id=v_org)
+       or not exists(select 1 from public.channel_sessions where id=(v_row->>'channel_session_id')::uuid and organization_id=v_org) then
+      raise exception 'foreign_operational_reference' using errcode='42501';
+    end if;
+    if v_table='conversations' and v_row->>'assigned_to_user_id' is not null and
+       coalesce(public.fn_member_role_in_org((v_row->>'assigned_to_user_id')::uuid,v_org),'none') not in ('agent','manager','admin') then
+      raise exception 'assignee_not_eligible_member' using errcode='42501';
+    end if;
+    if tg_op='UPDATE' and v_table='messages' and
+       (v_row->>'conversation_id') is distinct from (to_jsonb(old)->>'conversation_id') then
+      raise exception 'immutable_conversation' using errcode='42501';
+    end if;
+    v_row := v_row - 'comando_da_conversa' - 'tags_do_contato';
+    if tg_op='UPDATE' and v_row->'metadata' is not distinct from to_jsonb(old)->'metadata' then
+      -- A projeção sanitizada nunca substitui o metadata privado num PATCH.
+      v_row := v_row - 'metadata';
+    end if;
+    if auth.uid() is not null and not public.fn_managed_area_allowed(v_org,'/app/ai/knowledge/sources') and v_row ? 'metadata' then
+      if v_table='messages' then
+        v_row := jsonb_set(v_row,'{metadata}',public.fn_operational_message_metadata(v_row->'metadata'));
+      elsif v_row->'metadata' is distinct from '{}'::jsonb then
+        raise exception 'private_metadata_write_denied' using errcode='42501';
+      end if;
+    end if;
+    if tg_op='UPDATE' then
+      select coalesce(jsonb_object_agg(key,value),'{}'::jsonb) into v_row from jsonb_each(v_row)
+        where value is distinct from to_jsonb(old)->key;
+      if v_row='{}'::jsonb then return old; end if;
+    end if;
+    if tg_op='UPDATE' and v_row ? 'metadata' then
+      execute format('select metadata from public.%I where id=$1 and organization_id=$2',v_table)
+        into v_private_metadata using v_id,v_org;
+      v_row:=jsonb_set(v_row,'{metadata}',coalesce(v_private_metadata,'{}'::jsonb)||coalesce(v_row->'metadata','{}'::jsonb));
+    end if;
+    if tg_op='INSERT' then
+      v_row := jsonb_strip_nulls(v_row) || jsonb_build_object('id',v_id);
+      select array_agg(key order by key) into v_keys from jsonb_object_keys(v_row) key;
+      select string_agg(format('%I',key),','), string_agg(format('(jsonb_populate_record(null::public.%I,$1)).%I',v_table,key),',')
+        into v_columns,v_values from unnest(v_keys) key;
+      execute format('insert into public.%I (%s) select %s',v_table,v_columns,v_values) using v_row;
+    else
+      select string_agg(format('%I=(jsonb_populate_record(null::public.%I,$1)).%I',key,v_table,key),',')
+        into v_set from jsonb_object_keys(v_row) key where key not in ('id','organization_id');
+      execute format('update public.%I set %s where id=$2 and organization_id=$3',v_table,v_set) using v_row,v_id,v_org;
+    end if;
+  end if;
+  if auth.uid() is not null then
+    insert into public.api_audit_log(organization_id,actor_user_id,action,resource_type,resource_id,metadata)
+      values(v_org,auth.uid(),'operational_inbox.'||lower(tg_op),v_table,v_id,'{}'::jsonb);
+  end if;
+  if tg_op='DELETE' then return old; end if;
+  execute format('select * from public.%I where id=$1 and organization_id=$2',tg_table_name) into new using v_id,v_org;
+  return new;
+end;
+$fn$;
+revoke all on function public.fn_write_operational_inbox() from public,anon,authenticated;
+grant execute on function public.fn_write_operational_inbox() to service_role;
+notify pgrst, 'reload schema';
+
+-- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
+--
+-- ⚠️ DE PROPÓSITO, NENHUMA FUNÇÃO É CRIADA DEPOIS DESTE BLOCO. Apêndice que cria
+-- função entra ANTES dele — quem o empurrar para o meio desarma a cura para tudo
+-- que vier depois. (O último bloco do arquivo é a chamada das travas do suporte,
+-- migration 0274, que não cria função.)
+-- Vigiado por `tests/unit/varredura-anon-e-o-ultimo-bloco.test.ts`.
+--
+-- A 0108 revogou anon numa LISTA de 8 funções, medida num banco instalado do
+-- ZERO. Quem ATUALIZA tem outro estado: o `ALTER DEFAULT PRIVILEGES ... GRANT
+-- ALL ON FUNCTIONS TO anon` do corpo deste arquivo grava uma entrada em
+-- `pg_default_acl` que fica no catálogo PARA SEMPRE, e a partir daí toda função
+-- criada em `public` nasce com EXECUTE para anon — inclusive as deste apêndice.
+--
+-- Medido numa VPS real (2026-08-07), comparando com o que um install fresco
+-- produz: 6 definer expostas a anon e 5 a authenticated, entre elas
+-- `fn_decrypt_oauth` — alcançável pela anon key, que vai para o browser.
+--
+-- Lista conserta o estoque e reabre no próximo `create function`. Esta varredura
+-- é auto-curativa e roda DEPOIS de tudo que cria função, então cura no mesmo run
+-- em que o defeito nasceria. Desfazer o ALTER DEFAULT PRIVILEGES não serve: ele
+-- vem do `pg_dump` do Supabase e é reescrito a cada re-aplicação.
+--
+-- As duas origens de EXECUTE (a mesma lição da 0108): grant DIRETO a anon, que
+-- `revoke from public` não remove; e grant a PUBLIC, do qual anon HERDA, que
+-- `revoke from anon` não remove. O privilégio EFETIVO de authenticated e
+-- service_role é medido ANTES e devolvido depois — tira anon sem tirar leitura.
+do $$
+declare
+  f record;
+  tinha_auth boolean;
+  tinha_service boolean;
+begin
+  if to_regrole('anon') is null then
+    return;
+  end if;
+
+  for f in
+    select p.oid, p.oid::regprocedure as assinatura
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.prosecdef
+  loop
+    tinha_auth := to_regrole('authenticated') is not null
+                  and has_function_privilege('authenticated', f.oid, 'EXECUTE');
+    tinha_service := to_regrole('service_role') is not null
+                     and has_function_privilege('service_role', f.oid, 'EXECUTE');
+
+    execute format('revoke execute on function %s from public, anon', f.assinatura);
+
+    if tinha_auth then
+      execute format('grant execute on function %s to authenticated', f.assinatura);
+    end if;
+    if tinha_service then
+      execute format('grant execute on function %s to service_role', f.assinatura);
+    end if;
+  end loop;
+end $$;
+
+-- regra 2 (authenticated): as 5 que o update abriu e o install não abre. Aqui não
+-- cabe varredura — `authenticated` PRECISA de EXECUTE nos helpers de RLS e em
+-- `retrieve_top_k_chunks` (num install fresco ele tem). É julgamento por função,
+-- e o alvo de cada linha é o valor que um install fresco produz, medido.
+revoke execute on function public.fn_audit_log_row() from authenticated;
+revoke execute on function public.fn_decrypt_oauth(bytea) from authenticated;
+revoke execute on function public.fn_encrypt_oauth(text) from authenticated;
+revoke execute on function public.fn_lgpd_cascade_redact_contact(uuid, uuid, uuid) from authenticated;
+revoke execute on function public.fn_update_budget_consumption() from authenticated;
+
+grant execute on function public.fn_audit_log_row() to service_role;
+grant execute on function public.fn_decrypt_oauth(bytea) to service_role;
+grant execute on function public.fn_encrypt_oauth(text) to service_role;
+grant execute on function public.fn_lgpd_cascade_redact_contact(uuid, uuid, uuid) to service_role;
+grant execute on function public.fn_update_budget_consumption() to service_role;
+
+-- Tabelas novas também recebem as travas de suporte, após todo o apêndice.
+do $f$ begin perform public.fn_aplicar_travas_de_suporte(); end $f$;

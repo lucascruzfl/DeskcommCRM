@@ -52,7 +52,11 @@ O snapshot `managed-client-rpc-audit.json` mede corpos e privilégios reais.
   oito identidades de objetos e a view migrada estáveis na reaplicação.
 - Typecheck local: Node atingiu limite de heap; não equivale a erro de TypeScript.
   Gate final pertence ao CI com o orçamento de memória já configurado.
-- Resultados finais de CI/E2E serão acrescentados após os runs do commit corrigido.
+- O primeiro recheck remoto `36288072004` confirmou typecheck e lint e apontou
+  duas cercas sobre a ordem do baseline: o novo apêndice precisava anteceder
+  a varredura anon, e os dois GRANTs anon do dump reconcediam o que a 0452 revoga.
+  Apêndice reposicionado e grants retirados, preservando o estado final seguro.
+  Os resultados finais são os runs GitHub Actions do HEAD remoto.
 
 ## Living System Checklist — reconciliação de infraestrutura
 
@@ -69,3 +73,28 @@ O snapshot `managed-client-rpc-audit.json` mede corpos e privilégios reais.
 
 `can_execute=false`; nenhum onboarding service, tenant real ou convite real.
 Produção intocada. Não iniciada Fase 6; nenhuma tag, imagem ou release sobrescrita.
+
+## Segundo ajuste dos gates concretos
+
+O E2E confirmou gestor, bloqueio de URLs e JWT/cross-tenant; o histórico operacional
+retornou 500 por ausência de sent_on_behalf_of_user_id na view de mensagens.
+A nova migration 0453 publica somente esse UUID de autoria, preservando metadata
+higienizada e filtros da projeção. A definição anterior do baseline também tem
+a coluna para preservar OID no reapply; nenhuma migration histórica foi editada.
+Autoria delegada é imutável em INSERT/PATCH autenticado na projeção: o serviço
+preserva a atribuição, e JWT de cliente/gestor recebe 403 ao tentar falsificá-la.
+O catálogo RPC foi relido do banco e o hash do trigger atualizado.
+A cadeia histórica aplica uma vez, como o runner Supabase; forward-fixes novos
+são reaplicados, e o harness continua provando o baseline inteiro duas vezes.
+
+Os unitários restantes eram mocks de etapas/consultas/devolução e uma contagem
+de campo que confundia FK com Row/Insert/Update. Os seis arquivos corrigidos
+passaram em 62 casos. O catálogo MCP revisa as três ferramentas oficiais novas:
+rascunho e retomada permitidos na área operacional; previsão de pipeline mantém
+o domínio administrativo. O invariante HTTP com token persistido prova a lista
+e a recusa de cada tool fora dela, sem remover o gate.
+
+A regressão dirigida do segundo ajuste passou em 71 casos de seis arquivos de
+invariantes (mensagens, JWT/RLS/MCP persistido, cadeia managed, grants, automação
+e agenda), com fresh install e reapply. Registro MCP atual: 237 tools, zero
+nomes duplicados. O CI do commit final é a referência para a suíte completa.

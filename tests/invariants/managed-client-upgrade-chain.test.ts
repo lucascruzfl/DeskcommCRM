@@ -20,6 +20,7 @@ const migrations = [
   "20260927015113_0450_rpc_respeitam_areas_gerenciadas.sql",
   "20260927015114_0451_inbox_operacional_sem_metadados_privados.sql",
   "20260927021800_0452_reconciliar_rpc_managed_com_153.sql",
+  "20260927022600_0453_autoria_operacional_de_mensagem_153.sql",
 ] as const;
 
 it("promove banco anterior a 0425 com dados por toda a cadeia e aceita reapply", () => {
@@ -63,7 +64,9 @@ it("promove banco anterior a 0425 com dados por toda a cadeia e aceita reapply",
     (organization_id, business_type, management_mode, preset_id, preset_version, areas, applied_by)
     values ('${org}', 'aesthetic_clinic', 'managed', 'managed/aesthetic-clinic', '1.0.0', '${areas}'::jsonb, '${manager}');`);
   for (const migration of migrations.slice(1)) apply(migration);
-  for (const migration of migrations) apply(migration);
+  // Migrations históricas são aplicadas uma vez; forward-fixes novos precisam
+  // aceitar reapply. O baseline inteiro reaplicável é provado pelo harness.
+  for (const migration of migrations.slice(-2)) apply(migration);
 
   expect(
     countAs(client, `select count(*) from public.ai_agents where organization_id = '${org}';`),

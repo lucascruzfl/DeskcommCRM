@@ -42,7 +42,14 @@ const DE_GANHO = { is_won: true, is_lost: false } as const;
 
 describe("modoDeReabertura — o padrão é o comportamento de antes da issue", () => {
   it("sem settings, com null, com outro valor ou com objeto vazio: mesmo_registro", () => {
-    for (const settings of [undefined, null, {}, { reabertura: null }, { reabertura: 42 }, { reabertura: { modo: "novo_negocio" } }]) {
+    for (const settings of [
+      undefined,
+      null,
+      {},
+      { reabertura: null },
+      { reabertura: 42 },
+      { reabertura: { modo: "novo_negocio" } },
+    ]) {
       expect(modoDeReabertura(settings)).toBe(MODO_REABERTURA_PADRAO);
     }
     expect(MODO_REABERTURA_PADRAO).toBe("mesmo_registro");
@@ -100,9 +107,7 @@ describe("recusaReabertura — as três condições SÓ juntas recusam", () => {
     const es = traduzir(RECUSA_REABERTURA_CRIA_NOVO, "es");
     expect(es).not.toBe(RECUSA_REABERTURA_CRIA_NOVO);
     for (const idioma of ["pt-BR", "es"] as const) {
-      expect(traduzir(RECUSA_REABERTURA_CRIA_NOVO, idioma)).toContain(
-        "/api/v1/leads/{id}/retomar",
-      );
+      expect(traduzir(RECUSA_REABERTURA_CRIA_NOVO, idioma)).toContain("/api/v1/leads/{id}/retomar");
     }
   });
 });
@@ -111,14 +116,15 @@ describe("os campos que a retomada copia", () => {
   it("sem a chave, é o piso da proposta: custom_fields e tags", () => {
     expect(camposCopiadosNaRetomada(undefined)).toEqual([...CAMPOS_PADRAO_DA_RETOMADA]);
     expect(camposCopiadosNaRetomada({})).toEqual(["custom_fields", "tags"]);
-    expect(CAMPOS_PADRAO_DA_RETOMADA.every((c) => (CAMPOS_COPIAVEIS as readonly string[]).includes(c))).toBe(true);
+    expect(
+      CAMPOS_PADRAO_DA_RETOMADA.every((c) => (CAMPOS_COPIAVEIS as readonly string[]).includes(c)),
+    ).toBe(true);
   });
 
   it("a lista declarada é filtrada pela whitelist — fora dela não vira escrita", () => {
-    expect(camposCopiadosNaRetomada({ reabertura_campos: ["tags", "value_cents", "external_id"] })).toEqual([
-      "tags",
-      "value_cents",
-    ]);
+    expect(
+      camposCopiadosNaRetomada({ reabertura_campos: ["tags", "value_cents", "external_id"] }),
+    ).toEqual(["tags", "value_cents"]);
   });
 
   it("lista vazia é escolha do operador (só o contato), não erro de leitura", () => {
@@ -148,7 +154,9 @@ describe("clone (P-01): encerrado só entra num funil novo_negocio", () => {
 
   it("sem o modo, a recusa de antes continua valendo", () => {
     expect(recusaTrocaDeFunil(origem("lost"), outroFunil)?.code).toBe("lead_not_open");
-    expect(recusaTrocaDeFunil(origem("won"), outroFunil, "mesmo_registro")?.code).toBe("lead_not_open");
+    expect(recusaTrocaDeFunil(origem("won"), outroFunil, "mesmo_registro")?.code).toBe(
+      "lead_not_open",
+    );
   });
 
   it("novo_negocio abre a porta — e mesmo funil continua sendo /move", () => {
@@ -192,7 +200,12 @@ describe("a tripla da migration 0425 — coluna, FK e registro", () => {
     expect(manifest).toContain("0425_retomada_como_novo_negocio");
 
     const tipos = readFileSync(join(raiz, "lib", "database.types.ts"), "utf8");
-    const ocorrencias = tipos.split("retomado_de_lead_id").length - 1;
+    // Mede os campos Row/Insert/Update; a FK gerada também referencia a coluna.
+    const tabela = tipos.slice(
+      tipos.indexOf("      crm_leads: {"),
+      tipos.indexOf("      crm_pipelines: {"),
+    );
+    const ocorrencias = [...tabela.matchAll(/^\s+retomado_de_lead_id\??:/gm)].length;
     expect(ocorrencias).toBe(3);
   });
 });

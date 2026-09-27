@@ -13674,6 +13674,7 @@ export type Database = {
           revoked_at: string | null;
           sent_at: string | null;
           sent_by_user_id: string | null;
+          sent_on_behalf_of_user_id: string | null;
           sent_via: string | null;
           service_revision: number | null;
           status: string | null;

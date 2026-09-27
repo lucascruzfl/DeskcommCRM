@@ -283,6 +283,32 @@ describe("PostgREST com JWT persistido na sessão HTTP", () => {
     expect(foreignSignal).toMatchObject({ status: 200, rows: [] });
   });
 
+  it("autoria delegada de mensagem é legível, mas não falsificável por JWT", async () => {
+    sql(
+      `update public.messages set sent_on_behalf_of_user_id='${fixture.operator}' where id='${fixture.messageA}';`,
+    );
+    const own = await getRows(
+      fixture.clientA,
+      `operational_messages?id=eq.${fixture.messageA}&select=sent_on_behalf_of_user_id`,
+    );
+    expect(own.rows[0]?.sent_on_behalf_of_user_id).toBe(fixture.operator);
+    for (const user of [fixture.clientA, fixture.manager]) {
+      const response = await fetch(
+        `http://127.0.0.1:${port}/operational_messages?id=eq.${fixture.messageA}`,
+        {
+          method: "PATCH",
+          headers: { authorization: `Bearer ${jwt(user)}`, "content-type": "application/json" },
+          body: JSON.stringify({ sent_on_behalf_of_user_id: user }),
+        },
+      );
+      expect(response.status).toBe(403);
+      expect(await response.text()).toContain("immutable_message_authorship");
+    }
+    expect(
+      sql(`select sent_on_behalf_of_user_id from public.messages where id='${fixture.messageA}';`),
+    ).toBe(fixture.operator);
+  });
+
   it("manager sem membership em B não lê nem seleciona B", async () => {
     const result = await getRows(
       fixture.manager,
@@ -481,35 +507,54 @@ describe("PostgREST com JWT persistido na sessão HTTP", () => {
     expect(handshake.status).toBe(200);
     const listed = await call(2, "tools/list", {});
     expect(listed.status).toBe(200);
-    const audited = JSON.parse(readFileSync("docs/security/managed-client-mcp-audit.json", "utf8")) as {
-      tools: Array<{name: string; client_allowed: boolean}>;
+    const audited = JSON.parse(
+      readFileSync("docs/security/managed-client-mcp-audit.json", "utf8"),
+    ) as {
+      tools: Array<{ name: string; client_allowed: boolean }>;
     };
-    const frames = listed.body.trim().startsWith("{") ? [JSON.parse(listed.body)]
-      : listed.body.split("\n").filter(line => line.startsWith("data: ")).map(line => JSON.parse(line.slice(6)));
-    const names = frames.find(frame => frame.result?.tools)?.result.tools.map((tool: {name: string}) => tool.name) as string[];
-    expect(names.sort()).toEqual(audited.tools.filter(tool => tool.client_allowed).map(tool => tool.name).sort());
-    const forbidden = audited.tools.filter(tool => !tool.client_allowed);
+    const frames = listed.body.trim().startsWith("{")
+      ? [JSON.parse(listed.body)]
+      : listed.body
+          .split("\n")
+          .filter((line) => line.startsWith("data: "))
+          .map((line) => JSON.parse(line.slice(6)));
+    const names = frames
+      .find((frame) => frame.result?.tools)
+      ?.result.tools.map((tool: { name: string }) => tool.name) as string[];
+    expect(names.sort()).toEqual(
+      audited.tools
+        .filter((tool) => tool.client_allowed)
+        .map((tool) => tool.name)
+        .sort(),
+    );
+    const forbidden = audited.tools.filter((tool) => !tool.client_allowed);
     expect(forbidden.length).toBeGreaterThan(100);
     for (const [index, tool] of forbidden.entries()) {
       // Cada token é persistido na mesma fixture. Rotação conserva o teto real,
       // sem desativar rate limit para a certificação de autorização.
       if (index > 0 && index % 45 === 0) {
         token = persistToken();
-        expect((await call(1000 + index, "initialize", {
-          protocolVersion: "2025-06-18", capabilities: {}, clientInfo: {name: "fixture", version: "1"},
-        })).status).toBe(200);
+        expect(
+          (
+            await call(1000 + index, "initialize", {
+              protocolVersion: "2025-06-18",
+              capabilities: {},
+              clientInfo: { name: "fixture", version: "1" },
+            })
+          ).status,
+        ).toBe(200);
       }
       const denied = await call(100 + index, "tools/call", { name: tool.name, arguments: {} });
       expect(denied.status, tool.name).toBe(200);
       expect(denied.body, tool.name).toMatch(/not found|Unknown tool|not_allowed/i);
     }
     for (const [name, args] of [
-      ["crm_get_conversation", {conversation_id: fixture.conversationA}],
-      ["crm_get_conversation_history", {conversation_id: fixture.conversationA}],
-      ["crm_get_message", {message_id: fixture.messageA}],
-      ["crm_list_appointments", {contact_id: fixture.contactA}],
+      ["crm_get_conversation", { conversation_id: fixture.conversationA }],
+      ["crm_get_conversation_history", { conversation_id: fixture.conversationA }],
+      ["crm_get_message", { message_id: fixture.messageA }],
+      ["crm_list_appointments", { contact_id: fixture.contactA }],
     ] as const) {
-      const result = await call(900, "tools/call", {name, arguments: args});
+      const result = await call(900, "tools/call", { name, arguments: args });
       expect(result.status, name).toBe(200);
       expect(result.body, name).not.toContain('"isError":true');
       expect(result.body, name).not.toContain("never-expose");
