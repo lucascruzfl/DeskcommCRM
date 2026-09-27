@@ -5,7 +5,7 @@ import { buildManagedAreaPolicy } from "@/lib/managed-clients/policy";
 import { countAs, lastLine, sql, writeCountAs } from "./gov-helpers";
 
 const migrations = [
-  "20260927015101_0438_politica_de_area_gerenciada.sql",
+  "20260927015100_0454_politica_de_area_gerenciada.sql",
   "20260927015102_0439_diretorio_seguro_de_agentes_atribuiveis.sql",
   "20260927015103_0440_areas_administrativas_no_postgrest.sql",
   "20260927015104_0441_escrita_administrativa_de_funis_e_canais.sql",

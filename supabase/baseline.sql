@@ -39023,7 +39023,7 @@ grant execute on function public.fn_enfileirar_midia_vencida(integer) to service
 
 notify pgrst, 'reload schema';
 
--- ---- política de área para cliente gerenciado (migration 0425) ----
+-- ---- política de área para cliente gerenciado (migration 0454) ----
 -- A política de um cliente gerenciado pertence ao tenant, não à interface de um membro.
 -- Sem linha, a autorização histórica da organização continua vigente.
 create table if not exists public.managed_client_policies (
