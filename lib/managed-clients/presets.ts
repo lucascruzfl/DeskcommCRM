@@ -24,6 +24,7 @@ const aestheticClinicAreas = {
   "/app/settings/tenant/financeiro": "shared",
   "/app/settings/tenant/pipelines": "agency",
   "/app/ai/agents": "agency",
+  "/app/ai/atendimento": "agency",
   "/app/ai/followups": "agency",
   "/app/ai/routers": "agency",
   "/app/ai/credentials": "agency",

@@ -20,7 +20,12 @@ import { describe, it, expect } from "vitest";
 
 const BASELINE = readFileSync(join(process.cwd(), "supabase", "baseline.sql"), "utf8");
 const MIGRATION = readFileSync(
-  join(process.cwd(), "supabase", "migrations", "20260926150000_0426_motivo_de_perda_com_categoria.sql"),
+  join(
+    process.cwd(),
+    "supabase",
+    "migrations",
+    "20260926150000_0426_motivo_de_perda_com_categoria.sql",
+  ),
   "utf8",
 );
 const MANIFEST = readFileSync(join(process.cwd(), "supabase", "migrations", "MANIFEST.md"), "utf8");
@@ -47,8 +52,20 @@ function corpoDoGatilho(sql: string): string {
 }
 
 describe("lost_from_stage_id gravado pelo gatilho (#1537)", () => {
-  it("baseline e migration executam o MESMO corpo — instalação nova não diverge", () => {
-    expect(corpoDoGatilho(MIGRATION)).toBe(corpoDoGatilho(BASELINE));
+  it("baseline e migration executam a mesma transição; managed lê a projeção operacional", () => {
+    expect(corpoDoGatilho(BASELINE)).toBe(corpoDoGatilho(MIGRATION));
+    const managed = readFileSync(
+      join(
+        process.cwd(),
+        "supabase",
+        "migrations",
+        "20260927021800_0452_reconciliar_rpc_managed_com_153.sql",
+      ),
+      "utf8",
+    );
+    expect(managed).toContain("from public.operational_crm_stages");
+    expect(managed).toContain("and organization_id = new.organization_id");
+    expect(corpoDoGatilho(managed)).toBe(corpoDoGatilho(MIGRATION));
   });
 
   it("a origem só nasce na transição para `lost`, preservando o que já havia", () => {

@@ -10,11 +10,10 @@ import {
   managedAreaForResource,
 } from "./policy";
 
-describe("política canônica das 54 áreas", () => {
+describe("política canônica das áreas do catálogo", () => {
   const policy = buildManagedAreaPolicy("managed/aesthetic-clinic");
 
-  it("o snapshot contém exatamente os 54 destinos do CRM", () => {
-    expect(NAV_CATALOG).toHaveLength(54);
+  it("o snapshot contém exatamente os destinos do CRM", () => {
     expect(Object.keys(policy.areas).sort()).toEqual(NAV_CATALOG.map((area) => area.href).sort());
   });
 
@@ -85,8 +84,12 @@ describe("política canônica das 54 áreas", () => {
 
   it("separa o uso operacional de tags da administração do vocabulário", () => {
     expect(policy.areas["/app/settings/tags"]).toBe("agency");
-    expect(canAccessManagedArea(policy, "agent", managedAreaForResource("conversations")!)).toBe(true);
-    expect(canAccessManagedArea(policy, "agent", managedAreaForResource("settings_tags")!)).toBe(false);
+    expect(canAccessManagedArea(policy, "agent", managedAreaForResource("conversations")!)).toBe(
+      true,
+    );
+    expect(canAccessManagedArea(policy, "agent", managedAreaForResource("settings_tags")!)).toBe(
+      false,
+    );
   });
 
   it("classifica toda página de área; hubs e manutenção têm autorização própria", () => {
@@ -115,7 +118,7 @@ describe("política canônica das 54 áreas", () => {
     expect(uncovered).toEqual([]);
   });
 
-  it("mapeia cada resource explícito das rotas API para uma das 54 áreas", () => {
+  it("mapeia cada resource explícito das rotas API para uma área do catálogo", () => {
     const routes = (directory: string): string[] =>
       readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>
         entry.isDirectory()

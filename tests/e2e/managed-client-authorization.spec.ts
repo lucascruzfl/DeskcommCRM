@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "./helpers/test";
 import { createClient } from "@supabase/supabase-js";
 import { managedFixture } from "./helpers/managed-client-fixture";
 import { MANAGED_CLIENT_PRESETS } from "../../lib/managed-clients/presets";

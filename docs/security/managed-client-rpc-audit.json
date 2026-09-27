@@ -1,5 +1,5 @@
 {
-  "scope": "Todas as funções de public, excluindo extensões; catálogo aplicado em banco descartável. Não substitui provas de comportamento e UI.",
+  "scope": "Todas as funções de public, excluindo extensões; catálogo aplicado em banco descartável e reconciliado com upstream 1.53 na manutenção pré-Fase 6. Não substitui provas de comportamento e UI.",
   "functions": [
     {
       "signature": "activate_kb_version(uuid,uuid)",
@@ -14,12 +14,12 @@
     {
       "signature": "comando_da_conversa(conversations)",
       "name": "comando_da_conversa",
-      "security_definer": false,
+      "security_definer": true,
       "authenticated_execute": true,
       "anonymous_execute": false,
-      "body_sha256": "70643820444678868712ee056f30e851a6cacfbba8fc5600a230df6d95fac6e5",
-      "status": "SAFE",
-      "reason": "SECURITY INVOKER: queries sujeitas à RLS do chamador; filtros de organization_id/referência revisados; retorno operacional."
+      "body_sha256": "69e75fb960237bb6c36d69396298514dee2417cb5d2e23969ab96ff42eb1242c",
+      "status": "FIXED",
+      "reason": "Coluna calculada sem nome de parâmetro, não exposta como RPC pelo PostgREST; SECURITY DEFINER lê contatos apenas pelo id e organization_id da conversa. Prova de isolamento em comando-da-conversa-espelha-o-ts.test.ts e gate sem parâmetro nomeado."
     },
     {
       "signature": "emit_event(text,text,uuid,jsonb,jsonb,uuid)",
@@ -155,11 +155,11 @@
       "signature": "fn_agent_versions_immutable()",
       "name": "fn_agent_versions_immutable",
       "security_definer": false,
-      "authenticated_execute": true,
-      "anonymous_execute": true,
-      "body_sha256": "0710ecd3c12f84a682efb9364875c171ef94424e3dd4cdf5bb2309ff379cde75",
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "673afbcdf0323f0a9d5fa481bbf382bfd3ada6beb7e4e30421d5532aa085961d",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
     },
     {
       "signature": "fn_agora()",
@@ -190,6 +190,16 @@
       "body_sha256": "b842df3817f54bf23512de7e1e54c3ecd0916bf2410a4dbc2ad5fce7dcbe4939",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_apagar_rascunhos_do_contato_anonimizado()",
+      "name": "fn_apagar_rascunhos_do_contato_anonimizado",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "40612d107f9fbc8a9ae18534042c1e30321aab9d83d650c479eb486e242fde32",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
     },
     {
       "signature": "fn_aplicar_quadro_do_onboarding(uuid,uuid,text,text,jsonb)",
@@ -576,10 +586,10 @@
       "name": "fn_crm_lead_close_on_stage",
       "security_definer": false,
       "authenticated_execute": true,
-      "anonymous_execute": true,
-      "body_sha256": "12b0c5fe97846ba5e529a7055038aeb159c54356fc3aaa2327c88a0b7ae2b927",
-      "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+      "anonymous_execute": false,
+      "body_sha256": "ec9fdfea7b105aa39b019d00da22d3e880e3510d09b784fb2566aecd943f59d5",
+      "status": "SAFE",
+      "reason": "Trigger SECURITY INVOKER lê operational_crm_stages filtrando organização do lead; mantém RLS e grava/limpa origem da perda na transição oficial 1.53. Sem ingresso RPC direto de trigger."
     },
     {
       "signature": "fn_decrypt_oauth(bytea)",
@@ -624,12 +634,22 @@
     {
       "signature": "fn_definir_logo_da_organizacao(uuid,uuid,text)",
       "name": "fn_definir_logo_da_organizacao",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "5702e6e816a0466c293e2245c2da960447203c7566cc6430f8d3be48c8cb8985",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_definir_logo_por_tema_da_organizacao(uuid,uuid,text,text)",
+      "name": "fn_definir_logo_por_tema_da_organizacao",
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "4dd4b6a9512da4f2fb96f6bb510493dd0acd7fbd7727bb879d3431f4081db93c",
+      "body_sha256": "a9bcf6ca7689756ca5784bb048952a88e18446b6b0bd8f471394a2bbfa9230e4",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
     },
     {
       "signature": "fn_definir_marca_da_organizacao(uuid,uuid,jsonb)",
@@ -637,9 +657,9 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "f1fbc6c19376ee020af07d8803f150fb18ca2879297b77d228ab54a3420a82af",
+      "body_sha256": "a7b016fa43086ffb2513aef5530db037d7241f3dd10dbe41f61d2eb166532c57",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
     {
       "signature": "fn_degraus_de_lembrete_validos(integer[])",
@@ -772,6 +792,16 @@
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
     {
+      "signature": "fn_enfileirar_midia_vencida(integer)",
+      "name": "fn_enfileirar_midia_vencida",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "3c23e34d8590f5b7650474477d37d54f4b48c0cf46fbe70c4189d1bf04edaa41",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
+    },
+    {
       "signature": "fn_enrollment_superficie_coerente()",
       "name": "fn_enrollment_superficie_coerente",
       "security_definer": true,
@@ -807,9 +837,9 @@
       "security_definer": false,
       "authenticated_execute": true,
       "anonymous_execute": false,
-      "body_sha256": "bd4ebc8c1ed94f1e901d45fb22e8c3fe2fbaac5a562d7d693bcaa39a4220c9ce",
+      "body_sha256": "c9e7b8b8c0bc5af3a5c4cb1525327baba184b56638fe8d33154370d0df3c804b",
       "status": "SAFE",
-      "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
+      "reason": "Função pura classifica nomes de evento em lista fixa; não lê nem escreve dados de tenant e não cria ingresso privilegiado."
     },
     {
       "signature": "fn_event_log_marca_registro()",
@@ -842,6 +872,16 @@
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
     {
+      "signature": "fn_expurgar_candidatos_do_golden(integer,integer)",
+      "name": "fn_expurgar_candidatos_do_golden",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "9789b31536d2715d769279cde0cba0351f0c22d84bfa4a6448426a5852d203f6",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
+    },
+    {
       "signature": "fn_expurgar_conversa_do_caso_vencida(integer,integer)",
       "name": "fn_expurgar_conversa_do_caso_vencida",
       "security_definer": true,
@@ -872,6 +912,16 @@
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
     {
+      "signature": "fn_expurgar_observacoes_do_jev(integer,integer)",
+      "name": "fn_expurgar_observacoes_do_jev",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "6ea41ba5b22051071352870daec9bca66277dad6dec1f64a586f9f70cae3bd15",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
+    },
+    {
       "signature": "fn_expurgar_passagens_vencidas(integer,integer)",
       "name": "fn_expurgar_passagens_vencidas",
       "security_definer": true,
@@ -880,6 +930,16 @@
       "body_sha256": "ee3f06c339d0d170aafbb1d2a19fdf05bfdd41e099639b592c4bdc906331cd76",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_expurgar_prospeccao_vencida(integer,integer)",
+      "name": "fn_expurgar_prospeccao_vencida",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "d75380933dccc407e2c920ac5c4fbfc134845c5b47574c60f4e34ca1b0b7fb28",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
     },
     {
       "signature": "fn_extensions_admit_catalog(uuid,uuid,jsonb,text)",
@@ -1252,14 +1312,24 @@
       "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
     },
     {
+      "signature": "fn_lead_so_liga_a_propria_empresa()",
+      "name": "fn_lead_so_liga_a_propria_empresa",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "1ca393f30ff461a747152500fce00a528524b4c6682fb4ca25c58dbae26742fb",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
+    },
+    {
       "signature": "fn_lgpd_anonymize_contact(uuid,uuid)",
       "name": "fn_lgpd_anonymize_contact",
       "security_definer": true,
       "authenticated_execute": true,
       "anonymous_execute": false,
-      "body_sha256": "2cec616226e098cead492d996d22a14975b2017dc349cab7aa81e31f25b09bb8",
-      "status": "ADMIN-ONLY",
-      "reason": "Papel mínimo manager/admin com membership e área persistida antes do efeito; fn_agent_tool_usage é invoker e depende de tabelas privadas bloqueadas por RLS."
+      "body_sha256": "89af6a93450957d0124ad6ef540298577c5da12a0dc5df9a6c514640ff155c86",
+      "status": "FIXED",
+      "reason": "Mantém área LGPD, admin, support-write, MFA e mutex por tenant; consulta contato por organização e delega redação à cascata canônica. Cliente managed sem a área é recusado antes do efeito."
     },
     {
       "signature": "fn_lgpd_cascade_redact_contact(uuid,uuid,uuid)",
@@ -1310,6 +1380,16 @@
       "body_sha256": "f2e36dd5874c46d7e2910cb3eb4917d05adbbd72057c188f963f17d0596929fb",
       "status": "FIXED",
       "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+    },
+    {
+      "signature": "fn_marcar_configuracao_qualificacao()",
+      "name": "fn_marcar_configuracao_qualificacao",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "0fd6e31e6dffb3154d06ebfc82676f90fda42a3a005d4e5be2327bb2a33541cf",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
     },
     {
       "signature": "fn_marcar_contato_como_cliente()",
@@ -1457,9 +1537,9 @@
       "security_definer": true,
       "authenticated_execute": true,
       "anonymous_execute": false,
-      "body_sha256": "f1e6cf4b2a089365b55826084e10110a8092460c37ba928782737af0a7bc8c83",
+      "body_sha256": "08da5e52cb0f5af753a7070e56b85d3898dc3b6adc2c670ab44d7890c5fa9f3a",
       "status": "FIXED",
-      "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
+      "reason": "Mantém portão de área /app/contacts, manager, support-write e MFA; valida todos os contatos por organization_id, locks e unicidade. Herança social mantém a mesma organização e recusa identidade de terceiro vivo."
     },
     {
       "signature": "fn_message_service_lock()",
@@ -1497,9 +1577,9 @@
       "security_definer": false,
       "authenticated_execute": true,
       "anonymous_execute": false,
-      "body_sha256": "3fd094fde493c888005d5af4ae79d44a96349965a10d216493c770202c897708",
+      "body_sha256": "2104d8c919d4c283da8ccfa9c107fe91450fac340b44f8ac5b92930ffa2c83ca",
       "status": "SAFE",
-      "reason": "SECURITY INVOKER: queries sujeitas à RLS do chamador; filtros de organization_id/referência revisados; retorno operacional."
+      "reason": "SECURITY INVOKER, acesso sujeito à RLS; consulta e insert filtram p_org e trigger de referências exige mesma empresa. Moeda vem da organização; nenhum bypass novo de áreas managed."
     },
     {
       "signature": "fn_operational_message_metadata(jsonb)",
@@ -1550,6 +1630,16 @@
       "body_sha256": "8f15ed34a8c5806d44f746e9356b403d7366e2abfe6026bb48ed99e04ee1bf7d",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_preservar_conversao_enviada()",
+      "name": "fn_preservar_conversao_enviada",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "89d3613af1ae13a2521dd3850bff93779e4db7baf1d0708ac31ad3dd69c8bd79",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
     },
     {
       "signature": "fn_prospecting_refuse_erased_candidate()",
@@ -1617,9 +1707,9 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "a6db487ea0e9c3beeb3dcabde6a4b788eac1902ddbf65b743ed7d7027baeb0c9",
+      "body_sha256": "2666b1febc90eb9286a465be9c833993c0665d2d8e4a51c26cd3ad62b3682aa0",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
     {
       "signature": "fn_publish_followup_flow_version(uuid,uuid,jsonb,uuid)",
@@ -1947,9 +2037,9 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "bbb0d99820a5495129a63d30f00b7ab6f9b1b0eab1a22199c695e36168211867",
+      "body_sha256": "720521098a9bebb3dcf15ce85c126378a889f4cc8d5f1e2858bc9b85b090f44e",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
     {
       "signature": "fn_routing_unassigned_notice(uuid,uuid,text)",
@@ -2152,6 +2242,26 @@
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
     {
+      "signature": "fn_solicitar_reenvio_conversao(uuid,uuid)",
+      "name": "fn_solicitar_reenvio_conversao",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "c07d0e415fb063c27d719eb852acef2ad3d6f14400ff1724617d9cf0528eccc8",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
+    },
+    {
+      "signature": "fn_solicitar_reenvio_conversao(uuid,uuid,text)",
+      "name": "fn_solicitar_reenvio_conversao",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "5d2dbcd9fe2ce9672e8957648712464bddbee7c9a95a71d212d3202ca4b74a44",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
+    },
+    {
       "signature": "fn_stamp_stage_changed_at()",
       "name": "fn_stamp_stage_changed_at",
       "security_definer": false,
@@ -2262,6 +2372,16 @@
       "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
     },
     {
+      "signature": "fn_teto_de_tokens_ativos()",
+      "name": "fn_teto_de_tokens_ativos",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "782563c3b3986492089c710b953d6a9176dc3af437c7a10d17cb6eaba6348ccc",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
+    },
+    {
       "signature": "fn_touch_updated_at()",
       "name": "fn_touch_updated_at",
       "security_definer": false,
@@ -2356,10 +2476,10 @@
       "name": "fn_validate_lost_reason_required",
       "security_definer": false,
       "authenticated_execute": true,
-      "anonymous_execute": true,
-      "body_sha256": "747f6230658c7874d3248298d3071d0fec2b5db0663a9856c1d9bbca807d69c9",
-      "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
+      "anonymous_execute": false,
+      "body_sha256": "fcdf6e04dd09b3e72325dda109613fa050ca00a7cacdf5f29ab173321ad16792",
+      "status": "SAFE",
+      "reason": "Trigger SECURITY INVOKER lê operational_crm_pipelines sujeito à RLS; valida motivos textuais e objetos pelo label da 1.53, preservando o portão operacional managed."
     },
     {
       "signature": "fn_vocabulario_de_tags(uuid)",

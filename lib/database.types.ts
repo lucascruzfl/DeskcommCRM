@@ -1,4 +1,10 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
 
 export type Database = {
   public: {
@@ -56,18 +62,18 @@ export type Database = {
           detail: string | null;
           event_id: string | null;
           event_name: string;
+          event_occurred_at: string | null;
+          google_action_id: string | null;
           id: string;
           lead_id: string;
           organization_id: string;
           platform: string;
           reason: string | null;
+          remote_request_id: string | null;
+          remote_requested_at: string | null;
           status: string;
           updated_at: string;
           value_cents: number | null;
-          event_occurred_at: string | null;
-          google_action_id: string | null;
-          remote_request_id: string | null;
-          remote_requested_at: string | null;
         };
         Insert: {
           attempted_at?: string;
@@ -76,18 +82,18 @@ export type Database = {
           detail?: string | null;
           event_id?: string | null;
           event_name: string;
+          event_occurred_at?: string | null;
+          google_action_id?: string | null;
           id?: string;
           lead_id: string;
           organization_id: string;
           platform: string;
           reason?: string | null;
+          remote_request_id?: string | null;
+          remote_requested_at?: string | null;
           status: string;
           updated_at?: string;
           value_cents?: number | null;
-          event_occurred_at: string | null;
-          google_action_id: string | null;
-          remote_request_id: string | null;
-          remote_requested_at: string | null;
         };
         Update: {
           attempted_at?: string;
@@ -96,18 +102,18 @@ export type Database = {
           detail?: string | null;
           event_id?: string | null;
           event_name?: string;
+          event_occurred_at?: string | null;
+          google_action_id?: string | null;
           id?: string;
           lead_id?: string;
           organization_id?: string;
           platform?: string;
           reason?: string | null;
+          remote_request_id?: string | null;
+          remote_requested_at?: string | null;
           status?: string;
           updated_at?: string;
           value_cents?: number | null;
-          event_occurred_at: string | null;
-          google_action_id: string | null;
-          remote_request_id: string | null;
-          remote_requested_at: string | null;
         };
         Relationships: [
           {
@@ -247,9 +253,13 @@ export type Database = {
           created_at: string;
           dataset_id: string | null;
           enabled: boolean;
+          google_api: string;
           google_conversion_action_id: string | null;
           google_customer_id: string | null;
           google_login_customer_id: string | null;
+          google_qualification_action_id: string | null;
+          google_qualification_configured_at: string | null;
+          google_qualification_stage_id: string | null;
           google_refresh_token_encrypted: string | null;
           id: string;
           organization_id: string;
@@ -257,19 +267,19 @@ export type Database = {
           test_event_code: string | null;
           updated_at: string;
           updated_by: string | null;
-          google_api: string;
-          google_qualification_action_id: string | null;
-          google_qualification_configured_at: string | null;
-          google_qualification_stage_id: string | null;
         };
         Insert: {
           access_token_encrypted?: string | null;
           created_at?: string;
           dataset_id?: string | null;
           enabled?: boolean;
+          google_api?: string;
           google_conversion_action_id?: string | null;
           google_customer_id?: string | null;
           google_login_customer_id?: string | null;
+          google_qualification_action_id?: string | null;
+          google_qualification_configured_at?: string | null;
+          google_qualification_stage_id?: string | null;
           google_refresh_token_encrypted?: string | null;
           id?: string;
           organization_id: string;
@@ -277,19 +287,19 @@ export type Database = {
           test_event_code?: string | null;
           updated_at?: string;
           updated_by?: string | null;
-          google_api: string;
-          google_qualification_action_id: string | null;
-          google_qualification_configured_at: string | null;
-          google_qualification_stage_id: string | null;
         };
         Update: {
           access_token_encrypted?: string | null;
           created_at?: string;
           dataset_id?: string | null;
           enabled?: boolean;
+          google_api?: string;
           google_conversion_action_id?: string | null;
           google_customer_id?: string | null;
           google_login_customer_id?: string | null;
+          google_qualification_action_id?: string | null;
+          google_qualification_configured_at?: string | null;
+          google_qualification_stage_id?: string | null;
           google_refresh_token_encrypted?: string | null;
           id?: string;
           organization_id?: string;
@@ -297,10 +307,6 @@ export type Database = {
           test_event_code?: string | null;
           updated_at?: string;
           updated_by?: string | null;
-          google_api: string;
-          google_qualification_action_id: string | null;
-          google_qualification_configured_at: string | null;
-          google_qualification_stage_id: string | null;
         };
         Relationships: [
           {
@@ -316,6 +322,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "organizations";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ad_qualification_stage_org_fk";
+            columns: ["organization_id", "google_qualification_stage_id"];
+            isOneToOne: false;
+            referencedRelation: "crm_stages";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "ad_qualification_stage_org_fk";
+            columns: ["organization_id", "google_qualification_stage_id"];
+            isOneToOne: false;
+            referencedRelation: "operational_crm_stages";
+            referencedColumns: ["organization_id", "id"];
           },
         ];
       };
@@ -1466,6 +1486,7 @@ export type Database = {
           active_kb_version_id: string | null;
           agent_id: string | null;
           chunks_count: number;
+          content_hash: string | null;
           created_at: string;
           id: string;
           ingested_at: string | null;
@@ -1479,12 +1500,12 @@ export type Database = {
           source_type: string;
           status: string;
           updated_at: string;
-          content_hash: string | null;
         };
         Insert: {
           active_kb_version_id?: string | null;
           agent_id?: string | null;
           chunks_count?: number;
+          content_hash?: string | null;
           created_at?: string;
           id?: string;
           ingested_at?: string | null;
@@ -1498,12 +1519,12 @@ export type Database = {
           source_type: string;
           status?: string;
           updated_at?: string;
-          content_hash: string | null;
         };
         Update: {
           active_kb_version_id?: string | null;
           agent_id?: string | null;
           chunks_count?: number;
+          content_hash?: string | null;
           created_at?: string;
           id?: string;
           ingested_at?: string | null;
@@ -1517,7 +1538,6 @@ export type Database = {
           source_type?: string;
           status?: string;
           updated_at?: string;
-          content_hash: string | null;
         };
         Relationships: [
           {
@@ -1738,6 +1758,7 @@ export type Database = {
           api_key_iv: string;
           api_key_last4: string;
           api_key_tag: string;
+          base_url: string | null;
           created_at: string;
           created_by: string | null;
           id: string;
@@ -1755,6 +1776,7 @@ export type Database = {
           api_key_iv: string;
           api_key_last4: string;
           api_key_tag: string;
+          base_url?: string | null;
           created_at?: string;
           created_by?: string | null;
           id?: string;
@@ -1772,6 +1794,7 @@ export type Database = {
           api_key_iv?: string;
           api_key_last4?: string;
           api_key_tag?: string;
+          base_url?: string | null;
           created_at?: string;
           created_by?: string | null;
           id?: string;
@@ -5233,6 +5256,81 @@ export type Database = {
           },
         ];
       };
+      conversation_drafts: {
+        Row: {
+          body: string;
+          consumed_at: string | null;
+          consumed_by_user_id: string | null;
+          conversation_id: string;
+          created_at: string;
+          created_by_api_token_id: string | null;
+          expires_at: string;
+          id: string;
+          organization_id: string;
+          source: string;
+        };
+        Insert: {
+          body: string;
+          consumed_at?: string | null;
+          consumed_by_user_id?: string | null;
+          conversation_id: string;
+          created_at?: string;
+          created_by_api_token_id?: string | null;
+          expires_at: string;
+          id?: string;
+          organization_id: string;
+          source?: string;
+        };
+        Update: {
+          body?: string;
+          consumed_at?: string | null;
+          consumed_by_user_id?: string | null;
+          conversation_id?: string;
+          created_at?: string;
+          created_by_api_token_id?: string | null;
+          expires_at?: string;
+          id?: string;
+          organization_id?: string;
+          source?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "conversation_drafts_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversation_drafts_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "operational_conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversation_drafts_created_by_api_token_id_fkey";
+            columns: ["created_by_api_token_id"];
+            isOneToOne: false;
+            referencedRelation: "api_tokens";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversation_drafts_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "operational_organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversation_drafts_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       conversation_notes: {
         Row: {
           body: string;
@@ -5336,6 +5434,7 @@ export type Database = {
           usable_for_rag: boolean;
           usable_for_rag_marked_at: string | null;
           usable_for_rag_marked_by: string | null;
+          comando_da_conversa: string | null;
         };
         Insert: {
           active_agent_set_at?: string | null;
@@ -5813,6 +5912,7 @@ export type Database = {
           external_id: string | null;
           id: string;
           last_activity_at: string | null;
+          lost_from_stage_id: string | null;
           lost_reason: string | null;
           organization_id: string;
           owner_agent_id: string | null;
@@ -5820,6 +5920,7 @@ export type Database = {
           owner_user_id: string | null;
           pipeline_id: string;
           position_in_stage: number;
+          retomado_de_lead_id: string | null;
           source: string;
           source_metadata: Json;
           stage_changed_at: string | null;
@@ -5829,8 +5930,6 @@ export type Database = {
           title: string;
           updated_at: string;
           value_cents: number | null;
-          lost_from_stage_id: string | null;
-          retomado_de_lead_id: string | null;
           won_reason: string | null;
         };
         Insert: {
@@ -5846,6 +5945,7 @@ export type Database = {
           external_id?: string | null;
           id?: string;
           last_activity_at?: string | null;
+          lost_from_stage_id?: string | null;
           lost_reason?: string | null;
           organization_id: string;
           owner_agent_id?: string | null;
@@ -5853,6 +5953,7 @@ export type Database = {
           owner_user_id?: string | null;
           pipeline_id: string;
           position_in_stage?: number;
+          retomado_de_lead_id?: string | null;
           source?: string;
           source_metadata?: Json;
           stage_changed_at?: string | null;
@@ -5862,9 +5963,7 @@ export type Database = {
           title: string;
           updated_at?: string;
           value_cents?: number | null;
-          lost_from_stage_id: string | null;
-          retomado_de_lead_id: string | null;
-          won_reason: string | null;
+          won_reason?: string | null;
         };
         Update: {
           assigned_at?: string | null;
@@ -5879,6 +5978,7 @@ export type Database = {
           external_id?: string | null;
           id?: string;
           last_activity_at?: string | null;
+          lost_from_stage_id?: string | null;
           lost_reason?: string | null;
           organization_id?: string;
           owner_agent_id?: string | null;
@@ -5886,6 +5986,7 @@ export type Database = {
           owner_user_id?: string | null;
           pipeline_id?: string;
           position_in_stage?: number;
+          retomado_de_lead_id?: string | null;
           source?: string;
           source_metadata?: Json;
           stage_changed_at?: string | null;
@@ -5895,9 +5996,7 @@ export type Database = {
           title?: string;
           updated_at?: string;
           value_cents?: number | null;
-          lost_from_stage_id: string | null;
-          retomado_de_lead_id: string | null;
-          won_reason: string | null;
+          won_reason?: string | null;
         };
         Relationships: [
           {
@@ -5954,6 +6053,27 @@ export type Database = {
             columns: ["stage_id"];
             isOneToOne: false;
             referencedRelation: "operational_crm_stages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fk_crm_leads_lost_from_stage";
+            columns: ["lost_from_stage_id"];
+            isOneToOne: false;
+            referencedRelation: "crm_stages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fk_crm_leads_lost_from_stage";
+            columns: ["lost_from_stage_id"];
+            isOneToOne: false;
+            referencedRelation: "operational_crm_stages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fk_crm_leads_retomado_de_lead";
+            columns: ["retomado_de_lead_id"];
+            isOneToOne: false;
+            referencedRelation: "crm_leads";
             referencedColumns: ["id"];
           },
         ];
@@ -6062,7 +6182,7 @@ export type Database = {
           requires_human?: boolean;
           slug: string;
           updated_at?: string;
-          win_probability: number | null;
+          win_probability?: number | null;
         };
         Update: {
           agent_stage_hint?: string | null;
@@ -6083,7 +6203,7 @@ export type Database = {
           requires_human?: boolean;
           slug?: string;
           updated_at?: string;
-          win_probability: number | null;
+          win_probability?: number | null;
         };
         Relationships: [
           {
@@ -7649,42 +7769,96 @@ export type Database = {
           },
         ];
       };
+      golden_candidates: {
+        Row: {
+          created_at: string;
+          estagio_confirmado: string | null;
+          estagio_sugerido: string | null;
+          fonte: string;
+          id: string;
+          job_id: string;
+          lead_id: string | null;
+          motivo: string | null;
+          organization_id: string;
+          skill: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          estagio_confirmado?: string | null;
+          estagio_sugerido?: string | null;
+          fonte: string;
+          id?: string;
+          job_id: string;
+          lead_id?: string | null;
+          motivo?: string | null;
+          organization_id: string;
+          skill?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          estagio_confirmado?: string | null;
+          estagio_sugerido?: string | null;
+          fonte?: string;
+          id?: string;
+          job_id?: string;
+          lead_id?: string | null;
+          motivo?: string | null;
+          organization_id?: string;
+          skill?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "golden_candidates_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "operational_organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "golden_candidates_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       google_ads_click_refs: {
         Row: {
           contact_id: string | null;
           created_at: string;
-          gclid: string;
+          gbraid: string | null;
+          gclid: string | null;
           id: string;
           matched_at: string | null;
           organization_id: string;
           query_raw: Json;
           token: string;
-          gbraid: string | null;
           wbraid: string | null;
         };
         Insert: {
           contact_id?: string | null;
           created_at?: string;
-          gclid: string;
+          gbraid?: string | null;
+          gclid?: string | null;
           id?: string;
           matched_at?: string | null;
           organization_id: string;
           query_raw?: Json;
           token: string;
-          gbraid: string | null;
-          wbraid: string | null;
+          wbraid?: string | null;
         };
         Update: {
           contact_id?: string | null;
           created_at?: string;
-          gclid?: string;
+          gbraid?: string | null;
+          gclid?: string | null;
           id?: string;
           matched_at?: string | null;
           organization_id?: string;
           query_raw?: Json;
           token?: string;
-          gbraid: string | null;
-          wbraid: string | null;
+          wbraid?: string | null;
         };
         Relationships: [
           {
@@ -7865,6 +8039,75 @@ export type Database = {
           },
           {
             foreignKeyName: "incidents_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      jev_observacoes: {
+        Row: {
+          concordou: boolean | null;
+          confianca_jev: number | null;
+          conversation_id: string | null;
+          created_at: string;
+          estado: string;
+          id: string;
+          job_id: string | null;
+          latencia_ms: number | null;
+          message_id: string | null;
+          modelo: string | null;
+          organization_id: string;
+          probabilidade_jev: number | null;
+          rotulo_atual: string | null;
+          rotulo_jev: string | null;
+          tarefa: string;
+        };
+        Insert: {
+          concordou?: boolean | null;
+          confianca_jev?: number | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          estado: string;
+          id?: string;
+          job_id?: string | null;
+          latencia_ms?: number | null;
+          message_id?: string | null;
+          modelo?: string | null;
+          organization_id: string;
+          probabilidade_jev?: number | null;
+          rotulo_atual?: string | null;
+          rotulo_jev?: string | null;
+          tarefa: string;
+        };
+        Update: {
+          concordou?: boolean | null;
+          confianca_jev?: number | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          estado?: string;
+          id?: string;
+          job_id?: string | null;
+          latencia_ms?: number | null;
+          message_id?: string | null;
+          modelo?: string | null;
+          organization_id?: string;
+          probabilidade_jev?: number | null;
+          rotulo_atual?: string | null;
+          rotulo_jev?: string | null;
+          tarefa?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "jev_observacoes_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "operational_organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "jev_observacoes_organization_id_fkey";
             columns: ["organization_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
@@ -8791,6 +9034,7 @@ export type Database = {
           revoked_at: string | null;
           sent_at: string;
           sent_by_user_id: string | null;
+          sent_on_behalf_of_user_id: string | null;
           sent_via: string;
           service_revision: number | null;
           status: string;
@@ -8798,7 +9042,6 @@ export type Database = {
           template_name: string | null;
           type: string;
           updated_at: string;
-          sent_on_behalf_of_user_id: string | null;
         };
         Insert: {
           ack?: number | null;
@@ -8830,6 +9073,7 @@ export type Database = {
           revoked_at?: string | null;
           sent_at?: string;
           sent_by_user_id?: string | null;
+          sent_on_behalf_of_user_id?: string | null;
           sent_via?: string;
           service_revision?: number | null;
           status?: string;
@@ -8837,7 +9081,6 @@ export type Database = {
           template_name?: string | null;
           type: string;
           updated_at?: string;
-          sent_on_behalf_of_user_id: string | null;
         };
         Update: {
           ack?: number | null;
@@ -8869,6 +9112,7 @@ export type Database = {
           revoked_at?: string | null;
           sent_at?: string;
           sent_by_user_id?: string | null;
+          sent_on_behalf_of_user_id?: string | null;
           sent_via?: string;
           service_revision?: number | null;
           status?: string;
@@ -8876,7 +9120,6 @@ export type Database = {
           template_name?: string | null;
           type?: string;
           updated_at?: string;
-          sent_on_behalf_of_user_id: string | null;
         };
         Relationships: [
           {
@@ -10169,6 +10412,7 @@ export type Database = {
           fallback_at: string | null;
           fallback_reason: string | null;
           id: number;
+          logo_dark_path: string | null;
           logo_path: string | null;
           logo_url: string | null;
           seeded_from_env: boolean;
@@ -10182,6 +10426,7 @@ export type Database = {
           fallback_at?: string | null;
           fallback_reason?: string | null;
           id?: number;
+          logo_dark_path?: string | null;
           logo_path?: string | null;
           logo_url?: string | null;
           seeded_from_env?: boolean;
@@ -10195,6 +10440,7 @@ export type Database = {
           fallback_at?: string | null;
           fallback_reason?: string | null;
           id?: number;
+          logo_dark_path?: string | null;
           logo_path?: string | null;
           logo_url?: string | null;
           seeded_from_env?: boolean;
@@ -12434,74 +12680,12 @@ export type Database = {
           },
         ];
       };
-      jev_observacoes: {
-        Row: {
-          concordou: boolean | null
-          confianca_jev: number | null
-          conversation_id: string | null
-          created_at: string
-          estado: string
-          id: string
-          job_id: string | null
-          latencia_ms: number | null
-          message_id: string | null
-          modelo: string | null
-          organization_id: string
-          probabilidade_jev: number | null
-          rotulo_atual: string | null
-          rotulo_jev: string | null
-          tarefa: string
-        }
-        Insert: {
-          concordou?: never
-          confianca_jev?: number | null
-          conversation_id?: string | null
-          created_at?: string
-          estado: string
-          id?: string
-          job_id?: string | null
-          latencia_ms?: number | null
-          message_id?: string | null
-          modelo?: string | null
-          organization_id: string
-          probabilidade_jev?: number | null
-          rotulo_atual?: string | null
-          rotulo_jev?: string | null
-          tarefa: string
-        }
-        Update: {
-          concordou?: never
-          confianca_jev?: number | null
-          conversation_id?: string | null
-          created_at?: string
-          estado?: string
-          id?: string
-          job_id?: string | null
-          latencia_ms?: number | null
-          message_id?: string | null
-          modelo?: string | null
-          organization_id?: string
-          probabilidade_jev?: number | null
-          rotulo_atual?: string | null
-          rotulo_jev?: string | null
-          tarefa?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "jev_observacoes_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-
     };
     Views: {
       ai_provider_credentials_safe: {
         Row: {
           api_key_last4: string | null;
+          base_url: string | null;
           created_at: string | null;
           created_by: string | null;
           id: string | null;
@@ -12516,6 +12700,7 @@ export type Database = {
         };
         Insert: {
           api_key_last4?: string | null;
+          base_url?: string | null;
           created_at?: string | null;
           created_by?: string | null;
           id?: string | null;
@@ -12530,6 +12715,7 @@ export type Database = {
         };
         Update: {
           api_key_last4?: string | null;
+          base_url?: string | null;
           created_at?: string | null;
           created_by?: string | null;
           id?: string | null;
@@ -13661,8 +13847,10 @@ export type Database = {
         Returns: undefined;
       };
       comando_da_conversa: {
-        Args: { c: Database["public"]["Tables"]["conversations"]["Row"] };
-        Returns: string;
+        Args: { "": Database["public"]["Tables"]["conversations"]["Row"] };
+        Returns: {
+          error: true;
+        } & "the function public.comando_da_conversa with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache";
       };
       emit_event: {
         Args: {
@@ -13745,7 +13933,11 @@ export type Database = {
         Returns: boolean;
       };
       fn_agent_tool_usage: {
-        Args: { p_agent_id: string; p_organization_id: string; p_since: string };
+        Args: {
+          p_agent_id: string;
+          p_organization_id: string;
+          p_since: string;
+        };
         Returns: {
           em_teste: number;
           falhas: number;
@@ -13767,7 +13959,12 @@ export type Database = {
       };
       fn_aplicar_travas_de_suporte: { Args: never; Returns: undefined };
       fn_appointment_change: {
-        Args: { p_id: string; p_org: string; p_patch: Json; p_revision: number };
+        Args: {
+          p_id: string;
+          p_org: string;
+          p_patch: Json;
+          p_revision: number;
+        };
         Returns: Json;
       };
       fn_appointment_change_core: {
@@ -14008,6 +14205,15 @@ export type Database = {
         Args: { p_actor: string; p_org: string; p_path: string };
         Returns: number;
       };
+      fn_definir_logo_por_tema_da_organizacao: {
+        Args: {
+          p_actor: string;
+          p_org: string;
+          p_path: string;
+          p_tema: string;
+        };
+        Returns: number;
+      };
       fn_definir_marca_da_organizacao: {
         Args: { p_actor: string; p_marca: Json; p_org: string };
         Returns: number;
@@ -14062,6 +14268,10 @@ export type Database = {
         Args: { p_actor: string; p_session: string };
         Returns: Json;
       };
+      fn_enfileirar_midia_vencida: {
+        Args: { p_limite?: number };
+        Returns: Json;
+      };
       fn_estampar_atribuicao_de_anuncio: {
         Args: {
           p_contact: string;
@@ -14087,6 +14297,10 @@ export type Database = {
         Args: { p_limite?: number; p_retencao_dias?: number };
         Returns: number;
       };
+      fn_expurgar_candidatos_do_golden: {
+        Args: { p_limite?: number; p_retencao_dias?: number };
+        Returns: number;
+      };
       fn_expurgar_conversa_do_caso_vencida: {
         Args: { p_limite?: number; p_retencao_dias?: number };
         Returns: number;
@@ -14099,7 +14313,15 @@ export type Database = {
         Args: { p_limite?: number; p_retencao_dias?: number };
         Returns: number;
       };
+      fn_expurgar_observacoes_do_jev: {
+        Args: { p_limite?: number; p_retencao_dias?: number };
+        Returns: number;
+      };
       fn_expurgar_passagens_vencidas: {
+        Args: { p_limite?: number; p_retencao_dias?: number };
+        Returns: number;
+      };
+      fn_expurgar_prospeccao_vencida: {
         Args: { p_limite?: number; p_retencao_dias?: number };
         Returns: number;
       };
@@ -14253,7 +14475,12 @@ export type Database = {
         Returns: boolean;
       };
       fn_followup_patch: {
-        Args: { p_id: string; p_org: string; p_patch: Json; p_revision: number };
+        Args: {
+          p_id: string;
+          p_org: string;
+          p_patch: Json;
+          p_revision: number;
+        };
         Returns: number;
       };
       fn_gasto_de_ia_do_mes: { Args: { p_org: string }; Returns: number };
@@ -14283,7 +14510,12 @@ export type Database = {
         Returns: boolean;
       };
       fn_google_coverage: {
-        Args: { p_end: string; p_org: string; p_owner: string; p_start: string };
+        Args: {
+          p_end: string;
+          p_org: string;
+          p_owner: string;
+          p_start: string;
+        };
         Returns: boolean;
       };
       fn_google_resolve: {
@@ -14446,10 +14678,17 @@ export type Database = {
       };
       fn_proteger_modulo_provisionado: { Args: never; Returns: undefined };
       fn_proteger_tabelas_de_organizacao: { Args: never; Returns: undefined };
-      fn_proximo_numero_de_comanda: { Args: { p_org: string }; Returns: number };
+      fn_proximo_numero_de_comanda: {
+        Args: { p_org: string };
+        Returns: number;
+      };
       fn_publish_ai_agent_version:
         | {
-            Args: { p_agent_id: string; p_org_id: string; p_version_id: string };
+            Args: {
+              p_agent_id: string;
+              p_org_id: string;
+              p_version_id: string;
+            };
             Returns: {
               agent_id: string;
               previous_version_id: string;
@@ -14771,6 +15010,12 @@ export type Database = {
         Args: { p_status: string };
         Returns: boolean;
       };
+      fn_solicitar_reenvio_conversao:
+        | { Args: { p_lead: string; p_org: string }; Returns: boolean }
+        | {
+            Args: { p_event: string; p_lead: string; p_org: string };
+            Returns: boolean;
+          };
       fn_start_support: {
         Args: {
           p_actor: string;
@@ -14807,7 +15052,10 @@ export type Database = {
         };
         Returns: string[];
       };
-      fn_telefone_variantes: { Args: { p_telefone: string }; Returns: string[] };
+      fn_telefone_variantes: {
+        Args: { p_telefone: string };
+        Returns: string[];
+      };
       fn_upsert_wa_contact: {
         Args: {
           p_chat_id: string;
@@ -14882,20 +15130,6 @@ export type Database = {
         Args: { c: Database["public"]["Tables"]["conversations"]["Row"] };
         Returns: string[];
       };
-      fn_accept_team_invite: {
-        Args: { p_user: string; p_org: string; p_role: string; p_invited_by: string | null; p_issued_at: string | null; p_invited_at: string; p_interface_settings?: Json }
-        Returns: Json
-      }
-      fn_publish_ai_agent_version: {
-        Args: { p_agent_id: string; p_org_id: string; p_version_id: string; p_platform_credential_verified?:boolean; p_expected_provenance?:string|null }
-        Returns: {
-          agent_id: string
-          previous_version_id: string
-          published_at: string
-          version_id: string
-        }[]
-      }
-
     };
     Enums: {
       [_ in never]: never;
@@ -14908,7 +15142,10 @@ export type Database = {
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
+type DefaultSchema = DatabaseWithoutInternals[Extract<
+  keyof Database,
+  "public"
+>];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
@@ -14929,8 +15166,10 @@ export type Tables<
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R;
       }
       ? R
@@ -15003,7 +15242,8 @@ export type Enums<
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }

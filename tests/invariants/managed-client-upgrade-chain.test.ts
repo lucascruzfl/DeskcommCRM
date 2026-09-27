@@ -19,6 +19,7 @@ const migrations = [
   "20260927015112_0449_calendarios_operacionais_sem_tokens.sql",
   "20260927015113_0450_rpc_respeitam_areas_gerenciadas.sql",
   "20260927015114_0451_inbox_operacional_sem_metadados_privados.sql",
+  "20260927021800_0452_reconciliar_rpc_managed_com_153.sql",
 ] as const;
 
 it("promove banco anterior a 0425 com dados por toda a cadeia e aceita reapply", () => {
