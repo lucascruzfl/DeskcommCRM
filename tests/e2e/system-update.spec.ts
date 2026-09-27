@@ -36,7 +36,7 @@ import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { test, expect, type Page, type APIRequestContext } from "@playwright/test";
+import { test, expect, type Page, type APIRequestContext } from "./helpers/test";
 
 import { generateTotp, msUntilNextTotpWindow } from "./utils/totp";
 
@@ -525,7 +525,7 @@ test("instalação à frente da versão publicada não vira tela quebrada nem al
 
   await page.goto("/app/inbox");
   await expect(page.getByRole("link", { name: /nova versão/i })).toHaveCount(0);
-  await expect(page.getByText("versão abc1234")).toBeVisible();
+  await expect(page.getByText("Build abc1234")).toBeVisible();
 
   await page.goto("/app/settings/atualizacao");
   await expect(
@@ -537,7 +537,10 @@ test("instalação à frente da versão publicada não vira tela quebrada nem al
   await page.screenshot({ path: ".superpowers/evidence/final-3-a-frente-da-publicada.png" });
 });
 
-test("fork sem nenhuma release publicada não afirma 'à frente' sem base", async ({ page, request }) => {
+test("fork sem nenhuma release publicada não afirma 'à frente' sem base", async ({
+  page,
+  request,
+}) => {
   // Mesma combinação bruta do teste anterior (off_release=true, latest_version
   // vazio, compare_failed=false) — a diferença é `has_known_release: false`:
   // o agente NUNCA viu nenhuma tag `v*` neste repositório (fork sem releases),
@@ -575,4 +578,21 @@ test("quem não é dono do servidor não vê o botão", async ({ page, request }
   await page.goto("/app/settings/atualizacao");
   await expect(page.getByText(/404 — Página não encontrada/i)).toBeVisible();
   await page.screenshot({ path: ".superpowers/evidence/task9-4-nao-dono-404.png" });
+});
+
+test("rodapé distingue a release MCP da revisão do host", async ({ page, request }) => {
+  resetEstado();
+  await heartbeat(request, {
+    current_version: "42.7.19-mcp",
+    latest_version: "",
+    off_release: false,
+  });
+  await loginWithTotp(page, creds.users.dono!.email, creds.dono_totp!.secret);
+  await page.goto("/app/inbox");
+  const rodape = page.getByTitle("Versão 42.7.19-mcp · Build abc1234", { exact: true });
+  await expect(rodape).toBeVisible();
+  await expect(rodape).toContainText("Versão 42.7.19-mcp");
+  await expect(page.getByText("Build abc1234", { exact: true })).toBeVisible();
+  await expect(page.getByText("Versão abc1234", { exact: true })).toHaveCount(0);
+  await page.screenshot({ path: ".superpowers/evidence/mcp-versao-release-e-build.png" });
 });

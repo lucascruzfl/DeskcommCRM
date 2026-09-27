@@ -165,6 +165,53 @@ export const RETENCAO_AVISO_DE_CASO_DIAS_PADRAO = 180;
  */
 export const RETENCAO_AVISO_DE_CASO_DIAS_PISO = 30;
 
+/**
+ * 365 dias para os CANDIDATOS da prospecção nativa (`prospecting_candidates`,
+ * migration 0369; expurgo na 0408, issue #1313).
+ *
+ * Guarda nome, telefone, endereço e identificador de lugar — a pessoa que mais
+ * cedo ou mais tarde vai ser abordada, e que em muitos casos nunca falou com a
+ * empresa. Um ano é a decisão do dono do projeto (24/09/2026, PR #1577),
+ * alinhado ao horizonte da conversa do caso e da captação: depois disso o
+ * funil responde por EVENTOS, não por raspagem parada.
+ *
+ * Quem APLICA é `fn_expurgar_prospeccao_vencida` (migration 0408), chamada em
+ * lotes pelo cron `data-retention` — e o piso mora DENTRO do corpo da função,
+ * `greatest(...)`, como as sete irmãs: só assim ele vale para qualquer
+ * chamador, inclusive um `psql` na mão.
+ *
+ * Duas guardas que a função impõe e esta declaração não pode expressar:
+ * - `status not in ('queued','sending')` — trabalho vivo nunca entra no
+ *   expurgo, em nenhuma idade;
+ * - `suppression_salt is null` — os tokens de supressão (`suppression_salt`,
+ *   `suppression_place`, `suppression_phone`) de quem exerceu opt-out/exclusão
+ *   NUNCA são expurgados: é o tombstone que faz o trigger
+ *   `prospecting_refuse_erased` barrar a reimportação futura da mesma pessoa.
+ *   Expurgá-lo reabriria a porta que a anonimização (0370) fechou.
+ */
+export const RETENCAO_PROSPECCAO_DIAS_PADRAO = 365;
+export const RETENCAO_PROSPECCAO_DIAS_PISO = 90;
+
+/**
+ * 90 dias para as OBSERVAÇÕES DO JEV (`jev_observacoes`, migration 0421).
+ *
+ * A linha não guarda texto de cliente — só os rótulos do Jev e do mecanismo de
+ * hoje e se concordaram. Ela existe para uma pergunta só: "posso deixar o Jev
+ * decidir esta tarefa?", respondida pela concordância recente. Três meses é
+ * folga sobre a janela que o cartão mostra.
+ *
+ * Quem aplica é `fn_expurgar_observacoes_do_jev` (0421), em lotes pelo cron
+ * `data-retention`, com o piso no CORPO da função, como as irmãs.
+ */
+export const RETENCAO_OBSERVACOES_DO_JEV_DIAS_PADRAO = 90;
+/**
+ * Piso de 30 dias: a janela da concordância no cartão
+ * (`app/api/v1/ai/jev/route.ts`). Abaixo dela o cartão continuaria dizendo
+ * "nos últimos 30 dias" contando menos do que isso.
+ */
+export const RETENCAO_OBSERVACOES_DO_JEV_DIAS_PISO = 30;
+
+
 export interface RetencaoInterpretada {
   /** Dias a pedir ao banco. Nunca abaixo do piso, nunca `NaN`. */
   readonly dias: number;

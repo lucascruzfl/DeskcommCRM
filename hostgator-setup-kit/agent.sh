@@ -146,10 +146,12 @@ fi
 
 CURRENT_TAG="$(git describe --tags --exact-match HEAD 2>/dev/null || true)"
 CURRENT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo '?')"
-LATEST_TAG="$(git tag -l 'v*' --sort=-v:refname | head -1)" || true
 if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
   LATEST_TAG="$MCP_LATEST"
+else
+  LATEST_TAG="$(ultima_release_estavel)" || true
 fi
+if [ -n "$LATEST_TAG" ]; then RELEASE_OK=1; else RELEASE_OK=0; fi
 
 # Guardado ANTES de qualquer zeragem abaixo: "vi uma tag" e "não anunciei"
 # são coisas diferentes. Sem isto, um fork sem NENHUMA tag `v*` chega ao app
@@ -187,6 +189,9 @@ fi
 # Sem nenhuma tag conhecida E sem ter conseguido buscar: também não dá para
 # afirmar que não há versão nova — nem sabemos se existe alguma publicada.
 [ -z "$LATEST_TAG" ] && [ "$FETCH_OK" = 0 ] && COMPARE_FAILED=true
+# Idem quando quem não respondeu foi a API de releases: não sabemos se existe
+# versão nova, e dizer que não existe seria mentir com cara de boa notícia.
+[ -z "$LATEST_TAG" ] && [ "$RELEASE_OK" = 0 ] && COMPARE_FAILED=true
 
 # ── A ETIQUETA PODE SAIR NA FRENTE DA IMAGEM ─────────────────────────────────
 #

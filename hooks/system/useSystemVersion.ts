@@ -6,6 +6,8 @@ import type { RodadaDoBanco } from "@/lib/system/update-run";
 
 export interface SystemVersion {
   current_version: string;
+  /** Revisão do checkout do host; nunca substitui a release instalada. */
+  build_revision?: string | null;
   is_owner: boolean;
   latest_version?: string;
   update_available?: boolean;

@@ -19,6 +19,7 @@ import {
   crmListConversations,
   crmGetConversation,
   crmGetConversationHistory,
+  crmCreateConversationDraft,
 } from "./conversations";
 import {
   crmListLeads,
@@ -196,6 +197,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmReplyMessage,
   crmStartConversationAndSend,
   crmContinueOnAnotherNumber,
+  crmCreateConversationDraft,
   crmAssignConversation,
   crmManageTags,
   crmCreateContact,
