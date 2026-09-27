@@ -49,6 +49,23 @@ const CHANGELOG_LONGO: SystemVersion = {
 };
 
 describe("tela de atualização — o botão não fica atrás do changelog", () => {
+  it("oferece a release MCP mais nova quando o container está em 1.47 e o checkout avançou", () => {
+    renderTela({
+      current_version: "1.47.0-mcp",
+      build_revision: "6436c9db6",
+      latest_version: "v1.53.0-mcp",
+      is_owner: true,
+      update_available: true,
+      off_release: false,
+      agent_online: true,
+      has_known_release: true,
+      run: null,
+    });
+    expect(screen.getByText("Versão 1.53.0-mcp disponível")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Atualizar agora" })).toBeEnabled();
+    expect(screen.queryByText("Você está à frente da versão publicada")).toBeNull();
+  });
+
   it("'Atualizar agora' aparece ANTES de 'O que muda', mesmo com changelog extenso", () => {
     renderTela(CHANGELOG_LONGO);
 
