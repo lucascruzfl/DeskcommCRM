@@ -1,12 +1,12 @@
 {
-  "deskcomm_version": "1.53.0",
-  "upstream_tag": "v1.53.0",
-  "upstream_commit": "f5701b42bada06ee330701476bf1c28432cb2918",
-  "previous_mcp_tag": "v1.47.0-mcp",
-  "mcp_base_commit": "0a7511a886f12f5f699bac2aceedf957d179a3d3",
+  "deskcomm_version": "1.57.0",
+  "upstream_tag": "v1.57.0",
+  "upstream_commit": "6206bca728a3762f42add7c5773a3a39c4c35abc",
+  "previous_mcp_tag": "v1.53.0-mcp",
+  "mcp_base_commit": "d52ea52591174fbff0e338c0e14a5f45cb11b929",
   "tool_count_is_requirement": false,
   "gaps_a": 0,
   "mcp_compatible": true,
   "pending_domains": [],
-  "note": "Integração cumulativa v1.47.0-mcp → v1.53.0; alvo alterado explicitamente pelo operador. Gate de publicação exige CI, E2E, imagens e validação da árvore final. AUDIT-1.53.0.md registra resolução semântica, versão instalada e identidade das migrations. Sem deploy ou Fase 6."
+  "note": "Integração cumulativa v1.53.0-mcp → v1.57.0 com Fases 5 e 6 managed. Upstream v1.57.0 integrado e migrations managed reconciliadas/renumeradas. CI, E2E, imagens e invariantes da árvore promovida passaram. Detalhes em docs/security/phase6-upstream-157-integration.md. Sem deploy ou onboarding real antes da release MCP validada."
 }
