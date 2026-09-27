@@ -1,5 +1,5 @@
 {
-  "scope": "Catálogo revisado para token persistido de usuário agent; mcp:read/write e capacidades de envio/handoff/destrutivas não concedem áreas administrativas. A prova usa PostgREST descartável. Reconciliado com 1.53: rascunhos e retomada são operacionais; previsão via domínio pipelines continua reservada à gestão.",
+  "scope": "Catálogo revisado para token persistido de usuário agent; mcp:read/write e capacidades de envio/handoff/destrutivas não concedem áreas administrativas. A prova usa PostgREST descartável. Reconciliado cumulativamente até 1.57: rascunhos e retomada são operacionais; previsão via domínio pipelines continua reservada à gestão. Consulta de sons devolve apenas booleanos operacionais na área client de Notificações; restauração exige manager e capability destrutiva, portanto é negada ao cliente agent.",
   "tools": [
     {
       "name": "crm_activate_ai_agent",
@@ -717,6 +717,14 @@
       "name": "crm_get_message_template",
       "domain": "templates",
       "role": "agent",
+      "category": "read",
+      "public": true,
+      "client_allowed": true
+    },
+    {
+      "name": "crm_get_notification_sounds",
+      "domain": "settings",
+      "role": "viewer",
       "category": "read",
       "public": true,
       "client_allowed": true
@@ -1500,6 +1508,14 @@
     {
       "name": "crm_resend_team_invite",
       "domain": "team",
+      "role": "manager",
+      "category": "write",
+      "public": true,
+      "client_allowed": false
+    },
+    {
+      "name": "crm_reset_notification_sound",
+      "domain": "settings",
       "role": "manager",
       "category": "write",
       "public": true,

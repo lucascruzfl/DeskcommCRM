@@ -73,8 +73,9 @@ com os números antigos da linha managed. A integração renumerou as **18
 migrations managed ainda não distribuídas** para `0458`–`0475`, com timestamps
 posteriores aos oficiais e SQL executável preservado. A tripla versionada,
 `supabase/baseline.sql` e `supabase/migrations/MANIFEST.md` acompanha a ordem.
-A verificação da árvore contou **387 arquivos SQL, zero NNNN duplicado e zero
-timestamp duplicado**. A reconciliação da migration MCP `0382` com a oficial
+A verificação da árvore contou **387 arquivos SQL**: 386 com nome canônico
+(timestamp + NNNN) e o histórico `00001_initial_schema.sql`. Entre os nomes
+canônicos, **zero NNNN duplicado e zero timestamp duplicado**. A reconciliação da migration MCP `0382` com a oficial
 `0385` é a exceção histórica já documentada em [AUDIT-1.53.0.md](AUDIT-1.53.0.md),
 sem nova alteração nesta PR. [O registro da Fase 6](../security/phase6-upstream-157-integration.md)
 descreve cada renumeração e a ordem das dependências.
@@ -111,14 +112,36 @@ ou manifesto. Esse gate permanece obrigatório no corte da release.
   com produção e não se expandiu o orçamento. Typecheck dirigido dos arquivos
   alterados e imports: PASS, com configuração temporária fora do repo; isso
   não substitui o gate completo do CI.
-- `pnpm test:db` e `pnpm test:unit` completos estão em execução. Uma rodada com
-  Node 22.16 falhou no teste real de tsx/PDF; Node 22.23.3 passou os 16 casos
-  sem mudar o teste. A suíte foi reiniciada com essa versão. Uma cerca de
-  varredura da suíte ampla ultrapassou o timeout local; não foi enfraquecida.
+- `pnpm test:db` completo: PASS, **303 arquivos, 2.495 casos passando,
+  um expected fail e um skip já declarados pela suíte** (2.497 casos no total).
+  Nenhum gate/caso foi removido ou enfraquecido; o harness encerrou seu container.
+  A rodada precedeu a atualização do snapshot managed, que é revalidado abaixo.
+- `pnpm test:unit` completo permanece em execução. Uma rodada com Node 22.16
+  falhou no teste real de tsx/PDF; Node 22.23.3 passou os 16 casos sem mudar o
+  teste. A suíte foi reiniciada com essa versão. A cerca de hidratação
+  ultrapassou o timeout local na suíte ampla; isolada, passou os seis casos
+  sem mudar o timeout. A cerca estrutural do CI também passou.
+- Controle negativo após commit, em worktree descartável: remover o
+  encaminhamento de `avisar_na_central` derrubou exatamente os dois casos
+  previstos; remover a chamada de restauração derrubou exatamente dois de
+  14 casos dos sons (paridade e falha de leitura). Fontes restauradas, 16
+  testes PASS; worktree descartável removido, branch principal preservada.
 - Build e E2E/QA visual desta candidata não foram medidos localmente: memória
   limitada e ausência de ambiente E2E fresco configurado. CI/E2E da PR #20
   medem a base, não certificam as correções desta PR.
-- Esta PR precisa repetir os checks no seu próprio SHA. O workflow
+- A proteção de `fork/mcp/stable` foi consultada pela API: requer `verify`,
+  `invariants`, `imagens-ok` e `e2e`, com `enforce_admins=true` e force-push
+  desabilitado. `build-and-size` também roda e passou; nenhuma regra foi alterada.
+- A [PR #24](https://github.com/lucascruzfl/DeskcommCRM/pull/24), código em
+  `6b9fae45cc8f89f3d1c13bda2595767fa59e1c37`, já passou typecheck completo,
+  cercas estruturais, verify completo, build-and-size e imagens-ok no CI.
+  O invariante JWT detectou que o snapshot managed ainda não listava a consulta
+  de sons. O snapshot recebeu as duas tools e o caso permitido mede também a
+  saída sem metadado privado; a restauração entra na lista de chamadas diretas
+  negadas ao cliente agent. Nenhuma policy ou assertion foi afrouxada; nova
+  medição local do invariante e onboarding em PG 15 e 17: **25 casos PASS
+  em cada major**, com containers encerrados. Nova medição do CI é exigida.
+  Esta PR precisa repetir os checks no seu próprio SHA. O workflow
   `publish-mcp-release.yml` verifica ancestralidade, JSON, salto de banco,
   typecheck, lint, testes, build, quatro imagens e digests antes de publicar.
   Este documento não substitui esses gates nem autoriza atualizar a VPS.
