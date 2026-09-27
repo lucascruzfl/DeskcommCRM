@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { createServer } from "node:net";
+import { createClient } from "@supabase/supabase-js";
 import { test, expect, type Page } from "./helpers/test";
 import { managedFixture } from "./helpers/managed-client-fixture";
 import { createManagedOnboardingService } from "../../lib/managed-clients/onboarding";
@@ -115,6 +116,22 @@ test("cliente agent acessa operação e recebe 403 nas áreas da agência", asyn
   await page.goto("/app/inbox");
   await expect(page).toHaveURL(/\/app\/inbox/);
   await expect(page.locator('a[href="/app/ai/agents"]')).toHaveCount(0);
+  await expect(page.getByTestId("tenant-switcher")).toHaveCount(0);
+  await page.goto("/app/contacts");
+  await expect(page).toHaveURL(/\/app\/contacts/);
+  const clientDb = createClient(fixture.url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { error: loginError } = await clientDb.auth.signInWithPassword({
+    email: fixture.users.outsider!.email, password: fixture.password,
+  });
+  expect(loginError).toBeNull();
+  const own = await clientDb.from("operational_organizations").select("id").eq("id", organizationId);
+  const foreign = await clientDb.from("operational_organizations").select("id").eq("id", fixture.clinics.A!.id);
+  expect(own.error).toBeNull();
+  expect(own.data).toHaveLength(1);
+  expect(foreign.error).toBeNull();
+  expect(foreign.data).toEqual([]);
   await page.goto("/app/ai/agents");
   await expect(page).toHaveURL(/\/403(?:\?|$)/);
   await expect(page.getByRole("heading", { name: "403 — Sem permissão" })).toBeVisible();

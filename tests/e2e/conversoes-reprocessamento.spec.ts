@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { expect, test } from "./helpers/test";
 import { credenciaisSupabaseDeTeste } from "../../scripts/lib/env-de-teste";
@@ -11,6 +11,9 @@ test.describe.configure({ timeout: 60_000 });
 
 const { url, serviceRole } = credenciaisSupabaseDeTeste();
 const admin = createClient<Database>(url, serviceRole, { auth: { persistSession: false } });
+// A migration de links ainda não entrou no arquivo gerado de tipos do Supabase.
+// Mantém o client tipado para o restante da spec e limita o cast às tabelas novas.
+const recentSchema = admin as unknown as SupabaseClient;
 
 test("conversões: instalação sem credenciais explica a ausência e permite reprocessar uma pendência", async ({
   page,
@@ -258,7 +261,7 @@ test("links nomeados: cadastro pela tela, captura pública e desativação", asy
     const row = pane.getByRole("row").filter({ hasText: name });
     await row.getByRole("button", { name: "Editar", exact: true }).click();
     await expect(pane.getByLabel("Nome", { exact: true })).toHaveValue(name);
-    const { data: link, error: le } = await admin
+    const { data: link, error: le } = await recentSchema
       .from("ad_tracking_links")
       .select("id")
       .eq("organization_id", org)
@@ -286,12 +289,12 @@ test("links nomeados: cadastro pela tela, captura pública e desativação", asy
     await page.screenshot({ path: testInfo.outputPath("links-rastreaveis.png"), fullPage: true });
   } finally {
     if (id) {
-      await admin
+      await recentSchema
         .from("google_ads_click_refs")
         .delete()
         .eq("organization_id", org)
         .eq("tracking_link_id", id);
-      await admin.from("ad_tracking_links").delete().eq("organization_id", org).eq("id", id);
+      await recentSchema.from("ad_tracking_links").delete().eq("organization_id", org).eq("id", id);
     }
   }
 });
