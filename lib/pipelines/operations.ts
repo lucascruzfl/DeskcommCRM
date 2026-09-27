@@ -320,6 +320,11 @@ export async function atualizarConfiguracaoDoPipeline(
   const settings = { ...((row.settings as Record<string, unknown> | null) ?? {}) };
   if (patch.fields !== undefined) settings.fields = patch.fields;
   if (patch.lost_reasons !== undefined) settings.lost_reasons = patch.lost_reasons;
+  if (patch.won_reasons !== undefined) settings.won_reasons = patch.won_reasons;
+  if (patch.won_reason_required !== undefined)
+    settings.won_reason_required = patch.won_reason_required;
+  if (patch.reabertura !== undefined) settings.reabertura = patch.reabertura;
+  if (patch.reabertura_campos !== undefined) settings.reabertura_campos = patch.reabertura_campos;
   const { error } = await ctx.supabase
     .from("crm_pipelines")
     .update({ vocabulary, settings })
@@ -340,6 +345,9 @@ export async function atualizarConfiguracaoDoPipeline(
       vocabulary_changed: !!patch.vocabulary,
       fields_count: patch.fields?.length ?? null,
       lost_reasons_count: patch.lost_reasons?.length ?? null,
+      won_reasons_count: patch.won_reasons?.length ?? null,
+      won_reason_required: patch.won_reason_required ?? null,
+      reabertura: patch.reabertura ?? null,
     },
   });
   return obterPipeline(ctx, pipelineId);

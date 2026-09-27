@@ -5,20 +5,20 @@ import { buildManagedAreaPolicy } from "@/lib/managed-clients/policy";
 import { countAs, lastLine, sql, writeCountAs } from "./gov-helpers";
 
 const migrations = [
-  "20260925100000_0425_politica_de_area_gerenciada.sql",
-  "20260925110000_0411_diretorio_seguro_de_agentes_atribuiveis.sql",
-  "20260925120001_0426_areas_administrativas_no_postgrest.sql",
-  "20260925130000_0427_escrita_administrativa_de_funis_e_canais.sql",
-  "20260925140000_0428_projecoes_operacionais_gerenciadas.sql",
-  "20260925150001_0429_leitura_base_administrativa_gerenciada.sql",
-  "20260925160000_0430_rpc_administrativas_respeitam_policy.sql",
-  "20260925170001_0431_rpc_operacionais_leem_projecao.sql",
-  "20260925180001_0432_rpc_de_leitura_sem_base.sql",
-  "20260925190000_0433_funil_operacional_sem_configuracao.sql",
-  "20260925200001_0434_projecoes_para_triggers_e_tipos.sql",
-  "20260925210000_0435_calendarios_operacionais_sem_tokens.sql",
-  "20260926120000_0436_rpc_respeitam_areas_gerenciadas.sql",
-  "20260926130000_0437_inbox_operacional_sem_metadados_privados.sql",
+  "20260927015101_0438_politica_de_area_gerenciada.sql",
+  "20260927015102_0439_diretorio_seguro_de_agentes_atribuiveis.sql",
+  "20260927015103_0440_areas_administrativas_no_postgrest.sql",
+  "20260927015104_0441_escrita_administrativa_de_funis_e_canais.sql",
+  "20260927015105_0442_projecoes_operacionais_gerenciadas.sql",
+  "20260927015106_0443_leitura_base_administrativa_gerenciada.sql",
+  "20260927015107_0444_rpc_administrativas_respeitam_policy.sql",
+  "20260927015108_0445_rpc_operacionais_leem_projecao.sql",
+  "20260927015109_0446_rpc_de_leitura_sem_base.sql",
+  "20260927015110_0447_funil_operacional_sem_configuracao.sql",
+  "20260927015111_0448_projecoes_para_triggers_e_tipos.sql",
+  "20260927015112_0449_calendarios_operacionais_sem_tokens.sql",
+  "20260927015113_0450_rpc_respeitam_areas_gerenciadas.sql",
+  "20260927015114_0451_inbox_operacional_sem_metadados_privados.sql",
 ] as const;
 
 it("promove banco anterior a 0425 com dados por toda a cadeia e aceita reapply", () => {

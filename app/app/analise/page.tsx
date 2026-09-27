@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { NavHub } from "@/components/shell/NavHub";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { modulosLigados } from "@/lib/instalacao/modulos";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Análise" };
@@ -37,6 +39,7 @@ export default async function AnaliseHubPage() {
       role={activeOrg?.role ?? null}
       interfaceSettings={activeOrg?.interface_settings}
       managedPolicy={activeOrg?.managed_policy}
+      modulosLigados={await modulosLigados(createAdminClient())}
       title={traduzir("Análise", idioma)}
       subtitle={traduzir(
         "Como o negócio foi no período — e o histórico para quando alguém perguntar por quê.",

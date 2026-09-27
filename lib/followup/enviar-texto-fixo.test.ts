@@ -36,6 +36,7 @@ const JOB = {
 };
 
 const statusUpdates: string[] = [];
+const filtrosRunAfter: { op: string; col: string; v: string }[] = [];
 
 /** Admin stub: job_queue (select pending / claim / status) + followup_enrollments. */
 function admin(pendingJobs: typeof JOB[] = [JOB]) {
@@ -48,7 +49,8 @@ function admin(pendingJobs: typeof JOB[] = [JOB]) {
       _limit: 5,
       select: () => chain,
       eq: () => chain,
-      lte: () => chain,
+      lte: (col: string, v: string) => (filtrosRunAfter.push({ op: "lte", col, v }), chain),
+      lt: (col: string, v: string) => (filtrosRunAfter.push({ op: "lt", col, v }), chain),
       in: (column: string, values: string[]) => {
         if (table === "job_queue" && column === "contact_id") chain._contactIds = values;
         return chain;
@@ -90,6 +92,7 @@ function admin(pendingJobs: typeof JOB[] = [JOB]) {
 beforeEach(() => {
   vi.clearAllMocks();
   statusUpdates.length = 0;
+  filtrosRunAfter.length = 0;
 });
 
 describe("enviarTextoFixoPendente · gate de elegibilidade", () => {
@@ -130,4 +133,20 @@ it.each(["queued","failed"])("%s não conta envio nem avança o fluxo",async sta
  decidir.mockResolvedValue({permite:true});sendMessageHandler.mockResolvedValueOnce({id:"msg-1",status});
  expect(await enviarTextoFixoPendente(admin())).toBe(0);
  expect(completeTurnForEnrollment).not.toHaveBeenCalled();expect(statusUpdates).toContain("pending");
+});
+
+// O banco grava run_after em µs; o JS lê o relógio em ms. Job gravado com
+// run_after=now() há menos de 1 ms (ex.: ...00.000500Z com o JS em ...00.000Z)
+// está vencido, e o filtro não pode escondê-lo: o corte é o FIM do ms corrente.
+it("filtro de vencimento cobre o milissegundo corrente inteiro (run_after em µs)", async () => {
+  vi.useFakeTimers({ now: new Date("2026-09-26T10:04:46.558Z"), toFake: ["Date"] });
+  try {
+    decidir.mockResolvedValue({ permite: true });
+    await enviarTextoFixoPendente(admin());
+  } finally {
+    vi.useRealTimers();
+  }
+  const run = filtrosRunAfter.filter((f) => f.col === "run_after");
+  expect(run.length).toBeGreaterThanOrEqual(2); // seleção e reivindicação
+  for (const f of run) expect(f).toEqual({ op: "lt", col: "run_after", v: "2026-09-26T10:04:46.559Z" });
 });

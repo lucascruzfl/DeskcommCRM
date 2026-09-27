@@ -22,6 +22,20 @@ export async function proxy(request: NextRequest) {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
   response.headers.set("x-request-id", requestId);
 
+  // Recupera retornos de OAuth social já emitidos antes da landing pública existir.
+  // Apenas a navegação é tratada: o vínculo de conta segue protegido pelos guards canônicos.
+  // Passa adiante só o SINAL `connected=1` — nunca o `connect_token` nem o valor recebido.
+  if (
+    request.method === "GET" &&
+    pathname === "/app/connections" &&
+    request.nextUrl.searchParams.has("connected") &&
+    request.nextUrl.searchParams.has("connect_token")
+  ) {
+    const landing = NextResponse.redirect(new URL("/auth/social-return?connected=1", request.url));
+    landing.headers.set("Cache-Control", "no-store");
+    landing.headers.set("Referrer-Policy", "no-referrer");
+    return landing;
+  }
   // Expose pathname to Server Components via header (used by onboarding layout).
   response.headers.set("x-pathname", pathname);
 

@@ -47,7 +47,7 @@ let runSelectError: { message: string } | null;
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv(["DESK", "COMM_UPDATE_CHANNEL"].join(""), "official");
-  vi.stubEnv("APP_VERSION", "1.0.0");
+  vi.stubEnv("APP_VERSION", "");
   inserted = null;
   runRow = null;
   runUpdatePatch = null;
@@ -147,6 +147,25 @@ describe("GET /api/v1/system/version", () => {
     } finally {
       if (previous === undefined) delete process.env.APP_VERSION;
       else process.env.APP_VERSION = previous;
+    }
+  });
+
+  it("a release da imagem vence o SHA do host, para dono e membro", async () => {
+    vi.stubEnv("APP_VERSION", "42.7.19-mcp");
+    versionRow.current_version = "fa06399e1";
+    versionRow.current_sha = "fa06399e1";
+    versionRow.off_release = true;
+    versionRow.latest_version = "v42.7.19-mcp";
+    for (const user of [OWNER, MEMBRO]) {
+      vi.mocked(loadAuthUser).mockResolvedValue(user as never);
+      const { GET } = await import("../version/route");
+      const { data } = await (await GET(get())).json();
+      expect(data.current_version).toBe("42.7.19-mcp");
+      expect(data.build_revision).toBe("fa06399e1");
+      if (user.is_platform_admin) {
+        expect(data.update_available).toBe(false);
+        expect(data.off_release).toBe(false);
+      }
     }
   });
 
@@ -484,7 +503,7 @@ describe("GET /api/v1/system/version", () => {
     const body = await (await GET(get())).json();
     expect(body.data.run.superseded).toBe(true);
     // E a versão no ar deixa de ser a `from_version` do rollback.
-    expect(body.data.current_version).toBe("v1.33.0");
+    expect(body.data.current_version).toBe("1.33.0");
     expect(body.data.update_available).toBe(true);
     vi.unstubAllEnvs();
   });
@@ -516,7 +535,7 @@ describe("GET /api/v1/system/version", () => {
     const { GET } = await import("../version/route");
     const body = await (await GET(get())).json();
     expect(body.data.run.superseded).toBe(false);
-    expect(body.data.current_version).toBe("v1.32.1");
+    expect(body.data.current_version).toBe("1.32.1");
     vi.unstubAllEnvs();
   });
 
@@ -538,7 +557,7 @@ describe("GET /api/v1/system/version", () => {
     const { GET } = await import("../version/route");
     const body = await (await GET(get())).json();
     expect(body.data.run.superseded).toBe(false);
-    expect(body.data.current_version).toBe("v1.32.1");
+    expect(body.data.current_version).toBe("1.32.1");
     vi.unstubAllEnvs();
   });
 

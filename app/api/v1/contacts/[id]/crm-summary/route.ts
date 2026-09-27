@@ -45,6 +45,8 @@ export const dynamic = "force-dynamic";
  * diferentes ficavam idênticos na lista (#943). Os IDs de funis ativos são
  * filtrados antes do `limit(3)` — `pipeline_id` é NOT NULL.
  */
+// `stage_id` e as `etapas` do funil alimentam o seletor de etapa do painel: mover
+// o negócio (ex.: "Pedido confirmado") direto da conversa, sem ir ao quadro.
 const LEAD_COLS =
   "id, title, status, value_cents, currency, updated_at, pipeline_id, stage_id, custom_fields";
 const ORDER_COLS = "id, external_id, status, total_cents, currency, created_at";
@@ -212,19 +214,29 @@ export async function GET(
     return fail("internal_error", falha.message, 500, { requestId });
   }
   const leadRows = (leads.data ?? []) as Record<string, unknown>[];
-  const stageIds = leadRows
-    .map((lead) => lead.stage_id)
-    .filter((id): id is string => typeof id === "string");
-  const stages = stageIds.length
+  const leadPipelineIds = [...new Set(leadRows.map((lead) => String(lead.pipeline_id)))];
+  const stages = leadPipelineIds.length
     ? await supabase
         .from("operational_crm_stages")
-        .select("id, name")
+        .select("id, pipeline_id, name, position, is_won, is_lost, is_archived")
         .eq("organization_id", contactScope.organization_id)
-        .in("id", stageIds)
+        .in("pipeline_id", leadPipelineIds)
     : { data: [], error: null };
   if (stages.error) return fail("internal_error", stages.error.message, 500, { requestId });
   const pipelinesById = new Map((pipelines.data ?? []).map((pipeline) => [pipeline.id, pipeline]));
   const stagesById = new Map((stages.data ?? []).map((stage) => [stage.id, stage.name]));
+  const stagesByPipeline = new Map<string, Array<{
+    id: string; name: string; position: number | string; is_won: boolean; is_lost: boolean;
+  }>>();
+  for (const stage of stages.data ?? []) {
+    if (stage.is_archived) continue;
+    const items = stagesByPipeline.get(stage.pipeline_id) ?? [];
+    items.push(stage);
+    stagesByPipeline.set(stage.pipeline_id, items);
+  }
+  for (const items of stagesByPipeline.values()) {
+    items.sort((a, b) => Number(a.position) - Number(b.position));
+  }
 
   // QUEM agiu, e não só "uma pessoa". O lookup roda sobre os autores DISTINTOS
   // da janela (12 linhas, quase sempre 1 ou 2 pessoas), e degrada declarado
@@ -238,7 +250,7 @@ export async function GET(
   return ok(
     {
       ...enrichment,
-      leads: leadRows.map((row) => comCamposDoFunil(row, pipelinesById, stagesById)),
+      leads: leadRows.map((row) => comCamposDoFunil(row, pipelinesById, stagesById, stagesByPipeline)),
       orders: orders.data ?? [],
       activities: linhas.map((a) => ({
         ...a,
@@ -258,6 +270,9 @@ function comCamposDoFunil(
   lead: Record<string, unknown>,
   pipelines: ReadonlyMap<string, { name: string; settings: unknown }>,
   stages: ReadonlyMap<string, string>,
+  stagesByPipeline: ReadonlyMap<string, Array<{
+    id: string; name: string; is_won: boolean; is_lost: boolean;
+  }>>,
 ) {
   const pipeline = pipelines.get(String(lead.pipeline_id));
   return {
@@ -265,5 +280,8 @@ function comCamposDoFunil(
     field_defs: camposDoFunil(pipeline?.settings as Record<string, unknown> | null),
     funil_nome: pipeline?.name ?? null,
     etapa_nome: stages.get(String(lead.stage_id)) ?? null,
+    etapas_do_funil: (stagesByPipeline.get(String(lead.pipeline_id)) ?? []).map(
+      ({ id, name, is_won, is_lost }) => ({ id, name, is_won, is_lost }),
+    ),
   };
 }

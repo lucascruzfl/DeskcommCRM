@@ -15,7 +15,7 @@ const session = randomUUID(),
   version = randomUUID();
 const areas = JSON.stringify(buildManagedAreaPolicy("managed/aesthetic-clinic").areas);
 const gateMigration = readFileSync(
-  "supabase/migrations/20260925120001_0426_areas_administrativas_no_postgrest.sql",
+  "supabase/migrations/20260927015103_0440_areas_administrativas_no_postgrest.sql",
   "utf8",
 );
 const administrativeGates = [

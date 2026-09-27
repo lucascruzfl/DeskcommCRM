@@ -102,7 +102,7 @@ describe("crm-summary: leads recentes", () => {
           is_archived: false,
         },
       ],
-      operational_crm_stages: [{ id: "stage-novo", organization_id: ORG, name: "Novo" }],
+      operational_crm_stages: [{ id: "stage-novo", pipeline_id: "p-lead-ativo", organization_id: ORG, name: "Novo", position: 1000, is_won: false, is_lost: false, is_archived: false }],
       crm_leads: [lead("lead-arquivado"), lead("lead-ativo")],
     });
     vi.mocked(createClient).mockResolvedValue(banco as never);

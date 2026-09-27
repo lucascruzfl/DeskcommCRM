@@ -64,6 +64,10 @@ export type Database = {
           status: string;
           updated_at: string;
           value_cents: number | null;
+          event_occurred_at: string | null;
+          google_action_id: string | null;
+          remote_request_id: string | null;
+          remote_requested_at: string | null;
         };
         Insert: {
           attempted_at?: string;
@@ -80,6 +84,10 @@ export type Database = {
           status: string;
           updated_at?: string;
           value_cents?: number | null;
+          event_occurred_at: string | null;
+          google_action_id: string | null;
+          remote_request_id: string | null;
+          remote_requested_at: string | null;
         };
         Update: {
           attempted_at?: string;
@@ -96,6 +104,10 @@ export type Database = {
           status?: string;
           updated_at?: string;
           value_cents?: number | null;
+          event_occurred_at: string | null;
+          google_action_id: string | null;
+          remote_request_id: string | null;
+          remote_requested_at: string | null;
         };
         Relationships: [
           {
@@ -245,6 +257,10 @@ export type Database = {
           test_event_code: string | null;
           updated_at: string;
           updated_by: string | null;
+          google_api: string;
+          google_qualification_action_id: string | null;
+          google_qualification_configured_at: string | null;
+          google_qualification_stage_id: string | null;
         };
         Insert: {
           access_token_encrypted?: string | null;
@@ -261,6 +277,10 @@ export type Database = {
           test_event_code?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+          google_api: string;
+          google_qualification_action_id: string | null;
+          google_qualification_configured_at: string | null;
+          google_qualification_stage_id: string | null;
         };
         Update: {
           access_token_encrypted?: string | null;
@@ -277,6 +297,10 @@ export type Database = {
           test_event_code?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+          google_api: string;
+          google_qualification_action_id: string | null;
+          google_qualification_configured_at: string | null;
+          google_qualification_stage_id: string | null;
         };
         Relationships: [
           {
@@ -1455,6 +1479,7 @@ export type Database = {
           source_type: string;
           status: string;
           updated_at: string;
+          content_hash: string | null;
         };
         Insert: {
           active_kb_version_id?: string | null;
@@ -1473,6 +1498,7 @@ export type Database = {
           source_type: string;
           status?: string;
           updated_at?: string;
+          content_hash: string | null;
         };
         Update: {
           active_kb_version_id?: string | null;
@@ -1491,6 +1517,7 @@ export type Database = {
           source_type?: string;
           status?: string;
           updated_at?: string;
+          content_hash: string | null;
         };
         Relationships: [
           {
@@ -5802,6 +5829,9 @@ export type Database = {
           title: string;
           updated_at: string;
           value_cents: number | null;
+          lost_from_stage_id: string | null;
+          retomado_de_lead_id: string | null;
+          won_reason: string | null;
         };
         Insert: {
           assigned_at?: string | null;
@@ -5832,6 +5862,9 @@ export type Database = {
           title: string;
           updated_at?: string;
           value_cents?: number | null;
+          lost_from_stage_id: string | null;
+          retomado_de_lead_id: string | null;
+          won_reason: string | null;
         };
         Update: {
           assigned_at?: string | null;
@@ -5862,6 +5895,9 @@ export type Database = {
           title?: string;
           updated_at?: string;
           value_cents?: number | null;
+          lost_from_stage_id: string | null;
+          retomado_de_lead_id: string | null;
+          won_reason: string | null;
         };
         Relationships: [
           {
@@ -6005,6 +6041,7 @@ export type Database = {
           requires_human: boolean;
           slug: string;
           updated_at: string;
+          win_probability: number | null;
         };
         Insert: {
           agent_stage_hint?: string | null;
@@ -6025,6 +6062,7 @@ export type Database = {
           requires_human?: boolean;
           slug: string;
           updated_at?: string;
+          win_probability: number | null;
         };
         Update: {
           agent_stage_hint?: string | null;
@@ -6045,6 +6083,7 @@ export type Database = {
           requires_human?: boolean;
           slug?: string;
           updated_at?: string;
+          win_probability: number | null;
         };
         Relationships: [
           {
@@ -7620,6 +7659,8 @@ export type Database = {
           organization_id: string;
           query_raw: Json;
           token: string;
+          gbraid: string | null;
+          wbraid: string | null;
         };
         Insert: {
           contact_id?: string | null;
@@ -7630,6 +7671,8 @@ export type Database = {
           organization_id: string;
           query_raw?: Json;
           token: string;
+          gbraid: string | null;
+          wbraid: string | null;
         };
         Update: {
           contact_id?: string | null;
@@ -7640,6 +7683,8 @@ export type Database = {
           organization_id?: string;
           query_raw?: Json;
           token?: string;
+          gbraid: string | null;
+          wbraid: string | null;
         };
         Relationships: [
           {
@@ -8753,6 +8798,7 @@ export type Database = {
           template_name: string | null;
           type: string;
           updated_at: string;
+          sent_on_behalf_of_user_id: string | null;
         };
         Insert: {
           ack?: number | null;
@@ -8791,6 +8837,7 @@ export type Database = {
           template_name?: string | null;
           type: string;
           updated_at?: string;
+          sent_on_behalf_of_user_id: string | null;
         };
         Update: {
           ack?: number | null;
@@ -8829,6 +8876,7 @@ export type Database = {
           template_name?: string | null;
           type?: string;
           updated_at?: string;
+          sent_on_behalf_of_user_id: string | null;
         };
         Relationships: [
           {
@@ -12386,6 +12434,69 @@ export type Database = {
           },
         ];
       };
+      jev_observacoes: {
+        Row: {
+          concordou: boolean | null
+          confianca_jev: number | null
+          conversation_id: string | null
+          created_at: string
+          estado: string
+          id: string
+          job_id: string | null
+          latencia_ms: number | null
+          message_id: string | null
+          modelo: string | null
+          organization_id: string
+          probabilidade_jev: number | null
+          rotulo_atual: string | null
+          rotulo_jev: string | null
+          tarefa: string
+        }
+        Insert: {
+          concordou?: never
+          confianca_jev?: number | null
+          conversation_id?: string | null
+          created_at?: string
+          estado: string
+          id?: string
+          job_id?: string | null
+          latencia_ms?: number | null
+          message_id?: string | null
+          modelo?: string | null
+          organization_id: string
+          probabilidade_jev?: number | null
+          rotulo_atual?: string | null
+          rotulo_jev?: string | null
+          tarefa: string
+        }
+        Update: {
+          concordou?: never
+          confianca_jev?: number | null
+          conversation_id?: string | null
+          created_at?: string
+          estado?: string
+          id?: string
+          job_id?: string | null
+          latencia_ms?: number | null
+          message_id?: string | null
+          modelo?: string | null
+          organization_id?: string
+          probabilidade_jev?: number | null
+          rotulo_atual?: string | null
+          rotulo_jev?: string | null
+          tarefa?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jev_observacoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+
     };
     Views: {
       ai_provider_credentials_safe: {
@@ -14771,6 +14882,20 @@ export type Database = {
         Args: { c: Database["public"]["Tables"]["conversations"]["Row"] };
         Returns: string[];
       };
+      fn_accept_team_invite: {
+        Args: { p_user: string; p_org: string; p_role: string; p_invited_by: string | null; p_issued_at: string | null; p_invited_at: string; p_interface_settings?: Json }
+        Returns: Json
+      }
+      fn_publish_ai_agent_version: {
+        Args: { p_agent_id: string; p_org_id: string; p_version_id: string; p_platform_credential_verified?:boolean; p_expected_provenance?:string|null }
+        Returns: {
+          agent_id: string
+          previous_version_id: string
+          published_at: string
+          version_id: string
+        }[]
+      }
+
     };
     Enums: {
       [_ in never]: never;

@@ -22,7 +22,12 @@ export function VersionFooter({
 }) {
   const t = useT();
   const { data } = useSystemVersion();
-  if (!data?.current_version) return null;
+  if (!data) return null;
+  if (!data.current_version) {
+    return data.build_revision ? (
+      <p className="px-3 py-1 text-[11px] text-muted-foreground">Build {data.build_revision}</p>
+    ) : null;
+  }
 
   const label = data.current_version.replace(/^v/i, "");
   // Só acende quando existe versão nova de verdade. `off_release` sozinho não
@@ -38,9 +43,12 @@ export function VersionFooter({
           "px-3 py-1 text-[11px] text-muted-foreground",
           collapsed && "px-0 text-center",
         )}
-        title={`${t("Versão")} ${label}`}
+        title={`${t("Versão")} ${label}${data.build_revision ? ` · Build ${data.build_revision}` : ""}`}
       >
-        {collapsed ? label.split(".").slice(0, 2).join(".") : `${t("versão")} ${label}`}
+        {collapsed ? label.split(".").slice(0, 2).join(".") : `${t("Versão")} ${label}`}
+        {!collapsed && data.build_revision ? (
+          <span className="block">Build {data.build_revision}</span>
+        ) : null}
       </p>
     );
   }
