@@ -12,7 +12,7 @@ const proposal = {
 };
 
 describe("preset de clínica de estética gerenciada", () => {
-  it("classifica cada porta real exatamente uma vez e mantém criação fechada", () => {
+  it("classifica cada porta real exatamente uma vez e declara o preset disponível", () => {
     const preset = MANAGED_CLIENT_PRESETS["managed/aesthetic-clinic"];
     const areas = managedPresetAreas(preset.id);
     expect(areas).toHaveLength(NAV_CATALOG.length);
@@ -20,7 +20,7 @@ describe("preset de clínica de estética gerenciada", () => {
     expect(areas.find((area) => area.href === "/app/inbox")?.classification).toBe("client");
     expect(areas.find((area) => area.href === "/app/ai/agents")?.classification).toBe("agency");
     expect(areas.find((area) => area.href === "/app/ai/cases")?.classification).toBe("shared");
-    expect(preset.executable).toBe(false);
+    expect(preset.executable).toBe(true);
   });
 
   it("gera plano estável, mostra conflito crítico e não transforma override em autorização", () => {

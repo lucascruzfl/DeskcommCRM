@@ -4,7 +4,7 @@ export default defineConfig({
   testMatch: "*.pw.ts",
   workers: 1,
   timeout: 30_000,
-  outputDir: "../../.superpowers/evidence/responsive",
+  outputDir: "../../evidence/responsive",
   reporter: "list",
   use: {
     baseURL: "http://127.0.0.1:4319",

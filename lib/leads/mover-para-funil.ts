@@ -20,6 +20,11 @@ import {
 import { modoDeReabertura } from "@/lib/leads/reabertura";
 import { encerraDemanda } from "@/lib/leads/encerramento";
 import {
+  recusaDeCamposObrigatorios,
+  settingsDoFunil,
+  validaCamposExigidos,
+} from "@/lib/leads/campos-exigidos";
+import {
   motivoDaPerdaDaOrigem,
   recusaDeMotivoForaDoVocabulario,
 } from "@/lib/leads/motivo-da-perda";
@@ -113,6 +118,21 @@ export async function moverLeadParaOutroFunil(
 
   const destino = escolheEtapaDeDestino((etapas ?? []) as EtapaDoFunil[], input.stage_id ?? null);
   if (!destino.ok) erro(destino.status, destino.code, t(destino.texto), ctx);
+
+  // O clone entra numa etapa nova. A exigência declarada pelo funil de destino
+  // precisa ser conferida antes da primeira escrita, como na rota original.
+  const settingsDoDestino = await settingsDoFunil(supabase, destino.etapa.pipeline_id);
+  const vereditoDeCampos = validaCamposExigidos({
+    lead: { custom_fields: origemTipada.custom_fields ?? {} },
+    settingsDoFunil: settingsDoDestino,
+    destino: { stageId: destino.etapa.id, desfecho: null },
+    motivoDeGanho: null,
+  });
+  if (vereditoDeCampos.faltando.length > 0) {
+    const recusa = recusaDeCamposObrigatorios(vereditoDeCampos.faltando, idioma);
+    throw new ApiError(422, recusa.codigo, { faltando: vereditoDeCampos.faltando },
+      ctx.requestId, recusa.mensagem);
+  }
 
   if (!origemJaEncerrada) {
     const { data: etapaDePerdaDaOrigem, error: perdaErr } = await supabase

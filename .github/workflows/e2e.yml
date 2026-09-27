@@ -1082,6 +1082,7 @@ jobs:
       # PREVISÃO, não medida: ~1 min.
       SPECS_PARTE_5: >-
         managed-client-authorization.spec.ts
+        managed-client-onboarding.spec.ts
         inbox-busca-e-filtros-dizem-a-verdade.spec.ts
         extensoes-da-instalacao.spec.ts
         admin-credencial-google.spec.ts
@@ -1966,8 +1967,8 @@ jobs:
         with:
           name: mcp-version-evidence-parte-${{ matrix.parte }}
           path: |
-            .superpowers/evidence/mcp-versao-release-e-build.png
-            .superpowers/evidence/managed/*.png
+            evidence/mcp-versao-release-e-build.png
+            evidence/managed/*.png
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7

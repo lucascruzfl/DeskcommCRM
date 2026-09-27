@@ -65,6 +65,7 @@ export type McpCapability =
   | "automation_activation"
   | "destructive_operations"
   | "human_handoff"
+  | "managed_client_onboarding"
   | "send_messages";
 
 export interface McpToolDefinition<TInput extends z.ZodRawShape = z.ZodRawShape> {

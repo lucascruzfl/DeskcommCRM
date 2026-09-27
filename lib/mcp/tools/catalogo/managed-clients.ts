@@ -21,4 +21,14 @@ export const TOOLS_MANAGED_CLIENTS = declararTools([
     pacotes: ["organizar"],
     apenasHumano: true,
   },
+  {
+    name: "crm_create_managed_client",
+    category: "write",
+    rotulo: "Criar cliente gerenciado",
+    explicacao: "Conferir o plano e, só após confirmação explícita de um administrador da plataforma, criar a clínica gerenciada e convidar o primeiro usuário.",
+    oQueToca: "Nova organização, perfil gerenciado, vínculo do gestor e convite",
+    risco: "critico",
+    pacotes: ["organizar"],
+    apenasHumano: true,
+  },
 ]);

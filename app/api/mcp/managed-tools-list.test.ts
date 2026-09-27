@@ -15,6 +15,15 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({}) }));
 import { POST } from "./route";
 
 describe("tools/list pelo transporte MCP", () => {
+  const requestFor = (method: string, params: object = {}) => new Request("http://localhost/api/mcp", {
+    method: "POST",
+    headers: {
+      authorization: "Bearer test-token",
+      accept: "application/json, text/event-stream",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+  });
   function managedAuth() {
     mocks.auth.mockResolvedValue({
       organizationId: "clinic", role: "agent", actor: { type: "api_token", id: "token", role: "agent" },
@@ -61,5 +70,27 @@ describe("tools/list pelo transporte MCP", () => {
     const body = await response.text();
     expect(body).toContain("crm_list_orders");
     expect(body).toMatch(/not found|Unknown tool|not_allowed/i);
+  });
+
+  it("mostra criação só para platform_admin full e recusa chamada direta dos demais", async () => {
+    for (const [role, platformAdminFull] of [
+      ["admin", false], ["manager", false], ["agent", false], ["manager", true],
+    ] as const) {
+      mocks.auth.mockResolvedValue({
+        organizationId: "agency", role, actor: { type: "api_token", id: "token", role },
+        apiTokenId: "token", provisionedByUserId: "actor",
+        scopes: ["mcp:read", "mcp:write", "capability:managed_client_onboarding"],
+        platformAdminFull, managedPolicy: null,
+      });
+      const listed = await POST(requestFor("tools/list") as never);
+      const body = await listed.text();
+      expect(body.includes("crm_create_managed_client")).toBe(platformAdminFull);
+      if (!platformAdminFull) {
+        const called = await POST(requestFor("tools/call", {
+          name: "crm_create_managed_client", arguments: {},
+        }) as never);
+        expect(await called.text()).toMatch(/not found|Unknown tool|not_allowed/i);
+      }
+    }
   });
 });

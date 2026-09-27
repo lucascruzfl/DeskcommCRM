@@ -199,6 +199,9 @@ const QUARENTENA = new Set([
   // Em sua maioria, achados datados que dizem onde a prova DAQUELE dia foi
   // gravada. O `CLAUDE.md` saiu daqui quando a linha da doutrina passou a
   // mandar para `evidence/`.
+  // Registros históricos de capturas anteriores à migração para evidence/.
+  "docs/audits/responsividade-desktop-mobile.md",
+  "docs/security/pre-phase6-maintenance-153.md",
   "docs/testing/user-journey-map.md",
   "docs/interface-por-vinculo.md",
   "triagem/TRIAGEM.md",

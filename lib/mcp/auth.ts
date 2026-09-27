@@ -30,6 +30,8 @@ export interface McpAuthResult {
   provisionedByUserId?: string;
   scopes: string[];
   managedPolicy?: ManagedAreaPolicy | null;
+  /** Snapshot para ocultar tools de provisionamento; o serviço revalida antes do efeito. */
+  platformAdminFull?: boolean;
 }
 
 export class McpAuthError extends Error {
@@ -239,6 +241,30 @@ export async function validateBearerToken(
     }
   }
 
+  const onboardingScope = resolved.scopes.includes("capability:managed_client_onboarding");
+  let platformAdminFull = false;
+  if (onboardingScope) {
+    const { data: platformAdmin, error: platformAdminError } = await admin
+      .from("platform_admins")
+      .select("scope, mfa_required")
+      .eq("user_id", resolved.createdBy)
+      .is("revoked_at", null)
+      .maybeSingle();
+    if (platformAdminError) throw new McpAuthError(-32603, 500, "Platform authorization unavailable.");
+    if (platformAdmin?.scope === "full" && !platformAdmin.mfa_required) {
+      const { data: sourceMember, error: sourceMemberError } = await admin
+        .from("user_organizations")
+        .select("role")
+        .eq("organization_id", resolved.organizationId)
+        .eq("user_id", resolved.createdBy)
+        .is("revoked_at", null)
+        .not("accepted_at", "is", null)
+        .maybeSingle();
+      if (sourceMemberError) throw new McpAuthError(-32603, 500, "Membership authorization unavailable.");
+      platformAdminFull = sourceMember?.role === "admin" || sourceMember?.role === "manager";
+    }
+  }
+
   return {
     organizationId: resolved.organizationId,
     role,
@@ -247,6 +273,7 @@ export async function validateBearerToken(
     provisionedByUserId: resolved.createdBy,
     scopes: resolved.scopes,
     managedPolicy: managedPolicy as ManagedAreaPolicy | null,
+    ...(onboardingScope ? { platformAdminFull } : {}),
   };
 }
 

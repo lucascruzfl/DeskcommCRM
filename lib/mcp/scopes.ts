@@ -32,6 +32,7 @@ export const MCP_CAPABILITIES = [
   "automation_activation",
   "destructive_operations",
   "human_handoff",
+  "managed_client_onboarding",
   "send_messages",
 ] as const satisfies ReadonlyArray<McpCapability>;
 

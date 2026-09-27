@@ -21,10 +21,10 @@ async function login(page: Page, role: string) {
   await page.waitForURL(/\/app\//, { timeout: 120_000 });
 }
 async function evidence(page: Page, name: string) {
-  mkdirSync(".superpowers/evidence/managed", { recursive: true });
+  mkdirSync("evidence/managed", { recursive: true });
   const shot = await page.screenshot({
     fullPage: true,
-    path: `.superpowers/evidence/managed/${name}.png`,
+    path: `evidence/managed/${name}.png`,
   });
   await test.info().attach(name, { body: shot, contentType: "image/png" });
 }

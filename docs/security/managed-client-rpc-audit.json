@@ -1,5 +1,5 @@
 {
-  "scope": "Todas as funções de public, excluindo extensões; catálogo aplicado em banco descartável e reconciliado com upstream 1.53 na manutenção pré-Fase 6. Não substitui provas de comportamento e UI.",
+  "scope": "Todas as funções de public, excluindo extensões; catálogo medido no baseline aplicado em banco descartável durante a Fase 6. Não substitui provas de comportamento e UI.",
   "functions": [
     {
       "signature": "activate_kb_version(uuid,uuid)",
@@ -342,6 +342,16 @@
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
     {
+      "signature": "fn_begin_managed_client_onboarding(uuid,uuid,jsonb,text,text,jsonb)",
+      "name": "fn_begin_managed_client_onboarding",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "7f04208b27e55b7f1b3961c3f54903a0598570d702bb9a91c8d03fdb6f95a69a",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE somente service_role; revalida platform_admin full no banco e chama a RPC oficial para criar organização, policy, membership e convite lógico na mesma transação."
+    },
+    {
       "signature": "fn_buscar_trechos_das_fontes(uuid,uuid[],vector,integer,real,text)",
       "name": "fn_buscar_trechos_das_fontes",
       "security_definer": true,
@@ -450,6 +460,16 @@
       "body_sha256": "11ae1da7bea142aa567d4012620e2b8ac06cbc2f82e811d9af73b77a7d3f7cf5",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_claim_managed_client_invite(uuid,uuid,uuid)",
+      "name": "fn_claim_managed_client_invite",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "6de4623eca3e5f0732c384c3639d54a1475e472425b723868f4648d8eab39d8b",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "EXECUTE somente service_role; revalida platform_admin full e reivindica recibo por ator e chave sob lock para impedir envio concorrente."
     },
     {
       "signature": "fn_colegas_podem_mexer_na_agenda(uuid)",
@@ -607,9 +627,9 @@
       "security_definer": true,
       "authenticated_execute": true,
       "anonymous_execute": false,
-      "body_sha256": "1e657eef5a2ee2cf69e3d38b27d8aab9f8a849cdaab5a86326cc4e2da749e115",
+      "body_sha256": "53404bc2e2df26650a0e8c2e0597d73ed75abeddf05ff5c36cb740f500e06abd",
       "status": "ADMIN-ONLY",
-      "reason": "Papel mínimo manager/admin com membership e área persistida antes do efeito; fn_agent_tool_usage é invoker e depende de tabelas privadas bloqueadas por RLS."
+      "reason": "Somente admin com membership, MFA, trava de suporte e área gerenciada ativa; ignora conexão arquivada e valida referências da própria organização antes de escrever."
     },
     {
       "signature": "fn_definir_cliente_pela_agenda(uuid,boolean)",
@@ -797,9 +817,9 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "3c23e34d8590f5b7650474477d37d54f4b48c0cf46fbe70c4189d1bf04edaa41",
+      "body_sha256": "981f9744992d6396a468c32215db9470cc02bed048849bb8ac2e775f9091c674",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
+      "reason": "Corpo da 0435 inclui a contagem de linhas expurgadas; EXECUTE permanece exclusivo do service_role, sem alcance direto por authenticated ou anon."
     },
     {
       "signature": "fn_enrollment_superficie_coerente()",
@@ -1392,6 +1412,16 @@
       "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
     },
     {
+      "signature": "fn_marcar_configuracao_regra_google()",
+      "name": "fn_marcar_configuracao_regra_google",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "6ca9b996a05b287d9c5aa8cdd40641a1f7ff704bea6bbb01c730a3adecdd34e2",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Trigger de configuração da regra Google, sem EXECUTE concedido a authenticated ou anon; o corpo apenas atualiza o carimbo da linha alterada."
+    },
+    {
       "signature": "fn_marcar_contato_como_cliente()",
       "name": "fn_marcar_contato_como_cliente",
       "security_definer": true,
@@ -1530,6 +1560,16 @@
       "body_sha256": "24e8538b2698c53c321cb352d004f450dd9b72a6f540620ecb8fffe525692c59",
       "status": "SAFE",
       "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
+    },
+    {
+      "signature": "fn_metricas_links_rastreaveis(uuid)",
+      "name": "fn_metricas_links_rastreaveis",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "dc64142a8cb30d4164a3ad0e1c6e1d83907eab4f0610d94de6b52a68d5411464",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "RPC de métricas com EXECUTE só para service_role; filtra cliques e leads por organization_id e não é chamável por authenticated ou anon."
     },
     {
       "signature": "fn_mesclar_contatos(uuid,uuid,uuid[])",
@@ -2257,9 +2297,9 @@
       "security_definer": false,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "5d2dbcd9fe2ce9672e8957648712464bddbee7c9a95a71d212d3202ca4b74a44",
+      "body_sha256": "da3e50dcfb67c1c18064d07e50763e71bf461d166602505272de5dab3de6e349",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
+      "reason": "Corpo da 0436 aceita eventos por etapa e conserva o filtro de organização; EXECUTE só para service_role, sem chamada direta por authenticated ou anon."
     },
     {
       "signature": "fn_stamp_stage_changed_at()",

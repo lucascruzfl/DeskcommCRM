@@ -907,6 +907,9 @@ export const AUDIT_ACTIONS = [
   // o dado que importa quando alguém pergunta "por que este cliente voltou a
   // receber?".
   "contact.unblocked",
+  "managed_client.onboarding_started",
+  "managed_client.onboarding_completed",
+  "managed_client.onboarding_failed",
 ] as const;
 
 /** Um código de auditoria. Derivado de `AUDIT_ACTIONS` — não redigite a lista. */
