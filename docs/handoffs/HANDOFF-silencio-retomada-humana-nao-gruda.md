@@ -72,7 +72,7 @@ Eliminado, um por um, com evidência — **não é nenhum destes**:
    nenhuma das 3 tentativas de silêncio logou erro de leitura nem de update.
 8. **Mecanismo geral quebrado** — outras conversas do MESMO tenant, na MESMA
    janela, ficaram silenciadas corretamente por 27+ minutos seguidos
-   (`grep "turno pulado" nos logs do worker`, lead `b7e4f713-…`).
+   (`grep "turno pulado" nos logs do worker`, lead `<uuid-producao-removido>`).
 
 ## A reprodução que FUNCIONOU (e por isso não fecha o caso)
 
@@ -110,7 +110,7 @@ que sobraram, nenhuma confirmada:
 
 ## Próximo passo (precisa de acesso que esta sessão não tinha)
 
-No painel do Supabase do projeto (`xiysdkvcvnqbzkknwdzd`) → **Logs → API
+No painel do Supabase do projeto (`<ref-projeto-producao-removido>`) → **Logs → API
 Logs / Postgres Logs**, filtrar por `PATCH /rest/v1/conversations` no
 intervalo **2026-09-02 11:59:00–12:19:00 UTC**, e conferir o `id` filtrado e o
 corpo da resposta das 3 chamadas. Isso mostra se o Supabase recebeu e

@@ -3,8 +3,8 @@
 > Documento **vivo**. Alimentado a cada avanço, cada bug encontrado, cada coisa deixada para trás.
 > Toda afirmação declara o **SHA curto** de onde foi medida. Número sem SHA não compara.
 >
-> Contrato: [`docs/specs/16-spec-tres-papeis-do-agente.md`](docs/specs/16-spec-tres-papeis-do-agente.md)
-> Doutrina: [`docs/doctrine/separacao-fala-e-operacao.md`](docs/doctrine/separacao-fala-e-operacao.md)
+> Contrato: [`docs/specs/16-spec-tres-papeis-do-agente.md`](../../docs/specs/16-spec-tres-papeis-do-agente.md)
+> Doutrina: [`docs/doctrine/separacao-fala-e-operacao.md`](../../docs/doctrine/separacao-fala-e-operacao.md)
 > Branch: `feat/tres-papeis-do-agente` · Base: `origin/main` = `0a85d251`
 > **Worktree dedicado:** `/Users/rafaelmelgaco/DeskcommCRM-tres-papeis` — a árvore principal foi
 > trocada por outra sessão duas vezes no meio do trabalho, e o worktree acabou com a disputa.
@@ -356,7 +356,7 @@ nunca acontecer, silenciosamente.
 
 ### 🔴 O sinal de sucesso do passo 6 foi medido — e NÃO se cumpriu
 
-Relatório: [`RELATORIO-passo6.md`](evidence/ia-360-w4/medicao-vazamento/RELATORIO-passo6.md).
+Relatório: [`RELATORIO-passo6.md`](../../evidence/ia-360-w4/medicao-vazamento/RELATORIO-passo6.md).
 Mesmo modelo da linha de base (`gpt-5.6-terra`), 10 cenários × 3 configurações.
 
 | configuração | taxa |

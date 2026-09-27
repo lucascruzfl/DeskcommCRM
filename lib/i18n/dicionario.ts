@@ -37,6 +37,194 @@ import type { Idioma } from "./idiomas";
 type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>>>;
 
 export const DICIONARIO: Traducoes = {
+  // ─── BUSCA DENTRO DA CONVERSA (extraída do PR #1793) ───
+  "Resultados nas mensagens carregadas": { es: "Resultados en los mensajes cargados" },
+  "Buscar nesta conversa": { es: "Buscar en esta conversación" },
+  "Buscar nas mensagens carregadas": { es: "Buscar en los mensajes cargados" },
+  "Fechar busca": { es: "Cerrar búsqueda" },
+  "Estado": { es: "Estado" },
+  // Links rastreáveis.
+  "Links rastreáveis": { es: "Enlaces rastreables" },
+  "Informe a URL HTTPS pública do seu site.": { es: "Introduce la URL HTTPS pública de tu sitio." },
+  "Permita a abertura da aba para verificar o site.": { es: "Permite abrir la pestaña para verificar el sitio." },
+  "Script carregado e botão de WhatsApp reconhecido. Confira o código ao clicar no site.": { es: "Script cargado y botón de WhatsApp reconocido. Comprueba el código al hacer clic en el sitio." },
+  "Script carregado, mas nenhum botão deste número foi encontrado na abertura da página.": { es: "Script cargado, pero no se encontró ningún botón de este número al abrir la página." },
+  "Não foi possível confirmar automaticamente. Confira o script, o domínio e os bloqueios do navegador; este resultado não prova que o script está ausente.": { es: "No se pudo confirmar automáticamente. Revisa el script, el dominio y los bloqueos del navegador; este resultado no demuestra que falte el script." },
+  "Verificando na aba aberta. Aguarde até 20 segundos.": { es: "Verificando en la pestaña abierta. Espera hasta 20 segundos." },
+  "Crie um link por campanha ou botão. O código liga o clique à mensagem enviada pelo visitante.": { es: "Crea un enlace por campaña o botón. El código vincula el clic con el mensaje enviado por el visitante." },
+  "As métricas estão indisponíveis. Atualize a página para tentar novamente.": { es: "Las métricas no están disponibles. Actualiza la página para volver a intentarlo." },
+  "Cliques": { es: "Clics" },
+  "As contagens usam os registros ainda retidos no CRM. Cliques incluem acessos repetidos; contatos e negócios são distintos por link. Não representam pessoas únicas nem o total histórico após o expurgo.": { es: "Los recuentos usan los registros aún conservados en el CRM. Los clics incluyen visitas repetidas; contactos y negocios son distintos por enlace. No representan personas únicas ni el total histórico tras la eliminación por retención." },
+  "Link salvo.": { es: "Enlace guardado." },
+  "Não foi possível salvar este link. Atualize a página e tente novamente.": { es: "No se pudo guardar este enlace. Actualiza la página y vuelve a intentarlo." },
+  "Editar link": { es: "Editar enlace" },
+  "Novo link": { es: "Nuevo enlace" },
+  "WhatsApp com código do país": { es: "WhatsApp con código de país" },
+  "Mensagem inicial": { es: "Mensaje inicial" },
+  "Onde será usado": { es: "Dónde se usará" },
+  "Orgânico": { es: "Orgánico" },
+  "Origem da campanha": { es: "Origen de la campaña" },
+  "Meio da campanha": { es: "Medio de la campaña" },
+  "Link ativo": { es: "Enlace activo" },
+  "Prévia da mensagem": { es: "Vista previa del mensaje" },
+  "Este link está desativado e não abre o WhatsApp. Ative e salve para usar.": { es: "Este enlace está desactivado y no abre WhatsApp. Actívalo y guarda para usarlo." },
+  "Os códigos abaixo refletem a última configuração salva.": { es: "Los códigos siguientes reflejan la última configuración guardada." },
+  "Instale uma vez antes de fechar o head e mantenha o botão normal de WhatsApp. Use apenas um script por número. O visitante precisa enviar a mensagem com o código para a atribuição chegar ao CRM.": { es: "Instálalo una vez antes de cerrar el head y conserva el botón normal de WhatsApp. Usa solo un script por número. El visitante debe enviar el mensaje con el código para que la atribución llegue al CRM." },
+  "URL do site": { es: "URL del sitio" },
+  "Sufixo de URL final do Google Ads": { es: "Sufijo de URL final de Google Ads" },
+  "Copiar sufixo": { es: "Copiar sufijo" },
+  "Ative a codificação automática no Google Ads. O script preserva gclid, gbraid ou wbraid recebidos no site. UTMs sozinhas identificam a origem no CRM, mas não comprovam uma conversão no Google.": { es: "Activa el etiquetado automático en Google Ads. El script conserva gclid, gbraid o wbraid recibidos en el sitio. Las UTM solas identifican el origen en el CRM, pero no demuestran una conversión en Google." },
+  "Não foi possível ler os links. Atualize a página para tentar novamente.": { es: "No se pudieron leer los enlaces. Actualiza la página para volver a intentarlo." },
+  "Confira o nome, o telefone internacional e a mensagem.": { es: "Revisa el nombre, el teléfono internacional y el mensaje." },
+  "Entre novamente para salvar.": { es: "Vuelve a iniciar sesión para guardar." },
+  "Esta sessão de suporte não permite alterações.": { es: "Esta sesión de soporte no permite cambios." },
+  "Somente administradores podem alterar os links.": { es: "Solo los administradores pueden modificar los enlaces." },
+  // Conversões: histórico e diagnóstico.
+  "Seções de conversões": { es: "Secciones de conversiones" },
+  "Não consegui ler o histórico agora. Atualize a página em instantes.": { es: "No pude leer el historial ahora. Actualiza la página en unos instantes." },
+  "Não consegui ler o diagnóstico agora. Atualize a página em instantes.": { es: "No pude leer el diagnóstico ahora. Actualiza la página en unos instantes." },
+  "Instalação sem credenciais do Google Ads": { es: "Instalación sin credenciales de Google Ads" },
+  "Quem instalou o sistema precisa configurar GOOGLE_ADS_OAUTH_CLIENT_ID e GOOGLE_ADS_OAUTH_CLIENT_SECRET. Até lá, nada é enviado ao Google.": { es: "Quien instaló el sistema debe configurar GOOGLE_ADS_OAUTH_CLIENT_ID y GOOGLE_ADS_OAUTH_CLIENT_SECRET. Hasta entonces, no se envía nada a Google." },
+  "Conta Google não conectada": { es: "Cuenta de Google no conectada" },
+  "Clique em Conectar com Google e informe o Customer ID da conta de anúncios.": { es: "Haz clic en Conectar con Google e indica el Customer ID de la cuenta de anuncios." },
+  "Envio pausado": { es: "Envío en pausa" },
+  "A conta está conectada, mas o envio está desligado na aba Configuração.": { es: "La cuenta está conectada, pero el envío está desactivado en la pestaña Configuración." },
+  "A conta está conectada e o envio está ligado.": { es: "La cuenta está conectada y el envío está activado." },
+  "Conversões chegando ao Google": { es: "Conversiones llegando a Google" },
+  "Nenhuma conversão aceita ainda": { es: "Ninguna conversión aceptada todavía" },
+  "Pode ser falta de negócios vindos de anúncio do Google, ou a captura do clique ainda não configurada no site.": { es: "Puede deberse a que no hay negocios que vengan de anuncios de Google o a que la captura del clic aún no está configurada en el sitio." },
+  "Sem falhas recentes": { es: "Sin fallos recientes" },
+  "Abra o histórico filtrando por Falhas: o detalhe de cada linha é a resposta do Google.": { es: "Abre el historial filtrando por Fallos: el detalle de cada línea es la respuesta de Google." },
+  "Nenhum envio foi recusado nos últimos 7 dias.": { es: "Ningún envío fue rechazado en los últimos 7 días." },
+  "Nada aguardando o Google": { es: "Nada en espera de Google" },
+  "A confirmação é consultada sozinha. Passadas 24 horas, vira pendência na aba Configuração.": { es: "La confirmación se consulta sola. Pasadas 24 horas, se convierte en pendiente en la pestaña Configuración." },
+  "Todos os envios já têm resposta.": { es: "Todos los envíos ya tienen respuesta." },
+  "A venda está configurada. Etapas ligadas dão mais sinal ao Google antes da venda.": { es: "La venta está configurada. Las etapas activadas le dan más señal a Google antes de la venta." },
+  "A venda (negócio ganho) não tem ação de conversão: é ela que ensina o Google a buscar quem compra.": { es: "La venta (negocio ganado) no tiene acción de conversión: es la que le enseña a Google a buscar a quien compra." },
+  "Dê um nome à conversão antes de criar a ação no Google.": {
+    es: "Dale un nombre a la conversión antes de crear la acción en Google.",
+  },
+  "Ação criada no Google:": { es: "Acción creada en Google:" },
+  "Salve as regras.": { es: "Guarda las reglas." },
+  "Não consegui criar a ação no Google agora.": { es: "No pude crear la acción en Google ahora." },
+  "Cria a ação de conversão na sua conta do Google Ads": {
+    es: "Crea la acción de conversión en tu cuenta de Google Ads",
+  },
+  "Criar direto no Google exige o developer token do Google Ads nesta instalação e a conta reconectada. Enquanto isso, cole o ID da ação.":
+    {
+      es: "Crear directamente en Google requiere el developer token de Google Ads en esta instalación y la cuenta reconectada. Mientras tanto, pega el ID de la acción.",
+    },
+  "Criar no Google": { es: "Crear en Google" },
+  "Saúde da integração com o Google Ads": { es: "Estado de la integración con Google Ads" },
+  Problema: { es: "Problema" },
+  "Venda (negócio ganho)": { es: "Venta (negocio ganado)" },
+  "Ação de conversão da venda (ID)": { es: "Acción de conversión de la venta (ID)" },
+  "Recebe a compra quando o negócio é marcado como ganho. Deixe vazio se você só quer enviar etapas do funil.":
+    {
+      es: "Recibe la compra cuando el negocio se marca como ganado. Déjalo vacío si solo quieres enviar etapas del embudo.",
+    },
+  "Categoria da conversão": { es: "Categoría de la conversión" },
+  "Valor do negócio": { es: "Valor del negocio" },
+  "Com o valor, o Google pode otimizar por receita e não só por volume. Venda sem valor vai sem valor — nunca como zero.":
+    {
+      es: "Con el valor, Google puede optimizar por ingresos y no solo por volumen. Una venta sin valor se envía sin valor, nunca como cero.",
+    },
+  "Enviar o telefone do contato criptografado": { es: "Enviar el teléfono del contacto cifrado" },
+  "O telefone vai em SHA-256, nunca em claro, e ajuda o Google a ligar a conversão a quem clicou no anúncio. É dado pessoal: ligue só se a sua política de privacidade cobre esse uso.":
+    {
+      es: "El teléfono va en SHA-256, nunca en claro, y ayuda a Google a vincular la conversión con quien hizo clic en el anuncio. Es un dato personal: actívalo solo si tu política de privacidad cubre ese uso.",
+    },
+  "Enviar a venda; o valor vai quando estiver preenchido": {
+    es: "Enviar la venta; el valor va cuando esté completado",
+  },
+  "Só enviar venda com valor preenchido": { es: "Solo enviar ventas con valor completado" },
+  "Enviar a venda sempre sem valor": { es: "Enviar la venta siempre sin valor" },
+  "Últimas 24h": { es: "Últimas 24 h" },
+  "7 dias": { es: "7 días" },
+  "30 dias": { es: "30 días" },
+  "Todo o período": { es: "Todo el período" },
+  "Não enviados": { es: "No enviados" },
+  "Não enviado": { es: "No enviado" },
+  "Todos os eventos": { es: "Todos los eventos" },
+  Plataforma: { es: "Plataforma" },
+  "Buscar por negócio": { es: "Buscar por negocio" },
+  "Nome do negócio": { es: "Nombre del negocio" },
+  Filtrar: { es: "Filtrar" },
+  envio: { es: "envío" },
+  envios: { es: "envíos" },
+  "Nenhum envio com estes filtros.": { es: "Ningún envío con estos filtros." },
+  "ID do evento": { es: "ID del evento" },
+  Protocolo: { es: "Protocolo" },
+  "sem valor": { es: "sin valor" },
+  "Aconteceu em": { es: "Ocurrió el" },
+  "Etapas recomendadas ligadas. Informe ou crie a ação de conversão de cada uma e salve.": {
+    es: "Etapas recomendadas activadas. Indica o crea la acción de conversión de cada una y guarda.",
+  },
+  "Regras salvas.": { es: "Reglas guardadas." },
+  "Crie um funil com etapas para escolher o que cada etapa informa ao Google Ads.": {
+    es: "Crea un embudo con etapas para elegir qué informa cada etapa a Google Ads.",
+  },
+  "O que cada etapa do funil informa ao Google Ads": {
+    es: "Qué informa cada etapa del embudo a Google Ads",
+  },
+  "Quanto mais cedo você avisa, mais dados a campanha tem para aprender — mas só a venda ensina o Google a buscar quem compra. Cada etapa ligada envia a sua ação de conversão uma vez por negócio, quando ele entra ali.":
+    {
+      es: "Cuanto antes avisas, más datos tiene la campaña para aprender, pero solo la venta le enseña a Google a buscar a quien compra. Cada etapa activada envía su acción de conversión una vez por negocio, cuando este entra en ella.",
+    },
+  "etapas enviando": { es: "etapas enviando" },
+  "Usar o recomendado": { es: "Usar lo recomendado" },
+  "não envia conversão": { es: "no envía conversión" },
+  "Enviar conversão nesta etapa": { es: "Enviar conversión en esta etapa" },
+  "Nome da conversão": { es: "Nombre de la conversión" },
+  "ex.: Lead qualificado": { es: "ej.: Lead calificado" },
+  "Ação de conversão (ID)": { es: "Acción de conversión (ID)" },
+  "É como o Google agrupa a conversão nos relatórios e nos lances.": {
+    es: "Es cómo Google agrupa la conversión en los informes y en las pujas.",
+  },
+  "Canal de entrada": { es: "Canal de entrada" },
+  'Incluir na coluna "Conversões" (os lances otimizam por ela)': {
+    es: 'Incluir en la columna "Conversiones" (las pujas optimizan por ella)',
+  },
+  "As conversões só saem quando o negócio muda de etapa — pela equipe, pela IA ou por automação — e só para quem veio de anúncio do Google. Movimentos anteriores a ligar a regra não são enviados.":
+    {
+      es: "Las conversiones solo salen cuando el negocio cambia de etapa, por el equipo, por la IA o por una automatización, y solo para quien llegó desde un anuncio de Google. Los movimientos anteriores a activar la regla no se envían.",
+    },
+  "Salvar regras": { es: "Guardar reglas" },
+  "Toda etapa ligada precisa de um nome e do ID da ação de conversão.": {
+    es: "Toda etapa activada necesita un nombre y el ID de la acción de conversión.",
+  },
+  "Só um administrador da organização pode mudar estas regras.": {
+    es: "Solo un administrador de la organización puede cambiar estas reglas.",
+  },
+  "Uma das etapas não existe mais ou foi fechada. Atualize a página.": {
+    es: "Una de las etapas ya no existe o fue cerrada. Actualiza la página.",
+  },
+  "Contato (conversa, ligação, e-mail)": { es: "Contacto (conversación, llamada, correo)" },
+  "Envio de formulário de lead": { es: "Envío de formulario de lead" },
+  "Lead importado": { es: "Lead importado" },
+  "Lead convertido": { es: "Lead convertido" },
+  "Pedido de orçamento": { es: "Solicitud de presupuesto" },
+  "Assinatura paga": { es: "Suscripción paga" },
+  "Início de checkout": { es: "Inicio de pago" },
+  "Adicionou ao carrinho": { es: "Agregó al carrito" },
+  "Lead por ligação": { es: "Lead por llamada" },
+  "Visita à loja": { es: "Visita a la tienda" },
+  "Venda em loja física": { es: "Venta en tienda física" },
+  "Visualização de página": { es: "Vista de página" },
+  Download: { es: "Descarga" },
+  "Pedido de rota": { es: "Solicitud de ruta" },
+  "Clique de saída": { es: "Clic de salida" },
+  Engajamento: { es: "Interacción" },
+  "Todos os canais": { es: "Todos los canales" },
+  "Só WhatsApp": { es: "Solo WhatsApp" },
+  "Só fora do WhatsApp": { es: "Solo fuera de WhatsApp" },
+  "Histórico de envios": { es: "Historial de envíos" },
+  Diagnóstico: { es: "Diagnóstico" },
+  'A venda fechou sem valor preenchido. A Meta exige valor e moeda em uma compra — preencha o valor do negócio e use o botão de reprocessamento. No Google, você também pode escolher enviar a venda sem valor em "Valor do negócio".':
+    {
+      es: 'La venta se cerró sin importe. Meta exige importe y moneda en una compra: completa el valor del negocio y usa el botón para reprocesar. En Google también puedes elegir enviar la venta sin valor en "Valor del negocio".',
+    },
+
   // ─── CAMPOS OBRIGATÓRIOS (issue #1536) ───
   "Campos obrigatórios": { es: "Campos obligatorios" },
   // Editor de `obrigatorio_em` no funil (CR do mantenedor no PR #1688).
@@ -1493,6 +1681,16 @@ export const DICIONARIO: Traducoes = {
   },
   "Os fluxos abaixo só entram em ação para um cliente se este agente estiver publicado com follow-up habilitado.": {
     es: "Los flujos de abajo solo entran en acción para un cliente si este agente está publicado con el seguimiento habilitado.",
+  },
+  "Permitir que o agente marque novos retornos por conta própria": {
+    es: "Permitir que el agente programe nuevos retornos por su cuenta",
+  },
+  "Desligar impede novos retornos prometidos pelo agente. Os fluxos configurados abaixo e a consulta ou o cancelamento de retornos existentes continuam disponíveis.": {
+    es: "Al desactivarlo, el agente no podrá programar nuevos retornos. Los flujos configurados abajo y la consulta o cancelación de retornos existentes seguirán disponibles.",
+  },
+  "Fluxos automáticos habilitados:": { es: "Flujos automáticos habilitados:" },
+  "Retornos marcados pelo agente habilitados:": {
+    es: "Retornos programados por el agente habilitados:",
   },
   // ─── Agentes de IA: seletor de modelo, capacidades, credencial, handoff ───
   Modelo: { es: "Modelo" },
@@ -10279,8 +10477,8 @@ export const DICIONARIO: Traducoes = {
   "Lista os assuntos que já foram passados para uma pessoa resolver, com o estado de cada um, para o agente não pedir duas vezes a mesma coisa.": {
     es: "Lista los asuntos que ya se pasaron a una persona para que los resuelva, con el estado de cada uno, para que el agente no pida dos veces lo mismo.",
   },
-  "Lista os compromissos com hora marcada de um cliente ou de um dia, com a situação de cada um: marcado, realizado ou desmarcado.": {
-    es: "Lista los compromisos con fecha y hora de un cliente o de un día, con el estado de cada uno: programado, realizado o cancelado.",
+  "Lista os compromissos com hora marcada de um cliente, de um dia ou de um período de até 62 dias, com a situação de cada um: marcado, realizado ou desmarcado.": {
+    es: "Lista los compromisos con fecha y hora de un cliente, de un día o de un período de hasta 62 días, con el estado de cada uno: programado, realizado o cancelado.",
   },
   "Lista os textos que a empresa compartilhou com a equipe para responder as situações de sempre, com o atalho de cada um e as variáveis que cada texto usa.": {
     es: "Lista los textos que la empresa compartió con el equipo para responder a las situaciones de siempre, con el atajo de cada uno y las variables que usa cada texto.",

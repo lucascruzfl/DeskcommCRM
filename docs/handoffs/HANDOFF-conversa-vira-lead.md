@@ -2,7 +2,7 @@
 
 > Branch `feat/conversa-vira-lead`, empilhada sobre `feat/tres-papeis-do-agente` (spec 16, PR #181).
 > Worktree `/Users/rafaelmelgaco/DeskcommCRM-tres-papeis`. Spec:
-> [`docs/specs/17-spec-conversa-vira-lead.md`](docs/specs/17-spec-conversa-vira-lead.md).
+> [`docs/specs/17-spec-conversa-vira-lead.md`](../../docs/specs/17-spec-conversa-vira-lead.md).
 > Antecessor: [`HANDOFF-tres-papeis.md`](HANDOFF-tres-papeis.md) — as regras de trabalho ao final
 > daquele arquivo continuam valendo aqui.
 
@@ -141,8 +141,8 @@ Prova de tela: [`evidence/spec-17/contato-com-email-salvo.png`](evidence/spec-17
 
 ```
 "_data": { "key": {
-    "remoteJid":    "70192801575156@lid",
-    "remoteJidAlt": "558183647258@s.whatsapp.net",
+    "remoteJid":    "550000000000000@lid",
+    "remoteJidAlt": "5500000000000@s.whatsapp.net",
     "addressingMode": "lid" } }
 ```
 

@@ -45,12 +45,12 @@ que JÁ RODA e vai atualizar?**
 
 | | |
 |---|---|
-| **Worktree** | `/Users/rafaelmelgaco/DeskcommCRM-marca` |
+| **Worktree** | `/Users/EXEMPLO/DeskcommCRM-marca` |
 | **Branch** | `feat/marca-propria`, criada de `origin/main` @ `f9abedd0` |
 | **Banco** | Supabase local `127.0.0.1:54321` — **compartilhado com outras sessões**, checar antes de DDL |
-| **Blueprint** | https://claude.ai/code/artifact/1aa1b097-d6f4-4aff-b388-194b1e546ca2 |
+| **Blueprint** | https://claude.ai/code/artifact/00000000-0000-4000-8000-000000000000 |
 
-> ⚠️ O worktree principal (`/Users/rafaelmelgaco/DeskcommCRM`) é de **outra sessão** —
+> ⚠️ O worktree principal (`/Users/EXEMPLO/DeskcommCRM`) é de **outra sessão** —
 > mudou de `fix/alertas-de-seguranca-github` para `fix/issues-triadas` no meio desta.
 > Não commitar lá.
 

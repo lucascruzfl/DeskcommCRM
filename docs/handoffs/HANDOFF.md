@@ -12,7 +12,7 @@
 
 > **Sobre o diário abaixo:** as menções à Vercel são registro do dia em que cada
 > entrada foi escrita. O CRM é self-host em VPS, e o deploy que vale está em
-> [`docs/runbooks/deploy.md`](docs/runbooks/deploy.md).
+> [`docs/runbooks/deploy.md`](../../docs/runbooks/deploy.md).
 
 ## Contexto fixo
 

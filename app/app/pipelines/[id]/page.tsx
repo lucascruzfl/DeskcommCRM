@@ -22,5 +22,5 @@ export default async function PipelinePage({ params }: { params: Promise<{ id: s
     .eq("id", id)
     .maybeSingle();
   if (!pipeline) notFound();
-  return <PipelinePageClient pipelineId={id} initialName={pipeline.name} />;
+  return <PipelinePageClient pipelineId={id} initialName={pipeline.name} role={activeOrg.role} />;
 }

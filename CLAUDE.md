@@ -540,7 +540,7 @@ Ao mexer em schema, RLS, RBAC, atribuição, escopo, roteamento, follow-up, webh
 
 **Registro obrigatório (senão o progresso é invisível):**
 - Mapa de jornadas vivo em `docs/testing/user-journey-map.md` — casos por jornada, prioridade (`[P0]` primeira impressão), e achados. Atualize quando adicionar cobertura ou achar bug.
-- Specs em `tests/e2e/*.spec.ts` que dirigem o **frontend** (não só API). Evidência visual (screenshot/trace) em `.superpowers/evidence/`.
+- Specs em `tests/e2e/*.spec.ts` que dirigem o **frontend** (não só API). Evidência visual (screenshot/trace) em `evidence/<entrega>/`, que é versionada; nunca em pasta que o `.gitignore` ignora, senão a prova não sai da sua máquina.
 - Bug achado executando → **conserta na causa raiz**, com migration versionada se tocar schema (ver doutrina abaixo), commit próprio, e re-teste verde como prova.
 
 **Medidas de front-end por ferramenta, nunca a olho** (`getBoundingClientRect`/`getComputedStyle` no Playwright). Ver `feedback_protocolo_execucao_visivel` na memória.
@@ -570,8 +570,24 @@ Processo padrão (siga sempre):
 1. **Arquivo versionado** em `supabase/migrations/` com o padrão do repo: `<timestamp>_<NNNN>_<slug>.sql` (ex.: `20260706210000_0027_whatsapp_conversation_unification.sql`). `NNNN` é o próximo número sequencial — e **não** é o do último arquivo da listagem:
 
    ```bash
-   ls supabase/migrations/ | grep -oE '_[0-9]{4}_' | tr -d _ | sort -n | tail -1
+   # A POPULAÇÃO da pergunta: main do PRODUTO (o remoto que aponta para
+   # melgarafael/DeskcommCRM, com qualquer nome) + TODO PR ABERTO, inclusive de
+   # fork. O `ls` abaixo mede o DISCO, que responde uma pergunta menor.
+   pnpm checar:colisao-de-migration   # declara o que mediu e o que não mediu
    ```
+
+   Se a leitura for manual, três coisas são obrigatórias: um `git fetch` antes (a árvore em dia
+   não é a main atual), `git ls-tree` da main do PRODUTO e não `ls` do disco, e o `NNNN` tirado
+   com a **âncora do nome canônico** aplicada ao nome **sem a pasta** —
+   `sed 's#.*/##' | sed -nE 's#^[0-9]{14}_([0-9]{4})_.*#\1#p'`. O
+   `ls | grep -oE '_[0-9]{4}_'` que estava aqui pegava um `_NNNN_` do SLUG (com
+   `…_0326_relatorio_2024_anual.sql` o teto virava 2024) e media a árvore de
+   trabalho, onde a 0336 já podia estar reservada por um PR aberto (#1273).
+
+   O `checar` mede o arquivo que você **já** acrescentou: sem migration nova, ele responde
+   `OK — nenhuma migration acrescentada` e não dá número. Crie o arquivo com um número provisório
+   e rode; ou, para alocar antes, use a enumeração do que está em voo em `triagem/TRIAGEM.md`
+   (modo de falha 37). O teto é a main **mais** tudo em voo, em NNNN **e** em timestamp.
 
    O nome do arquivo começa pelo **timestamp**, e timestamp e `NNNN` podem discordar: em
    09/09/2026 o `ls | tail -1` devolvia o `_0230_` (timestamp de 07/09) enquanto o maior `NNNN`
@@ -695,7 +711,7 @@ Antes de declarar uma task pronta:
 9. Env vars novas adicionadas em `.env.example` + `lib/env.ts`
 10. Doc atualizada se mudou contrato (PRD/spec)
 11. **Mudança de schema saiu como migration versionada + linha no MANIFEST** (ver Doutrina de Migrations) — clones conseguem atualizar
-12. **Se tocou UI/fluxo de usuário: provado pela tela como um leigo faria**, em ambiente fresco estilo VPS, com evidência visual (ver Doutrina de QA Visual com Recursos Reais) — curl não conta
+12. **Se tocou UI/fluxo de usuário: provado pela tela como um leigo faria**, em ambiente fresco estilo VPS, com evidência visual (ver Doutrina de QA Visual com Recursos Reais) — curl não conta. Quando o caminho passa por um agente de IA, o caso de aceite mede o **par** (a tela pelo agente + a ferramenta chamada direto, com o mesmo texto cru) e só conta como prova quando os dois concordam — emenda em [`docs/doctrine/prova-em-par.md`](docs/doctrine/prova-em-par.md) (#489)
 13. **Living System Checklist respondido** (lei em `docs/doctrine/sistema-vivo.md`; racional no manual `docs/doctrine/sistema-vivo/`) — a feature não é ilha: tem entrada + saída, emite atividade/log, aparece na tela, tem porta na navegação, tem mecanismo anti-morte, **declara seu laço de retorno** (invariante 7 — o que muda no sistema quando ela erra), e o mapa vivo (`docs/architecture/`) reflete peça nova com ≥2 arestas. Resposta que não **nomeia o artefato concreto** (consumidor real, tela real, log real) não conta
 14. **Tela nova tem porta** — declarada em **`lib/navigation/catalogo.ts`** (no `NAV_CATALOG`, com seu grupo), ou na allowlist de `tests/unit/navegacao-completude.test.ts` **com justificativa escrita**. Ter tela e ser alcançável são coisas diferentes: o CI reprova tela que existe mas em que só se chega digitando a URL.
 
