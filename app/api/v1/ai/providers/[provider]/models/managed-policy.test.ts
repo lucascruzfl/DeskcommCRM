@@ -32,7 +32,7 @@ describe("catálogo de modelos na área administrativa", () => {
       is: () => query,
       order: () => query,
       then: (resolve: (value: unknown) => unknown) =>
-        Promise.resolve(resolve({ data: [{ model_id: "modelo" }], error: null })),
+        Promise.resolve(resolve({ data: [{ model_id: "modelo", supports_tools: true }], error: null })),
     };
     mocks.client.mockResolvedValueOnce({ from: () => query });
     const response = await GET(
@@ -42,6 +42,6 @@ describe("catálogo de modelos na área administrativa", () => {
       },
     );
     expect(response.status).toBe(200);
-    expect((await response.json()).data.models).toEqual([{ model_id: "modelo" }]);
+    expect((await response.json()).data.models).toEqual([{ model_id: "modelo", supports_tools: true }]);
   });
 });

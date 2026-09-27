@@ -1963,7 +1963,9 @@ jobs:
         if: always()
         with:
           name: mcp-version-evidence-parte-${{ matrix.parte }}
-          path: .superpowers/evidence/mcp-versao-release-e-build.png
+          path: |
+            .superpowers/evidence/mcp-versao-release-e-build.png
+            .superpowers/evidence/managed/*.png
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7

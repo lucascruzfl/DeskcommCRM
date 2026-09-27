@@ -98,3 +98,13 @@ A regressão dirigida do segundo ajuste passou em 71 casos de seis arquivos de
 invariantes (mensagens, JWT/RLS/MCP persistido, cadeia managed, grants, automação
 e agenda), com fresh install e reapply. Registro MCP atual: 237 tools, zero
 nomes duplicados. O CI do commit final é a referência para a suíte completa.
+
+E2E `36288952935`: quatro cenários PASS. As capturas managed também são
+gravadas em `.superpowers/evidence/managed/` e publicadas pelo passo de prova
+visual existente, inclusive em sucesso, para tornar o gate revisável.
+
+O último lote unitário do recheck mostrou dois gates concretos: bloco de rate
+limit duplicado pelo merge managed (removido o anterior à idempotência, mantendo
+o limitador dentro da execução real como na stable) e mock de catálogo sem
+`supports_tools` (alinhado ao contrato oficial). A release/stable não tinham
+essa duplicação; a correção fica exclusivamente na branch managed.

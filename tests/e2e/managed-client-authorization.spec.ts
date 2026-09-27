@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "./helpers/test";
+import { mkdirSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { managedFixture } from "./helpers/managed-client-fixture";
 import { MANAGED_CLIENT_PRESETS } from "../../lib/managed-clients/presets";
@@ -20,7 +21,11 @@ async function login(page: Page, role: string) {
   await page.waitForURL(/\/app\//, { timeout: 120_000 });
 }
 async function evidence(page: Page, name: string) {
-  const shot = await page.screenshot({ fullPage: true });
+  mkdirSync(".superpowers/evidence/managed", { recursive: true });
+  const shot = await page.screenshot({
+    fullPage: true,
+    path: `.superpowers/evidence/managed/${name}.png`,
+  });
   await test.info().attach(name, { body: shot, contentType: "image/png" });
 }
 const forbiddenAreas = Object.entries(MANAGED_CLIENT_PRESETS["managed/aesthetic-clinic"].areas)
