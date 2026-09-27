@@ -119,7 +119,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   // escolheu como a sua palavra. Sem isto, a tela cairia num literal ("Negócio")
   // e o produto deixaria de servir cinco nichos com o mesmo código.
   const { data: funil } = await supabase
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("vocabulary")
     .eq("organization_id", activeOrg.orgId)
     .eq("is_default", true)
@@ -158,9 +158,7 @@ async function resolveNomes(
       idsDeUsuario.map(async (id) => {
         const { data } = await admin.auth.admin.getUserById(id);
         usuarios[id] =
-          (data?.user?.user_metadata?.full_name as string | undefined) ??
-          data?.user?.email ??
-          null;
+          (data?.user?.user_metadata?.full_name as string | undefined) ?? data?.user?.email ?? null;
       }),
     );
   }
@@ -171,11 +169,11 @@ async function resolveNomes(
     // manda toda query que cruza tabela tenant-aware dizer o inquilino em voz
     // alta em vez de terceirizar o recorte.
     const { data } = await supabase
-      .from("ai_agents")
-      .select("id, name")
+      .from("ai_agent_assignable_directory")
+      .select("agent_id, name")
       .eq("organization_id", orgId)
-      .in("id", idsDeAgente);
-    for (const a of data ?? []) agentes[a.id] = a.name;
+      .in("agent_id", idsDeAgente);
+    for (const a of data ?? []) agentes[a.agent_id] = a.name;
   }
 
   return { usuarios, agentes };

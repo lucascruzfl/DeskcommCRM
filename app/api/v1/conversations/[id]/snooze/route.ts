@@ -55,7 +55,7 @@ export async function POST(req: NextRequest, { params }: RouteParams): Promise<R
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .update({ snooze_until: snoozeUntil, snoozed_at: nowIso, snoozed_by_user_id: user.id })
     .eq("id", id)
     .eq("organization_id", org.orgId)
@@ -89,7 +89,7 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams): Promis
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .update({ snooze_until: null, snoozed_at: null, snoozed_by_user_id: null })
     .eq("id", id)
     .eq("organization_id", org.orgId)

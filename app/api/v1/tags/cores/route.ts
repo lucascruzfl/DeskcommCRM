@@ -41,16 +41,17 @@ export const dynamic = "force-dynamic";
 
 export async function GET(): Promise<Response> {
   const requestId = randomUUID();
-  const auth = await requireRole("viewer", { requestId, resource: "settings_tags" });
+  const auth = await requireRole("viewer", { requestId, resource: "conversations" });
   if (!auth.ok) return auth.response;
 
   const db = await createClient();
   const { data, error } = await db
-    .from("organizations")
+    .from("operational_organizations")
     .select("settings")
     .eq("id", auth.org.orgId)
     .maybeSingle();
-  if (error) return fail("internal_error", "Não foi possível carregar as cores.", 500, { requestId });
+  if (error)
+    return fail("internal_error", "Não foi possível carregar as cores.", 500, { requestId });
 
   // A MESMA função que o mapa do chip usa (`etiquetasComCor`): uma
   // interpretação só de "etiqueta com cor", testável sem servidor.

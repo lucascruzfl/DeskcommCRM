@@ -9,6 +9,7 @@ export default async function AppHome() {
       org?.interface_settings,
       user.is_platform_admin && !user.support,
       org?.role ?? null,
+      org?.managed_policy,
     ),
   );
 }

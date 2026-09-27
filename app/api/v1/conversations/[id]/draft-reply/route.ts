@@ -20,13 +20,15 @@ async function context(ctx: Ctx, requestId: string) {
   const { id } = await ctx.params;
   const db = await createClient();
   const { data: conversation } = await db
-    .from("conversations")
+    .from("operational_conversations")
     .select("id,contact_id,channel_session_id")
     .eq("organization_id", auth.org.orgId)
     .eq("id", id)
     .maybeSingle();
   if (!conversation)
-    return { response: fail("not_found", t("Conversa não encontrada."), 404, { requestId }) } as const;
+    return {
+      response: fail("not_found", t("Conversa não encontrada."), 404, { requestId }),
+    } as const;
   return { auth, conversation, t } as const;
 }
 export async function GET(_req: NextRequest, ctx: Ctx) {

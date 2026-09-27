@@ -35,7 +35,7 @@ on:
   pull_request:
     branches: [main, mcp/stable]
   push:
-    branches: [main]
+    branches: [main, feat/managed-aesthetic-clinic-onboarding]
 
 # O GITHUB_TOKEN deste job serve a `actions/checkout` (clone) e a
 # `actions/setup-node` (manifest de `actions/node-versions`, repo público).
@@ -184,7 +184,9 @@ jobs:
       # uma rodada por parte.
       fail-fast: false
       matrix:
-        parte: [1, 2, 3, 4, 5]
+        # A branch de certificação mede só a spec managed; PRs e main mantêm
+        # a matriz completa. O mesmo job prepara Supabase, env e build.
+        parte: ${{ fromJSON(github.ref == 'refs/heads/feat/managed-aesthetic-clinic-onboarding' && '[5]' || '[1,2,3,4,5]') }}
     # ─────────────────────────────────────────────────────────────────────────
     # A COBERTURA DEIXA DE SER PROSA DIGITADA À MÃO.
     #
@@ -637,6 +639,7 @@ jobs:
         wizard-do-funcionario.spec.ts mfa-opcional.spec.ts inbox-responder-citando.spec.ts
         agenda-tela-do-produto.spec.ts
         notificacoes-diz-o-que-falta.spec.ts
+        sons-dos-avisos.spec.ts
         relogio-http-cron-externo.spec.ts
         j20-elegibilidade-respondi.spec.ts j20-elegibilidade-followup.spec.ts
         j20-elegibilidade-atendimento-manual.spec.ts
@@ -726,6 +729,7 @@ jobs:
         agenda-remarcar-e-cancelar.spec.ts
         agenda-tipos-de-agendamento.spec.ts
         cliente-pela-agenda.spec.ts
+        agenda-dia-desenhado-na-virada-do-mes.spec.ts
         agenda-grade-interativa.spec.ts
         agenda-papel-de-leitura.spec.ts
         agenda-busca-cliente-pelo-nome-do-perfil.spec.ts
@@ -737,6 +741,7 @@ jobs:
         escopo-de-funil-do-agente.spec.ts
         followup-tempo-adaptativo.spec.ts
         gatilho-de-etapa.spec.ts
+        etapa-avisa-na-central.spec.ts
         gatilho-de-caso.spec.ts
         conversa-do-caso.spec.ts
         aviso-de-caso-no-whatsapp.spec.ts
@@ -814,7 +819,7 @@ jobs:
       # passo "Subir WAHA e o par Redis da VPS fresca") — a jornada de onboarding é exercitada; o que só
       # o Plus tem, não.
       #
-# As CINCO specs da missão "Follow-up Vivo" (`followup-linguagem`,
+      # As CINCO specs da missão "Follow-up Vivo" (`followup-linguagem`,
       # `followup-ramos`, `followup-dossie`, `followup-tempo-adaptativo`,
       # `gatilho-de-etapa`) entraram nas listas de execução, e não aqui, porque a
       # medição não dá motivo para excluí-las: grep de waha/resend/nuvemshop/redis
@@ -967,6 +972,7 @@ jobs:
         troca-de-organizacao-tem-volta.spec.ts
         organizacoes-criacao-convite-e-cache.spec.ts
         inbox-abas-espelham-o-comando.spec.ts
+        busca-na-conversa.spec.ts
         moeda-da-organizacao.spec.ts
         zona-de-perigo-apaga-dados-de-teste.spec.ts
         email-da-instalacao-pela-tela.spec.ts
@@ -1077,6 +1083,8 @@ jobs:
       # — as duas nunca disputam a porta, porque a parte roda uma spec por vez.
       # PREVISÃO, não medida: ~1 min.
       SPECS_PARTE_5: >-
+        managed-client-authorization.spec.ts
+        managed-client-onboarding.spec.ts
         inbox-busca-e-filtros-dizem-a-verdade.spec.ts
         extensoes-da-instalacao.spec.ts
         admin-credencial-google.spec.ts
@@ -1213,6 +1221,14 @@ jobs:
           echo "parte ${{ matrix.parte }}: relógio do job iniciado em $(date -u +%H:%M:%S) UTC"
 
       - uses: actions/checkout@v7
+
+      - name: Verificar migrations antes do preparo pesado
+        if: github.ref == 'refs/heads/feat/managed-aesthetic-clinic-onboarding'
+        run: |
+          set -euo pipefail
+          git remote add upstream https://github.com/melgarafael/DeskcommCRM.git
+          git fetch --no-tags --depth=1 upstream main:refs/remotes/upstream/main
+          bash scripts/checar-colisao-de-migration.sh upstream/main
 
       # ─── As portas do Supabase saem da faixa efêmera do kernel ─────────────
       #
@@ -1835,6 +1851,9 @@ jobs:
             5) LISTA="$SPECS_PARTE_5" ;;
             *) echo "::error::parte ${{ matrix.parte }} sem lista"; exit 1 ;;
           esac
+          if [ "$GITHUB_REF" = 'refs/heads/feat/managed-aesthetic-clinic-onboarding' ]; then
+            LISTA='managed-client-authorization.spec.ts'
+          fi
           # Falha alto se a variável vier vazia: sem isto, um typo no nome faria
           # o playwright rodar a suíte INTEIRA (ou nenhuma) e o job ficaria
           # verde medindo outra coisa.
@@ -1949,7 +1968,9 @@ jobs:
         if: always()
         with:
           name: mcp-version-evidence-parte-${{ matrix.parte }}
-          path: .superpowers/evidence/mcp-versao-release-e-build.png
+          path: |
+            evidence/mcp-versao-release-e-build.png
+            evidence/managed/*.png
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7

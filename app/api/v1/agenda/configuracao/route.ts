@@ -13,7 +13,7 @@ export async function GET() {
   const { data, error } = await (
     await createClient()
   )
-    .from("organizations")
+    .from("operational_organizations")
     .select("settings")
     .eq("id", auth.org.orgId)
     .single();

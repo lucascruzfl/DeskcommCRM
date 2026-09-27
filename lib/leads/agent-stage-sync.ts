@@ -293,6 +293,7 @@ export async function sincronizaEstagioDoAgente(
     // ela, etapa de perda é indistinguível de etapa comum e o agente escreveria a
     // etapa que o banco recusa — recusa que chega ao worker como falha de escrita.
     .select("id, name, agent_stage_hint, is_archived, is_lost, is_won")
+    .eq("organization_id", input.organizationId)
     .eq("pipeline_id", lead.pipeline_id);
   // Mesmo motivo do SELECT acima: sem esta linha, banco fora = pipeline sem
   // hint nenhum = "sem_mapeamento", e o incidente se disfarça de configuração.
@@ -353,6 +354,7 @@ export async function sincronizaEstagioDoAgente(
   const { data: origem } = await admin
     .from("crm_stages")
     .select("name")
+    .eq("organization_id", input.organizationId)
     .eq("id", lead.stage_id)
     .maybeSingle();
 
@@ -379,7 +381,12 @@ export async function sincronizaEstagioDoAgente(
     // motivo fora do vocabulário do funil) e mantém o rótulo honesto.
     const recusa = recusaDeMotivoDaPerdaPeloBanco(error);
     if (recusa) {
-      return { moveu: false, motivo: "perda_sem_motivo", leadId: lead.id, detalhe: recusa.mensagem };
+      return {
+        moveu: false,
+        motivo: "perda_sem_motivo",
+        leadId: lead.id,
+        detalhe: recusa.mensagem,
+      };
     }
     return { moveu: false, motivo: "falha_de_escrita", leadId: lead.id, detalhe: error.message };
   }
@@ -400,10 +407,7 @@ export async function sincronizaEstagioDoAgente(
     sourceModule: "crm",
     sourceId: lead.id,
     actor: { type: "webhook_source", id: "agent-stage-sync" },
-    reason: stageChangeReason(
-      (origem as { name: string } | null)?.name ?? null,
-      destino.stageName,
-    ),
+    reason: stageChangeReason((origem as { name: string } | null)?.name ?? null, destino.stageName),
     payload: { passo_do_agente: input.passo, de: lead.stage_id, para: destino.stageId },
   });
   if (!atividade.ok) {

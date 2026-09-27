@@ -27,12 +27,9 @@ import { MOEDA_PADRAO } from "@/lib/money";
  * (`organization_id` resolvido de fonte confiável, CLAUDE.md multi-tenancy).
  * `produtoCreateSchema` nem declara o campo, então o Zod o descarta antes.
  */
-export async function moedaDaOrganizacao(
-  supabase: SupabaseClient,
-  orgId: string,
-): Promise<string> {
+export async function moedaDaOrganizacao(supabase: SupabaseClient, orgId: string): Promise<string> {
   const { data, error } = await supabase
-    .from("organizations")
+    .from("operational_organizations")
     .select("currency")
     .eq("id", orgId)
     .maybeSingle();

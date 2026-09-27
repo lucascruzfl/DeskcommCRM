@@ -81,6 +81,7 @@ export function createMcpServer(
           ...(idempotencyKey !== undefined ? { idempotencyKey } : {}),
           organizationId: auth.organizationId,
           role: auth.role,
+          managedPolicy: auth.managedPolicy,
           actor: auth.actor,
           apiTokenId: auth.apiTokenId,
           provisionedByUserId: auth.provisionedByUserId,

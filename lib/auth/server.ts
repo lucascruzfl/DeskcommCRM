@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { combinarInterfaces } from "@/lib/navigation/interface";
+import type { ManagedAreaPolicy } from "@/lib/managed-clients/policy";
 /**
  * Server-side auth helpers — load AuthUser, resolve active org, gate routes.
  *
@@ -87,10 +88,10 @@ function escolherMembroAtivo(
  * Loads the AuthUser for the current request. Returns null if unauthenticated.
  * Use only in Server Components / Route Handlers / Server Actions.
  *
- * Uses the user-scoped server client (cookie session). RLS policies allow:
- * - user_organizations: user_id = auth.uid() (user_orgs_select)
- * - organizations: id IN fn_user_org_ids()  (orgs_select)
- * - platform_admins: only platform admins read (so non-admins get null — correct)
+ * Validates the cookie session with getUser(). Memberships then use the admin
+ * client with an explicit user_id filter so the organization switcher can read
+ * its two narrow embeds after managed clients lose base organizations SELECT.
+ * platform_admins remains user-scoped.
  */
 /**
  * "Não havia sessão nenhuma" — o estado NORMAL, não um incidente.
@@ -177,7 +178,7 @@ export const loadAuthUser = cache(async (): Promise<AuthUser | null> => {
         .eq("user_id", user.id)
         .is("revoked_at", null)
         .maybeSingle(),
-      supabase
+      createAdminClient()
         .from("user_organizations")
         .select(
           // Dois embeds do MESMO `organizations`, como manda o PostgREST quando a
@@ -293,11 +294,19 @@ export const resolveActiveOrg = cache(async (authUser: AuthUser): Promise<Active
   const store = await cookies();
   const ativo = escolherMembroAtivo(authUser.organizations, store.get(ACTIVE_ORG_COOKIE)?.value);
   if (!ativo) return null;
+  const { data: managedPolicy, error: managedPolicyError } = await createAdminClient()
+    .from("managed_client_policies")
+    .select("business_type, management_mode, preset_id, preset_version, areas, overrides")
+    .eq("organization_id", ativo.organization_id)
+    .maybeSingle();
+  if (managedPolicyError)
+    throw new Error(`managed_policy_unavailable: ${managedPolicyError.message}`);
   return {
     orgId: ativo.organization_id,
     name: ativo.organization_name,
     role: ativo.role,
     interface_settings: ativo.interface_settings,
+    managed_policy: managedPolicy as ManagedAreaPolicy | null,
     timezone: ativo.timezone ?? null,
   };
 });
@@ -315,10 +324,18 @@ export async function requireAuth(): Promise<AuthUser> {
 /**
  * Returns true if the current session has at least one verified TOTP factor.
  * Use only in Server Components / Server Actions (cookie session).
+ *
+ * LANÇA quando não conseguiu ler os fatores. O `listFactors()` do auth-js não
+ * lança: ele chama `getUser()` pela rede e, se falhar, DEVOLVE
+ * `{ data: null, error }`. Ler só `data` transformava essa falha em "não tem
+ * fator" — e `mfaEmDivida` liberava a sessão `aal1` de quem TEM fator. Uma
+ * leitura que não aconteceu não pode virar resposta: quem decide acesso falha
+ * fechado (a exceção vira 500 na rota, nunca 200).
  */
 export const isMfaEnrolled = cache(async (): Promise<boolean> => {
   const supabase = await createClient();
-  const { data } = await supabase.auth.mfa.listFactors();
+  const { data, error } = await supabase.auth.mfa.listFactors();
+  if (error) throw error;
   return !!data?.totp?.some((f) => f.status === "verified");
 });
 

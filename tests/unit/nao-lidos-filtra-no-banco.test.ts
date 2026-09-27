@@ -63,7 +63,7 @@ async function listar(query: Record<string, unknown>) {
 }
 
 const emConversas = (c: Chamada[], metodo: string) =>
-  c.filter((x) => x.tabela === "conversations" && x.metodo === metodo);
+  c.filter((x) => x.tabela === "operational_conversations" && x.metodo === metodo);
 
 describe("o filtro de não lidos vira predicado de consulta", () => {
   it("⭐ com `unread`, a consulta pede ao banco só as não lidas", async () => {

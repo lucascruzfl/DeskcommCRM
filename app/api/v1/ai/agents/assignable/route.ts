@@ -31,8 +31,7 @@
  * dos workers.
  *
  * Auth: cookie session; organization_id vem do JWT — nunca do body/query.
- * RLS-scoped (createClient), sem admin client: não há nada aqui que a RLS do
- * tenant não deva mostrar.
+ * A projeção RLS contém só os campos do picker, inclusive no tenant gerenciado.
  */
 import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
@@ -53,7 +52,7 @@ export interface AssignableAgent {
 
 export async function GET(req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
-  const authz = await requireRole("agent", { requestId, resource: "ai_agents" });
+  const authz = await requireRole("agent", { requestId, resource: "ai_agents_assignable" });
   if (!authz.ok) return authz.response;
   const orgId = authz.org.orgId;
 
@@ -64,8 +63,8 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   const supabase = await createClient();
   let query = supabase
-    .from("ai_agents")
-    .select("id, name, published_version_id, kind, is_active, paused_at, archived_at")
+    .from("ai_agent_assignable_directory")
+    .select("agent_id, name, version_number, published_version_id, paused_at, archived_at")
     .eq("organization_id", orgId)
     .is("archived_at", null);
   if (channel === "whatsapp" || channel === "voice") query = query.eq("channel", channel);
@@ -77,36 +76,19 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   const rows = (
     (agents ?? []) as Array<{
-      id: string;
+      agent_id: string;
       name: string;
+      version_number: number | null;
       published_version_id: string | null;
-      kind: string | null;
-      is_active: boolean | null;
       paused_at: string | null;
       archived_at: string | null;
     }>
   ).filter(agenteAtende);
 
-  const publishedIds = rows.map((a) => a.published_version_id).filter((v): v is string => !!v);
-  const versionById = new Map<string, number>();
-  if (publishedIds.length > 0) {
-    const { data: versions, error: versionsErr } = await supabase
-      .from("ai_agent_versions")
-      .select("id, version_number")
-      .eq("organization_id", orgId)
-      .in("id", publishedIds);
-    if (versionsErr) return fail("internal_error", versionsErr.message, 500, { requestId });
-    for (const v of (versions ?? []) as Array<{ id: string; version_number: number }>) {
-      versionById.set(v.id, v.version_number);
-    }
-  }
-
   const result: AssignableAgent[] = rows.map((a) => ({
-    agent_id: a.id,
+    agent_id: a.agent_id,
     name: a.name,
-    version_number: a.published_version_id
-      ? (versionById.get(a.published_version_id) ?? null)
-      : null,
+    version_number: a.version_number,
   }));
 
   return ok(result, { requestId });

@@ -24,6 +24,8 @@ import { loadAuthUser, mfaEmDivida, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK, type ActiveOrg, type AuthUser, type Role } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { canAccessManagedArea, managedAreaForResource, type ManagedAreaPolicy } from "@/lib/managed-clients/policy";
 
 export type RoleCheck =
   | { ok: true; user: AuthUser; org: ActiveOrg }
@@ -85,17 +87,46 @@ export async function requireRole(min: Role, opts: RequireRoleOpts = {}): Promis
     };
   }
 
-  if (allowPlatformAdmin && user.is_platform_admin && !user.support) {
+  const managedArea = managedAreaForResource(resource);
+  if (allowPlatformAdmin && user.is_platform_admin && !user.support && !managedArea) {
     return { ok: true, user, org };
   }
 
   // Role efetivo do banco (não do snapshot do cookie/membership em memória).
   const supabase = await createClient();
+  // Duas leituras independentes da mesma requisição: não somar a espera de
+  // permissões com a de MFA em cada botão/consulta. Nenhuma decisão é cacheada.
+  // Capturar a rejeição mantém a precedência: papel insuficiente continua 403,
+  // e uma falha de MFA só é propagada quando essa checagem seria necessária.
+  const mfaPendente = mfaEmDivida().then(
+    (required) => ({ required }),
+    (error: unknown) => ({ error }),
+  );
   const { data: effectiveRole, error } = await supabase.rpc("fn_user_role_in_org", {
     p_org: org.orgId,
   });
   if (error) {
     return { ok: false, response: fail("internal_error", error.message, 500, { requestId }) };
+  }
+
+  if (managedArea) {
+    let managedPolicy = org.managed_policy;
+    if (organizationId) {
+      const { data, error } = await createAdminClient()
+        .from("managed_client_policies")
+        .select("business_type, management_mode, preset_id, preset_version, areas, overrides")
+        .eq("organization_id", org.orgId)
+        .maybeSingle();
+      if (error) return { ok: false, response: fail("internal_error", "Política indisponível.", 500, { requestId }) };
+      managedPolicy = data as ManagedAreaPolicy | null;
+    }
+    if (!canAccessManagedArea(managedPolicy, effectiveRole as Role | null, managedArea)) {
+      return { ok: false, response: fail("forbidden_area", "Área indisponível para esta função.", 403, { requestId }) };
+    }
+  }
+
+  if (allowPlatformAdmin && user.is_platform_admin && !user.support) {
+    return { ok: true, user, org };
   }
 
   const rank = effectiveRole ? (ROLE_RANK[effectiveRole as Role] ?? 0) : 0;
@@ -112,7 +143,13 @@ export async function requireRole(min: Role, opts: RequireRoleOpts = {}): Promis
   // Fica DEPOIS do rank e ANTES do retorno de sucesso, de propósito: quem não
   // tem papel suficiente continua levando 403 por falta de papel, sem que a
   // resposta revele o estado de MFA de quem nem chegaria lá.
-  if (rank >= ROLE_RANK[min] && (await mfaEmDivida())) {
+  let mfaRequired = false;
+  if (rank >= ROLE_RANK[min]) {
+    const mfa = await mfaPendente;
+    if ("error" in mfa) throw mfa.error;
+    mfaRequired = mfa.required;
+  }
+  if (mfaRequired) {
     void audit({
       action: "authz.denied",
       actorUserId: user.id,

@@ -13,6 +13,7 @@ import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { audit } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/server";
 import type { AuthUser, Role } from "@/lib/auth/types";
+import { buildManagedAreaPolicy } from "@/lib/managed-clients/policy";
 
 vi.mock("@/lib/auth/server", () => ({
   // Sessão sem dívida de MFA: esta suíte mede rank de papel; o gate de segundo
@@ -22,6 +23,16 @@ vi.mock("@/lib/auth/server", () => ({
   resolveActiveOrg: vi.fn(),
 }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => {
+    const query = {
+      select: () => query,
+      eq: () => query,
+      maybeSingle: async () => ({ data: null, error: null }),
+    };
+    return { from: () => query };
+  },
+}));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => undefined) }));
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
@@ -35,27 +46,24 @@ function authUserFixture(role: Role | null, platformAdmin = false): AuthUser {
     avatar_url: null,
     is_platform_admin: platformAdmin,
     idioma: "pt-BR" as const,
-    organizations: role
-      ? [{ organization_id: ORG_ID, organization_name: "Org", role }]
-      : [],
+    organizations: role ? [{ organization_id: ORG_ID, organization_name: "Org", role }] : [],
   };
 }
 
 /** Configura sessão + role efetivo devolvido pelo banco (fn_user_role_in_org). */
-function session(role: Role | null, opts: { dbRole?: string | null; platformAdmin?: boolean } = {}) {
+function session(
+  role: Role | null,
+  opts: { dbRole?: string | null; platformAdmin?: boolean } = {},
+) {
   const platformAdmin = opts.platformAdmin ?? false;
   const dbRole = opts.dbRole === undefined ? role : opts.dbRole;
   vi.mocked(loadAuthUser).mockResolvedValue(
     role || platformAdmin ? authUserFixture(role, platformAdmin) : null,
   );
-  vi.mocked(resolveActiveOrg).mockResolvedValue(
-    role ? { orgId: ORG_ID, name: "Org", role } : null,
-  );
+  vi.mocked(resolveActiveOrg).mockResolvedValue(role ? { orgId: ORG_ID, name: "Org", role } : null);
   vi.mocked(createClient).mockResolvedValue({
     rpc: vi.fn(async (fn: string) =>
-      fn === "fn_user_role_in_org"
-        ? { data: dbRole, error: null }
-        : { data: null, error: null },
+      fn === "fn_user_role_in_org" ? { data: dbRole, error: null } : { data: null, error: null },
     ),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
@@ -115,6 +123,39 @@ describe("requireRole — helper único (spec 13 §4)", () => {
     expect(res.org.orgId).toBe(ORG_ID);
     expect(res.org.role).toBe("manager");
     expect(audit).not.toHaveBeenCalled();
+  });
+
+  it("recurso de agência é negado mesmo quando o rank da rota permitiria", async () => {
+    session("agent");
+    vi.mocked(resolveActiveOrg).mockResolvedValue({
+      orgId: ORG_ID,
+      name: "Clínica",
+      role: "agent",
+      managed_policy: buildManagedAreaPolicy("managed/aesthetic-clinic"),
+    });
+    const denied = await requireRole("agent", { resource: "ai_agents" });
+    expect(denied.ok).toBe(false);
+    if (denied.ok) throw new Error("unreachable");
+    expect((await denied.response.json()).error.code).toBe("forbidden_area");
+
+    session("admin", { dbRole: "agent" });
+    vi.mocked(resolveActiveOrg).mockResolvedValue({
+      orgId: ORG_ID,
+      name: "Clínica",
+      role: "admin",
+      managed_policy: buildManagedAreaPolicy("managed/aesthetic-clinic"),
+    });
+    const staleAdmin = await requireRole("agent", { resource: "ai_agents" });
+    expect(staleAdmin.ok).toBe(false);
+
+    session("admin");
+    vi.mocked(resolveActiveOrg).mockResolvedValue({
+      orgId: ORG_ID,
+      name: "Clínica",
+      role: "admin",
+      managed_policy: buildManagedAreaPolicy("managed/aesthetic-clinic"),
+    });
+    expect((await requireRole("agent", { resource: "ai_agents" })).ok).toBe(true);
   });
 
   it("fail-closed: fn_user_role_in_org null (membership revogado) → 403", async () => {

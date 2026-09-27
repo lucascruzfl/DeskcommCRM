@@ -20,6 +20,11 @@ import {
 import { modoDeReabertura } from "@/lib/leads/reabertura";
 import { encerraDemanda } from "@/lib/leads/encerramento";
 import {
+  recusaDeCamposObrigatorios,
+  settingsDoFunil,
+  validaCamposExigidos,
+} from "@/lib/leads/campos-exigidos";
+import {
   motivoDaPerdaDaOrigem,
   recusaDeMotivoForaDoVocabulario,
 } from "@/lib/leads/motivo-da-perda";
@@ -68,7 +73,7 @@ export async function moverLeadParaOutroFunil(
   if (!origem) erro(404, "not_found", t("Lead não encontrado."), ctx);
 
   const { data: pipelineDestino, error: pipeErr } = await supabase
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("id, name")
     .eq("id", input.pipeline_id)
     .eq("organization_id", ctx.organization_id)
@@ -80,7 +85,7 @@ export async function moverLeadParaOutroFunil(
 
   const origemTipada = origem as OrigemParaClonar;
   const { data: pipelineOrigem, error: origemPipeErr } = await supabase
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("settings, name")
     .eq("id", origemTipada.pipeline_id)
     .eq("organization_id", ctx.organization_id)
@@ -103,7 +108,7 @@ export async function moverLeadParaOutroFunil(
   if (motivoRecusado) erro(422, motivoRecusado.codigo, motivoRecusado.mensagem, ctx);
 
   const { data: etapas, error: stagesErr } = await supabase
-    .from("crm_stages")
+    .from("operational_crm_stages")
     .select("id, pipeline_id, position, is_won, is_lost, is_archived")
     .eq("organization_id", ctx.organization_id)
     .eq("pipeline_id", input.pipeline_id)
@@ -114,9 +119,24 @@ export async function moverLeadParaOutroFunil(
   const destino = escolheEtapaDeDestino((etapas ?? []) as EtapaDoFunil[], input.stage_id ?? null);
   if (!destino.ok) erro(destino.status, destino.code, t(destino.texto), ctx);
 
+  // O clone entra numa etapa nova. A exigência declarada pelo funil de destino
+  // precisa ser conferida antes da primeira escrita, como na rota original.
+  const settingsDoDestino = await settingsDoFunil(supabase, destino.etapa.pipeline_id);
+  const vereditoDeCampos = validaCamposExigidos({
+    lead: { custom_fields: origemTipada.custom_fields ?? {} },
+    settingsDoFunil: settingsDoDestino,
+    destino: { stageId: destino.etapa.id, desfecho: null },
+    motivoDeGanho: null,
+  });
+  if (vereditoDeCampos.faltando.length > 0) {
+    const recusa = recusaDeCamposObrigatorios(vereditoDeCampos.faltando, idioma);
+    throw new ApiError(422, recusa.codigo, { faltando: vereditoDeCampos.faltando },
+      ctx.requestId, recusa.mensagem);
+  }
+
   if (!origemJaEncerrada) {
     const { data: etapaDePerdaDaOrigem, error: perdaErr } = await supabase
-      .from("crm_stages")
+      .from("operational_crm_stages")
       .select("id")
       .eq("organization_id", ctx.organization_id)
       .eq("pipeline_id", origemTipada.pipeline_id)

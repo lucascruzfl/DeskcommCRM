@@ -27,11 +27,23 @@ describe("registry público MCP", () => {
     }
   });
 
-  it("preset manager alcança o perfil completo sem role admin", () => {
+  it("preset manager alcança todas as tools exceto a criação exclusiva de platform admin", () => {
     const profile = mcpPublicProfile(auth([...MCP_OPERATION_PRESET]));
-    expect(profile).toHaveLength(MCP_TOOL_COUNT);
+    const managerNames = new Set(profile.map((tool) => tool.name));
+    expect(MCP_REGISTRY.filter((tool) => !managerNames.has(tool.name)).map((tool) => tool.name)).toEqual([
+      "crm_create_managed_client",
+    ]);
+    expect(profile).toHaveLength(MCP_TOOL_COUNT - 1);
+    expect(managerNames.has("crm_create_managed_client")).toBe(false);
     expect(profile.some((tool) => tool.name === "crm_publish_ai_agent_version")).toBe(true);
     expect(profile.every((tool) => tool.requiresRole !== "admin")).toBe(true);
+
+    const platformAdminProfile = mcpPublicProfile({
+      ...auth([...MCP_OPERATION_PRESET]),
+      platformAdminFull: true,
+    });
+    expect(platformAdminProfile).toHaveLength(MCP_TOOL_COUNT);
+    expect(platformAdminProfile.some((tool) => tool.name === "crm_create_managed_client")).toBe(true);
   });
 
   it("scope e allowlist reduzem tools/list antes de registrar handlers", () => {

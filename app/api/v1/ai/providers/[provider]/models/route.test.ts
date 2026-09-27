@@ -23,7 +23,11 @@ import type { AuthUser } from "@/lib/auth/types";
  * dublê, não do código.
  */
 
-vi.mock("@/lib/auth/server", () => ({ loadAuthUser: vi.fn(), resolveActiveOrg: vi.fn() }));
+vi.mock("@/lib/auth/server", () => ({
+  loadAuthUser: vi.fn(),
+  resolveActiveOrg: vi.fn(),
+  mfaEmDivida: vi.fn(async () => false),
+}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 
 const ORG_ID = "33333333-3333-4333-8333-333333333333";
@@ -73,6 +77,7 @@ const CATALOGO: LinhaDeModelo[] = [
  */
 function stubDoBanco(linhas: LinhaDeModelo[]) {
   return {
+    rpc: async () => ({ data: "admin", error: null }),
     from(tabela: string) {
       if (tabela !== "ai_models") throw new Error(`tabela inesperada: ${tabela}`);
       const cadeia: Record<string, unknown> = {};
@@ -103,9 +108,7 @@ function autorizado() {
 
 function listar(provider = "openai") {
   const req = new NextRequest(`http://localhost/api/v1/ai/providers/${provider}/models`);
-  return import("./route").then(({ GET }) =>
-    GET(req, { params: Promise.resolve({ provider }) }),
-  );
+  return import("./route").then(({ GET }) => GET(req, { params: Promise.resolve({ provider }) }));
 }
 
 describe("GET /api/v1/ai/providers/:provider/models — o que o agente pode escolher", () => {

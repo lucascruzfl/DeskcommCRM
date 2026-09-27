@@ -75,6 +75,10 @@ interface Excecao {
  * linhas da OUTRA organização, não uma leitura como superusuário.
  */
 const PROVA_PROPRIA: readonly Excecao[] = [
+  { tabela: "operational_inbox_signals", razao: "tests/invariants/managed-postgrest-jwt.test.ts — JWT do cliente A lê o sinal próprio, JWT do cliente B lê zero linhas de A; a resposta não expõe metadados privados." },
+  { tabela: "managed_client_policies", razao: "tests/invariants/managed-area-rls.test.ts — cliente com JWT da clínica não lê a política da organização vizinha, e não possui privilégio de UPDATE no preset." },
+  { tabela: "managed_client_onboardings", razao: "tests/invariants/managed-onboarding-real.test.ts — recibo privado sem SELECT ou UPDATE para authenticated; ator sem platform_admin full é recusado pela RPC, e cliente autenticado não alcança o recibo da clínica." },
+  { tabela: "ai_agent_assignable_directory", razao: "tests/invariants/managed-area-rls.test.ts — cliente e gestor leem o diretório da própria clínica; membro autenticado da organização vizinha lê zero linhas." },
   { tabela: "golden_candidates", razao: "tests/invariants/golden-candidates.test.ts — dois tenants reais por JWT (agent): leitura positiva local e ZERO do vizinho nos dois sentidos, a tabela inteira sem filtro igual à própria, anon recusado, e insert/update/delete de authenticated sem efeito (só o servidor grava)." },
   { tabela: "jev_observacoes", razao: "tests/invariants/jev-observacoes.test.ts — dois tenants reais por JWT (agent): leitura positiva local e ZERO do vizinho nos dois sentidos, a tabela inteira sem filtro igual à própria, anon recusado, e insert/update/delete de authenticated sem efeito (só o servidor grava)." },
   { tabela: "prospecting_settings", razao: "tests/invariants/prospecting.test.ts — tabela exclusiva do servidor, ACL e RLS verificadas; FK composta e comandos autenticados cercam a organização." },
@@ -250,6 +254,23 @@ const PROVA_PROPRIA: readonly Excecao[] = [
       "grants revogados de anon/authenticated, organization_id NOT NULL com FK " +
       "em cascata. Guarda para qual WhatsApp e com qual texto a landing page " +
       "de captura de gclid redireciona.",
+  },
+  {
+    tabela: "google_ads_conversion_rules",
+    razao:
+      "tests/invariants/captura-de-clique-e-server-side.test.ts — RLS ligada, " +
+      "zero policies, privilégios revogados e permission denied sob set role " +
+      "anon/authenticated. O servidor aplica organization_id às regras por etapa. " +
+      "tests/invariants/google-regras-etapa-isoladas.test.ts também prova a FK " +
+      "composta que recusa etapa de outra organização.",
+  },
+  {
+    tabela: "ad_tracking_links",
+    razao:
+      "tests/invariants/captura-de-clique-e-server-side.test.ts — mesmo teste " +
+      "comportamental deny-all, com controle positivo de service_role. " +
+      "tests/invariants/links-rastreaveis-isolados.test.ts prova as FKs compostas " +
+      "e o isolamento das métricas por organização.",
   },
   {
     tabela: "google_ads_click_refs",

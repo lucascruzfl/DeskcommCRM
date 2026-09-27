@@ -45,9 +45,7 @@ export type FiltroDeContagem = readonly [coluna: string, valor: string | boolean
  * e a segunda régua sempre diverge. Enquanto isso, o badge sob busca fica maior
  * que a lista, e isso está declarado, não esquecido.
  */
-export function filtrosAuxiliaresDaContagem(
-  sp: URLSearchParams,
-): FiltroDeContagem[] {
+export function filtrosAuxiliaresDaContagem(sp: URLSearchParams): FiltroDeContagem[] {
   const filtros: FiltroDeContagem[] = [];
   const canal = sp.get("channel_session_id");
   if (canal) filtros.push(["channel_session_id", canal]);
@@ -101,7 +99,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   // "montei uma contagem e não pus o filtro".
   const countExact = () => {
     let q = supabase
-      .from("conversations")
+      .from("operational_conversations")
       .select("id", { count: "exact", head: true })
       .eq("organization_id", org);
     for (const [coluna, valor] of auxiliares) q = q.eq(coluna, valor);

@@ -50,39 +50,99 @@ function bancoFalso(tabelas: Record<string, Linha[]>) {
     let limite = Infinity;
     const chain = {
       select: (cols: string) => (selects.push(cols), chain),
-      eq: (col: string, val: unknown) => ((linhas = linhas.filter((l) => valor(l, col) === val)), chain),
-      is: (col: string, val: unknown) => ((linhas = linhas.filter((l) => (valor(l, col) ?? null) === val)), chain),
-      not: (col: string, _op: string, val: unknown) => ((linhas = linhas.filter((l) => (valor(l, col) ?? null) !== val)), chain),
+      in: (col: string, values: unknown[]) => (
+        (linhas = linhas.filter((l) => values.includes(valor(l, col)))),
+        chain
+      ),
+      eq: (col: string, val: unknown) => (
+        (linhas = linhas.filter((l) => valor(l, col) === val)),
+        chain
+      ),
+      is: (col: string, val: unknown) => (
+        (linhas = linhas.filter((l) => (valor(l, col) ?? null) === val)),
+        chain
+      ),
+      not: (col: string, _op: string, val: unknown) => (
+        (linhas = linhas.filter((l) => (valor(l, col) ?? null) !== val)),
+        chain
+      ),
       order: () => chain,
       limit: (n: number) => ((limite = n), chain),
       maybeSingle: async () => ({ data: linhas[0] ?? null, error: null }),
-      then: (res: (v: unknown) => unknown) => Promise.resolve({ data: linhas.slice(0, limite), error: null }).then(res),
+      then: (res: (v: unknown) => unknown) =>
+        Promise.resolve({ data: linhas.slice(0, limite), error: null }).then(res),
     };
     return chain;
   };
-  return { auth: { getUser: async () => ({ data: { user: { id: "u-1" } }, error: null }) }, from, selects };
+  return {
+    auth: { getUser: async () => ({ data: { user: { id: "u-1" } }, error: null }) },
+    from,
+    selects,
+  };
 }
 
 describe("crm-summary: a etapa do negócio e as etapas do funil", () => {
   it("devolve stage_id e as etapas ativas na ordem do quadro", async () => {
     const banco = bancoFalso({
       contacts: [{ id: CONTATO, organization_id: ORG }],
+      operational_crm_pipelines: [
+        { id: "p-1", organization_id: ORG, name: "Pedidos", settings: {}, is_archived: false },
+      ],
+      operational_crm_stages: [
+        {
+          id: "s-cancelado",
+          pipeline_id: "p-1",
+          organization_id: ORG,
+          name: "Cancelado",
+          position: 3000,
+          is_won: false,
+          is_lost: true,
+          is_archived: false,
+        },
+        {
+          id: "s-velha",
+          pipeline_id: "p-1",
+          organization_id: ORG,
+          name: "Etapa antiga",
+          position: 1500,
+          is_won: false,
+          is_lost: false,
+          is_archived: true,
+        },
+        {
+          id: "s-confirmado",
+          pipeline_id: "p-1",
+          organization_id: ORG,
+          name: "Pedido confirmado",
+          position: "2000",
+          is_won: false,
+          is_lost: false,
+          is_archived: false,
+        },
+        {
+          id: "s-dados",
+          pipeline_id: "p-1",
+          organization_id: ORG,
+          name: "Dados incompletos",
+          position: 1000,
+          is_won: false,
+          is_lost: false,
+          is_archived: false,
+        },
+      ],
       crm_leads: [
         {
-          id: "l-1", organization_id: ORG, contact_id: CONTATO, title: "Pedido", status: "open",
-          value_cents: null, currency: null, updated_at: "2026-09-26T12:00:00.000Z",
-          pipeline_id: "p-1", stage_id: "s-dados", custom_fields: {},
-          crm_pipelines: {
-            name: "Pedidos", settings: {}, is_archived: false,
-            // Fora de ordem de propósito, e com uma arquivada no meio.
-            etapas: [
-              { id: "s-cancelado", name: "Cancelado", position: 3000, is_won: false, is_lost: true, is_archived: false },
-              { id: "s-velha", name: "Etapa antiga", position: 1500, is_won: false, is_lost: false, is_archived: true },
-              { id: "s-confirmado", name: "Pedido confirmado", position: "2000", is_won: false, is_lost: false, is_archived: false },
-              { id: "s-dados", name: "Dados incompletos", position: 1000, is_won: false, is_lost: false, is_archived: false },
-            ],
-          },
-          crm_stages: { name: "Dados incompletos" },
+          id: "l-1",
+          organization_id: ORG,
+          contact_id: CONTATO,
+          title: "Pedido",
+          status: "open",
+          value_cents: null,
+          currency: null,
+          updated_at: "2026-09-26T12:00:00.000Z",
+          pipeline_id: "p-1",
+          stage_id: "s-dados",
+          custom_fields: {},
         },
       ],
     });
@@ -104,7 +164,8 @@ describe("crm-summary: a etapa do negócio e as etapas do funil", () => {
     ]);
     const select = banco.selects.join("|");
     expect(select).toContain("stage_id");
-    expect(select).toContain("etapas:crm_stages!crm_stages_pipeline_id_fkey(id, name, position, is_won, is_lost, is_archived)");
+    expect(select).toContain("id, pipeline_id, name, position, is_won, is_lost, is_archived");
+    expect(select).not.toContain("crm_pipelines!inner");
   });
 });
 
@@ -125,14 +186,20 @@ vi.mock("@/lib/api/client", () => ({
     patch: vi.fn(),
   },
 }));
-vi.mock("@/hooks/pipelines/useDefaultPipeline", () => ({ useDefaultPipeline: () => ({ data: null, isError: false }) }));
+vi.mock("@/hooks/pipelines/useDefaultPipeline", () => ({
+  useDefaultPipeline: () => ({ data: null, isError: false }),
+}));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
 vi.mock("@/hooks/inbox/useConversationTags", () => ({
   useUpdateConversationTags: () => ({ mutate: vi.fn(), isPending: false }),
   useConversationTagVocabulary: () => ({ data: [] }),
 }));
-vi.mock("@/hooks/contacts/useContactTagVocabulary", () => ({ useContactTagVocabulary: () => ({ data: [] }) }));
-vi.mock("@/hooks/contacts/useUpdateContact", () => ({ useUpdateContact: () => ({ mutate: vi.fn(), isPending: false }) }));
+vi.mock("@/hooks/contacts/useContactTagVocabulary", () => ({
+  useContactTagVocabulary: () => ({ data: [] }),
+}));
+vi.mock("@/hooks/contacts/useUpdateContact", () => ({
+  useUpdateContact: () => ({ mutate: vi.fn(), isPending: false }),
+}));
 vi.mock("@/hooks/auth/AuthProvider", () => ({ useAuth: () => ({ user: { support: null } }) }));
 vi.mock("@/components/contacts/RoteirosDoContato", () => ({ RoteirosDoContato: () => null }));
 
@@ -156,9 +223,17 @@ function resumo(lead: Linha) {
     data: {
       leads: [
         {
-          id: "l-1", title: "Pedido", status: "open", value_cents: null, currency: null,
-          updated_at: "2026-09-26T12:00:00Z", pipeline_id: "p-1", custom_fields: {}, field_defs: [],
-          funil_nome: "Pedidos", etapa_nome: "Dados incompletos",
+          id: "l-1",
+          title: "Pedido",
+          status: "open",
+          value_cents: null,
+          currency: null,
+          updated_at: "2026-09-26T12:00:00Z",
+          pipeline_id: "p-1",
+          custom_fields: {},
+          field_defs: [],
+          funil_nome: "Pedidos",
+          etapa_nome: "Dados incompletos",
           ...lead,
         },
       ],
@@ -238,9 +313,13 @@ describe("painel da conversa — Etapa do funil", () => {
     await user.click(await screen.findByRole("option", { name: "Pedido confirmado" }));
 
     await waitFor(() => expect(post).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.getByRole("combobox", { name: "Etapa do funil" })).not.toBeDisabled());
+    await waitFor(() =>
+      expect(screen.getByRole("combobox", { name: "Etapa do funil" })).not.toBeDisabled(),
+    );
     expect(toast.success).not.toHaveBeenCalled();
-    expect(screen.getByRole("combobox", { name: "Etapa do funil" }).textContent).toContain("Dados incompletos");
+    expect(screen.getByRole("combobox", { name: "Etapa do funil" }).textContent).toContain(
+      "Dados incompletos",
+    );
   });
 
   it("resposta sem as etapas do funil não desenha seletor vazio", async () => {
@@ -248,7 +327,9 @@ describe("painel da conversa — Etapa do funil", () => {
     renderPainel();
 
     // Guarda de vacuidade: o bloco do negócio desenhou — o seletor é que não.
-    await waitFor(() => expect(screen.getByTestId("inbox-campos-lead").textContent).toContain("Pedidos"));
+    await waitFor(() =>
+      expect(screen.getByTestId("inbox-campos-lead").textContent).toContain("Pedidos"),
+    );
     expect(screen.queryByTestId("inbox-etapa-do-negocio")).toBeNull();
   });
 });

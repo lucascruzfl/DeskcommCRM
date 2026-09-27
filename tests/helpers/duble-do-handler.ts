@@ -29,10 +29,7 @@ interface CadeiaAguardavel extends PromiseLike<{ error: null }> {
   eq: (coluna: string, valor: unknown) => CadeiaAguardavel;
 }
 
-function cadeiaAguardavel(
-  tabela: string,
-  capturas: CapturasDoDubleDoHandler,
-): CadeiaAguardavel {
+function cadeiaAguardavel(tabela: string, capturas: CapturasDoDubleDoHandler): CadeiaAguardavel {
   const cadeia: CadeiaAguardavel = {
     eq: (coluna, valor) => {
       capturas.filtros[tabela]!.push({ coluna, valor });
@@ -76,6 +73,7 @@ export function criarDubleDoHandler(opcoes: OpcoesDoDubleDoHandler): {
 
   const client = {
     from(tabela: string) {
+      tabela = tabela.replace(/^operational_(conversations|messages)$/, "$1");
       if (tabela === "conversations") {
         return {
           select: (colunas = "") => {
@@ -106,7 +104,10 @@ export function criarDubleDoHandler(opcoes: OpcoesDoDubleDoHandler): {
             capturas.filtros.channel_sessions!.push({ coluna, valor });
             return cadeia;
           },
-          maybeSingle: async () => ({ data: { metadata: opcoes.channelMetadata ?? {} }, error: null }),
+          maybeSingle: async () => ({
+            data: { metadata: opcoes.channelMetadata ?? {} },
+            error: null,
+          }),
         };
         return cadeia;
       }

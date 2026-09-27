@@ -47,7 +47,12 @@ function reiniciaBanco() {
   tabelas.user_organizations = [
     { user_id: ATENDENTE_A, organization_id: ORG_A, role: "agent", revoked_at: null },
     { user_id: MEMBRO_B, organization_id: ORG_B, role: "admin", revoked_at: null },
-    { user_id: DESLIGADO_A, organization_id: ORG_A, role: "agent", revoked_at: "2026-09-01T00:00:00Z" },
+    {
+      user_id: DESLIGADO_A,
+      organization_id: ORG_A,
+      role: "agent",
+      revoked_at: "2026-09-01T00:00:00Z",
+    },
     { user_id: VIEWER_A, organization_id: ORG_A, role: "viewer", revoked_at: null },
   ];
   tabelas.crm_leads = [
@@ -69,6 +74,7 @@ function reiniciaBanco() {
 
 /** Consulta encadeável que aplica de fato os filtros `.eq`/`.is`. */
 function consulta(tabela: string) {
+  tabela = tabela.replace(/^operational_(crm_stages|crm_leads|organizations)$/, "$1");
   const filtros: [string, unknown][] = [];
   let escrita: { tipo: "insert" | "update"; valores: Linha } | null = null;
   const linhas = () =>
@@ -132,7 +138,14 @@ const ctxMcp = {
 } as never;
 
 const novo = (extra: Linha = {}) =>
-  ({ pipeline_id: PIPELINE, stage_id: ETAPA, title: "Lead", tags: [], source: "manual", ...extra }) as never;
+  ({
+    pipeline_id: PIPELINE,
+    stage_id: ETAPA,
+    title: "Lead",
+    tags: [],
+    source: "manual",
+    ...extra,
+  }) as never;
 
 const leadsGravados = () => escritas.filter((e) => e.tabela === "crm_leads");
 const primeiroLead = () => {
@@ -155,7 +168,11 @@ describe("createLeadHandler — contato", () => {
   });
 
   it("uuid que não existe: o MESMO 404 (não confirma existência alheia, e não é 500 da FK)", async () => {
-    const recusaB = await createLeadHandler(banco as never, ctx, novo({ contact_id: CONTATO_B })).catch((e) => e);
+    const recusaB = await createLeadHandler(
+      banco as never,
+      ctx,
+      novo({ contact_id: CONTATO_B }),
+    ).catch((e) => e);
     const recusaInexistente = await createLeadHandler(
       banco as never,
       ctx,
@@ -190,7 +207,10 @@ describe("createLeadHandler — responsável", () => {
 
   it("atendente ativo da própria empresa: grava com o responsável", async () => {
     await createLeadHandler(banco as never, ctx, novo({ owner_user_id: ATENDENTE_A }));
-    expect(primeiroLead().valores).toMatchObject({ owner_user_id: ATENDENTE_A, owner_kind: "user" });
+    expect(primeiroLead().valores).toMatchObject({
+      owner_user_id: ATENDENTE_A,
+      owner_kind: "user",
+    });
   });
 });
 
@@ -214,7 +234,10 @@ describe("updateLeadHandler", () => {
       contact_id: CONTATO_A,
       owner_user_id: ATENDENTE_A,
     } as never);
-    expect(primeiroLead().valores).toMatchObject({ contact_id: CONTATO_A, owner_user_id: ATENDENTE_A });
+    expect(primeiroLead().valores).toMatchObject({
+      contact_id: CONTATO_A,
+      owner_user_id: ATENDENTE_A,
+    });
   });
 
   it("reenviar o responsável que o lead JÁ tem (mesmo desligado) não trava a edição", async () => {
@@ -230,7 +253,12 @@ describe("pelo MCP (crm_create_lead / crm_update_lead passam pelo handler)", () 
   it("crm_create_lead com contato de outra empresa: 404, nada gravado", async () => {
     await expect(
       crmCreateLead.handler(
-        { pipeline_id: PIPELINE, stage_id: ETAPA, title: "Pelo agente", contact_id: CONTATO_B } as never,
+        {
+          pipeline_id: PIPELINE,
+          stage_id: ETAPA,
+          title: "Pelo agente",
+          contact_id: CONTATO_B,
+        } as never,
         ctxMcp,
       ),
     ).rejects.toMatchObject({ status: 404 });
@@ -258,7 +286,10 @@ describe("a recusa do gatilho do banco (migration 0403) vira a mesma resposta, n
   });
 
   it("PT422 no UPDATE → 422 validation_failed", async () => {
-    recusaDoGatilho = { code: "PT422", message: "Responsável não é um atendente ativo desta organização." };
+    recusaDoGatilho = {
+      code: "PT422",
+      message: "Responsável não é um atendente ativo desta organização.",
+    };
     await expect(
       updateLeadHandler(banco as never, ctx, LEAD, { title: "Outro título" } as never),
     ).rejects.toMatchObject({ status: 422, code: "validation_failed" });
@@ -289,13 +320,19 @@ describe("clone para outro funil: o dono vem da ORIGEM", () => {
     });
     expect(vi.mocked(emitLeadActivity)).toHaveBeenCalledWith(
       banco,
-      expect.objectContaining({ type: "lead_edited", reason: expect.stringContaining("sem responsável") }),
+      expect.objectContaining({
+        type: "lead_edited",
+        reason: expect.stringContaining("sem responsável"),
+      }),
     );
   });
 
   it("dono ainda ativo: o clone mantém o dono, sem atividade extra", async () => {
     await createLeadHandler(banco as never, ctx, montaPayloadDoClone(origem(ATENDENTE_A), etapa));
-    expect(primeiroLead().valores).toMatchObject({ owner_user_id: ATENDENTE_A, owner_kind: "user" });
+    expect(primeiroLead().valores).toMatchObject({
+      owner_user_id: ATENDENTE_A,
+      owner_kind: "user",
+    });
     expect(vi.mocked(emitLeadActivity)).not.toHaveBeenCalled();
   });
 

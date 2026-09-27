@@ -62,7 +62,9 @@ function bancoFalso(resultado: { data: unknown; error: { message: string } | nul
       },
     },
   ) as never;
-  vi.mocked(createAdminClient).mockReturnValue({ from: () => cadeia } as never);
+  vi.mocked(createAdminClient).mockReturnValue({ from: (table: string) => table === "managed_client_policies"
+    ? { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) }
+    : cadeia } as never);
 }
 
 /** Linha de `api_tokens` como o lookup devolve (schema real, token morto ou vivo). */

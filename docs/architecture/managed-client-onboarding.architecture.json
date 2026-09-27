@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Onboarding de cliente gerenciado",
+    "subtitle": "Preflight, confirmação, transação interna e entrega retomável do convite"
+  },
+  "lanes": [
+    { "id": "mcp", "label": "Pedido e confirmação" },
+    { "id": "service", "label": "Serviço oficial" },
+    { "id": "database", "label": "Banco e autorização" },
+    { "id": "human", "label": "Pessoas e retorno" }
+  ],
+  "mainPath": ["tool", "preflight", "service", "rpc", "receipt", "invite", "client"],
+  "nodes": [
+    { "id": "tool", "lane": "mcp", "col": 0, "type": "tool", "label": "crm_create_managed_client", "sublabel": "confirm=false só planeja; confirm=true pede execução" },
+    { "id": "preflight", "lane": "service", "col": 1, "type": "service", "label": "managedOnboardingService.preflight", "sublabel": "ator full atual, membership de origem, preset, slug, e-mail e recibo" },
+    { "id": "service", "lane": "service", "col": 2, "type": "service", "label": "managedOnboardingService.execute", "sublabel": "revalida e coordena envio retomável, sem expor link" },
+    { "id": "rpc", "lane": "database", "col": 3, "type": "database", "label": "fn_begin_managed_client_onboarding", "sublabel": "chama fn_create_tenant_with_owner; policy, membership e convite lógico na mesma transação" },
+    { "id": "receipt", "lane": "database", "col": 4, "type": "database", "label": "managed_client_onboardings", "sublabel": "chave única, estado, claim e falha sanitizada" },
+    { "id": "invite", "lane": "service", "col": 5, "type": "service", "label": "issueInvite", "sublabel": "e-mail oficial; retry da mesma linha team_invites" },
+    { "id": "client_membership", "lane": "database", "col": 6, "type": "database", "label": "user_organizations", "sublabel": "aceite oficial cria vínculo agent" },
+    { "id": "manager", "lane": "human", "col": 6, "type": "frontend", "label": "Gestor", "sublabel": "entra pelo membership e organization switcher" },
+    { "id": "client", "lane": "human", "col": 6, "type": "frontend", "label": "Cliente agent", "sublabel": "aceita convite e acessa apenas áreas permitidas" },
+    { "id": "audit", "lane": "human", "col": 6, "type": "frontend", "label": "Auditoria", "sublabel": "início, conclusão ou falha no painel /app/audit" }
+  ],
+  "edges": [
+    { "id": "e1", "from": "tool", "to": "preflight", "label": "entrada sem efeito" },
+    { "id": "e2", "from": "preflight", "to": "tool", "label": "can_execute e plano explícito" },
+    { "id": "e3", "from": "preflight", "to": "service", "label": "confirmação explícita" },
+    { "id": "e4", "from": "service", "to": "rpc", "label": "ator e chave confiáveis" },
+    { "id": "e5", "from": "rpc", "to": "receipt", "label": "registro atômico" },
+    { "id": "e6", "from": "receipt", "to": "service", "label": "retomada idempotente" },
+    { "id": "e7", "from": "service", "to": "invite", "label": "claim exclusivo" },
+    { "id": "e8", "from": "invite", "to": "client", "label": "convite agent" },
+    { "id": "e9", "from": "client", "to": "client_membership", "label": "aceite do convite no fluxo oficial" },
+    { "id": "e10", "from": "rpc", "to": "manager", "label": "membership admin oficial" },
+    { "id": "e11", "from": "manager", "to": "tool", "label": "pode conferir resultado e tenant" },
+    { "id": "e12", "from": "service", "to": "audit", "label": "estado visível" },
+    { "id": "e13", "from": "audit", "to": "manager", "label": "falha orienta retry" }
+  ]
+}

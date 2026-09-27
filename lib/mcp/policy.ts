@@ -1,6 +1,8 @@
 import type { McpAuthResult } from "./auth";
 import { McpAuthError } from "./auth";
 import type { McpCapability, McpToolDefinition, McpToolDomain } from "./types";
+import { canAccessManagedArea } from "@/lib/managed-clients/policy";
+import type { NavDestinationId } from "@/lib/navigation/catalogo";
 
 const DOMAIN_PREFIXES: ReadonlyArray<[RegExp, McpToolDomain]> = [
   [/appointment|event_type|free_slot/, "appointments"],
@@ -46,6 +48,16 @@ export function domainScope(tool: McpToolDefinition): string {
 }
 
 export function authorizeTool(auth: McpAuthResult, tool: McpToolDefinition): void {
+  if (tool.name === "crm_create_managed_client" && !auth.platformAdminFull) {
+    throw new McpAuthError(-32002, 403, "platform_admin_full_required");
+  }
+  if (auth.managedPolicy) {
+    const area = managedAreaOfTool(tool);
+    // A managed tenant grants only tools with an audited area, for every role.
+    if (!area || !canAccessManagedArea(auth.managedPolicy, auth.role, area)) {
+      throw new McpAuthError(-32002, 403, `managed_area_denied:${tool.name}`);
+    }
+  }
   if (!auth.scopes.includes(tool.requiresScope)) {
     throw new McpAuthError(-32002, 403, `scope_missing:${tool.requiresScope}`);
   }
@@ -68,6 +80,73 @@ export function authorizeTool(auth: McpAuthResult, tool: McpToolDefinition): voi
       throw new McpAuthError(-32002, 403, `capability_missing:${scope.slice("capability:".length)}`);
     }
   }
+}
+
+/** Routing from tool domain to the same href keys persisted for UI and RLS. */
+export function managedAreaOfTool(tool: McpToolDefinition): NavDestinationId | null {
+  const exactToolArea: Partial<Record<string, NavDestinationId>> = {
+    // Pedidos sincronizados pertencem à integração de loja, não ao catálogo
+    // de produtos compartilhado. O token MCP usa service_role e bypassa RLS.
+    crm_list_orders: "/app/integrations/nuvemshop",
+    crm_get_order: "/app/integrations/nuvemshop",
+    crm_list_contact_orders: "/app/integrations/nuvemshop",
+    crm_discover_integrations: "/app/integrations/nuvemshop",
+    crm_prepare_integration_action: "/app/integrations/nuvemshop",
+    crm_describe_external_data: "/app/integracao-dados",
+    crm_query_external_data: "/app/integracao-dados",
+    crm_get_ai_credential: "/app/ai/credentials",
+    crm_list_ai_credentials: "/app/ai/credentials",
+    crm_get_ai_model: "/app/ai/providers",
+    crm_list_ai_models: "/app/ai/providers",
+    crm_get_ai_provider: "/app/ai/providers",
+    crm_list_ai_providers: "/app/ai/providers",
+    crm_get_ai_skill: "/app/ai/skills",
+    crm_save_ai_skill: "/app/ai/skills",
+    crm_get_ai_skill_import_instructions: "/app/ai/skills",
+    crm_validate_agent_ai_configuration: "/app/ai/agents",
+    crm_get_operational_diagnostics: "/app/settings/tenant",
+    crm_list_managed_client_presets: "/app/settings/tenant",
+    crm_preflight_managed_client: "/app/settings/tenant",
+    crm_create_managed_client: "/app/settings/tenant",
+    crm_prepare_mcp_token_management: "/app/settings/api-tokens",
+    crm_list_message_templates: "/app/templates",
+    crm_get_message_template: "/app/templates",
+    crm_render_message_template: "/app/templates",
+    crm_list_ai_skill_versions: "/app/ai/skills",
+    crm_restore_ai_skill_version: "/app/ai/skills",
+    crm_list_pipelines: "/app/kanban",
+    crm_get_pipeline: "/app/kanban",
+    crm_list_stages: "/app/kanban",
+    crm_list_at_risk_leads: "/app/radar",
+    crm_assign_conversation: "/app/inbox",
+    crm_list_messaging_channels: "/app/inbox",
+    crm_get_lead_import_instructions: "/app/contacts",
+  };
+  const exact = exactToolArea[tool.name];
+  if (exact) return exact;
+  if (/^crm_(list_tasks|get_task|create_task|update_task)$/.test(tool.name)) return "/app/tasks";
+  const areaByDomain: Partial<Record<McpToolDomain, NavDestinationId>> = {
+    agents: "/app/ai/agents",
+    appointments: "/app/agenda",
+    automations: "/app/ai/followups",
+    campaigns: "/app/campaigns",
+    channels: "/app/connections",
+    contacts: "/app/contacts",
+    conversations: "/app/inbox",
+    followups: "/app/ai/followups",
+    knowledge: "/app/ai/knowledge/sources",
+    leads: "/app/kanban",
+    messages: "/app/inbox",
+    pipelines: "/app/settings/tenant/pipelines",
+    products: "/app/products",
+    routing: "/app/ai/routers",
+    team: "/app/team",
+    templates: "/app/templates",
+    webhooks: "/app/webhooks",
+    audit: "/app/audit",
+    privacy: "/app/lgpd/requests",
+  };
+  return areaByDomain[domainOf(tool)] ?? null;
 }
 
 export function isToolVisible(auth: McpAuthResult, tool: McpToolDefinition): boolean {

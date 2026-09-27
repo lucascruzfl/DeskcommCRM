@@ -105,7 +105,7 @@ function etapa(diferente: Partial<EtapaDoFunil> & { id: string; position: number
 }
 
 /**
- * Dublê de `crm_stages` que HONRA os `.eq()` — e essa é a diferença que importa.
+ * Dublê de `operational_crm_stages` que HONRA os `.eq()` — e essa é a diferença que importa.
  *
  * A versão anterior implementava `eq` como `() => elo`: o dublê ENGOLIA os
  * filtros e devolvia a etapa fixa que o teste passasse. Consequência medida:
@@ -150,7 +150,7 @@ function fazerSupabaseComEtapas(etapas: EtapaDoFunil[]) {
     };
     elo.single = () => Promise.resolve({ data: { id: `novo-${inseridos.length}` }, error: null });
     elo.maybeSingle = () => {
-      if (tabela !== "crm_stages") return Promise.resolve({ data: null, error: null });
+      if (tabela !== "operational_crm_stages") return Promise.resolve({ data: null, error: null });
       const campo = (linha: EtapaDoFunil, coluna: string) =>
         (linha as unknown as Record<string, unknown>)[coluna];
       const restantes = etapas.filter((linha) =>
@@ -276,9 +276,7 @@ describe("POST /api/v1/leads/import", () => {
     const { POST } = await import("@/app/api/v1/leads/import/route");
 
     await POST(
-      pedido(
-        "nome,telefone\nAna,11988887777\nAna (2),(11) 98888-7777\nAna (3),+5511988887777",
-      ),
+      pedido("nome,telefone\nAna,11988887777\nAna (2),(11) 98888-7777\nAna (3),+5511988887777"),
     );
 
     expect(espiao.inseridos).toHaveLength(1);
@@ -354,7 +352,7 @@ describe("POST /api/v1/leads/import", () => {
     const corpo = (await res.json()) as { error: { message: string } };
 
     expect(res.status).toBe(422);
-    expect(espiao.consultadas).toContain("crm_stages");
+    expect(espiao.consultadas).toContain("operational_crm_stages");
     expect(corpo.error.message).toBe("Este funil não tem etapas abertas.");
     expect(vi.mocked(createLeadHandler)).not.toHaveBeenCalled();
   });
@@ -421,7 +419,7 @@ describe("POST /api/v1/leads/import", () => {
 
 // Este teste isola o handler; autoridade de suporte é exercitada na suíte própria.
 vi.mock("@/lib/impersonate/support", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/lib/impersonate/support")>(),
+  ...(await importOriginal<typeof import("@/lib/impersonate/support")>()),
   requireSupportWrite: vi.fn(async () => null),
   authenticatedSessionId: vi.fn(async () => "f2200000-0000-4000-8000-000000000099"),
 }));

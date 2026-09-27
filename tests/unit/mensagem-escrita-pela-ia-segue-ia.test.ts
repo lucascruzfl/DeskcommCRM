@@ -83,7 +83,7 @@ vi.mock("@/lib/automation/desfecho-do-envio", () => ({
   reportarEnvio: vi.fn(async (_ctx: unknown, type: string) => ({ type, status: "success", detail: {} })),
 }));
 vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: () => ({ storage: { from: () => ({ createSignedUrl: vi.fn() }) } }),
+  createAdminClient: () => ({ ...adminTransport, storage: { from: () => ({ createSignedUrl: vi.fn() }) } }),
 }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}) }));
 
@@ -91,6 +91,8 @@ import { criarDubleDoHandler } from "../helpers/duble-do-handler";
 import { getAction } from "@/lib/automation/actions";
 import "@/lib/automation/actions/send-ai-message";
 import "@/lib/automation/actions/send-whatsapp";
+
+let adminTransport: SupabaseClient;
 
 type Row = Record<string, unknown>;
 
@@ -102,7 +104,7 @@ type Row = Record<string, unknown>;
  * sem ninguém ver.
  */
 function duble() {
-  return criarDubleDoHandler({
+  const result = criarDubleDoHandler({
     conversation: {
       id: CONV,
       organization_id: ORG,
@@ -120,6 +122,8 @@ function duble() {
       },
     },
   });
+  adminTransport = result.supabase;
+  return result;
 }
 
 

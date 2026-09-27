@@ -29,6 +29,18 @@ export async function GET(): Promise<Response> {
 
   const supabase = await createClient();
   try {
+    if (authz.org.managed_policy && authz.org.role !== "admin") {
+      const { data, error } = await supabase
+        .from("operational_crm_pipelines")
+        .select(
+          "id, organization_id, name, slug, description, is_default, is_client_pipeline, is_archived, position, vocabulary, settings",
+        )
+        .eq("organization_id", authz.org.orgId)
+        .eq("is_archived", false)
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return ok(data ?? [], { requestId });
+    }
     const { pipelines } = await listPipelinesHandler(supabase, {
       organization_id: authz.org.orgId,
       actor: { type: "user", id: authz.user.id },
@@ -75,8 +87,10 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
   const supabase = await createClient();
   try {
-    await criarPipeline({ supabase, organizationId: orgId,
-      actor: { type: "user", id: authz.user.id }, requestId }, parsed.data);
+    await criarPipeline(
+      { supabase, organizationId: orgId, actor: { type: "user", id: authz.user.id }, requestId },
+      parsed.data,
+    );
     const depois = await lerFunis(supabase, orgId);
     return ok(corpo(depois), { status: 201, requestId });
   } catch (err) {

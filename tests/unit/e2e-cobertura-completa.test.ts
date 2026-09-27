@@ -134,8 +134,8 @@ describe("cobertura do e2e no CI", () => {
   });
 
   it("toda lista declarada é invocada pela matrix (e vice-versa)", () => {
-    const m = /^\s*parte:\s*\[([^\]]+)\]/m.exec(yml);
-    expect(m, "não achei a matrix `parte:` no workflow — o parser envelheceu").not.toBeNull();
+    const m = /^\s*parte:\s*\$\{\{.*\|\| '\[([^\]]+)\]'.*\}\}/m.exec(yml);
+    expect(m, "não achei a matrix completa padrão no workflow — o parser envelheceu").not.toBeNull();
     const naMatrix = m![1]!
       .split(",")
       .map((s) => s.trim())

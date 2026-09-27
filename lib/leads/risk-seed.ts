@@ -117,11 +117,14 @@ async function coletaEClassifica(
   const janelaPorEstagio = new Map<string, ReturnType<typeof resolveStageWindow>>();
   if (stageIds.length > 0) {
     const { data: stages } = await admin
-      .from("crm_stages")
+      .from("operational_crm_stages")
       .select("id, expected_duration_hours")
       .eq("organization_id", organizationId)
       .in("id", stageIds);
-    for (const s of (stages ?? []) as Array<{ id: string; expected_duration_hours: number | null }>) {
+    for (const s of (stages ?? []) as Array<{
+      id: string;
+      expected_duration_hours: number | null;
+    }>) {
       janelaPorEstagio.set(s.id, resolveStageWindow(s));
     }
   }
@@ -146,7 +149,8 @@ async function coletaEClassifica(
   }
 
   const agenda = await protecaoAgendaSupabase(admin, organizationId, contactIds, now);
-  if ([...agenda.values()].some(p => p.motivo === "leitura_indisponivel")) throw new Error("risk_agenda_indisponivel");
+  if ([...agenda.values()].some((p) => p.motivo === "leitura_indisponivel"))
+    throw new Error("risk_agenda_indisponivel");
   const estados: EstadoCalculado[] = [];
   let semRelogio = 0;
 

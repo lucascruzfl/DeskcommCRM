@@ -93,7 +93,7 @@ function bancoFalso(
       chain.maybeSingle = async () => ({ data: { settings: settingsDoFunil }, error: null });
       return chain;
     }
-    if (tabela === "crm_stages") {
+    if (tabela === "operational_crm_stages") {
       const chain: Record<string, unknown> = {};
       chain.select = () => chain;
       chain.eq = (_col: string, id: string) => {

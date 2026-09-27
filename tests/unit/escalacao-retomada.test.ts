@@ -84,7 +84,7 @@ function fazerSupabase(cenario: CenarioBanco, cap: Captura) {
           const casa = cenario.updateDaConversaCasa ?? true;
           return Promise.resolve({ data: casa ? { id: CONV } : null, error: null });
         }
-        if (tabela === "conversations") {
+        if (tabela === "operational_conversations") {
           return Promise.resolve({ data: cenario.conversa, error: null });
         }
         if (tabela === "lead_checkpoints") {
@@ -221,7 +221,7 @@ describe("devolver o atendimento ao agente", () => {
     const cap = novaCaptura();
     await retomar(cenarioComAtendimentoHumano(), cap);
 
-    const naConversa = cap.updates.find((u) => u.tabela === "conversations");
+    const naConversa = cap.updates.find((u) => u.tabela === "operational_conversations");
     expect(naConversa?.valores).toMatchObject({
       bot_silenced_until: null,
       last_handoff_at: null,
@@ -250,7 +250,7 @@ describe("devolver o atendimento ao agente", () => {
     ]);
     // A coluna do dono NUNCA é escrita direto: quem escreve é a função, que grava
     // o evento de atribuição na mesma transação.
-    const naConversa = cap.updates.find((u) => u.tabela === "conversations");
+    const naConversa = cap.updates.find((u) => u.tabela === "operational_conversations");
     expect(Object.keys(naConversa?.valores ?? {})).not.toContain("assigned_to_user_id");
   });
 
@@ -347,7 +347,7 @@ describe("devolver o atendimento ao agente", () => {
       }),
     );
     // As três travas saem do mesmo jeito que no clique.
-    expect(cap.updates.find((u) => u.tabela === "conversations")?.valores).toMatchObject({
+    expect(cap.updates.find((u) => u.tabela === "operational_conversations")?.valores).toMatchObject({
       bot_silenced_until: null,
       assignee_kind: "ai",
     });
@@ -462,7 +462,7 @@ describe("devolver o atendimento ao agente", () => {
       }),
       cap,
     );
-    const naConversa = cap.updates.find((u) => u.tabela === "conversations");
+    const naConversa = cap.updates.find((u) => u.tabela === "operational_conversations");
     expect(naConversa?.valores.status).toBe("closed");
   });
 });

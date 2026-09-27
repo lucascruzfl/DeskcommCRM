@@ -24,7 +24,7 @@ export async function lerClientePelaAgenda(
   organizationId: string,
 ): Promise<boolean> {
   const { data, error } = await db
-    .from("organizations")
+    .from("operational_organizations")
     .select("settings")
     .eq("id", organizationId)
     .maybeSingle();

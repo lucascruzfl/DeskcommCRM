@@ -27,12 +27,20 @@ import { telefoneDoEmbed } from "@/lib/messaging/falha-de-entrega";
 import { ENTIDADE_ESPERADA_POR_GATILHO } from "@/lib/schemas/webhooks";
 import { criarDubleDoHandler } from "@/tests/helpers/duble-do-handler";
 
+const banco = vi.hoisted(() => ({
+  client: null as import("@supabase/supabase-js").SupabaseClient | null,
+}));
+
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}) }));
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
+    from: (table: string) => banco.client!.from(table),
     storage: {
       from: () => ({
-        createSignedUrl: async () => ({ data: { signedUrl: "https://signed.example/a.jpg" }, error: null }),
+        createSignedUrl: async () => ({
+          data: { signedUrl: "https://signed.example/a.jpg" },
+          error: null,
+        }),
       }),
     },
   }),
@@ -86,6 +94,7 @@ describe("falha de entrega emite message.failed", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("conexao recusada")));
 
     const { supabase, capturas } = criarDubleDoHandler({ conversation: conversa() });
+    banco.client = supabase;
     const msg = await sendMessageHandler(supabase, ctxToken, {
       conversation_id: CONV,
       type: "text",

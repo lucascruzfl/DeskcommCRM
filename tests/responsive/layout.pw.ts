@@ -129,7 +129,7 @@ for (const [width, height] of viewports) {
       await contained(dialog.getByRole("heading"), page);
       await noPageOverflow(page);
       await page.screenshot({
-        path: `.superpowers/evidence/responsive/tokens-${width}x${height}.png`,
+        path: `evidence/responsive/tokens-${width}x${height}.png`,
       });
       await dialog.getByRole("button", { name: "Criar", exact: true }).click();
       await expect(page.getByRole("heading", { name: "Token criado" })).toBeVisible();
@@ -148,7 +148,7 @@ for (const [width, height] of viewports) {
       await contained(dialog.getByRole("heading"), page);
       await noPageOverflow(page);
       await page.screenshot({
-        path: `.superpowers/evidence/responsive/connection-${width}x${height}.png`,
+        path: `evidence/responsive/connection-${width}x${height}.png`,
       });
       const deletion = page.waitForRequest((r) => r.method() === "DELETE");
       await remove.click();

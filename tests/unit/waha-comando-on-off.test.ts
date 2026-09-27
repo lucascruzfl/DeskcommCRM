@@ -28,7 +28,10 @@ vi.mock("@/lib/env", () => ({
     return envMock;
   },
 }));
-vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}), isServiceRoleConfigured: () => false }));
+vi.mock("@/lib/audit", () => ({
+  audit: vi.fn(async () => {}),
+  isServiceRoleConfigured: () => false,
+}));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 vi.mock("@/lib/channels/health", () => ({ sincronizarSaudeDaConexao: vi.fn(async () => {}) }));
 // O transporte de volta (revogar o comando no WhatsApp do cliente).
@@ -77,18 +80,21 @@ function makeAdmin(
   } = {},
 ) {
   contactUpdates.length = 0;
-  const agentes = (opts.agentes ?? [{ id: "ag-1", aceita: opts.aceitaComandos === true }]).map((a) => ({
-    id: a.id,
-    config: { aceita_comandos_celular: a.aceita === true },
-    kind: "mcp_agent",
-    is_active: true,
-    paused_at: a.pausado ? "2026-09-24T12:00:00Z" : null,
-    published_version_id: `v-${a.id}`,
-    archived_at: null,
-    priority: 0,
-    created_at: "2026-09-01T00:00:00Z",
-  }));
+  const agentes = (opts.agentes ?? [{ id: "ag-1", aceita: opts.aceitaComandos === true }]).map(
+    (a) => ({
+      id: a.id,
+      config: { aceita_comandos_celular: a.aceita === true },
+      kind: "mcp_agent",
+      is_active: true,
+      paused_at: a.pausado ? "2026-09-24T12:00:00Z" : null,
+      published_version_id: `v-${a.id}`,
+      archived_at: null,
+      priority: 0,
+      created_at: "2026-09-01T00:00:00Z",
+    }),
+  );
   const table = (name: string) => {
+    name = name.replace(/^operational_(conversations|messages)$/, "$1");
     let mode: "select" | "insert" | "update" = "select";
     let colunas = "";
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,7 +134,12 @@ function makeAdmin(
           // Contrato de `pausarIaDuravelmente`: linha de volta = gravou.
           return Promise.resolve({ data: { id: "conv-1" }, error: null });
         }
-        if (name === "conversations" && mode === "select" && opts.devolucaoFalha && colunas.includes("assigned_to_user_id")) {
+        if (
+          name === "conversations" &&
+          mode === "select" &&
+          opts.devolucaoFalha &&
+          colunas.includes("assigned_to_user_id")
+        ) {
           return Promise.resolve({ data: null, error: { message: "conexão caiu" } });
         }
         if (name === "conversations" && mode === "select") {
@@ -146,7 +157,9 @@ function makeAdmin(
       // Lista sem `maybeSingle`: os candidatos de `resolverAgenteDaConversa`.
       then: (r: (v: unknown) => unknown) =>
         Promise.resolve(
-          name === "ai_agents" && mode === "select" ? { data: agentes, error: null } : { data: null, error: null },
+          name === "ai_agents" && mode === "select"
+            ? { data: agentes, error: null }
+            : { data: null, error: null },
         ).then(r),
     };
     return chain;
@@ -183,7 +196,12 @@ beforeEach(() => vi.clearAllMocks());
 describe("C-075 · comando do celular controla o automático", () => {
   it("#off → pausa DURÁVEL e grava a mensagem", async () => {
     const cap: Captura = { conversationUpdates: [], insertedMessages: [], rpcs: [] };
-    await dispatchWahaEvent(makeAdmin(cap, { aceitaComandos: true }), SESSION, comando("#off"), "req-off");
+    await dispatchWahaEvent(
+      makeAdmin(cap, { aceitaComandos: true }),
+      SESSION,
+      comando("#off"),
+      "req-off",
+    );
 
     const pausa = cap.conversationUpdates.find((u) => u.last_handoff_reason !== undefined);
     expect(pausa).toBeDefined();
@@ -197,7 +215,12 @@ describe("C-075 · comando do celular controla o automático", () => {
 
   it("#on → devolve o atendimento à IA (limpa as travas), sem pausar", async () => {
     const cap: Captura = { conversationUpdates: [], insertedMessages: [], rpcs: [] };
-    await dispatchWahaEvent(makeAdmin(cap, { aceitaComandos: true }), SESSION, comando("#on"), "req-on");
+    await dispatchWahaEvent(
+      makeAdmin(cap, { aceitaComandos: true }),
+      SESSION,
+      comando("#on"),
+      "req-on",
+    );
 
     // A mensagem do comando é gravada…
     expect(cap.insertedMessages).toHaveLength(1);
@@ -242,7 +265,9 @@ describe("C-075 · comando do celular controla o automático", () => {
 
 describe("C-076 · o comando só VALE se o agente aceitar (config da UI)", () => {
   const auditado = () =>
-    vi.mocked(audit).mock.calls.map((c) => (c[0] as { metadata?: Record<string, unknown> }).metadata ?? {});
+    vi
+      .mocked(audit)
+      .mock.calls.map((c) => (c[0] as { metadata?: Record<string, unknown> }).metadata ?? {});
 
   it("DESLIGADO: '#off' é texto comum — pausa COM PRAZO, não revoga, nada de comando no rastro", async () => {
     const cap: Captura = { conversationUpdates: [], insertedMessages: [], rpcs: [] };
@@ -258,7 +283,12 @@ describe("C-076 · o comando só VALE se o agente aceitar (config da UI)", () =>
 
   it("LIGADO: '#off' silencia DURÁVEL, revoga o comando e deixa rastro no audit", async () => {
     const cap: Captura = { conversationUpdates: [], insertedMessages: [], rpcs: [] };
-    await dispatchWahaEvent(makeAdmin(cap, { aceitaComandos: true }), SESSION, comando("#off"), "req-off-ligado");
+    await dispatchWahaEvent(
+      makeAdmin(cap, { aceitaComandos: true }),
+      SESSION,
+      comando("#off"),
+      "req-off-ligado",
+    );
 
     const pausa = cap.conversationUpdates.find((u) => u.last_handoff_reason !== undefined);
     expect(pausa!.bot_silenced_until).toBe("infinity");
@@ -269,7 +299,12 @@ describe("C-076 · o comando só VALE se o agente aceitar (config da UI)", () =>
 
   it("LIGADO: '#on' religa (devolve ao agente) e revoga o comando", async () => {
     const cap: Captura = { conversationUpdates: [], insertedMessages: [], rpcs: [] };
-    await dispatchWahaEvent(makeAdmin(cap, { aceitaComandos: true }), SESSION, comando("#on"), "req-on-ligado");
+    await dispatchWahaEvent(
+      makeAdmin(cap, { aceitaComandos: true }),
+      SESSION,
+      comando("#on"),
+      "req-on-ligado",
+    );
 
     expect(cap.rpcs.some((r) => r.fn === "emit_event")).toBe(true);
     expect(cap.conversationUpdates.some((u) => u.bot_silenced_until === null)).toBe(true);
@@ -298,7 +333,12 @@ describe("C-076 · o comando só VALE se o agente aceitar (config da UI)", () =>
 
   it("LIGADO: resposta NORMAL pelo celular pausa DURÁVEL (o #on é quem religa)", async () => {
     const cap: Captura = { conversationUpdates: [], insertedMessages: [], rpcs: [] };
-    await dispatchWahaEvent(makeAdmin(cap, { aceitaComandos: true }), SESSION, comando("Oi, já te respondo"), "req-n-ligado");
+    await dispatchWahaEvent(
+      makeAdmin(cap, { aceitaComandos: true }),
+      SESSION,
+      comando("Oi, já te respondo"),
+      "req-n-ligado",
+    );
 
     const pausa = cap.conversationUpdates.find((u) => u.last_handoff_reason !== undefined);
     expect(pausa!.bot_silenced_until).toBe("infinity");

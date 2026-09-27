@@ -123,7 +123,7 @@ export async function carregaRadarDeRisco(
   // `.eq("crm_pipelines.is_archived", false)` —, que não carrega ids na URL. Não
   // medida: com ~50 funis arquivados são ~2 KB, dentro de qualquer limite.
   const { data: arquivados, error: arquivadosErr } = await admin
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("id")
     .eq("organization_id", organizationId)
     .eq("is_archived", true);
@@ -174,7 +174,7 @@ export async function carregaRadarDeRisco(
   const windowByStage = new Map<string, ReturnType<typeof resolveStageWindow>>();
   if (stageIds.length > 0) {
     const { data: stages } = await admin
-      .from("crm_stages")
+      .from("operational_crm_stages")
       .select("id, expected_duration_hours")
       .eq("organization_id", organizationId)
       .in("id", stageIds);
@@ -206,7 +206,7 @@ export async function carregaRadarDeRisco(
         .gt("next_run_at", nowIso)
         .in("contact_id", contactIds),
       admin
-        .from("conversations")
+        .from("operational_conversations")
         .select("id, contact_id, assignee_kind")
         .eq("organization_id", organizationId)
         .in("contact_id", contactIds),
@@ -232,7 +232,8 @@ export async function carregaRadarDeRisco(
   }
 
   const agenda = await protecaoAgendaSupabase(admin, organizationId, contactIds, now);
-  if ([...agenda.values()].some(p => p.motivo === "leitura_indisponivel")) throw new Error("radar_agenda_indisponivel");
+  if ([...agenda.values()].some((p) => p.motivo === "leitura_indisponivel"))
+    throw new Error("radar_agenda_indisponivel");
   const radar: AtRiskLead[] = [];
   const counts: Record<RiskBucket, number> = { critico: 0, em_risco: 0, em_voo: 0, em_dia: 0 };
 
@@ -248,7 +249,11 @@ export async function carregaRadarDeRisco(
       window: windowByStage.get(l.stage_id) ?? resolveStageWindow(null),
     });
     const protection = l.contact_id ? agenda.get(l.contact_id) : undefined;
-    if (!onRadar || (hoursSinceActivity < minHours && (!protection || protection.motivo === "sem_compromisso"))) continue;
+    if (
+      !onRadar ||
+      (hoursSinceActivity < minHours && (!protection || protection.motivo === "sem_compromisso"))
+    )
+      continue;
     const conv = l.contact_id ? (convByContact.get(l.contact_id) ?? null) : null;
     counts[bucket] += 1;
     radar.push({
@@ -308,7 +313,9 @@ export async function carregaRadarDeRisco(
   // descarta a linha NULL — apagaria exatamente a "demanda sem lead" que a linha
   // acima diz que tem de ficar. Por isso NÃO vira `.not("lead_id", "in", ...)`.
   if (funisArquivados.length > 0) {
-    const idsDeLead = [...new Set(demandasVisiveis.flatMap((d) => (d.lead_id ? [d.lead_id as string] : [])))];
+    const idsDeLead = [
+      ...new Set(demandasVisiveis.flatMap((d) => (d.lead_id ? [d.lead_id as string] : []))),
+    ];
     const fora = new Set<string>();
     // EM LOTES DE `IDS_POR_CONSULTA`, e não numa consulta só: esta lista vai na
     // QUERYSTRING do PostgREST. Um uuid custa ~37 bytes na URL e o teto da
@@ -335,27 +342,42 @@ export async function carregaRadarDeRisco(
   if (opts.humanRole === "agent" && demandasVisiveis.length) {
     // Demandas são org-flat. A visibilidade dos candidatos vem das relações sob
     // RLS, em lote separado do pool de leads frios (que não define autorização).
-    const leadIds = [...new Set(demandasVisiveis.flatMap(d => d.lead_id ? [d.lead_id] : []))];
-    const leadlessIds = demandasVisiveis.filter(d => !d.lead_id).map(d => d.id);
+    const leadIds = [...new Set(demandasVisiveis.flatMap((d) => (d.lead_id ? [d.lead_id] : [])))];
+    const leadlessIds = demandasVisiveis.filter((d) => !d.lead_id).map((d) => d.id);
     const visibleLeads = new Set<string>();
     const visibleLeadless = new Set<string>();
     if (leadIds.length) {
-      const result = await admin.from("crm_leads").select("id").eq("organization_id", organizationId).in("id", leadIds);
+      const result = await admin
+        .from("crm_leads")
+        .select("id")
+        .eq("organization_id", organizationId)
+        .in("id", leadIds);
       if (result.error) throw new Error("radar_scope_leads_failed");
       for (const lead of result.data ?? []) visibleLeads.add(lead.id);
     }
     if (leadlessIds.length) {
-      const links = await admin.from("demanda_conversas").select("demanda_id,conversation_id").eq("organization_id", organizationId).in("demanda_id", leadlessIds);
+      const links = await admin
+        .from("demanda_conversas")
+        .select("demanda_id,conversation_id")
+        .eq("organization_id", organizationId)
+        .in("demanda_id", leadlessIds);
       if (links.error) throw new Error("radar_scope_links_failed");
-      const ids = [...new Set((links.data ?? []).map(link => link.conversation_id))];
+      const ids = [...new Set((links.data ?? []).map((link) => link.conversation_id))];
       if (ids.length) {
-        const convs = await admin.from("conversations").select("id").eq("organization_id", organizationId).in("id", ids);
+        const convs = await admin
+          .from("operational_conversations")
+          .select("id")
+          .eq("organization_id", organizationId)
+          .in("id", ids);
         if (convs.error) throw new Error("radar_scope_conversations_failed");
-        const visible = new Set((convs.data ?? []).map(c => c.id));
-        for (const link of links.data ?? []) if (visible.has(link.conversation_id)) visibleLeadless.add(link.demanda_id);
+        const visible = new Set((convs.data ?? []).map((c) => c.id));
+        for (const link of links.data ?? [])
+          if (visible.has(link.conversation_id)) visibleLeadless.add(link.demanda_id);
       }
     }
-    demandasVisiveis = demandasVisiveis.filter(d => d.lead_id ? visibleLeads.has(d.lead_id) : visibleLeadless.has(d.id));
+    demandasVisiveis = demandasVisiveis.filter((d) =>
+      d.lead_id ? visibleLeads.has(d.lead_id) : visibleLeadless.has(d.id),
+    );
   }
 
   const semProximoPasso: DemandaSemProximoPasso[] = demandasVisiveis.map((d) => {

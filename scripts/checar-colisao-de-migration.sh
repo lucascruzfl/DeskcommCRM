@@ -380,6 +380,23 @@ while IFS= read -r nome; do
 
   colisao_n="$(grep -E "^[0-9]{14}_${nnnn}_.+\.sql$" <<<"$base_arvore" || true)"
   colisao_t="$(grep -E "^${ts}_[0-9]{4}_.+\.sql$" <<<"$base_arvore" || true)"
+  # A distribuição MCP já publicou sua 0382. A 0382 oficial, de conteúdo
+  # diferente, foi integrada como 0385 no fork mantendo o timestamp original
+  # (identidade do Supabase). Aceitar SOMENTE esse par de bytes evita mandar uma
+  # migration já aplicada rodar de novo para satisfazer a numeração upstream.
+  if [ "$nome" = "20260921092259_0382_replace_faq_atomico.sql" ] \
+     && [ "$colisao_n" = "20260922021548_0382_link_salvo_no_modelo.sql" ] \
+     && [ -z "$colisao_t" ]; then
+    hash_mcp="$(git show "HEAD:$caminho" 2>/dev/null | sha256sum | cut -d' ' -f1)"
+    hash_oficial="$(git show "$BASE:supabase/migrations/20260922021548_0382_link_salvo_no_modelo.sql" 2>/dev/null | sha256sum | cut -d' ' -f1)"
+    hash_integrado="$(git show HEAD:supabase/migrations/20260922021548_0385_link_salvo_no_modelo.sql 2>/dev/null | sha256sum | cut -d' ' -f1)"
+    if [ "$hash_mcp" = "61a994cd1d7296956f5ada051f71e7fb409a2b44301e8f6edfb9c872a3289374" ] \
+       && [ "$hash_oficial" = "2a9336e5117d82c5252ec778a48608054fb2e6ac3c6189a7752ad81d5ff4d917" ] \
+       && [ "$hash_integrado" = "$hash_oficial" ]; then
+      echo "::notice file=$caminho::0382 MCP histórica preservada; migration oficial integrada como 0385 com timestamp e bytes iguais."
+      colisao_n=""
+    fi
+  fi
   if [ -n "$colisao_n" ]; then
     lista="$(tr '\n' ' ' <<<"$colisao_n" | sed 's/ *$//')"
     echo "::error file=$caminho::NNNN=$nnnn já existe em '$BASE': $lista"

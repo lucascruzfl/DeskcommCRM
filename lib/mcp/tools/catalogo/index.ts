@@ -32,12 +32,14 @@ import { TOOLS_PARTE7 } from "./parte7";
 import { TOOLS_CAMPANHAS } from "./campanhas";
 import { TOOLS_CAMPANHAS_COMPLEMENTOS } from "./campanhas-complementos";
 import { TOOLS_SKILL_VERSIONS } from "./skill-versions";
+import { TOOLS_MANAGED_CLIENTS } from "./managed-clients";
 import type { McpToolCatalogEntry } from "./tipos";
 
 export type { McpToolCatalogEntry } from "./tipos";
 export { declararTools } from "./tipos";
 
 export const TOOL_CATALOG: ReadonlyArray<McpToolCatalogEntry> = [
+  ...TOOLS_MANAGED_CLIENTS,
   ...TOOLS_CAMPANHAS,
   ...TOOLS_CAMPANHAS_COMPLEMENTOS,
   ...TOOLS_SKILL_VERSIONS,

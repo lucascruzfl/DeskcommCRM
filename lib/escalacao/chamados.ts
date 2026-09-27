@@ -53,7 +53,7 @@ function recorte(visiveisPara: ConversasVisiveis): string[] | null {
   if (visiveisPara === "todas") return null;
   if (!Array.isArray(visiveisPara)) {
     throw new Error(
-      "chamados: `visiveisPara` é obrigatório — declare `\"todas\"` (cliente admin por " +
+      'chamados: `visiveisPara` é obrigatório — declare `"todas"` (cliente admin por ' +
         "contrato, como o MCP) ou o conjunto de conversas que a RLS devolveu para a sessão.",
     );
   }
@@ -98,7 +98,7 @@ export async function conversasVisiveisDosCasos(
   if (candidatas.length === 0) return [];
 
   const { data: visiveis, error: erroVisiveis } = await sessao
-    .from("conversations")
+    .from("operational_conversations")
     .select("id")
     .eq("organization_id", organizationId)
     .in("id", candidatas);
@@ -265,9 +265,8 @@ export async function lerChamado(
     .select(COLUNAS_DETALHE)
     .eq("id", caseId)
     .eq("organization_id", organizationId);
-  const { data: caseRow, error: caseErr } = await (conversas === null
-    ? consulta
-    : consulta.in("conversation_id", conversas)
+  const { data: caseRow, error: caseErr } = await (
+    conversas === null ? consulta : consulta.in("conversation_id", conversas)
   ).maybeSingle();
   if (caseErr) throw new Error(caseErr.message);
   if (!caseRow) return null;

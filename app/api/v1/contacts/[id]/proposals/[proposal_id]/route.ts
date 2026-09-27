@@ -62,7 +62,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
 
   // `agent`: paridade com o PATCH do próprio contato. Confirmar um dado é
   // editar a ficha, e editar ficha é trabalho de quem atende.
-  const guard = await requireRole("agent", { requestId });
+  const guard = await requireRole("agent", { requestId, resource: "contacts" });
   if (!guard.ok) return guard.response;
   const t = (texto: string) => traduzir(texto, guard.user.idioma);
   const orgId = guard.org.orgId;
@@ -70,7 +70,9 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
 
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return fail("invalid_body", t("decision é obrigatório (accept | dismiss)."), 400, { requestId });
+    return fail("invalid_body", t("decision é obrigatório (accept | dismiss)."), 400, {
+      requestId,
+    });
   }
   const { decision, motivo } = parsed.data;
 
@@ -107,7 +109,9 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       const st = (existe as { status: string }).status;
       return fail(
         "proposal_not_pending",
-        st === "expired" ? t("Esta sugestão venceu pelo prazo.") : t("Esta sugestão já foi decidida."),
+        st === "expired"
+          ? t("Esta sugestão venceu pelo prazo.")
+          : t("Esta sugestão já foi decidida."),
         409,
         { requestId },
       );
@@ -170,7 +174,9 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       // decisão humana, e ela é fato mesmo que a escrita tenha sido barrada.
       // Reverter para `pending` reapresentaria o botão e convidaria ao mesmo
       // clique, sem que nada tivesse mudado.
-      return fail(err.code, err.message ?? t("Não foi possível gravar."), err.status, { requestId });
+      return fail(err.code, err.message ?? t("Não foi possível gravar."), err.status, {
+        requestId,
+      });
     }
     return fail("internal_error", t("Não foi possível gravar o dado."), 500, { requestId });
   }
@@ -190,7 +196,8 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       // mudado no meio do caminho.
       old_value: p.valor_anterior,
       new_value: p.valor_proposto,
-      legal_basis: "L-05 transactional (dado informado pelo titular em atendimento iniciado por ele)",
+      legal_basis:
+        "L-05 transactional (dado informado pelo titular em atendimento iniciado por ele)",
     },
   });
 

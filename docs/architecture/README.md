@@ -16,6 +16,7 @@ ser fonte sem ninguém decidir isso.
 
 | arquivo | escopo |
 |---|---|
+| `managed-client-onboarding.architecture.json` | criação transacional de cliente gerenciado por platform admin full, convite agent retomável, membership do gestor, preflight MCP e auditoria |
 | `mcp-fundacao-ia.architecture.json` | fundação do MCP e administração de IA — registry único, autorização de manager por domínio/tool/capability, isolamento por organização, catálogo real de provider/model/credencial e auditoria sem segredos |
 | `conversoes-de-anuncios.architecture.json` | venda, entrega, protocolo assíncrono, pendências e reprocessamento |
 | `prospeccao-nativa.architecture.json` | busca comercial, fila gradual, configuração conversacional persistente, sandbox e assistente de voz opcional |

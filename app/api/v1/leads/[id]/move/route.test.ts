@@ -68,7 +68,7 @@ function bancoFalso(
       };
       return chain;
     }
-    if (tabela === "crm_stages") {
+    if (tabela === "operational_crm_stages") {
       const chain = {
         select: () => chain,
         eq: (_col: string, id: string) => {
@@ -92,7 +92,10 @@ function bancoFalso(
     if (tabela === "crm_leads") {
       return {
         select: () => {
-          const leitura = { eq: () => leitura, maybeSingle: async () => ({ data: lead(), error: null }) };
+          const leitura = {
+            eq: () => leitura,
+            maybeSingle: async () => ({ data: lead(), error: null }),
+          };
           return leitura;
         },
         update: (valores: { stage_id: string } & Record<string, unknown>) => {
@@ -372,7 +375,7 @@ describe("POST /move num funil que retoma como novo negócio", () => {
 
 // Este teste isola o handler; autoridade de suporte é exercitada na suíte própria.
 vi.mock("@/lib/impersonate/support", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/lib/impersonate/support")>(),
+  ...(await importOriginal<typeof import("@/lib/impersonate/support")>()),
   requireSupportWrite: vi.fn(async () => null),
   authenticatedSessionId: vi.fn(async () => "f2200000-0000-4000-8000-000000000099"),
 }));

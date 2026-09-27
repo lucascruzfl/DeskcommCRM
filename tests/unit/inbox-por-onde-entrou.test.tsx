@@ -111,7 +111,7 @@ describe("o elo que some sem barulho", () => {
     // e a rota nunca lê: três arquivos, e o defeito mora no que ninguém testou.
     const fonte = readFileSync("app/api/v1/conversations/_handler.ts", "utf8");
     expect(fonte, "falta o embed da sessão no SELECT_COLS").toMatch(
-      /channel_sessions:channel_session_id\s*\([^)]*phone_number/,
+      /channel_sessions:operational_channel_sessions!channel_session_id\s*\([^)]*phone_number/,
     );
   });
 

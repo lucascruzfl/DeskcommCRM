@@ -113,7 +113,7 @@ describe("busca do inbox — o contato entra no predicado", () => {
 
     // 2ª metade: os ids achados entram no predicado da lista, SEM perder o
     // casamento por conteúdo — quem busca um trecho de mensagem continua achando.
-    const filtro = args(c, "conversations", "or");
+    const filtro = args(c, "operational_conversations", "or");
     expect(filtro, "os ids do contato não chegaram ao predicado da lista").toContain(
       "contato-maria",
     );
@@ -147,7 +147,7 @@ describe("busca do inbox — o contato entra no predicado", () => {
 
   it("sem contato casado, a busca por conteúdo continua funcionando sozinha", async () => {
     const c = await buscar("orçamento", []);
-    const conv = c.filter((x) => x.tabela === "conversations");
+    const conv = c.filter((x) => x.tabela === "operational_conversations");
     const texto = JSON.stringify(conv);
     expect(texto).toContain("last_message_preview");
     // Sem ids, um `contact_id.in.()` vazio viraria SQL inválido no PostgREST.

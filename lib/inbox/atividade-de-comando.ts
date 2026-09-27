@@ -108,7 +108,7 @@ export async function registrarTrocaDeComando(entrada: Entrada): Promise<void> {
         .eq("organization_id", organizationId)
         .eq("contact_id", contactId),
       leitor
-        .from("crm_pipelines")
+        .from("operational_crm_pipelines")
         .select("id")
         .eq("organization_id", organizationId)
         .eq("is_default", true)

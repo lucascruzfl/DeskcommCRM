@@ -34,7 +34,7 @@ export const crmGetMessage: McpToolDefinition<typeof getMessageInput> = {
   auditResource: (input) => ({ type: "message", id: input.message_id }),
   handler: async (input, ctx) => {
     const { data, error } = await ctx.supabase
-      .from("messages")
+      .from("operational_messages")
       .select(`${messageColumns}, media_storage_path, media_url`)
       .eq("id", input.message_id)
       .eq("organization_id", ctx.organizationId)
@@ -300,7 +300,7 @@ export const crmListHandoffHistory: McpToolDefinition<typeof handoffHistoryInput
   auditResource: (input) => ({ type: "conversation", id: input.conversation_id }),
   handler: async (input, ctx) => {
     const { data: conversation, error: conversationError } = await ctx.supabase
-      .from("conversations")
+      .from("operational_conversations")
       .select("id")
       .eq("id", input.conversation_id)
       .eq("organization_id", ctx.organizationId)

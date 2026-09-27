@@ -130,8 +130,20 @@ describe("criar entrada automática de contatos — tenancy sob service-role", (
   it("entrada de outra organização não aparece na listagem", async () => {
     const db = makeDb({
       webhookSources: [
-        { id: "w1", organization_id: ORG_ID, name: "Minha", is_active: true, secret_encrypted: null },
-        { id: "w2", organization_id: OUTRA_ORG, name: "Alheia", is_active: true, secret_encrypted: null },
+        {
+          id: "w1",
+          organization_id: ORG_ID,
+          name: "Minha",
+          is_active: true,
+          secret_encrypted: null,
+        },
+        {
+          id: "w2",
+          organization_id: OUTRA_ORG,
+          name: "Alheia",
+          is_active: true,
+          secret_encrypted: null,
+        },
       ],
     });
     const lista = await listarEntradasAutomaticas(deps(db));
@@ -141,8 +153,22 @@ describe("criar entrada automática de contatos — tenancy sob service-role", (
   it("regra de outra organização não aparece na listagem", async () => {
     const db = makeDb({
       automationRules: [
-        { id: "r1", organization_id: ORG_ID, name: "Minha", is_active: true, actions: [], conditions: [] },
-        { id: "r2", organization_id: OUTRA_ORG, name: "Alheia", is_active: true, actions: [], conditions: [] },
+        {
+          id: "r1",
+          organization_id: ORG_ID,
+          name: "Minha",
+          is_active: true,
+          actions: [],
+          conditions: [],
+        },
+        {
+          id: "r2",
+          organization_id: OUTRA_ORG,
+          name: "Alheia",
+          is_active: true,
+          actions: [],
+          conditions: [],
+        },
       ],
     });
     const lista = await listarRegrasAutomaticas(deps(db));
@@ -152,7 +178,14 @@ describe("criar entrada automática de contatos — tenancy sob service-role", (
   it("ligar regra de outra organização → 404, e nenhuma escrita", async () => {
     const db = makeDb({
       automationRules: [
-        { id: "r2", organization_id: OUTRA_ORG, name: "Alheia", is_active: false, actions: [], conditions: [] },
+        {
+          id: "r2",
+          organization_id: OUTRA_ORG,
+          name: "Alheia",
+          is_active: false,
+          actions: [],
+          conditions: [],
+        },
       ],
     });
     const erro = await recusa(() => definirRegraAtiva(deps(db, AGENTE), { id: "r2", ativa: true }));
@@ -225,7 +258,13 @@ describe("o que a leitura NÃO devolve", () => {
   it("⭐ recebimento devolve os NOMES dos campos, nunca o que a pessoa digitou", async () => {
     const db = makeDb({
       webhookSources: [
-        { id: "w1", organization_id: ORG_ID, name: "Site", path_token: "tok", secret_encrypted: null },
+        {
+          id: "w1",
+          organization_id: ORG_ID,
+          name: "Site",
+          path_token: "tok",
+          secret_encrypted: null,
+        },
       ],
     });
     db.tabelas.crm_pipelines.push(); // sem efeito: só para deixar claro que a fonte é a tabela abaixo
@@ -272,7 +311,14 @@ describe("o que a leitura NÃO devolve", () => {
   it("execução devolve só as ações que falharam", async () => {
     const db = makeDb({
       automationRules: [
-        { id: "r1", organization_id: ORG_ID, name: "Avisar o ERP", is_active: true, actions: [], conditions: [] },
+        {
+          id: "r1",
+          organization_id: ORG_ID,
+          name: "Avisar o ERP",
+          is_active: true,
+          actions: [],
+          conditions: [],
+        },
       ],
     });
     (db.tabelas as unknown as Record<string, unknown[]>).automation_rule_runs = [
@@ -295,9 +341,7 @@ describe("o que a leitura NÃO devolve", () => {
 
     expect(execucao?.status).toBe("partial");
     expect(execucao?.regra).toBe("Avisar o ERP");
-    expect(execucao?.falhas).toEqual([
-      { acao: "call_webhook", erro: "connect ECONNREFUSED" },
-    ]);
+    expect(execucao?.falhas).toEqual([{ acao: "call_webhook", erro: "connect ECONNREFUSED" }]);
   });
 });
 
@@ -307,7 +351,14 @@ describe("o que a leitura NÃO devolve", () => {
 
 describe("autoria da mudança de configuração", () => {
   const REGRA = [
-    { id: "r1", organization_id: ORG_ID, name: "Boas-vindas", is_active: false, actions: [], conditions: [] },
+    {
+      id: "r1",
+      organization_id: ORG_ID,
+      name: "Boas-vindas",
+      is_active: false,
+      actions: [],
+      conditions: [],
+    },
   ];
 
   it("⭐ regra ligada pelo AGENTE grava autoria 'ai'", async () => {
@@ -393,9 +444,7 @@ describe("preencher resposta pronta", () => {
     (db.tabelas as unknown as Record<string, unknown[]>).message_templates = [
       { id: "t1", organization_id: OUTRA_ORG, title: "Alheio", body: "oi" },
     ];
-    const erro = await recusa(() =>
-      preencherModeloDeMensagem(deps(db), { templateId: "t1" }),
-    );
+    const erro = await recusa(() => preencherModeloDeMensagem(deps(db), { templateId: "t1" }));
     expect(erro.status).toBe(404);
   });
 });
@@ -407,10 +456,10 @@ describe("preencher resposta pronta", () => {
 describe("listar marcadores", () => {
   it("junta o vocabulário oficial com o que está em uso, os mais usados primeiro", async () => {
     const db = makeDb();
-    (db.tabelas as unknown as Record<string, unknown[]>).organizations = [
+    (db.tabelas as unknown as Record<string, unknown[]>).operational_organizations = [
       { id: ORG_ID, settings: { canonical_conversation_tags: ["urgente", "nunca-usado"] } },
     ];
-    (db.tabelas as unknown as Record<string, unknown[]>).conversations = [
+    (db.tabelas as unknown as Record<string, unknown[]>).operational_conversations = [
       { id: "c1", organization_id: ORG_ID, tags: ["urgente", "vip"] },
       { id: "c2", organization_id: ORG_ID, tags: ["urgente"] },
       { id: "c3", organization_id: OUTRA_ORG, tags: ["de-outra-empresa"] },

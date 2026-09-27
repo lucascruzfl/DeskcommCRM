@@ -34,8 +34,7 @@ import {
 } from "./retorno";
 
 /** As colunas que descrevem um retorno. Uma lista só — leitura e escrita. */
-const COLUNAS =
-  "id, contact_id, next_run_at, enabled, payload, cancelled_at, cancel_reason";
+const COLUNAS = "id, contact_id, next_run_at, enabled, payload, cancelled_at, cancel_reason";
 
 interface LinhaDeCron {
   id: string;
@@ -101,7 +100,11 @@ export function criaRetornoDbSupabase(admin: SupabaseClient): RetornoDb {
           kind: "at",
           job_kind: "followup_turn",
           next_run_at: input.quando.toISOString(),
-          payload: { ...input.payload, conversation_id: boundary.conversation_id, service_boundary: boundary },
+          payload: {
+            ...input.payload,
+            conversation_id: boundary.conversation_id,
+            service_boundary: boundary,
+          },
         })
         .select(COLUNAS)
         .single();
@@ -169,7 +172,10 @@ export interface AlvoDoRetorno {
 
 export type ResolucaoDoAlvo =
   | { ok: true; alvo: AlvoDoRetorno }
-  | { ok: false; codigo: "negocio_nao_encontrado" | "negocio_sem_contato" | "cliente_nao_encontrado" };
+  | {
+      ok: false;
+      codigo: "negocio_nao_encontrado" | "negocio_sem_contato" | "cliente_nao_encontrado";
+    };
 
 /**
  * De qual pessoa e de qual negócio é este retorno.
@@ -235,7 +241,7 @@ export async function resolveAlvoDoRetorno(
     .eq("contact_id", ref.contactId);
 
   const { data: padrao } = await admin
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("id")
     .eq("organization_id", orgId)
     .eq("is_default", true)
@@ -279,10 +285,7 @@ interface AtividadeDoRetorno {
  * Sem negócio a que pertencer, não há linha possível (`lead_id` é NOT NULL) e o
  * que resta é registrar que o rastro não coube em lugar nenhum.
  */
-async function registraAtividade(
-  admin: SupabaseClient,
-  input: AtividadeDoRetorno,
-): Promise<void> {
+async function registraAtividade(admin: SupabaseClient, input: AtividadeDoRetorno): Promise<void> {
   if (!input.alvo.leadId) {
     await registraFalhaDeAtividade(admin, {
       organizationId: input.orgId,

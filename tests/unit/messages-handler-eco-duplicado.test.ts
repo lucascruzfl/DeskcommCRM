@@ -1,14 +1,18 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { sendMessageHandler } from '@/app/api/v1/messages/_handler';
-import type { HandlerCtx } from '@/lib/api/handlers/types';
-import type { SendMessageInput } from '@/lib/schemas';
+import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
+import type { HandlerCtx } from "@/lib/api/handlers/types";
+import type { SendMessageInput } from "@/lib/schemas";
 
-vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: () => ({ storage: { from: () => ({ createSignedUrl: vi.fn() }) } }),
+const transporteDoTeste = vi.hoisted(() => ({ client: null as SupabaseClient | null }));
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({
+    from: (tabela: string) => transporteDoTeste.client!.from(tabela),
+    storage: { from: () => ({ createSignedUrl: vi.fn() }) },
+  }),
 }));
-vi.mock('@/lib/audit', () => ({ audit: vi.fn(async () => {}) }));
+vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}) }));
 
 /**
  * A MESMA FRASE NÃO PODE APARECER DUAS VEZES NA CONVERSA.
@@ -37,15 +41,15 @@ vi.mock('@/lib/audit', () => ({ audit: vi.fn(async () => {}) }));
  * de receber do canal o id exato da mensagem que mandou. Casa por ID.
  */
 
-const ORG = '11111111-1111-4111-8111-111111111111';
-const CONV = '22222222-2222-4222-8222-222222222222';
-const OUTRA_CONV = '99999999-9999-4999-8999-999999999999';
-const CONTACT = '33333333-3333-4333-8333-333333333333';
-const SESSION = '44444444-4444-4444-8444-444444444444';
-const USER = '55555555-5555-4555-8555-555555555555';
+const ORG = "11111111-1111-4111-8111-111111111111";
+const CONV = "22222222-2222-4222-8222-222222222222";
+const OUTRA_CONV = "99999999-9999-4999-8999-999999999999";
+const CONTACT = "33333333-3333-4333-8333-333333333333";
+const SESSION = "44444444-4444-4444-8444-444444444444";
+const USER = "55555555-5555-4555-8555-555555555555";
 
 /** O que o WAHA/NOWEB devolve no envio: o id BARE, sem o chat. */
-const BARE = '3EB0ABCDEF0123456789';
+const BARE = "3EB0ABCDEF0123456789";
 /** O mesmo id como o webhook o entrega de volta: composto. */
 const COMPOSTO = `true_5531999998888@c.us_${BARE}`;
 
@@ -59,8 +63,8 @@ function conversationRow(): Row {
     channel_session_id: SESSION,
     is_group: false,
     group_chat_id: null,
-    contacts: { phone_number: '+5531999998888', wa_identity: null, is_blocked: false },
-    channel_sessions: { provider: 'waha', waha_session_name: 'default', status: 'WORKING' },
+    contacts: { phone_number: "+5531999998888", wa_identity: null, is_blocked: false },
+    channel_sessions: { provider: "waha", waha_session_name: "default", status: "WORKING" },
   };
 }
 
@@ -72,10 +76,11 @@ function conversationRow(): Row {
 function makeSupabase(preexistentes: Row[] = []) {
   const messages: Row[] = [...preexistentes];
 
-  const filtrar = (filtros: Array<(r: Row) => boolean>) => messages.filter((r) => filtros.every((f) => f(r)));
+  const filtrar = (filtros: Array<(r: Row) => boolean>) =>
+    messages.filter((r) => filtros.every((f) => f(r)));
 
   const from = (table: string) => {
-    if (table === 'conversations') {
+    if (["conversations", "operational_conversations"].includes(table)) {
       // Encadeável sem limite: ver o comentário irmão em `contacts` logo abaixo.
       // A consulta da conversa filtra por id E por `organization_id`.
       const cadeiaConv: Record<string, unknown> = {
@@ -87,7 +92,7 @@ function makeSupabase(preexistentes: Row[] = []) {
         update: () => ({ eq: async () => ({ error: null }) }),
       };
     }
-    if (table === 'contacts') {
+    if (table === "contacts") {
       // Ver o comentário irmão em `messages-handler-desfechos`: encadeável sem
       // limite, porque a consulta filtra por id E por organização.
       const cadeiaContacts: Record<string, unknown> = {
@@ -97,11 +102,19 @@ function makeSupabase(preexistentes: Row[] = []) {
       };
       return { update: () => cadeiaContacts } as never;
     }
-    if (table !== 'messages') throw new Error(`fake: tabela inesperada '${table}'`);
+    if (!["messages", "operational_messages"].includes(table))
+      throw new Error(`fake: tabela inesperada '${table}'`);
 
     return {
       insert: (row: Row) => {
-        const nova: Row = { id: `msg-${messages.length + 1}`, external_id: null, ack: null, error_code: null, error_message: null, ...row };
+        const nova: Row = {
+          id: `msg-${messages.length + 1}`,
+          external_id: null,
+          ack: null,
+          error_code: null,
+          error_message: null,
+          ...row,
+        };
         messages.push(nova);
         return { select: () => ({ single: async () => ({ data: { ...nova }, error: null }) }) };
       },
@@ -121,10 +134,17 @@ function makeSupabase(preexistentes: Row[] = []) {
               const externo = patch.external_id as string | undefined;
               if (externo) {
                 const colide = messages.some(
-                  (r) => r.organization_id === ORG && r.external_id === externo && !alvos.includes(r),
+                  (r) =>
+                    r.organization_id === ORG && r.external_id === externo && !alvos.includes(r),
                 );
                 if (colide) {
-                  return { data: null, error: { code: '23505', message: 'duplicate key value violates "messages_org_external_id_unique"' } };
+                  return {
+                    data: null,
+                    error: {
+                      code: "23505",
+                      message: 'duplicate key value violates "messages_org_external_id_unique"',
+                    },
+                  };
                 }
               }
               alvos.forEach((r) => Object.assign(r, patch));
@@ -160,35 +180,40 @@ function makeSupabase(preexistentes: Row[] = []) {
   };
 
   const client = { from, rpc: async () => ({ error: null }) };
-  return { supabase: client as unknown as SupabaseClient, messages };
+  transporteDoTeste.client = client as unknown as SupabaseClient;
+  return { supabase: transporteDoTeste.client, messages };
 }
 
 /** A linha que o webhook cria quando o eco chega antes do envio terminar. */
 function ecoDoWebhook(over: Row = {}): Row {
   return {
-    id: 'eco-1',
+    id: "eco-1",
     organization_id: ORG,
     conversation_id: CONV,
     contact_id: CONTACT,
     channel_session_id: SESSION,
     external_id: COMPOSTO,
-    direction: 'outbound',
-    status: 'sent',
-    body: 'oi',
-    sent_via: 'external_device',
+    direction: "outbound",
+    status: "sent",
+    body: "oi",
+    sent_via: "external_device",
     ...over,
   };
 }
 
-const ctx: HandlerCtx = { organization_id: ORG, actor: { type: 'user', id: USER }, requestId: 'req-1' };
-const input = { conversation_id: CONV, type: 'text', body: 'oi' } as SendMessageInput;
+const ctx: HandlerCtx = {
+  organization_id: ORG,
+  actor: { type: "user", id: USER },
+  requestId: "req-1",
+};
+const input = { conversation_id: CONV, type: "text", body: "oi" } as SendMessageInput;
 
 function wahaRespondendo(idBare: string) {
-  vi.stubEnv('WAHA_API_BASE_URL', 'http://localhost:3030');
-  vi.stubEnv('WAHA_API_KEY', 'hash123');
+  vi.stubEnv("WAHA_API_BASE_URL", "http://localhost:3030");
+  vi.stubEnv("WAHA_API_KEY", "hash123");
   // NOWEB devolve o id interno cru — é daí que sai o `external_id` do envio.
   vi.stubGlobal(
-    'fetch',
+    "fetch",
     vi.fn(async () => new Response(JSON.stringify({ id: { id: idBare } }), { status: 200 })),
   );
 }
@@ -198,18 +223,18 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('eco do próprio envio na janela em que a linha ainda não tem external_id', () => {
-  it('o eco que chegou primeiro não deixa a frase duplicada', async () => {
+describe("eco do próprio envio na janela em que a linha ainda não tem external_id", () => {
+  it("o eco que chegou primeiro não deixa a frase duplicada", async () => {
     wahaRespondendo(BARE);
     const { supabase, messages } = makeSupabase([ecoDoWebhook()]);
 
     await sendMessageHandler(supabase, ctx, input);
 
     const daMensagem = messages.filter((m) => m.external_id === BARE || m.external_id === COMPOSTO);
-    expect(daMensagem, 'a mesma frase ficou duas vezes na conversa').toHaveLength(1);
+    expect(daMensagem, "a mesma frase ficou duas vezes na conversa").toHaveLength(1);
   });
 
-  it('a linha que sobra é a do ENVIO, com autoria — não a do webhook', async () => {
+  it("a linha que sobra é a do ENVIO, com autoria — não a do webhook", async () => {
     // Qual das duas sobrevive importa: a do envio carrega `sent_by_user_id` e
     // `sent_via`, que é o que a tela usa para dizer quem falou. Ficar com a do
     // webhook apagaria a autoria.
@@ -220,11 +245,11 @@ describe('eco do próprio envio na janela em que a linha ainda não tem external
 
     const sobrou = messages.find((m) => m.external_id === BARE || m.external_id === COMPOSTO)!;
     expect(sobrou.sent_by_user_id).toBe(USER);
-    expect(sobrou.sent_via).toBe('user');
-    expect(sobrou.status).toBe('sent');
+    expect(sobrou.sent_via).toBe("user");
+    expect(sobrou.status).toBe("sent");
   });
 
-  it('sem eco nenhum, nada é removido e o envio segue normal', async () => {
+  it("sem eco nenhum, nada é removido e o envio segue normal", async () => {
     // Guarda de vacuidade: se a correção apagasse indiscriminadamente, este caso
     // ainda daria 1 linha — por isso ele também confere que a linha é a do envio
     // e que ela recebeu o id.
@@ -235,55 +260,61 @@ describe('eco do próprio envio na janela em que a linha ainda não tem external
 
     expect(messages).toHaveLength(1);
     expect(messages[0]!.external_id).toBe(BARE);
-    expect(messages[0]!.status).toBe('sent');
+    expect(messages[0]!.status).toBe("sent");
   });
 });
 
-describe('o que a correção NÃO pode apagar', () => {
-  it('mensagem que o dono digitou no celular na MESMA conversa continua lá', async () => {
+describe("o que a correção NÃO pode apagar", () => {
+  it("mensagem que o dono digitou no celular na MESMA conversa continua lá", async () => {
     // ESTE é o caso que reprovou a correção pelo lado do webhook. Uma mensagem
     // legítima de dispositivo externo, na mesma conversa, durante o envio — ela
     // só não é o eco porque o id é OUTRO. Casar por id preserva; casar por
     // "envio em voo" apagaria.
     wahaRespondendo(BARE);
     const outraMensagem = ecoDoWebhook({
-      id: 'celular-1',
-      external_id: 'true_5531999998888@c.us_3EB0OUTRAMENSAGEM99',
-      body: 'vou verificar e ja te falo',
+      id: "celular-1",
+      external_id: "true_5531999998888@c.us_3EB0OUTRAMENSAGEM99",
+      body: "vou verificar e ja te falo",
     });
     const { supabase, messages } = makeSupabase([outraMensagem]);
 
     await sendMessageHandler(supabase, ctx, input);
 
     expect(
-      messages.find((m) => m.body === 'vou verificar e ja te falo'),
-      'apagou uma mensagem legítima do celular',
+      messages.find((m) => m.body === "vou verificar e ja te falo"),
+      "apagou uma mensagem legítima do celular",
     ).toBeDefined();
     expect(messages).toHaveLength(2);
   });
 
-  it('eco com o mesmo id em OUTRA conversa não é tocado', async () => {
+  it("eco com o mesmo id em OUTRA conversa não é tocado", async () => {
     // O bare pode colidir entre mensagens diferentes (não há garantia nossa, só
     // a do WhatsApp). Restringir à conversa do envio mantém o estrago de uma
     // colisão dentro do único lugar onde ela seria mesmo a nossa mensagem.
     wahaRespondendo(BARE);
-    const deOutraConversa = ecoDoWebhook({ id: 'outro-1', conversation_id: OUTRA_CONV });
+    const deOutraConversa = ecoDoWebhook({ id: "outro-1", conversation_id: OUTRA_CONV });
     const { supabase, messages } = makeSupabase([deOutraConversa]);
 
     await sendMessageHandler(supabase, ctx, input);
 
-    expect(messages.find((m) => m.id === 'outro-1'), 'apagou linha de outra conversa').toBeDefined();
+    expect(
+      messages.find((m) => m.id === "outro-1"),
+      "apagou linha de outra conversa",
+    ).toBeDefined();
   });
 
-  it('linha do CRM (não-webhook) com o mesmo id não é tocada', async () => {
+  it("linha do CRM (não-webhook) com o mesmo id não é tocada", async () => {
     // Só o eco nasce com `sent_via: external_device`. Uma linha nossa com o
     // mesmo id seria outra coisa — e apagá-la seria perder envio de verdade.
     wahaRespondendo(BARE);
-    const doCrm = ecoDoWebhook({ id: 'crm-1', sent_via: 'ai' });
+    const doCrm = ecoDoWebhook({ id: "crm-1", sent_via: "ai" });
     const { supabase, messages } = makeSupabase([doCrm]);
 
     await sendMessageHandler(supabase, ctx, input);
 
-    expect(messages.find((m) => m.id === 'crm-1'), 'apagou uma linha que não era eco de dispositivo').toBeDefined();
+    expect(
+      messages.find((m) => m.id === "crm-1"),
+      "apagou uma linha que não era eco de dispositivo",
+    ).toBeDefined();
   });
 });

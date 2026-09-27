@@ -250,20 +250,23 @@ export async function POST(req: NextRequest): Promise<Response> {
     // reenviar e duplicar a mensagem).
     if (authz.via === "session" && actor.type === "user" && message.status !== "failed") {
       try {
-        const { data: org, error: orgError } = await supabase
+        const { data: org, error: orgError } = await createAdminClient()
           .from("organizations")
           .select("settings")
           .eq("id", organizationId)
           .maybeSingle();
         if (orgError) throw orgError;
         if (conversaFicaComQuemAtendeu(org?.settings)) {
-          const { data: claimed, error: claimError } = await supabase.rpc("fn_conversation_assign", {
-            p_organization_id: organizationId,
-            p_conversation_id: message.conversation_id,
-            p_to_user_id: actor.id,
-            p_reason: "claim",
-            p_enforce_expected: true,
-          });
+          const { data: claimed, error: claimError } = await supabase.rpc(
+            "fn_conversation_assign",
+            {
+              p_organization_id: organizationId,
+              p_conversation_id: message.conversation_id,
+              p_to_user_id: actor.id,
+              p_reason: "claim",
+              p_enforce_expected: true,
+            },
+          );
           if (claimError) throw claimError;
           if (claimed?.[0]) {
             await audit({

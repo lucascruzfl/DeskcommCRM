@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
+import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
-import type { AuthUser } from "@/lib/auth/types";
 
 /**
  * GET /api/v1/ai/knowledge/sources — lista de fontes de RAG (tela de cliente).
@@ -14,11 +13,6 @@ import type { AuthUser } from "@/lib/auth/types";
  * depois de criar ou reindexar uma fonte.
  */
 
-vi.mock("@/lib/auth/server", () => ({
-  mfaEmDivida: vi.fn(async () => false),
-  loadAuthUser: vi.fn(),
-  resolveActiveOrg: vi.fn(),
-}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 vi.mock("@/lib/auth/require-role", () => ({ requireRole: vi.fn() }));
@@ -55,20 +49,9 @@ function makeSupabaseStub(rows: unknown[]) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(loadAuthUser).mockResolvedValue({
-    id: "11111111-1111-4111-8111-111111111111",
-    email: "a@example.com",
-    full_name: null,
-    avatar_url: null,
-    is_platform_admin: false,
-    organizations: [
-      { organization_id: ORG_ID, organization_name: "Org", role: "manager" },
-    ],
-  } as AuthUser);
-  vi.mocked(resolveActiveOrg).mockResolvedValue({
-    orgId: ORG_ID,
-    name: "Org",
-    role: "manager",
+  vi.mocked(requireRole).mockResolvedValue({
+    ok: true,
+    org: { orgId: ORG_ID, name: "Org", role: "manager" },
   } as never);
 });
 
@@ -83,6 +66,7 @@ describe("GET /api/v1/ai/knowledge/sources", () => {
       new NextRequest("http://localhost/api/v1/ai/knowledge/sources"),
     );
     expect(res.status).toBe(200);
+    expect(requireRole).toHaveBeenCalledWith("viewer", expect.objectContaining({ resource: "ai_knowledge" }));
 
     const body = (await res.json()) as { data: Array<{ agent_id: string }> };
     expect(Array.isArray(body.data)).toBe(true);
@@ -91,5 +75,16 @@ describe("GET /api/v1/ai/knowledge/sources", () => {
     // isto estoura com "filter is not a function".
     expect(() => body.data.filter((s) => s.agent_id === AGENT_ID)).not.toThrow();
     expect(body.data.filter((s) => s.agent_id === AGENT_ID)).toHaveLength(1);
+  });
+
+  it("nega a área gerenciada antes de ler fontes", async () => {
+    vi.mocked(requireRole).mockResolvedValue({
+      ok: false,
+      response: new Response(null, { status: 403 }),
+    } as never);
+    const { GET } = await import("./route");
+    const res = await GET(new NextRequest("http://localhost/api/v1/ai/knowledge/sources"));
+    expect(res.status).toBe(403);
+    expect(createClient).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 import { loadAuthUser } from "@/lib/auth/server";
@@ -46,6 +46,7 @@ let runSelectError: { message: string } | null;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv(["DESK", "COMM_UPDATE_CHANNEL"].join(""), "official");
   vi.stubEnv("APP_VERSION", "");
   inserted = null;
   runRow = null;
@@ -120,6 +121,8 @@ beforeEach(() => {
     },
   } as never);
 });
+
+afterEach(() => vi.unstubAllEnvs());
 
 function get() {
   return new NextRequest("http://localhost/api/v1/system/version");

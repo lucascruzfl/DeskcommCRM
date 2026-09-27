@@ -126,7 +126,10 @@ export async function listContactsHandler(
     // ⚠️ `%` e `_` são curingas do LIKE, e `,`/`(`/`)` são delimitadores do DSL
     // do `.or()` — um nome com vírgula ("Silva, Maria") injetaria uma condição
     // extra na string do filtro. Mesmo escape de conversations/_handler.ts.
-    const s = q.search.trim().replace(/[%_]/g, (m) => `\\${m}`).replace(/[,()]/g, " ");
+    const s = q.search
+      .trim()
+      .replace(/[%_]/g, (m) => `\\${m}`)
+      .replace(/[,()]/g, " ");
     const digits = q.search.replace(/\D/g, "");
     const orParts = [
       `name.ilike.%${s}%`,
@@ -185,9 +188,7 @@ export async function listContactsHandler(
     }
     const op = asc ? "gt" : "lt";
     if (c.sort) {
-      query = query.or(
-        `${sortCol}.${op}.${c.sort},and(${sortCol}.eq.${c.sort},id.${op}.${c.id})`,
-      );
+      query = query.or(`${sortCol}.${op}.${c.sort},and(${sortCol}.eq.${c.sort},id.${op}.${c.id})`);
     } else {
       // Página na região de sort NULL (nulls last): pagina só por id.
       query = query.is(sortCol, null);
@@ -233,7 +234,7 @@ async function withConversas(
   if (contactIds.length === 0) return { contacts, error: null };
 
   const { data, error } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select("id, contact_id, last_message_preview, last_message_at, unread_count_for_assignee")
     .eq("organization_id", organizationId)
     .in("contact_id", contactIds)
@@ -348,9 +349,11 @@ export async function getContactHandler(
     }
   }
 
-  const { contacts: enriched, error: convErr } = await withConversas(supabase, ctx.organization_id, [
-    contact,
-  ]);
+  const { contacts: enriched, error: convErr } = await withConversas(
+    supabase,
+    ctx.organization_id,
+    [contact],
+  );
   if (convErr) {
     throw new ApiError(500, "internal_error", undefined, ctx.requestId, convErr);
   }
@@ -537,7 +540,9 @@ export async function patchContactHandler(
   // O banco deriva a coluna sozinho — era só não escrever nela.
   if (input.email !== undefined) patch.email = input.email;
   if (input.phone_number !== undefined) {
-    patch.phone_number = input.phone_number ? canonicalPhoneBR(input.phone_number) : input.phone_number;
+    patch.phone_number = input.phone_number
+      ? canonicalPhoneBR(input.phone_number)
+      : input.phone_number;
   }
   if (input.birthdate !== undefined) patch.birthdate = input.birthdate;
   if (input.tags !== undefined) patch.tags = input.tags;
@@ -581,9 +586,10 @@ export async function patchContactHandler(
     );
   }
 
-  const tagServiceOrigin = input.tags !== undefined
-    ? await observeServiceOrigin(createAdminClient(), ctx.organization_id, contactId)
-    : null;
+  const tagServiceOrigin =
+    input.tags !== undefined
+      ? await observeServiceOrigin(createAdminClient(), ctx.organization_id, contactId)
+      : null;
   patch.updated_at = new Date().toISOString();
 
   const { data: updated, error: updErr } = await supabase
@@ -797,7 +803,10 @@ export async function deleteContactHandler(
       "state_conflict",
       undefined,
       ctx.requestId,
-      traduzir("Não foi possível excluir: o contato ainda tem registros vinculados.", ctx.idioma ?? "pt-BR"),
+      traduzir(
+        "Não foi possível excluir: o contato ainda tem registros vinculados.",
+        ctx.idioma ?? "pt-BR",
+      ),
     );
   }
 
@@ -810,7 +819,7 @@ export async function deleteContactHandler(
     // Mensagens e conversas RESTRICT no contato: apagar primeiro, senão o
     // DELETE da ficha falha para qualquer lead que já falou no canal.
     const { error: msgErr } = await supabase
-      .from("messages")
+      .from("operational_messages")
       .delete()
       .eq("contact_id", contactId)
       .eq("organization_id", ctx.organization_id);
@@ -818,7 +827,7 @@ export async function deleteContactHandler(
     apagados.push("messages");
 
     const { error: convErr } = await supabase
-      .from("conversations")
+      .from("operational_conversations")
       .delete()
       .eq("contact_id", contactId)
       .eq("organization_id", ctx.organization_id);

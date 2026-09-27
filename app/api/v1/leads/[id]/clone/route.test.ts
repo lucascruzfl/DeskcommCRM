@@ -44,6 +44,12 @@ function fakeDb(seed: Record<string, Row[]>) {
   const tables = seed;
 
   function from(table: string) {
+    const source =
+      table === "operational_crm_pipelines"
+        ? "crm_pipelines"
+        : table === "operational_crm_stages"
+          ? "crm_stages"
+          : table;
     const filters: [string, unknown][] = [];
     const orders: [string, boolean][] = [];
     let limit = Number.POSITIVE_INFINITY;
@@ -51,7 +57,7 @@ function fakeDb(seed: Record<string, Row[]>) {
     let patch: Row | null = null;
     let pending: Row | null = null;
 
-    const rows = (): Row[] => (tables[table] ??= []);
+    const rows = (): Row[] => (tables[source] ??= []);
     const matches = () => rows().filter((row) => filters.every(([c, v]) => row[c] === v));
 
     function selectRows(): Row[] {
@@ -77,7 +83,9 @@ function fakeDb(seed: Record<string, Row[]>) {
           Object.assign(row, patch);
           // O banco fecha pelo trigger `fn_crm_lead_close_on_stage`: quem manda o
           // desfecho é a ETAPA, não um campo `status` no patch.
-          const etapa = (tables.crm_stages ?? []).find((candidate) => candidate.id === row.stage_id);
+          const etapa = (tables.crm_stages ?? []).find(
+            (candidate) => candidate.id === row.stage_id,
+          );
           if (etapa?.is_won === true) {
             row.status = "won";
             row.closed_at ??= "2026-09-15T10:05:00.000Z";
@@ -124,9 +132,7 @@ function fakeDb(seed: Record<string, Row[]>) {
       // `await` direto no builder é select de LISTA — e é assim que `encerraDemanda`
       // aplica o update (sem `.select()`), então o update precisa valer aqui também.
       then: async (resolve: (value: unknown) => unknown) =>
-        resolve(
-          operation === "select" ? { data: selectRows(), error: null } : resolveOne(false),
-        ),
+        resolve(operation === "select" ? { data: selectRows(), error: null } : resolveOne(false)),
     };
 
     return builder;
@@ -142,11 +148,56 @@ function seed() {
       { id: P2, organization_id: ORG_ID, name: "Suporte", position: 2000, is_archived: false },
     ],
     crm_stages: [
-      { id: S1_A, organization_id: ORG_ID, pipeline_id: P1, name: "Novo", position: 1000, is_won: false, is_lost: false, is_archived: false },
-      { id: S1_LOST, organization_id: ORG_ID, pipeline_id: P1, name: "Perdido", position: 9000, is_won: false, is_lost: true, is_archived: false },
-      { id: S2_A, organization_id: ORG_ID, pipeline_id: P2, name: "Triagem", position: 1000, is_won: false, is_lost: false, is_archived: false },
-      { id: S2_B, organization_id: ORG_ID, pipeline_id: P2, name: "Em análise", position: 2000, is_won: false, is_lost: false, is_archived: false },
-      { id: S2_LOST, organization_id: ORG_ID, pipeline_id: P2, name: "Perdido", position: 9000, is_won: false, is_lost: true, is_archived: false },
+      {
+        id: S1_A,
+        organization_id: ORG_ID,
+        pipeline_id: P1,
+        name: "Novo",
+        position: 1000,
+        is_won: false,
+        is_lost: false,
+        is_archived: false,
+      },
+      {
+        id: S1_LOST,
+        organization_id: ORG_ID,
+        pipeline_id: P1,
+        name: "Perdido",
+        position: 9000,
+        is_won: false,
+        is_lost: true,
+        is_archived: false,
+      },
+      {
+        id: S2_A,
+        organization_id: ORG_ID,
+        pipeline_id: P2,
+        name: "Triagem",
+        position: 1000,
+        is_won: false,
+        is_lost: false,
+        is_archived: false,
+      },
+      {
+        id: S2_B,
+        organization_id: ORG_ID,
+        pipeline_id: P2,
+        name: "Em análise",
+        position: 2000,
+        is_won: false,
+        is_lost: false,
+        is_archived: false,
+      },
+      {
+        id: S2_LOST,
+        organization_id: ORG_ID,
+        pipeline_id: P2,
+        name: "Perdido",
+        position: 9000,
+        is_won: false,
+        is_lost: true,
+        is_archived: false,
+      },
     ],
     crm_leads: [
       {
@@ -493,7 +544,10 @@ describe("POST /api/v1/leads/[id]/clone", () => {
       ...base,
       crm_pipelines: (base.crm_pipelines ?? []).map((funil) =>
         funil.id === P2
-          ? { ...funil, settings: { fields: [{ key: "metragem", label: "Metragem", type: "text" }] } }
+          ? {
+              ...funil,
+              settings: { fields: [{ key: "metragem", label: "Metragem", type: "text" }] },
+            }
           : funil,
       ),
     });
@@ -508,6 +562,88 @@ describe("POST /api/v1/leads/[id]/clone", () => {
       metragem: "120m2",
       numero_da_os: "OS-99",
     });
+  });
+  it("a etapa de destino do clone passa pela régua de campos exigidos", async () => {
+    // O clone NASCE numa etapa do funil de destino, e entrar nela é o mesmo
+    // gatilho do arrasto. Sem a pergunta, a troca de funil aterrissava numa
+    // etapa exigente com o campo em branco — e o negócio já estava lá.
+    const base = seed();
+    db = fakeDb({
+      ...base,
+      crm_pipelines: (base.crm_pipelines ?? []).map((funil) =>
+        funil.id === P2
+          ? {
+              ...funil,
+              settings: {
+                fields: [
+                  {
+                    key: "concorrente",
+                    label: "Concorrente",
+                    type: "text",
+                    obrigatorio_em: { etapas: [S2_B] },
+                  },
+                ],
+              },
+            }
+          : funil,
+      ),
+    });
+    vi.mocked(createClient).mockResolvedValue(db.client);
+    const { POST } = await import("./route");
+
+    const response = await POST(cloneRequest({ pipeline_id: P2, stage_id: S2_B }), params);
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(body.error.code).toBe("required_fields_missing");
+    expect(body.error.details.faltando).toEqual([
+      { chave: "concorrente", rotulo: "Concorrente", tipo: "text" },
+    ]);
+    // NENHUMA escrita: o negócio não pode nascer no destino para a exigência
+    // ser cobrada só na próxima escrita.
+    expect(db.tables.crm_leads).toHaveLength(1);
+    const origemIntocada = (db.tables.crm_leads ?? [])[0] as Row;
+    expect(origemIntocada.status).toBe("open");
+    expect(origemIntocada.pipeline_id).toBe(P1);
+  });
+
+  it("o clone passa quando o campo exigido já vem preenchido da origem", async () => {
+    // O mesmo funil exigente, e o mesmo destino: o que muda é o VALOR. O
+    // controle negativo fica vazio sem ele — sem este caso, um gate que
+    // recusasse TODA troca de funil passaria no teste de cima.
+    const base = seed();
+    const origem = (base.crm_leads ?? [])[0];
+    if (!origem) throw new Error("o teste espera um crm_leads semeado neste ponto");
+    origem.custom_fields = { concorrente: "Loja do bairro" };
+    db = fakeDb({
+      ...base,
+      crm_pipelines: (base.crm_pipelines ?? []).map((funil) =>
+        funil.id === P2
+          ? {
+              ...funil,
+              settings: {
+                fields: [
+                  {
+                    key: "concorrente",
+                    label: "Concorrente",
+                    type: "text",
+                    obrigatorio_em: { etapas: [S2_B] },
+                  },
+                ],
+              },
+            }
+          : funil,
+      ),
+    });
+    vi.mocked(createClient).mockResolvedValue(db.client);
+    const { POST } = await import("./route");
+
+    const response = await POST(cloneRequest({ pipeline_id: P2, stage_id: S2_B }), params);
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect((body.data.lead as Row).stage_id).toBe(S2_B);
+    expect((body.data.lead as Row).custom_fields).toEqual({ concorrente: "Loja do bairro" });
   });
 });
 

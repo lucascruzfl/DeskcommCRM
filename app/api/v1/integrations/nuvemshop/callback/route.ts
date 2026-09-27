@@ -18,6 +18,7 @@ import { getConfig, SUBSCRIBED_EVENTS, eventToSlug } from "@/lib/nuvemshop/confi
 import { exchangeCodeForToken } from "@/lib/nuvemshop/oauth";
 import { NuvemshopApiClient } from "@/lib/nuvemshop/api-client";
 import { verifyState } from "@/lib/nuvemshop/state";
+import { managedAreaAllowedForActor } from "@/lib/managed-clients/server";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   if (!(await supportCallbackWriteAllowed(state.orgId, state.userId, state.authSessionId))) return redirectTo("/app/integrations/nuvemshop?error=invalid_state");
+  if (!(await managedAreaAllowedForActor(state.orgId, state.userId, "/app/integrations/nuvemshop"))) {
+    return redirectTo("/app/integrations/nuvemshop?error=forbidden_area");
+  }
 
   // Exchange code for access token.
   const tokenRes = await exchangeCodeForToken(code, cfg);

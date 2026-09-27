@@ -13,6 +13,7 @@ import { revalidatePath } from "next/cache";
 import { audit } from "@/lib/audit";
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { managedAreaAllowedForActor } from "@/lib/managed-clients/server";
 
 export type DisconnectResult =
   | { ok: true }
@@ -27,6 +28,9 @@ export async function disconnectNuvemshop(): Promise<DisconnectResult> {
   if (!activeOrg) return { ok: false, error: "no_active_org" };
 
   if (activeOrg.role !== "admin" && !user.is_platform_admin) {
+    return { ok: false, error: "forbidden" };
+  }
+  if (!(await managedAreaAllowedForActor(activeOrg.orgId, user.id, "/app/integrations/nuvemshop"))) {
     return { ok: false, error: "forbidden" };
   }
 

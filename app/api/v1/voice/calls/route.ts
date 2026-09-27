@@ -14,6 +14,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { requireSupportWrite } from "@/lib/impersonate/support";
 import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { exigirVozLigada } from "@/lib/voice/guarda";
 import { resolverNumeroDiscavel } from "@/lib/voice/numero-discavel";
 import { getWacallsClient, wacallsFriendlyError, wacallsSemConexao } from "@/lib/wacalls/client";
@@ -51,7 +52,9 @@ export async function POST(req: Request): Promise<Response> {
 
   const wacalls = getWacallsClient();
   if (!wacalls) {
-    return fail("wacalls_not_configured", "Chamada de voz não está configurada.", 503, { requestId });
+    return fail("wacalls_not_configured", "Chamada de voz não está configurada.", 503, {
+      requestId,
+    });
   }
 
   const supabase = await createClient();
@@ -69,7 +72,7 @@ export async function POST(req: Request): Promise<Response> {
   });
   if (vozDesligada) return vozDesligada;
 
-  const session = await resolveWacallsSession(supabase, activeOrg.orgId);
+  const session = await resolveWacallsSession(createAdminClient(), activeOrg.orgId);
   if (!session) {
     return fail(
       "wacalls_not_paired",
@@ -113,14 +116,20 @@ export async function POST(req: Request): Promise<Response> {
     });
   }
   if (!contact.phone_number) {
-    return fail("contact_without_phone", "Este contato não tem telefone cadastrado.", 422, { requestId });
+    return fail("contact_without_phone", "Este contato não tem telefone cadastrado.", 422, {
+      requestId,
+    });
   }
 
   try {
     // O cadastro guarda o celular COM o nono dígito; o WhatsApp pode tê-lo
     // registrado SEM. Discar o do cadastro mandava a oferta para um endereço
     // inexistente — ver o cabeçalho de `lib/voice/numero-discavel.ts`.
-    const destino = await resolverNumeroDiscavel(supabase, activeOrg.orgId, contact.phone_number);
+    const destino = await resolverNumeroDiscavel(
+      createAdminClient(),
+      activeOrg.orgId,
+      contact.phone_number,
+    );
     if (destino.fonte === "cadastro") {
       logger.warn("wacalls: número discado sem confirmação do WhatsApp", {
         request_id: requestId,

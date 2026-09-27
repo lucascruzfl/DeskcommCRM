@@ -64,35 +64,18 @@ async function withOwnerAgents(
   if (agentIds.length === 0) return { leads, error: null };
 
   const { data: agents, error: agentsErr } = await supabase
-    .from("ai_agents")
-    .select("id, name, published_version_id")
+    .from("ai_agent_assignable_directory")
+    .select("agent_id, name, version_number")
     .eq("organization_id", organizationId)
-    .in("id", agentIds);
+    .in("agent_id", agentIds);
   if (agentsErr) return { leads, error: agentsErr.message };
 
   const agentRows = (agents ?? []) as Array<{
-    id: string;
+    agent_id: string;
     name: string;
-    published_version_id: string | null;
+    version_number: number | null;
   }>;
-
-  const publishedIds = agentRows
-    .map((a) => a.published_version_id)
-    .filter((v): v is string => !!v);
-  const versionById = new Map<string, number>();
-  if (publishedIds.length > 0) {
-    const { data: versions, error: versionsErr } = await supabase
-      .from("ai_agent_versions")
-      .select("id, version_number")
-      .eq("organization_id", organizationId)
-      .in("id", publishedIds);
-    if (versionsErr) return { leads, error: versionsErr.message };
-    for (const v of (versions ?? []) as Array<{ id: string; version_number: number }>) {
-      versionById.set(v.id, v.version_number);
-    }
-  }
-
-  const byId = new Map(agentRows.map((a) => [a.id, a]));
+  const byId = new Map(agentRows.map((a) => [a.agent_id, a]));
   return {
     leads: leads.map((lead) => {
       if (lead.owner_kind !== "ai" || !lead.owner_agent_id) return lead;
@@ -101,11 +84,9 @@ async function withOwnerAgents(
       return {
         ...lead,
         owner_agent: {
-          id: agent.id,
+          id: agent.agent_id,
           name: agent.name,
-          version_number: agent.published_version_id
-            ? (versionById.get(agent.published_version_id) ?? null)
-            : null,
+          version_number: agent.version_number,
         },
       };
     }),
@@ -268,7 +249,7 @@ async function withConversas(
   // vence" lê a ordem.
   const { data, error } = await buscaEmLotes(contactIds, (lote) =>
     supabase
-      .from("conversations")
+      .from("operational_conversations")
       .select("id, contact_id, last_message_preview, last_message_at, unread_count_for_assignee, tags")
       .eq("organization_id", organizationId)
       .in("contact_id", lote)
@@ -354,7 +335,9 @@ async function withMarcadoresDoContato(
   );
   if (error) return { leads: leadsDoQuadro, error: error.message };
 
-  const linhas = (data ?? []) as Array<{ id: string; tags: string[] | null } & LinhaDoContatoNoQuadro>;
+  const linhas = (data ?? []) as Array<
+    { id: string; tags: string[] | null } & LinhaDoContatoNoQuadro
+  >;
   const leads = anexarDadosDoContato(leadsDoQuadro, linhas);
 
   const porContato = new Map<string, string[]>();
@@ -379,9 +362,7 @@ async function withNextActions(
   leads: Lead[],
   defaultPipelineId: string | null,
 ): Promise<{ leads: Lead[]; error: string | null }> {
-  const contactIds = [
-    ...new Set(leads.map((l) => l.contact_id).filter((c): c is string => !!c)),
-  ];
+  const contactIds = [...new Set(leads.map((l) => l.contact_id).filter((c): c is string => !!c))];
   if (contactIds.length === 0) return { leads, error: null };
 
   const [{ data: estados, error: estadosErr }, { data: candidatos, error: candErr }] =
@@ -454,9 +435,9 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
     { data: stages, error: stagesErr },
     { data: leads, error: leadsErr },
   ] = await Promise.all([
-    supabase.from("crm_pipelines").select("*").eq("id", pipelineId).maybeSingle(),
+    supabase.from("operational_crm_pipelines").select("*").eq("id", pipelineId).maybeSingle(),
     supabase
-      .from("crm_stages")
+      .from("operational_crm_stages")
       .select("*")
       .eq("pipeline_id", pipelineId)
       .eq("is_archived", false)
@@ -472,7 +453,8 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
   if (pipelineErr) return fail("internal_error", pipelineErr.message, 500, { requestId });
   if (stagesErr) return fail("internal_error", stagesErr.message, 500, { requestId });
   if (leadsErr) return fail("internal_error", leadsErr.message, 500, { requestId });
-  if (!pipeline) return fail("resource_not_found", t("Pipeline não encontrado."), 404, { requestId });
+  if (!pipeline)
+    return fail("resource_not_found", t("Pipeline não encontrado."), 404, { requestId });
 
   const leadsWithOwner = await withOwnerAgents(
     supabase,
@@ -484,7 +466,7 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
   }
 
   const { data: pipelinePadrao } = await supabase
-    .from("crm_pipelines")
+    .from("operational_crm_pipelines")
     .select("id")
     .eq("organization_id", (pipeline as Pipeline).organization_id)
     .eq("is_default", true)

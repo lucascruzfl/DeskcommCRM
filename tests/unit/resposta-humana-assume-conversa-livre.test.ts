@@ -8,6 +8,7 @@ import { registrarTrocaDeComando } from "@/lib/inbox/atividade-de-comando";
 vi.mock("@/lib/impersonate/support", () => ({ requireSupportWrite: vi.fn(async () => null) }));
 vi.mock("@/lib/api/auth-dual", () => ({ resolveAuthDual: vi.fn() }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => undefined) }));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ from }) }));
 vi.mock("@/app/api/v1/messages/_handler", () => ({ sendMessageHandler: vi.fn() }));
 vi.mock("@/lib/inbox/atividade-de-comando", () => ({
   registrarTrocaDeComando: vi.fn(async () => undefined),
@@ -119,7 +120,7 @@ describe("POST /messages após resposta humana, com o ajuste DESLIGADO", () => {
     ["sem settings", null],
     ["sem a chave", { routing: { mode: "round_robin" } }],
     ["com false", { routing: { conversation_stays_with_attendant: false } }],
-    ["com texto \"true\"", { routing: { conversation_stays_with_attendant: "true" } }],
+    ['com texto "true"', { routing: { conversation_stays_with_attendant: "true" } }],
   ])("não assume a conversa (%s)", async (_nome, valor) => {
     settings = valor;
     // A rota engole erro do claim (falha dele não pode virar falha do envio).

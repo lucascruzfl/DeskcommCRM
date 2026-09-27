@@ -55,7 +55,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
 
   // RLS (no ramo da sessão) + filtro explícito: a conversa precisa ser da org ativa.
   const { data: conv, error: convErr } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select("id")
     .eq("id", conversationId)
     .eq("organization_id", activeOrg.orgId)
@@ -74,13 +74,20 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");
   if (!(file instanceof File)) {
-    return fail("validation_failed", t("Campo 'file' (multipart) obrigatório."), 422, { requestId });
+    return fail("validation_failed", t("Campo 'file' (multipart) obrigatório."), 422, {
+      requestId,
+    });
   }
 
   const mime = file.type || "application/octet-stream";
   const verdict = validateOutboundMedia(mime, file.size);
   if (!verdict.ok) {
-    const status = verdict.code === "payload_too_large" ? 413 : verdict.code === "unsupported_media_type" ? 415 : 422;
+    const status =
+      verdict.code === "payload_too_large"
+        ? 413
+        : verdict.code === "unsupported_media_type"
+          ? 415
+          : 422;
     return fail(verdict.code, verdict.message, status, { requestId });
   }
 

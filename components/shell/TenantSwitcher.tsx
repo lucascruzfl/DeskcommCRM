@@ -21,6 +21,9 @@ export function TenantSwitcher() {
   const user = useUser();
   const active = useActiveOrg();
   const transition = useOrganizationTransition();
+  const managedContext = active?.managed_policy
+    ? `Cliente gerenciado · Minha função: ${active.role === "admin" ? "Admin/Gestor" : active.role === "agent" ? "Atendente" : "Membro"}`
+    : null;
   const [isPending, setPending] = useState(false);
   const switchTo = async (orgId: string) => {
     if (orgId === active?.orgId) return;
@@ -67,7 +70,7 @@ export function TenantSwitcher() {
           size="sm"
           disabled={isPending || !!user.support}
           className="gap-2"
-          aria-label={`${t("Organização")}: ${active?.name ?? t("Selecionar org")}`}
+          aria-label={`${t("Organização")}: ${active?.name ?? t("Selecionar org")}${managedContext ? `, ${managedContext}` : ""}`}
           title={user.support ? "Saia do acompanhamento para trocar de organização" : undefined}
           data-testid="tenant-switcher"
         >
@@ -75,10 +78,12 @@ export function TenantSwitcher() {
           <span className="hidden max-w-[160px] truncate md:inline">
             {active?.name ?? "Selecionar org"}
           </span>
+          {managedContext && <span className="hidden text-xs text-muted-foreground xl:inline">{managedContext}</span>}
           <CaretDown size={12} aria-hidden className="hidden md:inline" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[220px]">
+        {managedContext && <div className="px-2 py-1 text-xs text-muted-foreground">{managedContext}</div>}
         {user.organizations.map((org) => (
           <DropdownMenuItem
             key={org.organization_id}

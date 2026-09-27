@@ -48,7 +48,7 @@ export async function listarMarcadores(
   const limite = opts.limite ?? 60;
 
   const { data: org, error: orgErr } = await deps.supabase
-    .from("organizations")
+    .from("operational_organizations")
     .select("settings")
     .eq("id", deps.organizationId)
     .maybeSingle();
@@ -66,7 +66,7 @@ export async function listarMarcadores(
   // milhares, não dos milhões. Se um dia doer, vira índice GIN + RPC — e o
   // contrato desta função não muda.
   const { data: conversas, error: convErr } = await deps.supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select("tags")
     .eq("organization_id", deps.organizationId)
     .limit(2000);
@@ -82,15 +82,17 @@ export async function listarMarcadores(
     if (!contagem.has(oficial)) contagem.set(oficial, 0);
   }
 
-  return [...contagem.entries()]
-    .map(([marcador, conversas_]) => ({
-      marcador,
-      conversas: conversas_,
-      oficial: oficiais.has(marcador),
-    }))
-    // Os mais usados primeiro: é a ordem em que alguém decidiria reaproveitar.
-    .sort((a, b) => b.conversas - a.conversas || a.marcador.localeCompare(b.marcador))
-    .slice(0, limite);
+  return (
+    [...contagem.entries()]
+      .map(([marcador, conversas_]) => ({
+        marcador,
+        conversas: conversas_,
+        oficial: oficiais.has(marcador),
+      }))
+      // Os mais usados primeiro: é a ordem em que alguém decidiria reaproveitar.
+      .sort((a, b) => b.conversas - a.conversas || a.marcador.localeCompare(b.marcador))
+      .slice(0, limite)
+  );
 }
 
 export interface PessoaDoTime {

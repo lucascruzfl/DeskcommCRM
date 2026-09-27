@@ -12,7 +12,7 @@ export async function listarNotasDaConversa(
   conversationId: string,
 ) {
   const { data: conversation, error: conversationError } = await db
-    .from("conversations")
+    .from("operational_conversations")
     .select("id")
     .eq("id", conversationId)
     .eq("organization_id", organizationId)
@@ -51,7 +51,7 @@ export async function criarNotaDaConversa(input: {
   if (!member) throw new Error("author_not_active_member");
 
   const { data: conversation, error: conversationError } = await input.db
-    .from("conversations")
+    .from("operational_conversations")
     .select("id")
     .eq("id", input.conversationId)
     .eq("organization_id", input.organizationId)

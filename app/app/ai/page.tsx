@@ -30,6 +30,7 @@ export default async function AiHubPage() {
       isPlatformAdmin={user.is_platform_admin && !user.support}
       role={activeOrg?.role ?? null}
       interfaceSettings={activeOrg?.interface_settings}
+      managedPolicy={activeOrg?.managed_policy}
       modulosLigados={await modulosLigados(createAdminClient())}
       title={traduzir("Agente de IA", idioma)}
       subtitle={traduzir(

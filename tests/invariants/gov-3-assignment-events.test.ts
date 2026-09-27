@@ -83,7 +83,9 @@ describe("eixo 3 — G3-01: eventos de atribuição", () => {
   });
 
   it("claim duplicado: optimistic lock perde (0 rows → rota 409) e ZERO evento duplicado", () => {
-    const rows = assignAs(GOV_AGENT_B, `'${GOV_AGENT_B}'::uuid, 'claim', null::uuid, true`);
+    // O dono atual repete o claim: ele ainda vê a conversa, então a função
+    // alcança o optimistic lock. Outro agent é recusado antes pela visibilidade.
+    const rows = assignAs(GOV_AGENT_A, `'${GOV_AGENT_A}'::uuid, 'claim', null::uuid, true`);
     expect(rows).toBe(0);
 
     // Nenhum evento novo: segue exatamente 1 claim registrado.

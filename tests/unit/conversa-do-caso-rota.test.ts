@@ -89,7 +89,7 @@ function session(effectiveRole: Role = "agent") {
  */
 function sessaoComVisibilidade(visiveis: string[], mensagens: unknown[] = []) {
   const linhas = (tabela: string) =>
-    tabela === "conversations"
+    tabela === "operational_conversations"
       ? visiveis.map((id) => ({ id }))
       : tabela === "agent_cases"
         ? [{ conversation_id: CONV_ID }]

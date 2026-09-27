@@ -10,7 +10,7 @@ vi.mock("@/lib/impersonate/support", () => ({ requireSupportWrite: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/agenda/google/sync-store", () => ({ googleRpc: vi.fn() }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn() }));
-import { PATCH } from "@/app/api/v1/agenda/google/calendarios/route";
+import { GET, PATCH } from "@/app/api/v1/agenda/google/calendarios/route";
 import { POST as resolve } from "@/app/api/v1/agenda/agendamentos/[id]/google/resolver/route";
 import { POST as retry } from "@/app/api/v1/agenda/agendamentos/[id]/google/retry/route";
 const org = "aaaaaaaa-0000-4000-8000-000000000001",
@@ -37,6 +37,55 @@ beforeEach(() => {
   vi.mocked(googleRpc).mockResolvedValue(null);
 });
 describe("bordas humanas de seleção e conflito", () => {
+  it("lista a agenda pela projeção operacional sem devolver estado de sincronização interno", async () => {
+    const reads: string[] = [];
+    const rows: Record<string, Record<string, unknown>[]> = {
+      operational_calendar_connections: [
+        {
+          id,
+          account_email: "agenda@teste.local",
+          status: "healthy",
+          calendar_selection_revision: "7",
+        },
+      ],
+      operational_calendar_connection_calendars: [
+        {
+          id,
+          connection_id: id,
+          name: "Principal",
+          available: true,
+          access_role: "owner",
+          reading: true,
+          sync_coverage: null,
+        },
+      ],
+    };
+    vi.mocked(createClient).mockResolvedValue({
+      from(table: string) {
+        reads.push(table);
+        const query = {
+          select: () => query,
+          eq: () => query,
+          in: () => query,
+          order: () => query,
+          then: (resolve: (value: unknown) => unknown) =>
+            Promise.resolve(resolve({ data: rows[table] ?? [], error: null })),
+        };
+        return query;
+      },
+    } as never);
+
+    const response = await GET();
+    expect(response.status).toBe(200);
+    expect(reads).toEqual([
+      "operational_calendar_connections",
+      "operational_calendar_connection_calendars",
+    ]);
+    const body = await response.text();
+    expect(body).toContain('"reading":true');
+    expect(body).not.toMatch(/sync_cursor|sync_token|oauth_.*_token/);
+  });
+
   it("seleção usa org confiável e conserva bigint em texto", async () => {
     expect(
       (

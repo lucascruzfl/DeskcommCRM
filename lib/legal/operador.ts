@@ -16,7 +16,7 @@ import { env } from "@/lib/env";
 import { valorDaInstalacao } from "@/lib/instalacao/config";
 import { branding } from "@/lib/branding";
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface Operador {
   /** Nome do sistema nesta instalação (respeita marca própria). */
@@ -98,8 +98,7 @@ export async function resolverOperador(): Promise<Operador> {
   const activeOrg = await resolveActiveOrg(user);
   if (!activeOrg) return await SEM_SESSAO();
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data, error } = await createAdminClient()
     .from("organizations")
     .select("display_name, legal_name, cnpj, dpo_email, privacy_policy_url")
     .eq("id", activeOrg.orgId)
@@ -124,9 +123,7 @@ export async function resolverOperador(): Promise<Operador> {
     cnpj: org.cnpj?.trim() || null,
     // Mesmo fallback que o resto do produto já usa para o encarregado.
     dpoEmail:
-      org.dpo_email?.trim() ||
-      (await valorDaInstalacao("LGPD_DPO_EMAIL")).valor?.trim() ||
-      null,
+      org.dpo_email?.trim() || (await valorDaInstalacao("LGPD_DPO_EMAIL")).valor?.trim() || null,
     politicaPropria: urlDePoliticaSegura(org.privacy_policy_url),
     resolvido: true,
   };

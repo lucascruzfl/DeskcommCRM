@@ -81,7 +81,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams): Promise<R
   // devolveria `[]` com 200, que se lê como "esta conversa não teve passagem
   // nenhuma" — e afirma a existência dela de graça.
   const { data: conversa } = await supabase
-    .from("conversations")
+    .from("operational_conversations")
     .select("id")
     .eq("id", id)
     .eq("organization_id", org.orgId)

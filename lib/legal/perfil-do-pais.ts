@@ -254,7 +254,7 @@ export async function perfilDaOrganizacao(
   orgId: string,
 ): Promise<PerfilDoPais> {
   const { data, error } = await supabase
-    .from("organizations")
+    .from("operational_organizations")
     .select("country")
     .eq("id", orgId)
     .maybeSingle();

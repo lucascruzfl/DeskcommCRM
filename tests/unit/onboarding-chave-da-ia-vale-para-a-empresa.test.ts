@@ -56,6 +56,11 @@ let orgIdAtualizado: string | null = null;
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => undefined) }));
+// Esta suíte exercita o assistente legado autorizado; a recusa do cliente é
+// medida com o resolvedor real em managed-onboarding-authorization.test.ts.
+vi.mock("@/lib/managed-clients/server", () => ({
+  managedAreaAllowedForActor: vi.fn(async () => true),
+}));
 vi.mock("@/lib/auth/server", () => ({
   loadAuthUser: vi.fn(async () => ({ id: USER, email: "dono@qa.local", full_name: "Dono" })),
   resolveActiveOrg: vi.fn(async () => ({ orgId: ORG, name: "QA", role: "admin" })),

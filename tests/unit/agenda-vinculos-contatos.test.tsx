@@ -105,11 +105,11 @@ describe("contatos da Agenda pelo nome exibido", () => {
   });
   it("o ID de outro tenant não retorna contato nem consulta suas conversas", async () => {
     expect(await buscar({ contact_id: OUTRO_ID })).toEqual({ contacts: [], conversations: [] });
-    expect(deps.from).not.toHaveBeenCalledWith("conversations");
+    expect(deps.from).not.toHaveBeenCalledWith("operational_conversations");
   });
   it("buscar pelo ID mantém o nome canônico e o filtro de organização nas conversas", async () => {
     expect((await buscar({ contact_id: ID })).contacts).toEqual([{ id: ID, name: "Cíntia Nunes" }]);
-    expect(deps.from).toHaveBeenCalledWith("conversations");
+    expect(deps.from).toHaveBeenCalledWith("operational_conversations");
     const query = deps.from.mock.results[1]?.value;
     expect(query.eq).toHaveBeenCalledWith("organization_id", "org-a");
     expect(query.eq).toHaveBeenCalledWith("contact_id", ID);

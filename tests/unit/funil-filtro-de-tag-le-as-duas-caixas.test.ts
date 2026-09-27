@@ -132,7 +132,7 @@ describe("os pontos de chamada — a regra só vale se quem a usa a chama", () =
   it("a consulta de conversas do quadro traz as `tags` e as devolve no card", () => {
     const fonte = readFileSync("app/api/v1/pipelines/[id]/board/route.ts", "utf8");
     expect(fonte, "withConversas não seleciona `tags` das conversas").toMatch(
-      /from\("conversations"\)\s*\.select\("[^"]*\btags\b[^"]*"\)/,
+      /from\("operational_conversations"\)\s*\.select\(\s*"[^"]*\btags\b[^"]*",?\s*\)/,
     );
     expect(fonte, "o card não recebe `conversation_tags`").toContain("conversation_tags:");
   });

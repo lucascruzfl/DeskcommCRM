@@ -54,6 +54,30 @@ export async function obterPipeline(ctx: PipelineOperationContext, pipelineId: s
   return { ...data, stages: stages ?? [] };
 }
 
+/** Leitura do quadro sem configuração administrativa para um token gerenciado. */
+export async function obterPipelineOperacional(ctx: PipelineOperationContext, pipelineId: string) {
+  const { data, error } = await ctx.supabase
+    .from("operational_crm_pipelines")
+    .select("id, organization_id, name, slug, description, position, is_default, is_archived")
+    .eq("organization_id", ctx.organizationId)
+    .eq("id", pipelineId)
+    .maybeSingle();
+  if (error) throw new ApiError(500, "internal_error", undefined, ctx.requestId, error.message);
+  if (!data)
+    throw new ApiError(404, "not_found", undefined, ctx.requestId, "Funil não encontrado.");
+  const { data: stages, error: stagesError } = await ctx.supabase
+    .from("operational_crm_stages")
+    .select(
+      "id, organization_id, pipeline_id, name, slug, description, position, color, is_won, is_lost, is_archived, requires_human, expected_duration_hours",
+    )
+    .eq("organization_id", ctx.organizationId)
+    .eq("pipeline_id", pipelineId)
+    .order("position", { ascending: true });
+  if (stagesError)
+    throw new ApiError(500, "internal_error", undefined, ctx.requestId, stagesError.message);
+  return { ...data, stages: stages ?? [] };
+}
+
 export async function criarPipeline(
   ctx: PipelineOperationContext,
   input: { name: string; description?: string | null },

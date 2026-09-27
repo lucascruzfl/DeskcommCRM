@@ -156,7 +156,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     // perda o segundo trigger aborta cada linha com `lost_reason_required` — 200
     // na tela, zero leads criados.
     const { data: primeiraEtapa, error: erroEtapa } = await supabase
-      .from("crm_stages")
+      .from("operational_crm_stages")
       .select("id")
       .eq("pipeline_id", pipelineId)
       .eq("organization_id", orgId)

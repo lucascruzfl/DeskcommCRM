@@ -50,14 +50,13 @@ export interface SelectableChannel {
 
 // `provider` entra no `select` por causa de `aceitaMensagemLivre`. Ele é lido
 // aqui e MORRE aqui: o DTO leva a capacidade, nunca o nome do provedor.
-const COLUNAS = "id, display_name, status, phone_number, waha_session_name, provider";
+const COLUNAS = "id, display_name, status, phone_number, provider";
 
 interface LinhaCanal {
   id: string;
   display_name: string | null;
   status: string;
   phone_number: string | null;
-  waha_session_name: string | null;
   provider: string | null;
 }
 
@@ -93,7 +92,7 @@ export async function listSelectableChannels(
 ): Promise<SelectableChannel[]> {
   const base = () =>
     db
-      .from("channel_sessions")
+      .from("operational_channel_sessions")
       .select(COLUNAS)
       .eq("organization_id", organizationId)
       // Esta é a FONTE ÚNICA dos seletores de "Número conectado" — e alimenta

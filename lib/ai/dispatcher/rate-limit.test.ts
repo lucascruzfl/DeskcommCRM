@@ -29,6 +29,10 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Esta suíte mede exclusivamente o fallback; configuração local de Redis não pode
+// transformar timers simulados em uma requisição externa que nunca termina.
+vi.mock("@/lib/env", () => ({ env: { UPSTASH_REDIS_REST_URL: "", UPSTASH_REDIS_REST_TOKEN: "" } }));
+
 describe("contador em memória", () => {
   beforeEach(() => {
     vi.resetModules();

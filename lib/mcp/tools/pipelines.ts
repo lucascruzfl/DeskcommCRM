@@ -12,8 +12,10 @@ import {
   atualizarPipeline,
   criarPipeline,
   obterPipeline,
+  obterPipelineOperacional,
 } from "@/lib/pipelines/operations";
 import { pipelineConfigPatchSchema } from "@/lib/schemas/settings";
+import { canAccessManagedArea } from "@/lib/managed-clients/policy";
 
 function operationContext(ctx: Parameters<typeof obterPipeline>[0]) {
   return ctx;
@@ -34,17 +36,19 @@ export const crmGetPipeline: McpToolDefinition<typeof getPipelineShape> = {
   requiresRole: "agent",
   requiresScope: "mcp:read",
   domain: "pipelines",
-  handler: (input, ctx) =>
-    obterPipeline(
-      operationContext({
-        supabase: ctx.supabase,
-        organizationId: ctx.organizationId,
-        actor: ctx.actor,
-        requestId: ctx.requestId,
-        apiTokenId: ctx.apiTokenId,
-      }),
-      input.pipeline_id,
-    ),
+  handler: (input, ctx) => {
+    const operation = operationContext({
+      supabase: ctx.supabase,
+      organizationId: ctx.organizationId,
+      actor: ctx.actor,
+      requestId: ctx.requestId,
+      apiTokenId: ctx.apiTokenId,
+    });
+    return ctx.managedPolicy &&
+      !canAccessManagedArea(ctx.managedPolicy, ctx.role, "/app/settings/tenant/pipelines")
+      ? obterPipelineOperacional(operation, input.pipeline_id)
+      : obterPipeline(operation, input.pipeline_id);
+  },
 };
 
 const createPipelineShape = {
@@ -181,6 +185,20 @@ export const crmListPipelines: McpToolDefinition<typeof listInputShape> = {
   requiresScope: "mcp:read",
   domain: "pipelines",
   handler: async (input, ctx) => {
+    if (
+      ctx.managedPolicy &&
+      !canAccessManagedArea(ctx.managedPolicy, ctx.role, "/app/settings/tenant/pipelines")
+    ) {
+      let query = ctx.supabase
+        .from("operational_crm_pipelines")
+        .select("id, organization_id, name, slug, description, is_default, is_archived, position")
+        .eq("organization_id", ctx.organizationId)
+        .order("position", { ascending: true });
+      if (!input.include_archived) query = query.eq("is_archived", false);
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      return { pipelines: data ?? [] };
+    }
     const result = await listPipelinesHandler(
       ctx.supabase,
       {

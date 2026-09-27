@@ -38,13 +38,15 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
 
   // `viewer` porque LER o que está pendente é informação, não poder. Quem
   // decide precisa de `agent` — está na rota de decisão, ao lado do efeito.
-  const guard = await requireRole("viewer", { requestId });
+  const guard = await requireRole("viewer", { requestId, resource: "contacts" });
   if (!guard.ok) return guard.response;
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("contact_field_proposals")
-    .select("id, campo, valor_proposto, valor_anterior, trecho, conversation_id, expires_at, proposed_at")
+    .select(
+      "id, campo, valor_proposto, valor_anterior, trecho, conversation_id, expires_at, proposed_at",
+    )
     .eq("organization_id", guard.org.orgId)
     .eq("contact_id", contactId)
     .eq("status", "pending")
