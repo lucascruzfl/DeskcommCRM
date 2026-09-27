@@ -132,6 +132,10 @@ export const AUDIT_ACTIONS = [
   "lead.tags_changed",
   "message.sent",
   "message.received",
+  "message.edited",
+  "message.revoked",
+  "message.hidden_in_crm",
+  "message.restored_in_crm",
   // Uma rodada do cron `recover-stuck-messages` que de fato marcou mensagem
   // como falha (rodada vazia não vira linha — varredura não é mutação).
   "message.recover_stuck_run",
@@ -157,6 +161,9 @@ export const AUDIT_ACTIONS = [
   "lgpd.consent_changed",
   "lgpd.manually_approved",
   "webhook.hmac_invalid",
+  // Uma rodada do cron `webhook-replay` que reprocessou ou desistiu de algum
+  // arquivo de webhook do canal por QR (rodada vazia não vira linha).
+  "webhook.replay_run",
   "lgpd.sla_alarm_triggered",
   "lgpd.sla_watcher_run",
   "platform_admin.inbox_listed",
@@ -185,6 +192,7 @@ export const AUDIT_ACTIONS = [
   "ai.credential_created",
   "ai.credential_deleted",
   "ai.credential_revalidated",
+  "ai.knowledge_reindex_all",
   "ai_agent.created",
   "ai_agent.updated",
   "ai_agent.archived",
@@ -348,6 +356,12 @@ export const AUDIT_ACTIONS = [
   "conversation.handoff_auto_return_run",
   "conversation.note_added",
   "conversation.note_deleted",
+  // Rascunho sugerido por integração (issue #1611): quem criou o texto que a
+  // pessoa vai revisar, e — separado — quem clicou em enviar. O envio em si já
+  // é `messages` com `sent_via='user'`; estas duas linhas contam a metade que
+  // ficava invisível (o ERP sugeriu, o atendente decidiu).
+  "conversation.draft_created",
+  "conversation.draft_used",
   "ai.case_replied",
   // O agente participando do chamado — separado de `ai.case_replied` (a pessoa
   // respondendo) porque juntar os dois apagaria justamente quem agiu.
@@ -439,6 +453,7 @@ export const AUDIT_ACTIONS = [
   // O `metadata` carrega o dataset (identificador, não segredo) e um booleano
   // dizendo se o token foi trocado. O token, nem em metadata.
   "ad_platform_connection.updated",
+  "ad_conversion.retry_requested",
   // A conexão de LEITURA da organização com a conta de anúncios (0214).
   // Ação SEPARADA da de cima, e não um `metadata.purpose` na mesma: a pergunta
   // que cada trilha responde é diferente. "Quem apontou minhas vendas para este
@@ -868,6 +883,24 @@ export const AUDIT_ACTIONS = [
   "registration.requested",
   "registration.approved",
   "registration.rejected",
+  // O interruptor do Jev (PATCH /api/v1/ai/jev). Ligar manda cada mensagem
+  // recebida dos clientes, uma de cada vez e sem o histórico da conversa, para
+  // um fornecedor nos EUA: "quem ligou, quando, e se o aceite foi dado ali" é a
+  // pergunta de LGPD que só estas linhas respondem.
+  // `desligado` também sai quando a exclusão da última chave apta dele o
+  // desliga (`DELETE /api/v1/ai/credentials/:id`, metadata.motivo "chave_excluida").
+  "ai.jev.ligado",
+  "ai.jev.desligado",
+  "ai.jev.modo_alterado",
+  // Uma tarefa do Jev mudou de estado (observando/decidindo/desligada) pelo
+  // PATCH com `tarefa`; metadata.tarefa diz qual, e estado_anterior o de antes.
+  "ai.jev.tarefa_alterada",
+  // O pedido de descadastro é do cliente e o padrão é irreversível — mas a
+  // regra W-02 do catálogo de negócio prevê o override: admin desbloqueia à
+  // mão. Sem esta linha, a ação existiria sem rastro de QUEM a desfez, que é
+  // o dado que importa quando alguém pergunta "por que este cliente voltou a
+  // receber?".
+  "contact.unblocked",
 ] as const;
 
 /** Um código de auditoria. Derivado de `AUDIT_ACTIONS` — não redigite a lista. */

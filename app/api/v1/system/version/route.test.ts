@@ -12,7 +12,11 @@ vi.mock("@/lib/auth/server", () => ({
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => undefined) }));
 
-const OWNER = { id: "11111111-1111-4111-8111-111111111111", email: "dono@x.com", is_platform_admin: true };
+const OWNER = {
+  id: "11111111-1111-4111-8111-111111111111",
+  email: "dono@x.com",
+  is_platform_admin: true,
+};
 const MEMBRO = { ...OWNER, id: "22222222-2222-4222-8222-222222222222", is_platform_admin: false };
 
 let versionRow: Record<string, unknown>;
@@ -42,6 +46,7 @@ let runSelectError: { message: string } | null;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv("APP_VERSION", "");
   inserted = null;
   runRow = null;
   runUpdatePatch = null;
@@ -139,6 +144,25 @@ describe("GET /api/v1/system/version", () => {
     } finally {
       if (previous === undefined) delete process.env.APP_VERSION;
       else process.env.APP_VERSION = previous;
+    }
+  });
+
+  it("a release da imagem vence o SHA do host, para dono e membro", async () => {
+    vi.stubEnv("APP_VERSION", "42.7.19-mcp");
+    versionRow.current_version = "fa06399e1";
+    versionRow.current_sha = "fa06399e1";
+    versionRow.off_release = true;
+    versionRow.latest_version = "v42.7.19-mcp";
+    for (const user of [OWNER, MEMBRO]) {
+      vi.mocked(loadAuthUser).mockResolvedValue(user as never);
+      const { GET } = await import("../version/route");
+      const { data } = await (await GET(get())).json();
+      expect(data.current_version).toBe("42.7.19-mcp");
+      expect(data.build_revision).toBe("fa06399e1");
+      if (user.is_platform_admin) {
+        expect(data.update_available).toBe(false);
+        expect(data.off_release).toBe(false);
+      }
     }
   });
 
@@ -476,7 +500,7 @@ describe("GET /api/v1/system/version", () => {
     const body = await (await GET(get())).json();
     expect(body.data.run.superseded).toBe(true);
     // E a versão no ar deixa de ser a `from_version` do rollback.
-    expect(body.data.current_version).toBe("v1.33.0");
+    expect(body.data.current_version).toBe("1.33.0");
     expect(body.data.update_available).toBe(true);
     vi.unstubAllEnvs();
   });
@@ -508,7 +532,7 @@ describe("GET /api/v1/system/version", () => {
     const { GET } = await import("../version/route");
     const body = await (await GET(get())).json();
     expect(body.data.run.superseded).toBe(false);
-    expect(body.data.current_version).toBe("v1.32.1");
+    expect(body.data.current_version).toBe("1.32.1");
     vi.unstubAllEnvs();
   });
 
@@ -530,7 +554,7 @@ describe("GET /api/v1/system/version", () => {
     const { GET } = await import("../version/route");
     const body = await (await GET(get())).json();
     expect(body.data.run.superseded).toBe(false);
-    expect(body.data.current_version).toBe("v1.32.1");
+    expect(body.data.current_version).toBe("1.32.1");
     vi.unstubAllEnvs();
   });
 
@@ -741,7 +765,9 @@ describe("POST /api/v1/system/update", () => {
       requested_by: OWNER.id,
     });
     expect(versionUpdatePatch).toBeNull();
-    expect(audit).toHaveBeenCalledWith(expect.objectContaining({ action: "system.update_requested" }));
+    expect(audit).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "system.update_requested" }),
+    );
   });
 
   it("recusa um segundo pedido enquanto há run em andamento", async () => {
@@ -772,7 +798,11 @@ describe("POST /api/v1/system/update", () => {
     const res = await POST(post());
     expect(res.status).toBe(200);
     expect(runUpdatePatch).toMatchObject({ status: "failed" });
-    expect(inserted).toMatchObject({ from_version: "1.0.0", to_version: "1.1.0", status: "dispatched" });
+    expect(inserted).toMatchObject({
+      from_version: "1.0.0",
+      to_version: "1.1.0",
+      status: "dispatched",
+    });
   });
 
   it("recusa quando já está na última versão", async () => {
@@ -790,7 +820,11 @@ describe("POST /api/v1/system/update", () => {
     // precisa tratar isso como o MESMO estado de negócio do check acima, não
     // deixar vazar como 500.
     vi.mocked(loadAuthUser).mockResolvedValue(OWNER as never);
-    insertError = { code: "23505", message: 'duplicate key value violates unique constraint "uniq_system_update_runs_dispatched"' };
+    insertError = {
+      code: "23505",
+      message:
+        'duplicate key value violates unique constraint "uniq_system_update_runs_dispatched"',
+    };
     const { POST } = await import("../update/route");
     const res = await POST(post());
     expect(res.status).toBe(409);

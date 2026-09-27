@@ -4,6 +4,7 @@
 import { z } from "zod";
 
 import { listPipelinesHandler } from "@/app/api/v1/pipelines/_handler";
+import { carregarPrevisao } from "@/lib/leads/previsao";
 import type { McpToolDefinition } from "../types";
 import {
   arquivarPipeline,
@@ -12,7 +13,7 @@ import {
   criarPipeline,
   obterPipeline,
 } from "@/lib/pipelines/operations";
-import { customFieldSchema } from "@/lib/schemas/settings";
+import { pipelineConfigPatchSchema } from "@/lib/schemas/settings";
 
 function operationContext(ctx: Parameters<typeof obterPipeline>[0]) {
   return ctx;
@@ -33,7 +34,17 @@ export const crmGetPipeline: McpToolDefinition<typeof getPipelineShape> = {
   requiresRole: "agent",
   requiresScope: "mcp:read",
   domain: "pipelines",
-  handler: (input, ctx) => obterPipeline(operationContext({ supabase: ctx.supabase, organizationId: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId, apiTokenId: ctx.apiTokenId }), input.pipeline_id),
+  handler: (input, ctx) =>
+    obterPipeline(
+      operationContext({
+        supabase: ctx.supabase,
+        organizationId: ctx.organizationId,
+        actor: ctx.actor,
+        requestId: ctx.requestId,
+        apiTokenId: ctx.apiTokenId,
+      }),
+      input.pipeline_id,
+    ),
 };
 
 const createPipelineShape = {
@@ -50,8 +61,21 @@ export const crmCreatePipeline: McpToolDefinition<typeof createPipelineShape> = 
   requiresRole: "manager",
   requiresScope: "mcp:write",
   domain: "pipelines",
-  auditResource: (_input, result) => ({ type: "crm_pipeline", id: (result as { id?: string } | undefined)?.id }),
-  handler: (input, ctx) => criarPipeline({ supabase: ctx.supabase, organizationId: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId, apiTokenId: ctx.apiTokenId }, input),
+  auditResource: (_input, result) => ({
+    type: "crm_pipeline",
+    id: (result as { id?: string } | undefined)?.id,
+  }),
+  handler: (input, ctx) =>
+    criarPipeline(
+      {
+        supabase: ctx.supabase,
+        organizationId: ctx.organizationId,
+        actor: ctx.actor,
+        requestId: ctx.requestId,
+        apiTokenId: ctx.apiTokenId,
+      },
+      input,
+    ),
 };
 
 const updatePipelineShape = {
@@ -76,7 +100,17 @@ export const crmUpdatePipeline: McpToolDefinition<typeof updatePipelineShape> = 
   auditResource: (input) => ({ type: "crm_pipeline", id: input.pipeline_id }),
   handler: (input, ctx) => {
     const { pipeline_id, ...patch } = input;
-    return atualizarPipeline({ supabase: ctx.supabase, organizationId: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId, apiTokenId: ctx.apiTokenId }, pipeline_id, patch);
+    return atualizarPipeline(
+      {
+        supabase: ctx.supabase,
+        organizationId: ctx.organizationId,
+        actor: ctx.actor,
+        requestId: ctx.requestId,
+        apiTokenId: ctx.apiTokenId,
+      },
+      pipeline_id,
+      patch,
+    );
   },
 };
 
@@ -93,19 +127,22 @@ export const crmArchivePipeline: McpToolDefinition<typeof archivePipelineShape> 
   domain: "pipelines",
   capabilities: ["destructive_operations"],
   auditResource: (input) => ({ type: "crm_pipeline", id: input.pipeline_id }),
-  handler: (input, ctx) => arquivarPipeline({ supabase: ctx.supabase, organizationId: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId, apiTokenId: ctx.apiTokenId }, input.pipeline_id),
+  handler: (input, ctx) =>
+    arquivarPipeline(
+      {
+        supabase: ctx.supabase,
+        organizationId: ctx.organizationId,
+        actor: ctx.actor,
+        requestId: ctx.requestId,
+        apiTokenId: ctx.apiTokenId,
+      },
+      input.pipeline_id,
+    ),
 };
 
 const configPipelineShape = {
   pipeline_id: z.string().uuid(),
-  vocabulary: z.object({
-    lead: z.string().min(1).max(40).optional(),
-    deal: z.string().min(1).max(40).optional(),
-    won: z.string().min(1).max(40).optional(),
-    lost: z.string().min(1).max(40).optional(),
-  }).optional(),
-  fields: z.array(customFieldSchema).max(50).optional(),
-  lost_reasons: z.array(z.string().min(1).max(80)).max(50).optional(),
+  ...pipelineConfigPatchSchema.shape,
 };
 
 export const crmUpdatePipelineSchema: McpToolDefinition<typeof configPipelineShape> = {
@@ -120,7 +157,17 @@ export const crmUpdatePipelineSchema: McpToolDefinition<typeof configPipelineSha
   auditResource: (input) => ({ type: "crm_pipeline", id: input.pipeline_id }),
   handler: (input, ctx) => {
     const { pipeline_id, ...patch } = input;
-    return atualizarConfiguracaoDoPipeline({ supabase: ctx.supabase, organizationId: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId, apiTokenId: ctx.apiTokenId }, pipeline_id, patch);
+    return atualizarConfiguracaoDoPipeline(
+      {
+        supabase: ctx.supabase,
+        organizationId: ctx.organizationId,
+        actor: ctx.actor,
+        requestId: ctx.requestId,
+        apiTokenId: ctx.apiTokenId,
+      },
+      pipeline_id,
+      patch,
+    );
   },
 };
 
@@ -157,4 +204,40 @@ export const crmListPipelines: McpToolDefinition<typeof listInputShape> = {
       })),
     };
   },
+};
+
+const forecastInputShape = {
+  pipeline_id: z.string().uuid(),
+};
+
+/**
+ * A previsão ponderada de UM funil (issue #1535) — a MESMA regra da rota REST
+ * `GET /api/v1/pipelines/[id]/forecast`, porque duas réguas para a mesma conta
+ * divergem no primeiro ajuste de probabilidade.
+ *
+ * ⚠️ AQUI O CLIENTE É O DO CONTEXTO (service-role, bypassa RLS), então o
+ * isolamento vem do filtro explícito de `organization_id` dentro de
+ * `carregarPrevisao`. A rota REST usa o client de SESSÃO de propósito: é ela
+ * que tem de respeitar `visibility_mode = "own"` (migration 0036) para um
+ * atendente ver só a previsão dos próprios negócios.
+ */
+export const crmGetPipelineForecast: McpToolDefinition<typeof forecastInputShape> = {
+  name: "crm_get_pipeline_forecast",
+  description:
+    "Devolve a previsão ponderada de um funil: negócios ABERTOS agrupados por moeda e por mês de " +
+    "expected_close_date, com bruto_cents e ponderado_cents (valor x probabilidade), mais os baldes " +
+    '"sem data" e "sem probabilidade" reportados À PARTE — nunca somados como zero. A fonte da ' +
+    'probabilidade vem de crm_pipelines.settings.previsao.fonte: "etapa" (padrão) ou ' +
+    '"ia_quando_houver" (usa crm_lead_scores.ai_probability quando existe). Moedas diferentes ' +
+    "NUNCA são somadas entre si.",
+  inputSchema: forecastInputShape,
+  category: "read",
+  requiresRole: "agent",
+  requiresScope: "mcp:read",
+  handler: async (input, ctx) =>
+    carregarPrevisao(ctx.supabase, {
+      organizationId: ctx.organizationId,
+      pipelineId: input.pipeline_id,
+      requestId: ctx.requestId,
+    }),
 };
