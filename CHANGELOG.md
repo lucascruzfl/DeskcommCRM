@@ -8,6 +8,103 @@ Se você roda o DeskcommCRM numa VPS, **leia a seção da versão para a qual es
 
 ## [Não lançado]
 
+## [1.54.0] — 2026-09-27
+
+### Adicionado
+
+- **Aba Graph (Datafy): editar e apagar um modelo sem levar as outras traduções** Na aba **Modelos** do canal Graph (Datafy), os botões **Editar** e **Apagar**
+  voltam a aparecer. Eles ficavam desligados porque apagar um modelo por nome
+  removia todas as traduções de uma vez, enquanto a tela mostrava um só idioma.
+  Agora a operação identifica a variante escolhida (nome + idioma) antes de falar
+  com a plataforma: apagar tira só a tradução selecionada, e editar manda o
+  conteúdo para a variante certa.
+
+  Apagar continua perguntando antes, mostrando onde o modelo está em uso
+  (follow-up ou prompt de agente), e só confirma com a sua confirmação. Se a
+  plataforma não devolver a variante, nada é apagado no escuro — a operação
+  recusa com o motivo.
+
+  Contribuição de @webtecnica (#1761, issue #1734).
+
+- **A ferramenta de agenda lê um período inteiro, no fuso da empresa e em páginas** A ferramenta `crm_list_appointments` passa a aceitar `de`/`ate` (até 62 dias, a agenda inteira da organização) e paginação por `depois_de`/`proximo`, e cada compromisso traz o nome do contato e do atendente, o tipo, o local e os negócios vinculados — as chaves `contato_id`/`atendente_id` continuam na resposta. O filtro por `dia` passa a contar o dia no fuso da organização. A listagem da agenda pela API recusa com 422 um período acima de 62 dias.
+
+  Não há ação para quem opera a VPS.
+
+  Contribuição de @webtecnica (#1762).
+
+- **O dono pode impedir que um agente marque novos retornos sem desligar os acompanhamentos configurados** Cada agente passa a ter um controle separado para permitir ou impedir novos retornos prometidos por conta própria. Os acompanhamentos configurados, a consulta e o cancelamento de retornos existentes e os agendamentos de compromisso continuam disponíveis. Agentes existentes mantêm o comportamento atual. Contribuição de @lucasa15 (#1764).
+
+- **Nome da etapa editável direto no cabeçalho do quadro** Em **`/app/pipelines/:id`**, quem é `manager` ou `admin` agora renomeia a etapa clicando no próprio cabeçalho da coluna — sem precisar ir a Configurações › Funis. Salva ao confirmar (Enter ou saindo do campo), nunca a cada tecla, pela mesma rota que a tela de Configurações já usa. Para `viewer`/`agent`, que também abrem este quadro, o cabeçalho continua só leitura.
+
+  Não há ação para quem opera a VPS.
+
+  Contribuição de @lmarceloc (#1738).
+
+- **Dá para trocar entre tema claro e escuro dentro do Modo Plataforma** O Modo Plataforma — a área de administração da instalação, que enxerga todas as
+  organizações — não tinha como trocar o tema. Não era só o botão que faltava: o
+  atalho de teclado também vive dentro desse botão, então quem estava ali não
+  tinha caminho nenhum. Para mudar de claro para escuro era preciso sair para o
+  app pessoal, trocar lá e voltar, e nada na tela dizia isso.
+
+  Quem mais sentia é quem acabou de instalar: a instalação cria o dono como
+  administrador da plataforma, então o Modo Plataforma costuma ser a primeira
+  tela de uma VPS nova.
+
+  Agora o controle fica na própria tarja amarela do topo, ao lado do "Sair pra app
+  pessoal". Ele cicla entre claro, escuro e o que o sistema operacional estiver
+  usando, e o atalho `Ctrl + Shift + L` funciona ali também. A escolha continua
+  valendo nas duas áreas, como sempre valeu.
+
+  A tarja também passou a acompanhar o tema. Antes ela era uma faixa clara fixa,
+  que não mudava de cor — no tema escuro ficava gritando no topo da tela.
+
+  Crédito: @Draven9
+
+  Contribuição de @Draven9 (#1757, trazida no #1759).
+
+### Alterado
+
+- **Telemetria atualizada para o Sentry 11, com a coleta de dados pessoais travada no mínimo** O componente que envia relatórios de erro foi atualizado para a versão 11 do
+  Sentry. A versão nova passaria a coletar, por padrão, IP, cookies, corpo das
+  requisições e o texto trocado com a IA. Aqui essa coleta continua desligada, de
+  forma explícita, e a limpeza de dados pessoais (e-mail, CPF, telefone, IP,
+  tokens de webhook e de convite) agora é conferida no pacote que de fato sai do
+  servidor. Quem usa o padrão (Sentry da comunidade) ou desligou a telemetria
+  (`SENTRY_DSN=off`) não precisa fazer nada.
+
+  Se você aponta `SENTRY_DSN` para o seu próprio Sentry, o rastreamento de
+  desempenho passa a ser enviado em fluxo contínuo, sem o antigo limite de 1.000
+  trechos por requisição. Alguns atributos mudaram de nome (por exemplo,
+  `http.method` virou `http.request.method` e `db.statement` virou
+  `db.query.text`), então alertas e painéis que filtram pelos nomes antigos
+  precisam ser revistos. Se o seu Sentry é auto-hospedado, o SDK novo só dá
+  suporte à versão 26.4.2 ou mais nova. Os relatórios de erro continuam chegando
+  como antes.
+
+### Corrigido
+
+- **Mídia já removida pode ser enfileirada de novo e a fila deixa de crescer sem teto** A fila de remoção de mídia guarda cada arquivo por `object_path` e a 0432 pedia
+  `on conflict (bucket, object_path) do nothing`. Como o worker marca a linha
+  como `deleted` e a linha nunca sai da fila, um arquivo NOVO gravado naquele
+  mesmo caminho era ignorado em silêncio: não entrava mais na retenção nem na
+  anonimização da LGPD, e nenhuma das duas conseguia alcançá-lo depois.
+
+  Agora o conflito reabre a linha só quando ela já terminou — `deleted` ou
+  `skipped` volta a `pending` com as tentativas zeradas — e não toca em `pending`
+  nem `failed` em curso, que é justamente o `where` que garante isso. O cron
+  diário de retenção passa também a expurgar a linha `deleted` da retenção com
+  mais de 90 dias, para a fila deixar de crescer sem teto; a linha ligada a um
+  pedido LGPD permanece, porque é o registro de que a mídia do titular foi
+  removida. Nada a fazer para quem já roda o sistema.
+
+  Contribuição de @webtecnica (#1763).
+
+- **O servidor do app segura a conexão ociosa por mais tempo que o proxy na frente** O app fechava a conexão ociosa com o proxy (Caddy ou Traefik) aos 6 segundos, enquanto o proxy
+  a guardava por até 2 minutos para reaproveitar. Quando a próxima requisição saía no instante
+  em que o app fechava, ela morria no meio e a pessoa via um erro 502 raro e sem explicação —
+  um salvamento podia falhar e dar certo ao tentar de novo. Agora o app segura a conexão por
+  125 segundos, e quem fecha primeiro é sempre o proxy. Nada a fazer: vale ao atualizar.
+
 ## [1.53.0] — 2026-09-26
 
 ### Adicionado
@@ -8439,7 +8536,8 @@ Primeira versão marcada do DeskcommCRM. O projeto vinha sendo desenvolvido publ
 
 - **Node 22 é obrigatório para desenvolvimento.** A suíte de invariantes instancia o cliente do Supabase, que exige o `WebSocket` global — nativo apenas a partir do Node 22. Isso não afeta quem apenas hospeda: a VPS roda a imagem pronta.
 
-[Não lançado]: https://github.com/melgarafael/DeskcommCRM/compare/v1.53.0...HEAD
+[Não lançado]: https://github.com/melgarafael/DeskcommCRM/compare/v1.54.0...HEAD
+[1.54.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.53.0...v1.54.0
 [1.53.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.52.0...v1.53.0
 [1.52.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.51.0...v1.52.0
 [1.51.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.50.0...v1.51.0
