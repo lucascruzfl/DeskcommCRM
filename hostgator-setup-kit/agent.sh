@@ -47,8 +47,7 @@ log_err() {  # log_err <mensagem> — grava com timestamp, corta pra ~200 linhas
 # Antes de qualquer outra coisa: esta cópia do repo manda neste projeto Docker?
 #
 # Cedo de propósito — antes até de ANUNCIAR a versão. Uma cópia que não é a dona
-# anunciaria a versão da árvore dela, e o app ofereceria "Atualizar agora" com
-# base num número que não descreve o que está no ar.
+# poderia consultar outro projeto ou enviar metadata de um checkout alheio.
 recusar_projeto_de_outra_arvore log_err || exit 0
 
 # A senha das rotinas que o log do sistema guardou (#1054) é trocada AQUI quando
@@ -144,7 +143,13 @@ else
   git fetch --tags --quiet origin 2>/dev/null || FETCH_OK=0
 fi
 
-CURRENT_TAG="$(git describe --tags --exact-match HEAD 2>/dev/null || true)"
+RUNTIME_VERSION="$(versao_do_app_em_execucao)" || RUNTIME_VERSION=""
+CURRENT_TAG="${RUNTIME_VERSION:+v$RUNTIME_VERSION}"
+if [ -z "$RUNTIME_VERSION" ]; then
+  CURRENT_TAG="$(git describe --tags --exact-match HEAD 2>/dev/null || true)"
+  log_err "sem versão confiável do app em execução; usando fallback Git legado para esta batida"
+fi
+# Revisão do checkout do cron: metadata de debug, não versão instalada.
 CURRENT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo '?')"
 if [ "${DESKCOMM_UPDATE_CHANNEL:-official}" = custom-mcp ]; then
   LATEST_TAG="$MCP_LATEST"
@@ -160,21 +165,18 @@ if [ -n "$LATEST_TAG" ]; then RELEASE_OK=1; else RELEASE_OK=0; fi
 # está à frente de uma release real ou se nunca houve release nenhuma.
 if [ -n "$LATEST_TAG" ]; then HAS_KNOWN_RELEASE=true; else HAS_KNOWN_RELEASE=false; fi
 
-if [ -n "$CURRENT_TAG" ]; then
+if [ -n "$RUNTIME_VERSION" ]; then
+  CURRENT="$RUNTIME_VERSION"; OFF_RELEASE=false
+elif [ -n "$CURRENT_TAG" ]; then
   CURRENT="$CURRENT_TAG"; OFF_RELEASE=false
 else
   CURRENT="$CURRENT_SHA";  OFF_RELEASE=true
 fi
 
-# Tag que já está CONTIDA no que roda aqui não é atualização — é retrocesso, e
-# o update.sh recusa instalar (sem --force). Anunciá-la mesmo assim acenderia
-# na tela um botão que o agente é obrigado a recusar depois: o mesmo teste de
-# ancestralidade nas duas pontas é o que impede o app de prometer o que o host
-# não vai cumprir. Sem tag anunciada, a tela diz que a instalação está à frente
-# da versão publicada.
-#
-# Na dúvida (repositório raso que não deu pra completar), também NÃO anuncia:
-# oferecer o botão seria oferecer o que o update.sh vai recusar do outro lado.
+# A release em execução decide se o alvo é atualização. O checkout do cron
+# pode estar adiantado sem que a imagem tenha sido atualizada. A mesma guarda
+# no update.sh impede prometer na tela o que o host recusaria depois.
+# Só sem metadata da imagem usamos a ancestralidade Git legada.
 #
 # Mas "não anunciei" e "não existe versão nova" são coisas DIFERENTES, e o app
 # não tem como distinguir uma da outra olhando um campo vazio — ele leria o
@@ -182,7 +184,7 @@ fi
 # atrasada. Por isso o "não sei" viaja explícito no heartbeat.
 COMPARE_FAILED=false
 if [ -n "$LATEST_TAG" ]; then
-  is_already_in_head "$LATEST_TAG" && CONTIDA=0 || CONTIDA=$?
+  is_already_installed "$LATEST_TAG" "$RUNTIME_VERSION" && CONTIDA=0 || CONTIDA=$?
   [ "$CONTIDA" = 2 ] && COMPARE_FAILED=true
   [ "$CONTIDA" = 1 ] || LATEST_TAG=""   # 0 = retrocesso, 2 = não sei: nos dois, não anuncia
 fi
