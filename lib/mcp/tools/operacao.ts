@@ -79,7 +79,8 @@ export const crmListStages: McpToolDefinition<typeof listStagesShape> = {
   description:
     "Lista as etapas ativas de um pipeline, na ordem do quadro, com id, name, slug, position, " +
     "is_won/is_lost, win_probability (probabilidade de ganho 0-100 ou null quando a etapa nao foi " +
-    "calibrada) e a autoria da última mudança de configuração (last_change_actor_kind: user|ai|system). " +
+    "calibrada), avisar_na_central (aviso ao entrar na etapa) e a autoria da última mudança " +
+    "de configuração (last_change_actor_kind: user|ai|system). " +
     "Use antes de mover um lead ou de criar etapa nova, para não duplicar coluna existente.",
   inputSchema: listStagesShape,
   category: "read",
@@ -162,6 +163,8 @@ const updateStageShape = {
    * probabilidade" em vez de somar zero em silêncio.
    */
   win_probability: z.number().int().min(0).max(100).nullable().optional(),
+  /** Aciona um aviso na Central quando um negócio entrar nesta etapa no futuro. */
+  avisar_na_central: z.boolean().optional(),
 };
 
 export const crmUpdateStage: McpToolDefinition<typeof updateStageShape> = {
@@ -169,7 +172,8 @@ export const crmUpdateStage: McpToolDefinition<typeof updateStageShape> = {
   description:
     "Renomeia, reordena, calibra a probabilidade de ganho (win_probability, 0-100; null limpa a " +
     "calibração e a previsão passa a reportar a etapa sem probabilidade) ou muda o papel de desfecho " +
-    "(is_won/is_lost) de uma etapa. " +
+    "(is_won/is_lost) de uma etapa. avisar_na_central liga ou desliga o aviso interno da Central " +
+    "para negócios que entrarem nesta etapa; não cria avisos retroativos. " +
     "after_stage_id é o id da etapa VIZINHA DA ESQUERDA (null = primeira coluna), não um número de posição. " +
     "Mover a marcação de ganho/perda para outra etapa é permitido; REMOVÊ-LA sem substituta não é — " +
     "o pipeline ficaria sem onde fechar negócio.",
@@ -186,13 +190,14 @@ export const crmUpdateStage: McpToolDefinition<typeof updateStageShape> = {
     if (input.is_lost !== undefined) pedido.is_lost = input.is_lost;
     if (input.after_stage_id !== undefined) pedido.depois_de = input.after_stage_id;
     if (input.win_probability !== undefined) pedido.win_probability = input.win_probability;
+    if (input.avisar_na_central !== undefined) pedido.avisar_na_central = input.avisar_na_central;
     if (Object.keys(pedido).length === 0) {
       throw new ApiError(
         422,
         "unprocessable_entity",
         undefined,
         ctx.requestId,
-        "Diga o que mudar na etapa: o nome, a ordem ou o papel dela no desfecho do negócio.",
+        "Diga o que mudar na etapa: nome, ordem, desfecho, probabilidade ou aviso na Central.",
       );
     }
     const { funil } = await atualizarEtapa(deps(ctx), {

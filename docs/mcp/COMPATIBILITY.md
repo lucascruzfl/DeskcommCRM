@@ -71,3 +71,15 @@ aplica o freio por número antes de criar a conversa. A classificação e os
 gates pendentes estão em [AUDIT-1.47.0.md](AUDIT-1.47.0.md). A nova opção de
 manter a conversa com o atendente anterior está coberta pelas tools de leitura
 e atualização da configuração de roteamento, com permissão de gerente.
+
+Na integração 1.57.0, `crm_update_stage` aceita `avisar_na_central` como
+booleano opcional e o encaminha ao mesmo `atualizarEtapa` usado pelo PATCH da
+tela. `crm_list_stages` devolve o valor persistido para orientar a próxima
+decisão. A configuração continua marcada `apenasHumano` no catálogo; o evento
+futuro de entrada na etapa abre o aviso pela regra oficial.
+
+A consulta e a restauração do som padrão estão cobertas por
+`crm_get_notification_sounds` e `crm_reset_notification_sound`. A restauração
+exige manager e capability `destructive_operations`, usa o mesmo serviço da
+rota HTTP e não entrega caminhos privados ou URLs assinadas. Enviar um áudio
+personalizado continua em Configurações › Notificações.

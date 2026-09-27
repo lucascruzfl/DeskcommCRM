@@ -28,7 +28,7 @@
  * Errar para baixo aqui dá ao agente poder que o humano não sabe que concedeu,
  * porque `critico` é exatamente o que `entraPorPacote()` recusa ligar sozinho.
  *
- * ⚠️ AS SEIS ESCRITAS DESTE ARQUIVO SÃO `apenasHumano`, E ISSO É PARIDADE, NÃO
+ * ⚠️ AS ESCRITAS DESTE ARQUIVO SÃO `apenasHumano`, E ISSO É PARIDADE, NÃO
  * TIMIDEZ. A régua do épico para o papel de uma capacidade é o que a ROTA HTTP
  * equivalente exige (ver `tests/unit/capacidade-alcancavel-pelo-agente.test.ts`).
  * As três rotas que estas tools espelham — `pipelines/[id]/stages`,
@@ -40,7 +40,7 @@
  *
  * A consequência é honesta e tem que ser dita na tela, que é para isso que o
  * campo serve: no pacote "Organizar a operação", o agente **lê tudo e muda
- * nada**. As dez leituras são o que ele de fato ganhou — explicar a operação,
+ * nada**. As leituras são o que ele de fato ganhou — explicar a operação,
  * diagnosticar a entrada que parou de receber, mostrar a automação que falhou,
  * parar de inventar marcador. As escritas ficam com quem já as tinha.
  *
@@ -54,6 +54,16 @@
 import { declararTools } from "./tipos";
 
 export const TOOLS_OPERACAO = declararTools([
+  {
+    name: "crm_get_notification_sounds", category: "read",
+    rotulo: "Ver os sons dos avisos", explicacao: "Mostra quais avisos usam um som escolhido pela empresa e quais usam o som padrão, sem entregar arquivos privados.",
+    oQueToca: "Sons da Central", risco: "seguro", pacotes: ["organizar"],
+  },
+  {
+    name: "crm_reset_notification_sound", category: "write",
+    rotulo: "Restaurar o som de um aviso", explicacao: "Volta ao som padrão do aviso e remove o áudio personalizado. Para recuperar o áudio anterior, envie o arquivo novamente pela tela de Notificações.",
+    oQueToca: "Sons da Central", risco: "critico", pacotes: ["organizar"], apenasHumano: true,
+  },
   // ---- funil e etapas ----
   {
     name: "crm_list_stages",
@@ -79,9 +89,9 @@ export const TOOLS_OPERACAO = declararTools([
   {
     name: "crm_update_stage",
     category: "write",
-    rotulo: "Renomear ou reordenar uma etapa",
+    rotulo: "Configurar uma etapa do funil",
     explicacao:
-      "Troca o nome de uma coluna do funil, muda o lugar dela na ordem, define em qual delas o negócio é dado como fechado ou perdido e ajusta a chance de fechamento que a previsão do funil usa.",
+      "Troca nome e ordem da coluna, define ganho ou perda, ajusta a chance de fechamento e liga ou desliga o aviso à equipe quando um negócio entrar nela.",
     oQueToca: "Funil de vendas",
     risco: "atencao",
     pacotes: ["organizar"],
