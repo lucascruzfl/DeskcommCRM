@@ -132,6 +132,24 @@ function post() {
 }
 
 describe("GET /api/v1/system/version", () => {
+  it("oferece 1.53 quando o heartbeat confirma o container 1.47 apesar do checkout à frente", async () => {
+    vi.stubEnv("APP_VERSION", "1.47.0-mcp");
+    versionRow.current_version = "1.47.0-mcp";
+    versionRow.current_sha = "6436c9db6";
+    versionRow.latest_version = "v1.53.0-mcp";
+    versionRow.off_release = false;
+    vi.mocked(loadAuthUser).mockResolvedValue(OWNER as never);
+    const { GET } = await import("../version/route");
+    const { data } = await (await GET(get())).json();
+    expect(data).toMatchObject({
+      current_version: "1.47.0-mcp",
+      latest_version: "v1.53.0-mcp",
+      update_available: true,
+      off_release: false,
+      build_revision: "6436c9db6",
+    });
+  });
+
   it("mantém canal MCP quando o .env perde a chave mas a imagem ainda é MCP", async () => {
     const previous = process.env.APP_VERSION;
     process.env.APP_VERSION = "1.42.0-mcp";
@@ -725,6 +743,31 @@ describe("GET /api/v1/system/version", () => {
 });
 
 describe("POST /api/v1/system/update", () => {
+  it("despacha 1.47 → 1.53 usando a release da imagem, mesmo com SHA antigo no banco", async () => {
+    vi.stubEnv("APP_VERSION", "1.47.0-mcp");
+    versionRow.current_version = "6436c9db6";
+    versionRow.latest_version = "v1.53.0-mcp";
+    vi.mocked(loadAuthUser).mockResolvedValue(OWNER as never);
+    const { POST } = await import("../update/route");
+    expect((await POST(post())).status).toBe(200);
+    expect(inserted).toMatchObject({
+      from_version: "1.47.0-mcp",
+      to_version: "v1.53.0-mcp",
+      status: "dispatched",
+    });
+  });
+
+  it("recusa mesma release MCP com prefixo v diferente e sem criar run", async () => {
+    vi.stubEnv("APP_VERSION", "1.53.0-mcp");
+    versionRow.current_version = "1.53.0-mcp";
+    versionRow.latest_version = "v1.53.0-mcp";
+    vi.mocked(loadAuthUser).mockResolvedValue(OWNER as never);
+    const { POST } = await import("../update/route");
+    expect((await POST(post())).status).toBe(409);
+    expect(inserted).toBeNull();
+    expect(audit).not.toHaveBeenCalled();
+  });
+
   it("exige sessão", async () => {
     vi.mocked(loadAuthUser).mockResolvedValue(null as never);
     const { POST } = await import("../update/route");

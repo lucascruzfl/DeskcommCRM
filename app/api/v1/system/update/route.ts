@@ -14,6 +14,7 @@ import { loadAuthUser } from "@/lib/auth/server";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isRunStale } from "@/lib/system/update-run";
+import { versaoInstalada } from "@/lib/system/versao-instalada";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +47,9 @@ export async function POST(_req: NextRequest): Promise<Response> {
     return fail("internal_error", "Não consegui ler o estado da atualização.", 500);
   }
 
-  const current = version?.current_version ?? "";
+  const current =
+    versaoInstalada(process.env.APP_VERSION, version?.current_version ?? "").current_version ||
+    (version?.current_version ?? "");
   const latest = version?.latest_version ?? "";
 
   if ((process.env.DESKCOMM_UPDATE_CHANNEL === "custom-mcp" || process.env.APP_VERSION?.endsWith("-mcp")) &&
@@ -54,7 +57,7 @@ export async function POST(_req: NextRequest): Promise<Response> {
     return fail("state_conflict", "Aguardando uma release MCP validada.", 409);
   }
 
-  if (!latest || latest === current) {
+  if (!latest || latest.replace(/^v/, "") === current.replace(/^v/, "")) {
     return fail("state_conflict", "Você já está na versão mais recente.", 409);
   }
 

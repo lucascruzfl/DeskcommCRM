@@ -93,7 +93,9 @@ fi
 [ -n "$TARGET_TAG" ] || die "Não encontrei nenhuma versão publicada para instalar."
 git rev-parse --verify --quiet "${TARGET_TAG}^{commit}" >/dev/null \
   || die "Não conheço a versão $TARGET_TAG aqui. Confira o nome (ex.: v1.1.0) ou tente de novo quando o servidor conseguir falar com o GitHub."
-CURRENT_TAG="$(git describe --tags --exact-match HEAD 2>/dev/null || true)"
+RUNTIME_VERSION="$(versao_do_app_em_execucao)" || RUNTIME_VERSION=""
+CURRENT_TAG="${RUNTIME_VERSION:+v$RUNTIME_VERSION}"
+[ -n "$CURRENT_TAG" ] || CURRENT_TAG="$(git describe --tags --exact-match HEAD 2>/dev/null || true)"
 
 # O código estar em dia NÃO significa que o app está: quem roda é a imagem.
 # Uma atualização interrompida depois do checkout (queda de rede, falta de
@@ -148,17 +150,12 @@ if [ -n "$MESMA_TAG" ] && [ -z "$FORCE" ] && ! image_desatualizada; then
   exit 0
 fi
 
-# Alvo que JÁ está contido no que roda aqui = andar pra trás, não pra frente.
-# Numa instalação que segue a `main`, `git describe --exact-match` é vazio: a
-# comparação de tags acima passa batido e, sem esta guarda, o script instalaria
-# alegremente uma versão MAIS VELHA que a instalada — desligando o que o dono
-# já tem (foi assim que este próprio botão se autodestruiria, voltando pra uma
-# imagem que não conhece o agente de atualização). Recusar é o padrão; voltar
-# no tempo continua possível, mas só quando alguém pede de propósito.
-# Quando o alvo é a MESMA tag já instalada, a guarda não se aplica: não há para
-# onde voltar no tempo — só a imagem é que ficou para trás.
+# A versão da imagem em execução decide retrocesso; só sem metadata confiável
+# usamos a ancestralidade do checkout como fallback legado. Recusar downgrade
+# é o padrão; voltar no tempo exige --force. Na MESMA release, o caminho acima
+# ainda permite conferir/refazer a imagem (inclusive rebuild de segurança).
 if [ -z "$FORCE" ] && [ -z "$MESMA_TAG" ]; then
-  is_already_in_head "$TARGET_TAG" && CONTIDA=0 || CONTIDA=$?
+  is_already_installed "$TARGET_TAG" "$RUNTIME_VERSION" && CONTIDA=0 || CONTIDA=$?
   case "$CONTIDA" in
     0) refuse "A versão $TARGET_TAG é ANTERIOR à que já está instalada neste servidor.
      Instalar ela seria voltar no tempo e desligar coisas que você já tem.

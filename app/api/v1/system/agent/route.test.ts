@@ -95,6 +95,28 @@ beforeEach(() => {
 });
 
 describe("POST /api/v1/system/agent", () => {
+  it("preserva a release em execução separada da revisão Git do cron", async () => {
+    const { POST } = await import("./route");
+    const res = await POST(
+      req({
+        ...HEARTBEAT,
+        current_version: "1.47.0-mcp",
+        current_sha: "6436c9db6",
+        latest_version: "v1.53.0-mcp",
+        off_release: false,
+        has_known_release: true,
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(lastUpdate("system_version")).toMatchObject({
+      current_version: "1.47.0-mcp",
+      current_sha: "6436c9db6",
+      latest_version: "v1.53.0-mcp",
+      off_release: false,
+      has_known_release: true,
+    });
+  });
+
   it("recusa sem o segredo", async () => {
     const { POST } = await import("./route");
     const res = await POST(req(HEARTBEAT, "segredo-errado"));

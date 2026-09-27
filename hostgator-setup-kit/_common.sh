@@ -845,11 +845,56 @@ is_already_in_head() {
   return 1
 }
 
+# Versão da aplicação REAL, nunca APP_VERSION/APP_IMAGE do .env do checkout.
+# O ID vem do compose desta instalação; .Image é o ID imutável da imagem que
+# criou o contêiner (uma tag local pode ter sido movida depois do deploy).
+# Sem APP_VERSION válido, tenta o label OCI do contêiner e então da imagem.
+# Sem metadata confiável, devolve vazio: o chamador usa o fallback Git legado.
+versao_do_app_em_execucao() {
+  local cid ver img
+  cid="$(dc ps --status running -q app 2>/dev/null)" || cid=""
+  [ -n "$cid" ] && [[ "$cid" != *$'\n'* ]] || return 0
+  ver="$(docker container inspect "$cid" --format '{{range .Config.Env}}{{if eq (index (split . "=") 0) "APP_VERSION"}}{{println .}}{{end}}{{end}}' 2>/dev/null | sed -n 's/^APP_VERSION=//p')" || ver=""
+  if versao_de_release_valida "$ver"; then printf '%s' "${ver#v}"; return 0; fi
+  ver="$(docker container inspect "$cid" --format '{{index .Config.Labels "org.opencontainers.image.version"}}' 2>/dev/null)" || ver=""
+  if versao_de_release_valida "$ver"; then printf '%s' "${ver#v}"; return 0; fi
+  img="$(docker container inspect "$cid" --format '{{.Image}}' 2>/dev/null)" || img=""
+  [ -n "$img" ] || return 0
+  ver="$(docker image inspect "$img" --format '{{index .Config.Labels "org.opencontainers.image.version"}}' 2>/dev/null)" || ver=""
+  if versao_de_release_valida "$ver"; then printf '%s' "${ver#v}"; fi
+  return 0
+}
+
+versao_de_release_valida() {
+  [[ "${1:-}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]
+}
+
+# Mesmo contrato 0/1/2 da guarda legada. Com release em execução, compara os
+# números da release no mesmo canal; HEAD não participa. Sufixos desconhecidos
+# ou troca de canal são incertos (2), nunca autorização para downgrade.
+is_already_installed() {
+  local target="${1#v}" installed="${2:-}" first
+  installed="${installed#v}"
+  [ -n "$installed" ] || { is_already_in_head "$1"; return $?; }
+  [[ "$target" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-mcp)?$ ]] || return 2
+  [[ "$installed" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-mcp)?$ ]] || return 2
+  if [[ "$target" = *-mcp ]]; then
+    [[ "$installed" = *-mcp ]] || return 2
+  else
+    [[ "$installed" != *-mcp ]] || return 2
+  fi
+  [ "$target" != "$installed" ] || return 0
+  first="$(printf '%s\n' "${target%-mcp}" "${installed%-mcp}" | LC_ALL=C sort -V | head -1)" || return 2
+  [ "$first" = "${target%-mcp}" ] && return 0
+  return 1
+}
+
 # Se uma instalação já veio de uma release MCP, apagar por engano a variável
 # do canal não pode devolver o atualizador à imagem oficial. O commit/tag do
 # próprio checkout é uma segunda prova, independente do .env.
 mcp_checkout_sem_canal() {
   [ "${DESKCOMM_UPDATE_CHANNEL:-official}" != custom-mcp ] || return 1
+  case "$(versao_do_app_em_execucao)" in *-mcp*) return 0 ;; esac
   case "${APP_VERSION:-}" in *-mcp*) return 0 ;; esac
   git describe --tags --match 'v*-mcp' --abbrev=0 HEAD >/dev/null 2>&1
 }
