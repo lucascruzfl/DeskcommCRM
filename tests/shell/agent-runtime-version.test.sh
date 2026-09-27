@@ -145,7 +145,7 @@ printf '✓ caso 1: APP_VERSION vence labels e checkout à frente; 1.53 disponí
 rm -f "$TEST_BACKUP"
 if bash hostgator-setup-kit/update.sh --to v1.53.0-mcp > "$WORK/update.log" 2>&1; then exit 1; fi
 test -f "$TEST_BACKUP"
-! rg -q 'up |pull |stop |down ' "$TEST_DOCKER_LOG"
+if grep -Eq 'up |pull |stop |down ' "$TEST_DOCKER_LOG"; then exit 1; else test "$?" = 1; fi
 printf '✓ update aceita 1.47 → 1.53 mesmo com tag ancestral do checkout\n'
 export TEST_APP_VERSION=1.53.0-mcp
 heartbeat
@@ -162,7 +162,7 @@ assert_heartbeat 1.53.0-mcp '' false
 export TEST_CONTAINER_LABEL='' TEST_IMAGE_LABEL=1.47.0-mcp
 heartbeat
 assert_heartbeat 1.47.0-mcp v1.53.0-mcp false
-rg -q 'image inspect sha256:fixture-running-image' "$TEST_DOCKER_LOG"
+grep -q 'image inspect sha256:fixture-running-image' "$TEST_DOCKER_LOG"
 export TEST_APP_VERSION=invalid
 heartbeat
 assert_heartbeat 1.47.0-mcp v1.53.0-mcp false
@@ -170,7 +170,7 @@ export TEST_APP_VERSION='' TEST_IMAGE_LABEL=''
 git checkout -q v1.53.0-mcp
 heartbeat
 assert_heartbeat v1.53.0-mcp '' false
-rg -q 'fallback Git legado' .update-agent.log
+grep -q 'fallback Git legado' .update-agent.log
 printf '✓ caso 4: APP_VERSION ausente/inválido → OCI container → imagem real → Git legado com log\n'
 export TEST_APP_VERSION=1.47.0-mcp
 for role in deskcommcrm deskcomm-worker deskcomm-scheduler deskcomm-voice-agent; do
