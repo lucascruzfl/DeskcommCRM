@@ -342,12 +342,17 @@ O não-negociável:
 
 ```bash
 nvm use                    # node 22
-npm install
+pnpm install               # o gerenciador é pnpm (packageManager no package.json), não npm
 cp .env.example .env.local  # preencher
 docker compose up -d        # WAHA local
-npm run dev                 # http://localhost:3000
+pnpm dev                    # http://localhost:3000
+pnpm worker                 # agent-worker (processo separado do Next)
+pnpm dev:crons              # chama localmente só os crons de PATHS em scripts/dev-crons.ts (não todos)
 ```
 
+Schema: aplique `supabase/baseline.sql`, **não** as migrations (a cadeia não sobe do zero).
+Stack local completa (Supabase via `scripts/local-supabase.sh`; app, worker, scheduler, WAHA e Redis via `docker-compose.local.yml`), depois de rodar
+`./ubuntu-local-installer.sh` uma vez: `pnpm local:up | local:down | local:status | local:logs`.
 Ver `README.md` pra detalhes de setup.
 
 ---
@@ -360,6 +365,19 @@ pnpm lint        # eslint next/core-web-vitals
 pnpm test:unit   # Vitest (NÃO inclui tests/invariants/** — ver abaixo)
 pnpm test:db     # Postgres efêmero + baseline install/update + 364 invariantes
 pnpm test:e2e    # Playwright (requer dev server)
+pnpm gov:verify  # typecheck + lint + lint:channels + lint:role-rank + test:unit
+pnpm cercas      # só as cercas estruturais (projeto vitest "cercas")
+pnpm test:journeys  # Playwright com tests/journeys/playwright.config.ts
+pnpm format:check   # prettier
+```
+
+Um teste só:
+
+```bash
+pnpm vitest run lib/foo/bar.test.ts         # um arquivo unit
+pnpm vitest run -t "nome do caso"           # um caso pelo nome
+pnpm test:db tests/invariants/x.test.ts     # um invariante (o script repassa os args ao vitest)
+pnpm playwright test tests/e2e/x.spec.ts    # uma spec e2e
 ```
 
 **⚠️ `test:unit` NÃO é `tests/unit/`.** O script é `vitest run` **sem caminho**, e ele alcança
@@ -700,8 +718,8 @@ mudança lá — senão a página ensina um guia que não existe. Ela e a de cha
 
 Antes de declarar uma task pronta:
 
-1. `npm run typecheck` passa zerado
-2. `npm run lint` zerado
+1. `pnpm typecheck` passa zerado
+2. `pnpm lint` zerado
 3. Testes unit/e2e relevantes existem e passam
 4. RLS testada se feature toca tabela tenant-aware
 5. Audit log emitido se há mutação relevante

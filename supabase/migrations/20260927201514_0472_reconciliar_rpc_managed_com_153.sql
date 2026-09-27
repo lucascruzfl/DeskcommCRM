@@ -1,4 +1,4 @@
--- 0452 — reconciliar funções managed com o comportamento oficial da 1.53.
+-- 0472 — reconciliar funções managed com o comportamento oficial da 1.53.
 -- Mantém projeção operacional, portões de área, tenancy e ACL; recupera a
 -- etapa de origem da perda, identidade social da fusão e cascata LGPD única.
 -- As migrations certificadas anteriores permanecem intactas.

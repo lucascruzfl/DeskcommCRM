@@ -639,6 +639,7 @@ jobs:
         wizard-do-funcionario.spec.ts mfa-opcional.spec.ts inbox-responder-citando.spec.ts
         agenda-tela-do-produto.spec.ts
         notificacoes-diz-o-que-falta.spec.ts
+        sons-dos-avisos.spec.ts
         relogio-http-cron-externo.spec.ts
         j20-elegibilidade-respondi.spec.ts j20-elegibilidade-followup.spec.ts
         j20-elegibilidade-atendimento-manual.spec.ts
@@ -740,6 +741,7 @@ jobs:
         escopo-de-funil-do-agente.spec.ts
         followup-tempo-adaptativo.spec.ts
         gatilho-de-etapa.spec.ts
+        etapa-avisa-na-central.spec.ts
         gatilho-de-caso.spec.ts
         conversa-do-caso.spec.ts
         aviso-de-caso-no-whatsapp.spec.ts

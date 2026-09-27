@@ -108,6 +108,7 @@ const RESOURCE_AREAS: Readonly<Record<string, NavDestinationId>> = {
   pipelines: "/app/kanban",
   push_subscriptions: "/app/settings/notifications",
   reports: "/app/metrics",
+  settings_sons: "/app/settings/notifications",
   settings_tags: "/app/settings/tags",
   system_instalacao: "/app/settings/tenant",
   system_instalacao_provar: "/app/ai/credentials",

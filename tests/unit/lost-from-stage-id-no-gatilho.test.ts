@@ -59,7 +59,7 @@ describe("lost_from_stage_id gravado pelo gatilho (#1537)", () => {
         process.cwd(),
         "supabase",
         "migrations",
-        "20260927021800_0452_reconciliar_rpc_managed_com_153.sql",
+        "20260927201514_0472_reconciliar_rpc_managed_com_153.sql",
       ),
       "utf8",
     );

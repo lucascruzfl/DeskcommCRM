@@ -11,8 +11,12 @@ const sourceOrg = randomUUID();
 const key = randomUUID();
 const slug = `managed-${randomUUID().slice(0, 8)}`;
 const email = "client-managed-onboarding@invariant.test";
-const request = JSON.stringify({ display_name: "Clínica fixture", slug, plan: "standard",
-  owner_email: "agency-managed-onboarding@invariant.test" });
+const request = JSON.stringify({
+  display_name: "Clínica fixture",
+  slug,
+  plan: "standard",
+  owner_email: "agency-managed-onboarding@invariant.test",
+});
 const policy = JSON.stringify(buildManagedAreaPolicy("managed/aesthetic-clinic"));
 const call = `public.fn_begin_managed_client_onboarding('${actor}','${key}',
   '${request}'::jsonb,'abcd','${email}','${policy}'::jsonb)`;
@@ -86,12 +90,16 @@ describe("onboarding gerenciado real em Postgres descartável", () => {
     expect(lastLine(output)).toBe("proved");
   });
 
-  it("admin comum é negado; cliente não altera preset ou recibo pelo PostgREST", () => {
-    const output = sql(`begin; ${fixture}
+  it.each(["admin", "manager", "agent"])(
+    "%s comum é negado; cliente não altera preset ou recibo pelo PostgREST",
+    (role) => {
+      const output = sql(`begin; ${fixture}
+      update public.user_organizations set role='${role}'
+        where organization_id='${sourceOrg}' and user_id='${ordinaryAdmin}';
       do $$ begin
         begin perform public.fn_begin_managed_client_onboarding('${ordinaryAdmin}','${key}',
           '${request}'::jsonb,'abcd','${email}','${policy}'::jsonb);
-          raise exception 'ordinary admin accepted';
+          raise exception 'ordinary role accepted';
         exception when insufficient_privilege then null; end;
       end $$;
       select ${call};
@@ -111,6 +119,7 @@ describe("onboarding gerenciado real em Postgres descartável", () => {
           where organization_id='${sourceOrg}') <> 0 then raise exception 'cross tenant'; end if;
       end $$;
       rollback; select 'proved';`);
-    expect(lastLine(output)).toBe("proved");
-  });
+      expect(lastLine(output)).toBe("proved");
+    },
+  );
 });

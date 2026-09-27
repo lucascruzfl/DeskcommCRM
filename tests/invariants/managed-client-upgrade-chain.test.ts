@@ -5,22 +5,24 @@ import { buildManagedAreaPolicy } from "@/lib/managed-clients/policy";
 import { countAs, lastLine, sql, writeCountAs } from "./gov-helpers";
 
 const migrations = [
-  "20260927015100_0454_politica_de_area_gerenciada.sql",
-  "20260927015101_0455_diretorio_seguro_de_agentes_atribuiveis.sql",
-  "20260927015103_0440_areas_administrativas_no_postgrest.sql",
-  "20260927015104_0441_escrita_administrativa_de_funis_e_canais.sql",
-  "20260927015105_0442_projecoes_operacionais_gerenciadas.sql",
-  "20260927015106_0443_leitura_base_administrativa_gerenciada.sql",
-  "20260927015107_0444_rpc_administrativas_respeitam_policy.sql",
-  "20260927015108_0445_rpc_operacionais_leem_projecao.sql",
-  "20260927015109_0446_rpc_de_leitura_sem_base.sql",
-  "20260927015110_0447_funil_operacional_sem_configuracao.sql",
-  "20260927015111_0448_projecoes_para_triggers_e_tipos.sql",
-  "20260927015112_0449_calendarios_operacionais_sem_tokens.sql",
-  "20260927015113_0450_rpc_respeitam_areas_gerenciadas.sql",
-  "20260927015114_0451_inbox_operacional_sem_metadados_privados.sql",
-  "20260927021800_0452_reconciliar_rpc_managed_com_153.sql",
-  "20260927022600_0453_autoria_operacional_de_mensagem_153.sql",
+  "20260927201500_0458_politica_de_area_gerenciada.sql",
+  "20260927201501_0459_diretorio_seguro_de_agentes_atribuiveis.sql",
+  "20260927201502_0460_areas_administrativas_no_postgrest.sql",
+  "20260927201503_0461_escrita_administrativa_de_funis_e_canais.sql",
+  "20260927201504_0462_projecoes_operacionais_gerenciadas.sql",
+  "20260927201505_0463_leitura_base_administrativa_gerenciada.sql",
+  "20260927201506_0464_rpc_administrativas_respeitam_policy.sql",
+  "20260927201507_0465_rpc_operacionais_leem_projecao.sql",
+  "20260927201508_0466_rpc_de_leitura_sem_base.sql",
+  "20260927201509_0467_funil_operacional_sem_configuracao.sql",
+  "20260927201510_0468_projecoes_para_triggers_e_tipos.sql",
+  "20260927201511_0469_calendarios_operacionais_sem_tokens.sql",
+  "20260927201512_0470_rpc_respeitam_areas_gerenciadas.sql",
+  "20260927201513_0471_inbox_operacional_sem_metadados_privados.sql",
+  "20260927201514_0472_reconciliar_rpc_managed_com_153.sql",
+  "20260927201515_0473_autoria_operacional_de_mensagem_153.sql",
+  "20260927201516_0474_onboarding_cliente_gerenciado.sql",
+  "20260927201517_0475_aviso_de_caso_conciliar_areas_e_arquivamento.sql",
 ] as const;
 
 it("promove banco anterior a 0425 com dados por toda a cadeia e aceita reapply", () => {
@@ -66,7 +68,7 @@ it("promove banco anterior a 0425 com dados por toda a cadeia e aceita reapply",
   for (const migration of migrations.slice(1)) apply(migration);
   // Migrations históricas são aplicadas uma vez; forward-fixes novos precisam
   // aceitar reapply. O baseline inteiro reaplicável é provado pelo harness.
-  for (const migration of migrations.slice(-2)) apply(migration);
+  for (const migration of migrations.slice(-4)) apply(migration);
 
   expect(
     countAs(client, `select count(*) from public.ai_agents where organization_id = '${org}';`),

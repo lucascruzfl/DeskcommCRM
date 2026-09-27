@@ -889,6 +889,12 @@ export const AUDIT_ACTIONS = [
   "registration.requested",
   "registration.approved",
   "registration.rejected",
+
+  // ── Sons dos avisos da Central (migration 0441) ─────────────────────────
+  // O arquivo de som que a organização escolheu para a etapa que avisa e para
+  // o pedido de pessoa — e a volta ao bipe do produto.
+  "settings.notification_sound_updated",
+  "settings.notification_sound_removed",
   // O interruptor do Jev (PATCH /api/v1/ai/jev). Ligar manda cada mensagem
   // recebida dos clientes, uma de cada vez e sem o histórico da conversa, para
   // um fornecedor nos EUA: "quem ligou, quando, e se o aceite foi dado ali" é a

@@ -32,9 +32,9 @@ em Postgres descartável; área nova `/app/ai/atendimento` reservada à agência
 resources novos classificados; mocks adaptados ao guard e transporte vigentes;
 E2E usando o helper compartilhado da suíte.
 
-As correções SQL pendentes foram preservadas como nova migration 0452,
-apêndice idempotente e linha no MANIFEST. As migrations 0445 e 0450 voltaram
-exatamente ao conteúdo histórico do HEAD: a lógica válida continua na 0452.
+As correções SQL pendentes foram preservadas como nova migration 0472,
+apêndice idempotente e linha no MANIFEST. As migrations 0465 e 0470 voltaram
+exatamente ao conteúdo histórico do HEAD: a lógica válida continua na 0472.
 Ela recupera as transições de perda, motivo categorizado, identidade social e
 cascata LGPD oficial, mantendo projeções e guardas managed. O baseline preserva
 o OID de `comando_da_conversa` para aceitar reapply com a view operacional.
@@ -54,7 +54,7 @@ O snapshot `managed-client-rpc-audit.json` mede corpos e privilégios reais.
   Gate final pertence ao CI com o orçamento de memória já configurado.
 - O primeiro recheck remoto `36288072004` confirmou typecheck e lint e apontou
   duas cercas sobre a ordem do baseline: o novo apêndice precisava anteceder
-  a varredura anon, e os dois GRANTs anon do dump reconcediam o que a 0452 revoga.
+  a varredura anon, e os dois GRANTs anon do dump reconcediam o que a 0472 revoga.
   Apêndice reposicionado e grants retirados, preservando o estado final seguro.
   Os resultados finais são os runs GitHub Actions do HEAD remoto.
 
@@ -78,7 +78,7 @@ Produção intocada. Não iniciada Fase 6; nenhuma tag, imagem ou release sobres
 
 O E2E confirmou gestor, bloqueio de URLs e JWT/cross-tenant; o histórico operacional
 retornou 500 por ausência de sent_on_behalf_of_user_id na view de mensagens.
-A nova migration 0453 publica somente esse UUID de autoria, preservando metadata
+A nova migration 0473 publica somente esse UUID de autoria, preservando metadata
 higienizada e filtros da projeção. A definição anterior do baseline também tem
 a coluna para preservar OID no reapply; nenhuma migration histórica foi editada.
 Autoria delegada é imutável em INSERT/PATCH autenticado na projeção: o serviço

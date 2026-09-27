@@ -8,6 +8,154 @@ Se você roda o DeskcommCRM numa VPS, **leia a seção da versão para a qual es
 
 ## [Não lançado]
 
+## [1.57.0] — 2026-09-27
+
+### Adicionado
+
+- **O caso aberto pela IA aparece no sino na hora, e sai quando é fechado** Quando a IA pede ajuda à equipe sem sair da conversa (um caso esperando uma
+  pessoa), o pedido passa a aparecer na Central de alertas no mesmo instante, com
+  o botão que abre o caso. Antes ele só aparecia na tela de Casos, e a Central só
+  cobrava depois de 24 horas. Quando o caso é concluído, passado para uma pessoa
+  ou cancelado, o aviso sai do sino sozinho. O aviso não repete o assunto do
+  caso: diz só que a IA pediu ajuda, no idioma da organização.
+
+  Contribuição de @jmpo (#1816).
+
+- **A etapa do funil pode avisar a equipe na Central quando um negócio entra nela** Em Configurações › Funis › Etapas, cada etapa ganhou a chave «Avisar a equipe
+  na Central quando um negócio entrar aqui». Ligada, todo negócio que entra
+  nela — pelo arrasto no quadro, pelo mover em lote, por uma automação ou pelo
+  assistente de IA — abre um aviso na Central com o botão «Abrir negócio».
+
+  Serve para o momento que pede ação e não é o fechamento: numa venda com
+  pagamento na entrega, o cliente confirmar o pedido com todos os dados é a hora
+  de separar e despachar, e o ganho só vem com a entrega. O aviso diz a etapa,
+  nunca o nome ou o telefone do cliente, sai no idioma da organização e não se
+  repete enquanto o anterior do mesmo negócio estiver aberto. Vem desligada em
+  todas as etapas: nada muda para quem não ligar. Contribuição de @jmpo (#1813).
+
+- **Os avisos que pedem gente chegam ao celular** Com o push ligado no aparelho (Configurações › Notificações), três avisos da
+  Central passam a chegar como notificação no celular, mesmo com o CRM fechado:
+  a IA passou uma conversa para a equipe, a IA ficou sem saldo no provedor e as
+  respostas estão esperando a recarga, e um negócio entrou numa etapa marcada
+  para avisar. São os mesmos avisos que tocam som com o site aberto; o resto da
+  Central continua só na tela. O texto sai no idioma da organização, sem o nome
+  nem o telefone do cliente, e o toque abre a conversa, o negócio ou as
+  credenciais. Precisa do par VAPID no `.env` (`VAPID_PUBLIC_KEY` e
+  `VAPID_PRIVATE_KEY`), como o push de mensagem nova; sem ele, nada muda.
+  Contribuição de @jmpo (#1815).
+
+- **Os avisos que pedem gente tocam o som que a organização escolher** Em Configurações › Notificações, a seção «Sons dos avisos» deixa trocar o som
+  de dois momentos da Central: a etapa que avisa (um negócio entrou numa etapa
+  marcada para avisar — por exemplo, o pedido confirmado) e o pedido de pessoa
+  (o assistente passou a conversa para alguém da equipe, ou ficou sem saldo no
+  provedor de IA). MP3, OGG ou WAV de até 1 MB; sem arquivo, toca o som do
+  sistema. Todo mundo ouve; trocar é de gestor para cima.
+
+  O som toca com o site aberto, quando o aviso chega na Central — que passa a ser
+  relida a cada 30 segundos, em vez de a cada minuto. Contribuição de @jmpo (#1814).
+
+### Corrigido
+
+- **O aviso "já acionei o time" só vai ao cliente se a IA (ou o agente conectado) atendia a conversa — e uma vez por dia** Numa instalação sem agente publicado, o detector de sentimento — que analisa
+  toda mensagem, com ou sem agente — podia passar a conversa para a equipe, e o
+  cliente recebia "Esse caso é melhor resolvido por uma pessoa. Já acionei o
+  time." sem nunca ter falado com a IA. E quando o envio travava e o disparo era
+  refeito, o mesmo aviso saía várias vezes seguidas.
+
+  Agora o aviso só sai quando a IA de fato falou naquela conversa antes (ou
+  quando foi o agente conectado por MCP quem pediu a passagem), e no máximo uma
+  vez por conversa a cada 24 horas. Um aviso que falhou no envio não conta: o
+  cliente nunca o recebeu, e o próximo sai. A passagem para a equipe continua
+  acontecendo do mesmo jeito; só a frase ao cliente deixa de sair quando não faz
+  sentido.
+
+  Contribuição de @jmpo (#1818).
+
+- **No número oficial intermediado, o cliente que chega por anúncio fica marcado — e a hora de entrega e de leitura passa a ser gravada** Quem chegava por um anúncio "Clique para o WhatsApp" pelo número oficial
+  intermediado não ficava marcado como vindo do anúncio: o dado chegava num
+  lugar do aviso que o CRM não lia. Agora o contato fica marcado com o anúncio de
+  origem — que aparece na ficha do contato —, e as vendas desses clientes podem
+  ser devolvidas à Meta. Nesse mesmo canal, a conversa passa a guardar a hora em
+  que cada mensagem foi entregue e lida, além do tique.
+
+  Contribuição de @jmpo (#1820).
+
+- **No número oficial intermediado, evento sem conta não entra e o estado do número só vale para o próprio número** Evento de mensagem ou de modelo que chega sem a conta de origem passa a ser
+  ignorado e fica no arquivo de webhooks, em vez de entrar na caixa de entrada.
+  Aviso de estado de número (suspenso, liberado, reativado) só muda o canal
+  quando o número do aviso é o número deste canal; se não houver como comparar,
+  o aviso fica registrado sem mudar o estado do canal. A tela de conexão passa a
+  orientar o preenchimento do filtro de contas na inscrição do webhook no
+  provedor.
+
+  Contribuição de @jmpo (#1821, completado no #1823).
+
+- **No número oficial intermediado, a caixa de entrada só recebe o que é do próprio número** O aviso que o provedor intermediado manda ao CRM é por espaço de trabalho, não
+  por número: quem tinha mais de uma conta no mesmo espaço (outro número, ou as
+  redes de outro negócio) via na conversa de um número mensagens enviadas por
+  outro. Agora o evento que traz a conta de outro número é ignorado e fica no
+  arquivo de webhooks como "evento de outra conta"; o evento sem conta (como o
+  aviso de queda do número) continua valendo.
+
+  Contribuição de @jmpo (#1821).
+
+- **No número oficial intermediado, o lugar escolhido no mapa chega com o link do mapa** Quando o cliente compartilhava um lugar com nome — uma praça, um mercado — em
+  vez da própria localização, a conversa mostrava só o nome do lugar, sem o link
+  para abrir no mapa. Agora esse pino chega igual ao da localização atual: com o
+  nome, o endereço e o link, e o assistente recebe o ponto para o pedido.
+
+  Contribuição de @jmpo (#1820).
+
+## [1.56.1] — 2026-09-27
+
+### Corrigido
+
+- **A anotação interna do compromisso aparece no painel de detalhe da Agenda** O assistente coletava a qualificação inteira do lead, marcava a reunião e gravava
+  o resumo na anotação interna do compromisso. A anotação era salva — e não
+  aparecia em tela nenhuma: quem ia atender chegava à reunião sem a ficha. Pelo
+  caminho da transferência o mesmo resumo chegava à Central; era só o caminho da
+  reunião marcada que o perdia.
+
+  Agora o painel de detalhe do compromisso mostra a anotação, com o rótulo
+  "Anotação", logo depois da observação. É leitura: nada muda no que sobe para o
+  calendário do cliente, que continua usando o campo próprio de observação, e a
+  anotação segue interna ao CRM.
+
+  Contribuição de @hiro-nikaitou (#1803, issue #511).
+
+- **O aviso de caso não sai mais para um número que virou de uma conexão da própria conta** Uma conexão de WhatsApp arquivada deixou de contar como número da própria conta,
+  para que o número dela pudesse voltar a receber os avisos. Mas arquivar não apaga
+  a conexão: se ela for reativada depois, o número volta a ser atendido por um robô
+  da própria conta — e o aviso passava a sair para ele, respondendo a si mesmo.
+
+  Agora o envio do aviso confere o destino na hora de sair: se o número voltou a ser
+  o de uma conexão ativa da sua conta, o aviso NÃO é enviado, o motivo fica
+  registrado no histórico de avisos da tela e um alerta é aberto na Central. O
+  atendimento continua na fila, esperando alguém — só não vai para o robô da casa.
+
+  O botão "Enviar aviso de teste" recusa o mesmo número pelo mesmo motivo, em vez
+  de mandar a mensagem e aparecer como sucesso.
+
+  Contribuição de @hiro-nikaitou (#1804).
+
+- **Em espanhol, a tela de rastreio e conversões do Google Ads passa a tratar por "tú", e o painel de perdas escreve cada moeda na convenção dela** A tela de rastreio do site e de conversões do Google Ads em espanhol deixou de alternar entre "usted" e "tú" e passou a usar "calificado"/"calificación" em vez das formas peninsulares "cualificado"/"cualificación", como o resto do produto. O painel de perdas das métricas passou a escrever o valor perdido na convenção da própria moeda, com o mesmo formatador da previsão, em vez de sempre no formato brasileiro; em BRL nada muda. Não exige ação de quem opera a instalação. Contribuição de @JowaniOrantes (#1807).
+
+- **Em espanhol, os gatilhos e ações de Webhooks, o papel de assistente com autonomia e a gravidade "informativo" dos avisos da IA deixam de aparecer em português** Nove rótulos que a tela montava a partir de tabelas continuavam em português para quem escolheu espanhol: os gatilhos de agenda (horário marcado, confirmado, remarcado, cancelado), aniversário de contato e prazo de data do funil, a ação "Iniciar fluxo de mensagem" nas regras de Webhooks, o papel "Assistente com autonomia de operação" no convite de equipe e a gravidade "informativo" na Central de avisos da IA. Agora aparecem em espanhol. Para quem usa em português nada muda, e não exige ação de quem opera a instalação. Contribuição de @JowaniOrantes (#1808).
+
+- **"Não me contate mais", "não entre mais em contato" e "pode me remover da lista" passam a descadastrar o contato** Três jeitos comuns de pedir para sair não eram reconhecidos, e quem escrevia
+  assim continuava recebendo mensagens: "não me contate mais" (e "não me escreva
+  mais", "não me chame mais"), "não entre mais em contato" (e "parem de entrar em
+  contato comigo") e "pode me remover da lista". Agora eles bloqueiam o contato,
+  como "não me mande mais" e "me tira da lista" já faziam.
+
+  A regra continua exigindo que o pedido seja sobre as mensagens: "o dente não
+  incomoda mais", "a dor não me perturba mais", "não entre em contato com meu
+  marido, fale comigo" e "tira da lista de presentes" seguem sem bloquear. De
+  brinde, "me tira da lista de espera", que é paciente pedindo para ser chamado,
+  deixou de bloquear.
+
+  Contribuição de @deskcommopp4s-cmd (#1607, trazida no #1805).
+
 ## [1.56.0] — 2026-09-27
 
 ### Adicionado
@@ -8790,7 +8938,9 @@ Primeira versão marcada do DeskcommCRM. O projeto vinha sendo desenvolvido publ
 
 - **Node 22 é obrigatório para desenvolvimento.** A suíte de invariantes instancia o cliente do Supabase, que exige o `WebSocket` global — nativo apenas a partir do Node 22. Isso não afeta quem apenas hospeda: a VPS roda a imagem pronta.
 
-[Não lançado]: https://github.com/melgarafael/DeskcommCRM/compare/v1.56.0...HEAD
+[Não lançado]: https://github.com/melgarafael/DeskcommCRM/compare/v1.57.0...HEAD
+[1.57.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.56.1...v1.57.0
+[1.56.1]: https://github.com/melgarafael/DeskcommCRM/compare/v1.56.0...v1.56.1
 [1.56.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.55.0...v1.56.0
 [1.55.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.54.0...v1.55.0
 [1.54.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.53.0...v1.54.0

@@ -84,6 +84,7 @@ function conversationRow(botSilencedUntil: string | null): Row {
 /** Captura o patch do UPDATE em `conversations` — é isso que os casos verificam. */
 function makeSupabase(botSilencedUntil: string | null, snapshot?: () => Record<string, unknown>) {
   const patches: Row[] = [];
+  const mensagensInseridas: Row[] = [];
   const client = {
     from(table: string) {
       if (table === "operational_conversations") {
@@ -154,8 +155,16 @@ function makeSupabase(botSilencedUntil: string | null, snapshot?: () => Record<s
               ack: null,
               error_code: null,
               error_message: null,
+              created_at: new Date().toISOString(),
               ...row,
             };
+            // O dublê ACUMULA o que foi inserido: a guarda do aviso ao lead
+            // (`avisarLeadDoCrm`) pergunta ao banco se a IA já falou nesta
+            // conversa, e um dublê que só insere sem lembrar responderia "nunca"
+            // para uma conversa onde este mesmo teste acabou de mandar três
+            // respostas de IA — o aviso legítimo seria barrado pelo esquecimento
+            // do dublê, não pela regra.
+            mensagensInseridas.push(nova as Row);
             return { select: () => ({ single: async () => ({ data: nova, error: null }) }) };
           },
           update: (patch: Row) => ({
@@ -165,6 +174,20 @@ function makeSupabase(botSilencedUntil: string | null, snapshot?: () => Record<s
               }),
             }),
           }),
+          select: () => {
+            // Encadeável sem limite, como o dublê de contacts logo abaixo — e
+            // devolve o acumulado: os `eq` da consulta real filtram por
+            // organização/conversa/direção/via, e aqui tudo que foi inserido é
+            // desta conversa e saiu como 'ai'.
+            const cadeia: Record<string, unknown> = {
+              eq: () => cadeia,
+              order: () => cadeia,
+              limit: () => cadeia,
+              then: (resolve: (v: unknown) => unknown) =>
+                Promise.resolve({ data: [...mensagensInseridas], error: null }).then(resolve),
+            };
+            return cadeia;
+          },
         };
       }
       if (table === "contacts") {
@@ -459,15 +482,10 @@ it("ação de automação conserva origem durante pacing e dois envios vigentes 
     expect(generation.authorize).toHaveBeenCalledTimes(1);
     expect(hits.filter((url) => url.endsWith("/sendText"))).toHaveLength(3);
     revision = 3;
-    // Aviso humano independente conserva autoria de sistema sem exigir job.
-    const aviso = await avisarLeadDoCrm(supabase, {
-      organizationId: ORG,
-      contactId: CONTACT,
-      conversationId: CONV,
-      reason: "requested_human",
-    });
-    expect(aviso.avisado).toBe(true);
-    expect(hits.filter((url) => url.endsWith("/sendText"))).toHaveLength(4);
+    // O aviso com fronteira VENCIDA vem ANTES do vigente: depois de um aviso
+    // enviado, a guarda de um aviso por 24 h barraria este também, e o caso
+    // passaria a medir a guarda em vez da fronteira. Aqui a IA já falou (as
+    // respostas acima) e ainda não houve aviso — só a fronteira pode barrar.
     const antigo = await avisarLeadDoCrm(supabase, {
       organizationId: ORG,
       contactId: CONTACT,
@@ -476,6 +494,18 @@ it("ação de automação conserva origem durante pacing e dois envios vigentes 
       serviceBoundary: boundary,
     });
     expect(antigo.avisado).toBe(false);
+    expect(antigo.avisado ? null : antigo.porque).not.toMatch(
+      /^(ia_nunca_falou_nesta_conversa|aviso_ja_enviado_na_janela)$/,
+    );
+    expect(hits.filter((url) => url.endsWith("/sendText"))).toHaveLength(3);
+    // Aviso humano independente conserva autoria de sistema sem exigir job.
+    const aviso = await avisarLeadDoCrm(supabase, {
+      organizationId: ORG,
+      contactId: CONTACT,
+      conversationId: CONV,
+      reason: "requested_human",
+    });
+    expect(aviso.avisado).toBe(true);
     expect(hits.filter((url) => url.endsWith("/sendText"))).toHaveLength(4);
   } finally {
     await new Promise<void>((resolve) => receiver.close(() => resolve()));

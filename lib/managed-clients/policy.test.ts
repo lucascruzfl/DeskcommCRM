@@ -92,6 +92,18 @@ describe("política canônica das áreas do catálogo", () => {
     );
   });
 
+  it("sons dos avisos seguem a área de notificações e seus overrides", () => {
+    const area = managedAreaForResource("settings_sons");
+    expect(area).toBe("/app/settings/notifications");
+    expect(canAccessManagedArea(policy, "agent", area!)).toBe(true);
+    const restricted = buildManagedAreaPolicy("managed/aesthetic-clinic", [
+      { href: "/app/settings/notifications", classification: "agency" },
+    ]);
+    expect(canAccessManagedArea(restricted, "agent", area!)).toBe(false);
+    expect(canAccessManagedArea(restricted, "manager", area!)).toBe(false);
+    expect(canAccessManagedArea(restricted, "admin", area!)).toBe(true);
+  });
+
   it("classifica toda página de área; hubs e manutenção têm autorização própria", () => {
     const pages = (directory: string): string[] =>
       readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>

@@ -1,4 +1,4 @@
--- Forward-fix da ordem de migrations 0438/0444: a guarda de área e a exclusão
+-- Forward-fix da ordem de migrations 0438/0464: a guarda de área e a exclusão
 -- de conexão arquivada devem coexistir na definição final.
 create or replace function public.fn_definir_aviso_de_caso(
   p_org uuid,

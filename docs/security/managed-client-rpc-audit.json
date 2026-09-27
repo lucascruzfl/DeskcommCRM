@@ -742,6 +742,16 @@
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
     {
+      "signature": "fn_emit_aviso_da_central()",
+      "name": "fn_emit_aviso_da_central",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "1ffb873aba6d916e48a63036a2d5350e80c8b83cb5d75656a0fdc7d27f4726ec",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Trigger AFTER INSERT da migration oficial 0442 (v1.57.0): EXECUTE revogado de PUBLIC, anon e authenticated; tenant vem de NEW.organization_id, sem HTTP, dado pessoal ou mudança de autorização. Emite somente central.aviso_criado; falha do anúncio não impede o aviso."
+    },
+    {
       "signature": "fn_emit_channel_session_status_changed()",
       "name": "fn_emit_channel_session_status_changed",
       "security_definer": false,

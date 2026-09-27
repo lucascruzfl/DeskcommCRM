@@ -265,43 +265,43 @@ export const DICIONARIO: Traducoes = {
     es: "Este motivo de negocio ganado no está en la lista del embudo. Elige uno de los motivos registrados.",
   },
   "Script para instalar no site": { es: "Script para instalar en el sitio" },
-  "Salve e ligue a captura do Google ou do site. Depois, copie este script uma única vez para todas as páginas do seu site, antes de fechar o head. Se trocar os números configurados, copie o script novamente.": { es: "Guarde y active la captura de Google o del sitio. Después, copie este script una sola vez en todas las páginas de su sitio, antes de cerrar el head. Si cambia los números configurados, vuelva a copiar el script." },
+  "Salve e ligue a captura do Google ou do site. Depois, copie este script uma única vez para todas as páginas do seu site, antes de fechar o head. Se trocar os números configurados, copie o script novamente.": { es: "Guarda y activa la captura de Google o del sitio. Después, copia este script una sola vez en todas las páginas de tu sitio, antes de cerrar el head. Si cambias los números configurados, vuelve a copiar el script." },
   "Script copiado.": { es: "Script copiado." },
   "Copiar script do site": { es: "Copiar script del sitio" },
   "O script aparece depois que uma captura ativa estiver salva.": { es: "El script aparece después de guardar una captura activa." },
-  "Mantenha os links normais de WhatsApp nos botões. O script ajusta apenas os links dos números configurados, inclusive os adicionados depois. Sem origem reconhecida, o link original permanece.": { es: "Mantenga los enlaces normales de WhatsApp en los botones. El script ajusta solo los enlaces de los números configurados, incluidos los añadidos después. Sin un origen reconocido, el enlace original se mantiene." },
+  "Mantenha os links normais de WhatsApp nos botões. O script ajusta apenas os links dos números configurados, inclusive os adicionados depois. Sem origem reconhecida, o link original permanece.": { es: "Mantén los enlaces normales de WhatsApp en los botones. El script ajusta solo los enlaces de los números configurados, incluidos los agregados después. Sin un origen reconocido, el enlace original se mantiene." },
   "A origem fica na mesma aba e no mesmo domínio durante a navegação. Uma nova campanha substitui a anterior. Ao clicar, o CRM gera o código na mensagem; ele precisa ser enviado pelo visitante. A mensagem usada é a que você salvou na captura.": { es: "El origen se conserva en la misma pestaña y dominio durante la navegación. Una nueva campaña sustituye a la anterior. Al hacer clic, el CRM genera el código en el mensaje; el visitante debe enviarlo. Se usa el mensaje guardado en la captura." },
-  "Para não guardar a origem na aba, adicione data-storage=\"none\" ao script. Para excluir um link, adicione data-rastreio-ignorar nele. Botões controlados apenas por JavaScript e links abreviados precisam de adaptação no site.": { es: "Para no guardar el origen en la pestaña, añada data-storage=\"none\" al script. Para excluir un enlace, añada data-rastreio-ignorar. Los botones controlados solo por JavaScript y los enlaces acortados necesitan adaptación en el sitio." },
-  "Teste abrindo o site com os parâmetros de uma campanha, navegando para outra página e clicando no WhatsApp. Confira o código na mensagem e a origem no contato. UTMs identificam a campanha no CRM; não garantem atribuição de conversão pela Meta.": { es: "Pruebe abriendo el sitio con los parámetros de una campaña, navegando a otra página y haciendo clic en WhatsApp. Compruebe el código del mensaje y el origen del contacto. Las UTM identifican la campaña en el CRM; no garantizan atribución de conversión por Meta." },
+  "Para não guardar a origem na aba, adicione data-storage=\"none\" ao script. Para excluir um link, adicione data-rastreio-ignorar nele. Botões controlados apenas por JavaScript e links abreviados precisam de adaptação no site.": { es: "Para no guardar el origen en la pestaña, agrega data-storage=\"none\" al script. Para excluir un enlace, agrega data-rastreio-ignorar. Los botones controlados solo por JavaScript y los enlaces acortados necesitan adaptación en el sitio." },
+  "Teste abrindo o site com os parâmetros de uma campanha, navegando para outra página e clicando no WhatsApp. Confira o código na mensagem e a origem no contato. UTMs identificam a campanha no CRM; não garantem atribuição de conversão pela Meta.": { es: "Prueba abriendo el sitio con los parámetros de una campaña, navegando a otra página y haciendo clic en WhatsApp. Comprueba el código del mensaje y el origen del contacto. Las UTM identifican la campaña en el CRM; no garantizan atribución de conversión por Meta." },
   "Enviar conversões para o Google Ads ainda não está disponível nesta instalação — não é nada que você tenha feito. Quem instalou o sistema precisa configurar": { es: "El envío de conversiones a Google Ads aún no está disponible en esta instalación. No se debe a nada que hayas hecho. Quien instaló el sistema debe configurar" },
   "Enviar conversões para o Google Ads": { es: "Enviar conversiones a Google Ads" },
   "O botão do site precisa repassar gclid, gbraid ou wbraid recebidos na página. Um endereço fixo sem esses parâmetros não identifica o clique. Mantenha o código na mensagem enviada ao WhatsApp.":
     {
-      es: "El botón del sitio debe transmitir el gclid, gbraid o wbraid recibido en la página. Una dirección fija sin estos parámetros no identifica el clic. Mantenga el código en el mensaje enviado a WhatsApp.",
+      es: "El botón del sitio debe transmitir el gclid, gbraid o wbraid recibido en la página. Una dirección fija sin estos parámetros no identifica el clic. Mantén el código en el mensaje enviado a WhatsApp.",
     },
-  "Lead qualificado (opcional)": { es: "Lead cualificado (opcional)" },
-  "Lead qualificado": { es: "Lead cualificado" },
+  "Lead qualificado (opcional)": { es: "Lead calificado (opcional)" },
+  "Lead qualificado": { es: "Lead calificado" },
   Compra: { es: "Compra" },
   "Captura de origem do Google Ads": { es: "Captura de origen de Google Ads" },
   "Ao entrar na etapa escolhida, o negócio envia uma qualificação sem valor monetário. A compra continua sendo enviada ao ganhar o negócio com valor. Cada evento é contado uma vez por negócio.":
     {
-      es: "Al entrar en la etapa elegida, el negocio envía una cualificación sin valor monetario. La compra se sigue enviando al ganar el negocio con un valor. Cada evento se cuenta una vez por negocio.",
+      es: "Al entrar en la etapa elegida, el negocio envía una calificación sin valor monetario. La compra se sigue enviando al ganar el negocio con un valor. Cada evento se cuenta una vez por negocio.",
     },
-  "Etapa de qualificação": { es: "Etapa de cualificación" },
-  "Não enviar qualificação": { es: "No enviar cualificación" },
-  "Etapa indisponível — escolha outra": { es: "Etapa no disponible — elija otra" },
+  "Etapa de qualificação": { es: "Etapa de calificación" },
+  "Não enviar qualificação": { es: "No enviar calificación" },
+  "Etapa indisponível — escolha outra": { es: "Etapa no disponible — elige otra" },
   "Não foi possível carregar as etapas. Atualize a página antes de salvar.": {
-    es: "No se pudieron cargar las etapas. Actualice la página antes de guardar.",
+    es: "No se pudieron cargar las etapas. Actualiza la página antes de guardar.",
   },
-  "Ação de conversão de lead qualificado": { es: "Acción de conversión de lead cualificado" },
+  "Ação de conversão de lead qualificado": { es: "Acción de conversión de lead calificado" },
   "Informe uma ação do Google diferente da compra. Configure a categoria de lead qualificado e o uso na otimização no Google Ads. Salvar não envia qualificações antigas.":
     {
-      es: "Introduzca una acción de Google distinta de la compra. Configure la categoría de lead cualificado y su uso en la optimización en Google Ads. Guardar no envía cualificaciones anteriores.",
+      es: "Ingresa una acción de Google distinta de la compra. Configura la categoría de lead calificado y su uso en la optimización en Google Ads. Guardar no envía calificaciones anteriores.",
     },
   "Conversões que não foram reportadas": { es: "Conversiones que no se han enviado" },
   "conversões aceitas pela plataforma": { es: "conversiones aceptadas por la plataforma" },
   "Nenhuma pendência. Ainda pode não haver vendas ou qualificações com origem em anúncio.": {
-    es: "No hay envíos pendientes. Puede que aún no haya ventas o cualificaciones procedentes de anuncios.",
+    es: "No hay envíos pendientes. Puede que aún no haya ventas o calificaciones provenientes de anuncios.",
   },
   Evento: { es: "Evento" },
   "A plataforma recebeu o envio. A confirmação será consultada automaticamente.": { es: "La plataforma recibió el envío. La confirmación se consultará automáticamente." },
@@ -1102,6 +1102,11 @@ export const DICIONARIO: Traducoes = {
   "aberto excepcionalmente": { es: "abierto excepcionalmente" },
   "Abrir atendimento": { es: "Abrir atención" },
   "Abra o atendimento e diga o que fazer: concluir, pedir informação ao cliente ou passar para uma pessoa.": { es: "Abre la atención e indica qué hacer: concluirla, pedir información al cliente o pasarla a una persona." },
+  // O caso aberto na Central, na hora (`lib/escalacao/caso-na-central.handler.ts`).
+  "A IA pediu ajuda à equipe": { es: "La IA pidió ayuda al equipo" },
+  "Abra o caso para responder. A IA continua atendendo o cliente enquanto isso.": {
+    es: "Abre el caso para responder. La IA sigue atendiendo al cliente mientras tanto.",
+  },
   "Um atendimento espera decisão da equipe": { es: "Una atención espera la decisión del equipo" },
   "Soltar o horário de um pedido não confirmado após (minutos)": { es: "Liberar el horario de una solicitud no confirmada después de (minutos)" },
   "Vale só para tipos de atendimento que pedem confirmação. Enquanto o pedido espera, o horário fica reservado e ninguém mais o pega; passado o prazo sem decisão, ele volta a ser oferecido. O cliente não é avisado, e o pedido continua na fila.": { es: "Solo aplica a los tipos de cita que requieren confirmación. Mientras la solicitud espera, el horario queda reservado y nadie más puede tomarlo. Si pasa el plazo sin una decisión, el horario vuelve a ofrecerse. El cliente no recibe aviso y la solicitud sigue en la fila." },
@@ -4613,6 +4618,13 @@ export const DICIONARIO: Traducoes = {
   },
   "Quando alguém comparecer ao compromisso": { es: "Cuando alguien asista a la cita" },
   "Quando alguém faltar ao compromisso": { es: "Cuando alguien falte a la cita" },
+  "Quando um horário for marcado": { es: "Cuando se agende una cita" },
+  "Quando um horário pendente for confirmado": { es: "Cuando se confirme una cita pendiente" },
+  "Quando um horário for remarcado": { es: "Cuando se reagende una cita" },
+  "Quando um horário for cancelado": { es: "Cuando se cancele una cita" },
+  "No aniversário de um contato": { es: "En el cumpleaños de un contacto" },
+  "Quando faltarem N dias para uma data do funil": { es: "Cuando falten N días para una fecha del embudo" },
+  "Iniciar fluxo de mensagem": { es: "Iniciar flujo de mensaje" },
   Sucesso: { es: "Éxito" },
   "Aguardando envio": { es: "Esperando envío" },
   "Essa ação não funcionou.": { es: "Esta acción no funcionó." },
@@ -5129,6 +5141,9 @@ export const DICIONARIO: Traducoes = {
     es: ": la respuesta del cliente no llega y la pantalla no muestra ningún aviso. El secreto aparece",
   },
   "uma única vez": { es: "una sola vez" },
+  "Na inscrição do webhook no provedor, preencha o filtro de contas (accountIds) com a Conta deste número: assim só chegam aqui os eventos dele.": {
+    es: "En la suscripción del webhook en el proveedor, completa el filtro de cuentas (accountIds) con la Cuenta de este número: así solo llegan aquí sus eventos.",
+  },
   " — se sair desta tela sem copiá-lo, reconecte para gerar outro.": {
     es: " — si sales de esta pantalla sin copiarlo, reconecta para generar otro.",
   },
@@ -6933,6 +6948,7 @@ export const DICIONARIO: Traducoes = {
 
   // ─── Onboarding: invite-team — ROTULO_DO_PAPEL (lib/auth/types.ts) ───
   "Somente leitura": { es: "Solo lectura" },
+  "Assistente com autonomia de operação": { es: "Asistente con autonomía de operación" },
   "Gerente": { es: "Gerente" },
   "Administrador": { es: "Administrador" },
 
@@ -8420,6 +8436,7 @@ export const DICIONARIO: Traducoes = {
   "demandas abertas sem próximo passo": { es: "casos abiertos sin siguiente paso" },
   "Ninguém marcou o que acontece a seguir. Cada uma é alguém esperando sem que nada esteja combinado.": { es: "Nadie definió qué sigue. Cada caso es alguien esperando sin que haya nada acordado." },
   "aberta há": { es: "abierto hace" },
+  "informativo": { es: "informativo" },
   "crítico": { es: "crítico" },
   "em risco": { es: "en riesgo" },
   "em voo": { es: "en seguimiento" },
@@ -9238,6 +9255,49 @@ export const DICIONARIO: Traducoes = {
     es: "Las respuestas a los clientes están esperando. Recarga el saldo en la cuenta del proveedor: salen solas cuando vuelva el saldo, durante hasta 6 horas. Después de eso, la conversación que no se respondió aparece aquí en la Central.",
   },
   "Revisar credencial": { es: "Revisar credencial" },
+  // ─── lib/leads/aviso-de-etapa.ts + editor de etapas (migration 0440) ───
+  "Negócio entrou em": { es: "Negocio entró en" },
+  "Abra o negócio para dar o próximo passo. Este aviso foi pedido na configuração da etapa.": {
+    es: "Abre el negocio para dar el siguiente paso. Este aviso se pidió en la configuración de la etapa.",
+  },
+  "Avisar a equipe na Central quando um negócio entrar aqui": {
+    es: "Avisar al equipo en la Central cuando un negocio entre aquí",
+  },
+  "Avisar a equipe na Central quando um negócio entrar em": {
+    es: "Avisar al equipo en la Central cuando un negocio entre en",
+  },
+  // ─── sons dos avisos (migration 0441; app/app/settings/notifications/_sons.tsx) ───
+  "Sons dos avisos": { es: "Sonidos de los avisos" },
+  "Tocam com o site aberto quando o aviso chega na Central. MP3, OGG ou WAV de até 1 MB.": {
+    es: "Suenan con el sitio abierto cuando el aviso llega a la Central. MP3, OGG o WAV de hasta 1 MB.",
+  },
+  "Etapa que avisa": { es: "Etapa que avisa" },
+  "Quando um negócio entra numa etapa marcada para avisar na Central (por exemplo, o pedido confirmado).": {
+    es: "Cuando un negocio entra en una etapa marcada para avisar en la Central (por ejemplo, el pedido confirmado).",
+  },
+  "Precisa de uma pessoa": { es: "Necesita una persona" },
+  "Quando o assistente passa a conversa para alguém da equipe, ou fica sem saldo no provedor de IA.": {
+    es: "Cuando el asistente pasa la conversación a alguien del equipo, o se queda sin saldo en el proveedor de IA.",
+  },
+  "Som personalizado": { es: "Sonido personalizado" },
+  "Som do sistema": { es: "Sonido del sistema" },
+  "Ouvir": { es: "Escuchar" },
+  "Trocar som": { es: "Cambiar sonido" },
+  "Usar o do sistema": { es: "Usar el del sistema" },
+  "Som salvo": { es: "Sonido guardado" },
+  "Voltou ao som do sistema": { es: "Volvió al sonido del sistema" },
+  "Erro ao subir o som.": { es: "Error al subir el sonido." },
+  "Erro ao salvar o som.": { es: "Error al guardar el sonido." },
+  "Escolha o aviso e o arquivo de som.": { es: "Elige el aviso y el archivo de sonido." },
+  "O som pode ter no máximo 1 MB.": { es: "El sonido puede tener como máximo 1 MB." },
+  "O som precisa ser MP3, OGG ou WAV.": { es: "El sonido tiene que ser MP3, OGG o WAV." },
+  "Aviso desconhecido.": { es: "Aviso desconocido." },
+  // ─── lib/notifications/push-dos-avisos.ts (migration 0442) ───
+  "A IA passou uma conversa para a equipe": { es: "La IA pasó una conversación al equipo" },
+  "Abra a conversa para responder o cliente.": { es: "Abre la conversación para responder al cliente." },
+  "Recarregue o saldo na conta do provedor: as respostas saem sozinhas quando ele voltar.": {
+    es: "Recarga el saldo en la cuenta del proveedor: las respuestas salen solas cuando vuelva.",
+  },
   // `informativo` e `crítico` saem iguais nos dois idiomas — sem linha, por isso.
   "atenção": { es: "atención" },
   // ─── lib/ai/agent-inbox-copy.ts (copyDaPromessaSemDono) ───

@@ -39091,7 +39091,7 @@ grant execute on function public.fn_enfileirar_midia_vencida(integer) to service
 
 notify pgrst, 'reload schema';
 
--- ---- política de área para cliente gerenciado (migration 0454) ----
+-- ---- política de área para cliente gerenciado (migration 0458) ----
 -- A política de um cliente gerenciado pertence ao tenant, não à interface de um membro.
 -- Sem linha, a autorização histórica da organização continua vigente.
 create table if not exists public.managed_client_policies (
@@ -39348,6 +39348,58 @@ revoke all on function public.fn_metricas_links_rastreaveis(uuid) from public, a
 grant execute on function public.fn_metricas_links_rastreaveis(uuid) to service_role;
 
 notify pgrst, 'reload schema';
+
+-- ---- o aviso da Central anuncia no barramento que nasceu (migration 0442) ----
+--
+-- Ver o cabeçalho da migration: trigger AFTER INSERT em `agent_inbox_items`
+-- emite `central.aviso_criado` (item, kind, ref) para o push decidir o que vai
+-- ao celular. Sem I/O; falha do anúncio não impede o aviso de nascer; aviso de
+-- plataforma (organização nula) não anuncia. Função com as DUAS origens de
+-- EXECUTE revogadas. Entra ANTES da VARREDURA anon porque cria função.
+-- Idempotente (`create or replace` + `drop trigger if exists`).
+create or replace function public.fn_emit_aviso_da_central()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- Aviso de PLATAFORMA (organização nula) não vai para o celular de ninguém.
+  if new.organization_id is null then
+    return null;
+  end if;
+  begin
+    perform public.emit_event(
+      'central.aviso_criado',
+      'agent_inbox_item',
+      new.id,
+      jsonb_build_object(
+        'item_id',  new.id,
+        'kind',     new.kind,
+        'ref_kind', new.ref_kind,
+        'ref_id',   new.ref_id
+      ),
+      '{}'::jsonb,
+      new.organization_id   -- SEMPRE de `new`: é o filtro de tenant
+    );
+  exception when others then
+    raise warning 'fn_emit_aviso_da_central: anúncio do aviso % falhou: %', new.id, sqlerrm;
+  end;
+  return null;              -- AFTER trigger: o retorno é ignorado
+end;
+$$;
+
+alter function public.fn_emit_aviso_da_central() owner to postgres;
+
+-- As DUAS origens de EXECUTE (doutrina de migrations, item 9). Função de
+-- trigger: ninguém a chama pela REST, então não há `grant` a ninguém.
+revoke all     on function public.fn_emit_aviso_da_central() from public;
+revoke execute on function public.fn_emit_aviso_da_central() from anon, authenticated;
+
+drop trigger if exists trg_aviso_da_central_criado on public.agent_inbox_items;
+create trigger trg_aviso_da_central_criado
+  after insert on public.agent_inbox_items
+  for each row execute function public.fn_emit_aviso_da_central();
 
 do $$
 declare
@@ -44173,8 +44225,8 @@ $function$;
 revoke all on function public.fn_vocabulario_de_tags(uuid) from public, anon;
 grant execute on function public.fn_vocabulario_de_tags(uuid) to authenticated, service_role;
 
--- ---- 0452 — reconciliar RPC managed com upstream 1.53 ----
--- 0452 — reconciliar funções managed com o comportamento oficial da 1.53.
+-- ---- 0472 — reconciliar RPC managed com upstream 1.53 ----
+-- 0472 — reconciliar funções managed com o comportamento oficial da 1.53.
 -- Mantém projeção operacional, portões de área, tenancy e ACL; recupera a
 -- etapa de origem da perda, identidade social da fusão e cascata LGPD única.
 -- As migrations certificadas anteriores permanecem intactas.
@@ -44615,8 +44667,8 @@ grant execute on function public.fn_validate_lost_reason_required() to authentic
 
 notify pgrst, 'reload schema';
 
--- ---- 0453 — autoria operacional da mensagem 1.53 ----
--- 0453 — autoria operacional acrescentada pelo upstream 1.53.
+-- ---- 0473 — autoria operacional da mensagem 1.53 ----
+-- 0473 — autoria operacional acrescentada pelo upstream 1.53.
 -- A coluna é um UUID de autoria, sem token/configuração. Preserva filtros,
 -- metadata higienizada, OID e trigger de escrita da projeção certificada.
 create or replace view public.operational_messages with (security_barrier=true) as
@@ -44738,7 +44790,7 @@ revoke all on function public.fn_write_operational_inbox() from public,anon,auth
 grant execute on function public.fn_write_operational_inbox() to service_role;
 notify pgrst, 'reload schema';
 
--- ---- onboarding de cliente gerenciado (migration 0456) ----
+-- ---- onboarding de cliente gerenciado (migration 0474) ----
 -- Provisionamento gerenciado: o recibo e os efeitos internos nascem na mesma
 -- transação da RPC oficial. O e-mail é efeito externo, retomável pelo estado.
 create table if not exists public.managed_client_onboardings (
@@ -44862,6 +44914,34 @@ grant execute on function public.fn_claim_managed_client_invite(uuid,uuid,uuid)
   to service_role;
 
 notify pgrst, 'reload schema';
+
+
+-- ---- a etapa que avisa a equipe na Central (migration 0440) ----
+--
+-- Marca por etapa, desligada por padrão: negócio que ENTRA numa etapa marcada
+-- abre um aviso na Central (kind `other`, ref `lead`, botão «Abrir negócio»).
+-- Quem lê é `lib/leads/aviso-de-etapa.handler.ts`, no evento
+-- `lead.stage_changed`. Aditiva e idempotente: coluna com default, nenhuma
+-- linha existente a corrigir antes.
+alter table public.crm_stages
+  add column if not exists avisar_na_central boolean not null default false;
+
+comment on column public.crm_stages.avisar_na_central is
+  'Negócio que entra nesta etapa abre um aviso na Central de avisos (0440).';
+
+notify pgrst, 'reload schema';
+
+-- ---- o bucket dos sons dos avisos da Central (migration 0441) ----
+-- Privado; só o service_role lê e grava, pela rota `app/api/v1/settings/sons`.
+-- Teto e tipos são os de `lib/notifications/sons-da-org.ts` (1 MB, MP3/OGG/WAV),
+-- conferidos por `tests/invariants/sons-dos-avisos.test.ts`. Sem policy em
+-- `storage.objects`. Idempotente.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('org-sounds', 'org-sounds', false, 1048576, array['audio/mpeg', 'audio/ogg', 'audio/wav'])
+on conflict (id) do update
+  set public             = excluded.public,
+      file_size_limit    = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
 
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --

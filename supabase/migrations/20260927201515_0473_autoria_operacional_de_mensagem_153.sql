@@ -1,4 +1,4 @@
--- 0453 — autoria operacional acrescentada pelo upstream 1.53.
+-- 0473 — autoria operacional acrescentada pelo upstream 1.53.
 -- A coluna é um UUID de autoria, sem token/configuração. Preserva filtros,
 -- metadata higienizada, OID e trigger de escrita da projeção certificada.
 create or replace view public.operational_messages with (security_barrier=true) as
