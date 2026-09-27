@@ -70,7 +70,7 @@ test.beforeAll(async () => {
     status: "already_completed", organization_id: organizationId,
   });
   const [{ data: orgs }, { data: policies }, { data: managerLinks }, { data: invites }, { data: receipts }] = await Promise.all([
-    fixture.db.from("organizations").select("id").eq("id", organizationId),
+    fixture.db.from("organizations").select("id,onboarded_at").eq("id", organizationId),
     fixture.db.from("managed_client_policies").select("preset_id").eq("organization_id", organizationId),
     fixture.db.from("user_organizations").select("role, accepted_at").eq("organization_id", organizationId).eq("user_id", manager.id),
     fixture.db.from("team_invites").select("id").eq("organization_id", organizationId).eq("email", client.email),
@@ -80,6 +80,15 @@ test.beforeAll(async () => {
   expect(managerLinks?.[0]?.role).toBe("admin");
   expect(policies?.[0]?.preset_id).toBe("managed/aesthetic-clinic");
   expect(receipts?.[0]?.state).toBe("completed");
+  expect(orgs?.[0]?.onboarded_at).toBeNull();
+
+  // Provisionar e convidar não conclui o wizard de configuração da agência.
+  // Os casos abaixo medem uma clínica pronta para operação, como a fixture A/B.
+  const { data: configured, error: configureError } = await fixture.db.from("organizations")
+    .update({ onboarded_at: new Date().toISOString() })
+    .eq("id", organizationId).is("onboarded_at", null).select("id").single();
+  if (configureError) throw configureError;
+  expect(configured?.id).toBe(organizationId);
 
   // Equivale ao aceite humano no ambiente descartável, sem criar senha na aplicação.
   const { error: acceptError } = await fixture.db.rpc("fn_accept_team_invite", {
@@ -136,6 +145,8 @@ test("cliente agent acessa operação e recebe 403 nas áreas da agência", asyn
   await expect(page).toHaveURL(/\/403(?:\?|$)/);
   await expect(page.getByRole("heading", { name: "403 — Sem permissão" })).toBeVisible();
   await screenshot(page, "fase6-cliente-area-negada");
+  await page.goto("/onboarding/welcome");
+  await expect(page).toHaveURL(/\/403(?:\?|$)/);
 });
 
 test("MCP real faz handshake, nega admin comum e cria uma vez com confirmação", async ({ request }) => {
@@ -214,16 +225,25 @@ test("MCP real faz handshake, nega admin comum e cria uma vez com confirmação"
     return JSON.parse(content.text) as Record<string, unknown>;
   }
   try {
-    const authorizedToken = await token(manager.id);
+    // O teto do token precisa alcançar as áreas da agência no tenant de origem.
+    // Platform admin full não eleva um role:manager a admin.
+    const authorizedToken = await token(manager.id, "admin");
     expect((await call(authorizedToken, 1, "initialize", {
       protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "phase6-fixture", version: "1" },
     })).result).toBeDefined();
     const listed = await call(authorizedToken, 2, "tools/list", {});
     expect(listed.result?.tools?.map((tool) => tool.name)).toContain("crm_preflight_managed_client");
     expect(listed.result?.tools?.map((tool) => tool.name)).toContain("crm_create_managed_client");
+    const limitedToken = await token(manager.id, "manager");
+    const limitedList = await call(limitedToken, 9, "tools/list", {});
+    expect(limitedList.result?.tools?.map((tool) => tool.name)).not.toContain("crm_create_managed_client");
     const suffix = randomUUID().slice(0, 8);
     const input = { organization_name: `Clínica MCP ${suffix}`, slug: `clinica-mcp-${suffix}`,
       preset: "managed/aesthetic-clinic", client_email: `client-mcp-${randomUUID()}@fixture.test` };
+    const limitedCall = await call(limitedToken, 10, "tools/call", {
+      name: "crm_create_managed_client", arguments: { ...input, confirm: true },
+    });
+    expect(limitedCall.result?.isError || limitedCall.error).toBeTruthy();
     const legacyPreflight = payload(await call(authorizedToken, 8, "tools/call", {
       name: "crm_preflight_managed_client",
       arguments: { name: input.organization_name, business_type: "aesthetic_clinic",

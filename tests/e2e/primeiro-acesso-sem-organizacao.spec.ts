@@ -147,6 +147,9 @@ test.describe("conta confirmada e sem organização", () => {
     await page.goto("/app/inbox");
     const porta = page.getByRole("link", { name: /Configurar minha organização/i });
     await expect(porta).toBeVisible({ timeout: 20_000 });
+    await test.info().attach("inbox-sem-organizacao", {
+      body: await page.screenshot(), contentType: "image/png",
+    });
     await porta.click();
     await expect(page).toHaveURL(/\/get-started/, { timeout: 20_000 });
   });

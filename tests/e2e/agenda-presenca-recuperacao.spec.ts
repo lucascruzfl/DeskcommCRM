@@ -908,7 +908,7 @@ test("receiver reconcilia inline/daemon, barra claim antigo e protege agenda alÃ
             typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
           if (
             armed &&
-            url.includes("/rest/v1/messages") &&
+            url.includes("/rest/v1/operational_messages") &&
             init?.method === "POST" &&
             response.ok
           ) {

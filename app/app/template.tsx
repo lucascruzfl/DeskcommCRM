@@ -10,7 +10,15 @@ export default async function ManagedAreaGate({ children }: { children: React.Re
   if (area || !pathname) {
     const user = await requireAuth();
     const org = await resolveActiveOrg(user);
-    if (!org || (!pathname && org.managed_policy) || (area && !canAccessManagedArea(org.managed_policy, org.role, area))) notFound();
+    // Inbox owns the recovery link for a confirmed account without a tenant.
+    // Keep every other area closed until an official membership exists.
+    if (!org) {
+      if (pathname !== "/app/inbox") notFound();
+    } else if (
+      (!pathname && org.managed_policy) ||
+      (area && !canAccessManagedArea(org.managed_policy, org.role, area))
+    )
+      notFound();
   }
   return children;
 }
