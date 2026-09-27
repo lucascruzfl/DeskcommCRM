@@ -53,9 +53,13 @@ describe("sentinelas de compatibilidade do MCP", () => {
 
   it("detecta regressão de acesso do preset manager e do tools/list", () => {
     const profile = mcpPublicProfile(auth);
-    expect(profile).toHaveLength(MCP_TOOL_COUNT);
+    const managerNames = new Set(profile.map((tool) => tool.name));
+    expect(MCP_REGISTRY.filter((tool) => !managerNames.has(tool.name)).map((tool) => tool.name)).toEqual([
+      "crm_create_managed_client",
+    ]);
+    expect(profile).toHaveLength(MCP_TOOL_COUNT - 1);
     expect(profile.map((tool) => tool.name).sort()).toEqual(
-      MCP_REGISTRY.map((tool) => tool.name).sort(),
+      MCP_REGISTRY.filter((tool) => tool.name !== "crm_create_managed_client").map((tool) => tool.name).sort(),
     );
   });
 
