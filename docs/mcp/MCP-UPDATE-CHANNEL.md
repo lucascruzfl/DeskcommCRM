@@ -46,3 +46,10 @@ visual. O workflow de corte oficial está desativado especificamente no fork.
 Sync fork na `main` não publica MCP e não atualiza a VPS. O canal só oferece
 release com manifesto e quatro digests validados; falha ou versão oficial sem
 MCP nunca provoca fallback. A pessoa ainda clica **Atualizar** no painel.
+
+Uma integração pode ser publicada antes de promover `mcp/stable`: o dispatch
+de `publish-mcp-release.yml` aceita `release_candidate=true` somente numa branch
+`feat/mcp-update-*` do fork e exige os cinco checks verdes no mesmo commit.
+Depois repete os gates de publicação antes dos quatro pushes e do manifesto.
+Essa publicação não atualiza a VPS nem move `mcp/stable`; a promoção é posterior
+à validação dos digests.

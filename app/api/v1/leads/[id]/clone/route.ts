@@ -21,13 +21,12 @@ import { requireSupportWrite } from "@/lib/impersonate/support";
 import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 
-import { createLeadHandler } from "@/app/api/v1/leads/_handler";
 import { listPipelinesHandler } from "@/app/api/v1/pipelines/_handler";
+import { traduzir } from "@/lib/i18n/dicionario";
 import type { HandlerCtx } from "@/lib/api/handlers/types";
 import { ApiError } from "@/lib/api/types";
 import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
-import { traduzir } from "@/lib/i18n/dicionario";
 import { moverLeadParaOutroFunil } from "@/lib/leads/mover-para-funil";
 import { cloneLeadSchema, validateRequest } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";

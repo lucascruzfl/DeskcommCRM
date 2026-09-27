@@ -15,8 +15,8 @@ describe("release instalada e revisão do host", () => {
     });
   });
   it("release e SHA ficam em campos distintos", () => {
-    expect(versaoInstalada("1.52.0-mcp", "fa06399e1")).toEqual({
-      current_version: "1.52.0-mcp",
+    expect(versaoInstalada("1.53.0-mcp", "fa06399e1")).toEqual({
+      current_version: "1.53.0-mcp",
       build_revision: "fa06399e1",
     });
   });

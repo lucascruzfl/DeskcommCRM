@@ -2,7 +2,7 @@ name: perf
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, mcp/stable]
   push:
     branches: [main]
 

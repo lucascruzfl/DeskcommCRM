@@ -3,7 +3,13 @@ name: Publicar release MCP validada
 on:
   push:
     branches: [mcp/stable]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      release_candidate:
+        description: Publicar candidato validado antes de promover mcp/stable
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -14,7 +20,7 @@ concurrency:
 
 jobs:
   check:
-    if: github.repository == 'lucascruzfl/DeskcommCRM' && github.ref == 'refs/heads/mcp/stable'
+    if: github.repository == 'lucascruzfl/DeskcommCRM' && (github.ref == 'refs/heads/mcp/stable' || (github.event_name == 'workflow_dispatch' && inputs.release_candidate && startsWith(github.ref, 'refs/heads/feat/mcp-update-')))
     runs-on: ubuntu-latest
     outputs:
       needed: ${{ steps.release.outputs.needed }}
@@ -23,6 +29,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+      - name: Exigir gates verdes do commit candidato
+        if: github.ref != 'refs/heads/mcp/stable'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs?per_page=100" > "$RUNNER_TEMP/mcp-checks.json"
+          jq -se '
+            [.[].check_runs[]] as $runs |
+            ["verify", "build-and-size", "invariants", "e2e", "imagens-ok"] |
+            all(.[]; . as $name | [$runs[] | select(.name == $name)] | sort_by(.started_at) | last | .conclusion == "success")
+          ' "$RUNNER_TEMP/mcp-checks.json"
       - name: Verificar auditoria e release pronta
         id: release
         env:
@@ -100,7 +118,7 @@ jobs:
           NEXT_PUBLIC_APP_URL: https://placeholder.invalid
           NEXT_PUBLIC_ADMIN_URL: https://placeholder.invalid
       - name: MCP, política, fluxos e atualizador
-        run: pnpm exec vitest run tests/unit/manifest-x-migrations.test.ts tests/unit/mcp-compatibility-sentinels.test.ts tests/unit/mcp-final-flows.test.ts tests/unit/mcp-campaign-isolation.test.ts tests/unit/mcp-rate-limit.test.ts app/api/v1/system/version/route.test.ts app/api/v1/system/update/route.test.ts
+        run: pnpm exec vitest run tests/unit/manifest-x-migrations.test.ts tests/unit/mcp-compatibility-sentinels.test.ts tests/unit/mcp-final-flows.test.ts tests/unit/mcp-campaign-isolation.test.ts tests/unit/mcp-rate-limit.test.ts app/api/v1/system/version/route.test.ts app/api/v1/system/update/route.test.ts tests/unit/mcp-runtime-release.test.ts
       - name: Baseline e invariantes em banco descartável
         run: pnpm test:db
       - run: pnpm test:shell
@@ -201,7 +219,7 @@ jobs:
 
   blocked-summary:
     needs: [check, validate, publish]
-    if: always() && github.repository == 'lucascruzfl/DeskcommCRM' && github.ref == 'refs/heads/mcp/stable' && (needs.check.result != 'success' || (needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'))
+    if: always() && github.repository == 'lucascruzfl/DeskcommCRM' && (github.ref == 'refs/heads/mcp/stable' || inputs.release_candidate) && (needs.check.result != 'success' || (needs.check.outputs.needed == 'yes' && needs.publish.result != 'success'))
     runs-on: ubuntu-latest
     permissions:
       actions: read

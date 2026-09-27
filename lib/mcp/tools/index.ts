@@ -29,9 +29,11 @@ import {
   crmMoveLeadStage,
   crmMoveLeadPipeline,
   crmGetLeadTimeline,
+  crmRetomarLead,
 } from "./leads";
 import {
   crmListPipelines,
+  crmGetPipelineForecast,
   crmGetPipeline,
   crmCreatePipeline,
   crmUpdatePipeline,
@@ -148,6 +150,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmGetLead,
   crmGetLeadTimeline,
   crmListPipelines,
+  crmGetPipelineForecast,
   crmGetPipeline,
   crmSearchKnowledge,
   crmListKnowledgeSources,
@@ -193,6 +196,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmUpdateLead,
   crmMoveLeadStage,
   crmMoveLeadPipeline,
+  crmRetomarLead,
   crmSendWhatsappMessage,
   crmReplyMessage,
   crmStartConversationAndSend,
