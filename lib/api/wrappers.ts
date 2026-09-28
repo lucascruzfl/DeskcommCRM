@@ -69,11 +69,14 @@ export function fail(
   status: number,
   opts: FailOptions = {},
 ): NextResponse<ApiError> {
+  // Mensagens de banco chegam aqui como `error.message` em handlers legados.
+  // O 500 não pode devolver SQL, URLs internas ou credenciais.
+  const erroInterno = status === 500;
   const body: ApiError = {
     error: {
       code,
-      message,
-      ...(opts.details !== undefined ? { details: opts.details } : {}),
+      message: erroInterno ? "Não foi possível concluir a operação." : message,
+      ...(!erroInterno && opts.details !== undefined ? { details: opts.details } : {}),
     },
   };
 
