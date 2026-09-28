@@ -264,6 +264,8 @@ describe("o handler do cron — a falha da captação sai pelo mesmo canal das i
     // E o que o arquivo forense JÁ tinha feito fica no erro — a rodada falhou,
     // e mesmo assim isto é verdade, e descartar seria perder trabalho feito.
     expect(corpo.error.details.arquivo_forense.esvaziadas).toBe(1);
+    expect(corpo.error.details).not.toHaveProperty("erro");
+    expect(JSON.stringify(corpo)).not.toContain("connection reset by peer");
   });
 
   it("banco recusa o DELETE: o Sentry é chamado", async () => {

@@ -28,7 +28,6 @@ export interface WebhookSourceEvent {
   id: string;
   created_at: string;
   valid_signature: boolean | null;
-  payload_parsed: unknown;
   status: string;
 }
 

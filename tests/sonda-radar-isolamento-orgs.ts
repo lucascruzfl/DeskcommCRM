@@ -21,8 +21,9 @@
  *   A3  FECHADA, sem próximo passo        → não aparece
  *   B1  aberta, sem próximo passo, org B  → não aparece em A  ← o vazamento
  *
- * Uso: `npx tsx tests/sonda-radar-isolamento-orgs.ts`
+ * Uso: `SUPABASE_LOCAL_SERVICE_ROLE_KEY=<chave local> pnpm exec tsx tests/sonda-radar-isolamento-orgs.ts`
  * Requer Supabase local de pé. Semeia e limpa o que semeou.
+ * A chave pertence somente à instância local e nunca fica versionada.
  */
 import { execFileSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
@@ -30,8 +31,9 @@ import { createClient } from "@supabase/supabase-js";
 import { carregaRadarDeRisco } from "@/lib/leads/radar-de-risco";
 
 const URL = "http://127.0.0.1:54321";
-const SERVICE =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+const SERVICE = process.env.SUPABASE_LOCAL_SERVICE_ROLE_KEY ?? (() => {
+  throw new Error("Informe SUPABASE_LOCAL_SERVICE_ROLE_KEY da instância local.");
+})();
 
 const ORG_A = "50d0a111-0000-4000-8000-00000000000a";
 const ORG_B = "50d0a222-0000-4000-8000-00000000000b";

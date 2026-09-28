@@ -123,7 +123,8 @@ export function createMcpServer(
             structuredContent: safeResult as Record<string, unknown>,
           };
         } catch (err) {
-          const message = err instanceof Error ? err.message : "unknown_error";
+          const exposedError = mcpErrorPayload(err);
+          const message = (exposedError.error as { message: string }).message;
           const durationMs = Date.now() - startedAt;
 
           await auditMcpToolCall({
@@ -140,7 +141,7 @@ export function createMcpServer(
 
           return {
             isError: true,
-            content: [{ type: "text", text: JSON.stringify(mcpErrorPayload(err)) }],
+            content: [{ type: "text", text: JSON.stringify(exposedError) }],
           };
         }
       },

@@ -78,6 +78,12 @@ describe("fundação de autorização MCP", () => {
     expect(JSON.stringify(payload)).not.toContain("valor-real");
   });
 
+  it("não devolve a mensagem bruta de uma falha inesperada", () => {
+    const payload = mcpErrorPayload(new Error("SQL falhou; connection string privada"));
+    expect(payload).toEqual({ error: { code: "not_allowed", message: "Tool execution failed." } });
+    expect(JSON.stringify(payload)).not.toContain("connection string privada");
+  });
+
   it("redige segredos de qualquer resposta sem apagar metadados seguros", () => {
     const payload = sanitizeMcpPayload({
       api_key: "key-real",

@@ -21,6 +21,7 @@ import type { Role } from "@/lib/auth/types";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ManagedAreaPolicy } from "@/lib/managed-clients/policy";
+import { logger } from "@/lib/logger";
 
 export interface McpAuthResult {
   organizationId: string;
@@ -140,7 +141,8 @@ export async function resolveApiToken(plaintext: string): Promise<ResolvedApiTok
     .maybeSingle();
 
   if (error) {
-    throw new ApiTokenError("lookup_failed", `Token lookup failed: ${error.message}`);
+    logger.error("[mcp.auth] token lookup failed", { error_code: error.code ?? "unknown" });
+    throw new ApiTokenError("lookup_failed", "Token lookup failed.");
   }
   if (!data) {
     throw new ApiTokenError("not_found", "Token not recognized.");
@@ -157,7 +159,7 @@ export async function resolveApiToken(plaintext: string): Promise<ResolvedApiTok
     .update({ last_used_at: new Date().toISOString() })
     .eq("id", data.id)
     .then(({ error: updErr }) => {
-      if (updErr) console.error("[mcp.auth] last_used_at update failed", updErr.message);
+      if (updErr) logger.warn("[mcp.auth] last_used_at update failed", { error_code: updErr.code ?? "unknown" });
     });
 
   return {

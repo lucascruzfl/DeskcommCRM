@@ -218,8 +218,8 @@ export async function POST(req: NextRequest): Promise<Response> {
     });
 
     return ok({ callId: callRow.id, channelId: channel.id }, { status: 201, requestId });
-  } catch (err) {
+  } catch {
     await supabase.from("voice_calls").update({ status: "ended", end_reason: "failed" }).eq("id", callRow.id);
-    return fail("originate_failed", err instanceof Error ? err.message : "originate_failed", 502, { requestId });
+    return fail("originate_failed", "Não foi possível iniciar a chamada.", 502, { requestId });
   }
 }

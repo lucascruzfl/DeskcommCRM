@@ -66,7 +66,10 @@ export async function GET(_req: NextRequest): Promise<Response> {
       orgId: authz.org.orgId,
       cause: error.message,
     });
-    return fail("internal_error", "Não foi possível carregar as tags.", 500, { requestId });
+    return fail("internal_error", "Não foi possível carregar as tags.", 500, {
+      requestId,
+      publicMessage: "Não foi possível carregar as tags.",
+    });
   }
 
   // NORMALIZADA, com a mesma função que o editor usa ao gravar: o rótulo do

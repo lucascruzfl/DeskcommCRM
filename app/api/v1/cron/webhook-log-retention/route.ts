@@ -173,13 +173,13 @@ export async function GET(req: NextRequest): Promise<Response> {
     // rodada falhou, e mesmo assim isto é verdade.
     return fail("internal_error", "webhook_lead_captures_retention_failed", 500, {
       requestId,
-      details: {
-        erro: detalhe.slice(0, 300),
+      publicMessage: "webhook_lead_captures_retention_failed",
+      publicDetails: {
         arquivo_forense: arquivo,
         // Quando as DUAS podas falham na mesma rodada, isto é o que separa
         // uma da outra na tela do operador: a do arquivo forense já foi
         // reportada acima, e o 200 não vai mascará-la.
-        arquivo_forense_falhou: falhaDoArquivo,
+        arquivo_forense_falhou: Boolean(falhaDoArquivo),
       },
     });
   }
@@ -191,7 +191,8 @@ export async function GET(req: NextRequest): Promise<Response> {
   if (falhaDoArquivo) {
     return fail("internal_error", "webhook_events_log_retention_failed", 500, {
       requestId,
-      details: { erro: falhaDoArquivo.slice(0, 300), arquivo_forense: arquivo, captacao },
+      publicMessage: "webhook_events_log_retention_failed",
+      publicDetails: { arquivo_forense: arquivo, captacao },
     });
   }
 

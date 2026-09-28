@@ -211,10 +211,9 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
       graphVersion: creds.graphVersion,
     });
     return ok(counts);
-  } catch (err) {
-    // A falha da Graph API vira mensagem legível na tela, não 500 mudo — o
-    // operador precisa saber se é token vencido, WABA errada ou rede.
-    return fail("internal_error", err instanceof Error ? err.message : "sync_failed", 502, {
+  } catch {
+    // O corpo de erro do provedor ou do banco pode conter dados da integração.
+    return fail("internal_error", "Não foi possível sincronizar os modelos. Confira a conexão.", 502, {
       requestId,
     });
   }

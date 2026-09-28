@@ -16,6 +16,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { auditMcpToolCall } from "@/lib/mcp/audit";
+import { mcpErrorPayload } from "@/lib/mcp/errors";
 import { McpAuthError, ensureRole, ensureScope } from "@/lib/mcp/auth";
 import type { McpAuthResult } from "@/lib/mcp/auth";
 import { logger } from "@/lib/logger";
@@ -270,7 +271,8 @@ function wrapMcpTool(
         });
         return result;
       } catch (err) {
-        const message = err instanceof Error ? err.message : "unknown_error";
+        const exposedError = mcpErrorPayload(err);
+        const message = (exposedError.error as { message: string }).message;
         void auditMcpToolCall({
           ctx: input.ctx,
           toolName: def.name,

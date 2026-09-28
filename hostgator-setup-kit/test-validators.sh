@@ -946,8 +946,9 @@ TMP_CRON="$(mktemp -d)"
   PROJECT_DIR="$TMP_CRON/projeto"; mkdir -p "$PROJECT_DIR"
   NEXT_PUBLIC_APP_URL="https://crm.exemplo.com.br"
   URL="$NEXT_PUBLIC_APP_URL/api/v1/cron/event-log-drain"
-  printf '* * * * * curl -fsS -H "Authorization: Bearer segredo-velho-a1b2c3" "%s" >/dev/null 2>&1 # deskcomm:%s:drain\n' \
-    "$URL" "$PROJECT_DIR" > "$TMP_CRON/crontab"
+  cabecalho_legado='Authorization: Bearer segredo-velho-a1b2c3'
+  printf '* * * * * curl -fsS -H "%s" "%s" >/dev/null 2>&1 # deskcomm:%s:drain\n' \
+    "$cabecalho_legado" "$URL" "$PROJECT_DIR" > "$TMP_CRON/crontab"
   CAB="$PROJECT_DIR/.env.cron-drain"
   checa() { if eval "$2"; then printf '  ✓ %s\n' "$1"; else printf '  ✗ %s\n' "$1"; exit 1; fi; }
 
