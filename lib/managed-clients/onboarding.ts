@@ -6,11 +6,11 @@ import { emailConfigurado } from "@/lib/email/roteador";
 import { issueInvite } from "@/lib/auth/issue-invite";
 import { audit } from "@/lib/audit";
 import { buildManagedAreaPolicy } from "./policy";
-import { MANAGED_CLIENT_PRESETS, managedPresetAreas } from "./presets";
+import { MANAGED_CLIENT_PRESETS, MANAGED_PRESET_IDS, managedPresetAreas } from "./presets";
 
 export const managedOnboardingSchema = z.object({
   organization_name: z.string().trim().min(2).max(120),
-  preset: z.literal("managed/aesthetic-clinic"),
+  preset: z.enum(MANAGED_PRESET_IDS),
   client_email: z.email().transform((email) => email.trim().toLowerCase()),
   slug: z.string().min(2).max(40).regex(/^[a-z0-9-]+$/).optional(),
   idempotency_key: z.uuid().optional(),

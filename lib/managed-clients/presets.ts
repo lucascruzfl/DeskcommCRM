@@ -65,6 +65,65 @@ const aestheticClinicAreas = {
   "/app/integracao-dados": "agency",
 } as const satisfies Record<NavDestinationId, ManagedAreaClass>;
 
+// Classificação independente: evoluir o ISP não altera a clínica já distribuída.
+const internetProviderAreas = {
+  "/app/prospecting": "not_applicable",
+  "/app/inbox": "client",
+  "/app/radar": "client",
+  "/app/agenda": "not_applicable",
+  "/app/templates": "client",
+  "/app/kanban": "client",
+  "/app/campaigns": "agency",
+  "/app/contacts": "client",
+  "/app/tasks": "client",
+  "/app/calls": "shared",
+  "/app/products": "shared",
+  "/app/settings/tenant/agenda": "not_applicable",
+  "/app/comandas": "not_applicable",
+  "/app/settings/tenant/financeiro": "not_applicable",
+  "/app/settings/tenant/pipelines": "agency",
+  "/app/ai/agents": "agency",
+  "/app/ai/atendimento": "agency",
+  "/app/ai/followups": "agency",
+  "/app/ai/routers": "agency",
+  "/app/ai/credentials": "agency",
+  "/app/ai/providers": "agency",
+  "/app/ai/knowledge/sources": "agency",
+  "/app/ai/memory": "agency",
+  "/app/ai/skills": "agency",
+  "/app/ai/cases": "shared",
+  "/app/ai/inbox": "shared",
+  "/app/ai/cases/avisos": "agency",
+  "/app/ai/proposals": "agency",
+  "/app/ai/runs": "agency",
+  "/app/ai/usage": "agency",
+  "/app/connections": "agency",
+  "/app/integrations/nuvemshop": "not_applicable",
+  "/app/webhooks": "agency",
+  "/app/faturamento": "not_applicable",
+  "/app/metrics": "client",
+  "/app/ads/meta": "agency",
+  "/app/activities": "client",
+  "/app/ai/evolution": "agency",
+  "/app/audit": "agency",
+  "/app/settings/profile": "client",
+  "/app/settings/security": "client",
+  "/app/settings/notifications": "client",
+  "/app/team": "shared",
+  "/app/settings/atendimento": "agency",
+  "/app/settings/tags": "agency",
+  "/app/settings/tenant": "agency",
+  "/app/settings/conversoes": "agency",
+  "/app/settings/meta-ads": "agency",
+  "/app/settings/marca": "agency",
+  "/app/settings/billing": "agency",
+  "/app/lgpd/requests": "shared",
+  "/app/settings/api-tokens": "agency",
+  "/app/settings/voip-trunk": "agency",
+  "/app/extensions": "agency",
+  "/app/integracao-dados": "agency",
+} as const satisfies Record<NavDestinationId, ManagedAreaClass>;
+
 export const MANAGED_CLIENT_PRESETS = {
   "managed/aesthetic-clinic": {
     id: "managed/aesthetic-clinic",
@@ -78,9 +137,38 @@ export const MANAGED_CLIENT_PRESETS = {
     executable: true,
     areas: aestheticClinicAreas,
   },
+  "managed/internet-provider": {
+    id: "managed/internet-provider",
+    version: "1.0.0",
+    business_type: "internet_provider",
+    management_mode: "managed",
+    label: "Provedor de internet — cliente gerenciado",
+    proposed_client_role: "agent",
+    agency_manager_role: "admin",
+    executable: true,
+    areas: internetProviderAreas,
+  },
 } as const;
 
 export type ManagedPresetId = keyof typeof MANAGED_CLIENT_PRESETS;
+export type ManagedBusinessType = (typeof MANAGED_CLIENT_PRESETS)[ManagedPresetId]["business_type"];
+
+// Vocabulários de schema derivados do registro; nenhuma lista de permissões paralela.
+export const MANAGED_PRESET_IDS = Object.keys(MANAGED_CLIENT_PRESETS) as [
+  ManagedPresetId,
+  ...ManagedPresetId[],
+];
+export const MANAGED_BUSINESS_TYPES = Object.values(MANAGED_CLIENT_PRESETS).map(
+  (preset) => preset.business_type,
+) as [ManagedBusinessType, ...ManagedBusinessType[]];
+
+export function managedPresetForBusinessType(businessType: ManagedBusinessType) {
+  const preset = Object.values(MANAGED_CLIENT_PRESETS).find(
+    (candidate) => candidate.business_type === businessType,
+  );
+  if (!preset) throw new Error("managed_preset_not_found");
+  return preset;
+}
 
 export function managedPresetAreas(id: ManagedPresetId) {
   const preset = MANAGED_CLIENT_PRESETS[id];

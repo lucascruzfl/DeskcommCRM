@@ -1,16 +1,12 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { NAV_CATALOG, type NavDestinationId } from "@/lib/navigation/catalogo";
-import { MANAGED_CLIENT_PRESETS, managedPresetAreas } from "./presets";
+import { MANAGED_BUSINESS_TYPES, managedPresetForBusinessType, managedPresetAreas } from "./presets";
 
 const hrefs = NAV_CATALOG.map((area) => area.href) as [NavDestinationId, ...NavDestinationId[]];
 
 export const managedClientPreflightSchema = z.object({
-  business_type: z.string().regex(/^[a-z_]+$/).refine(
-    (businessType) => Object.values(MANAGED_CLIENT_PRESETS)
-      .some((preset) => preset.business_type === businessType && preset.management_mode === "managed"),
-    "Tipo de negócio sem preset gerenciado.",
-  ),
+  business_type: z.enum(MANAGED_BUSINESS_TYPES),
   management_mode: z.literal("managed"),
   name: z.string().trim().min(2).max(120),
   slug: z.string().min(2).max(40).regex(/^[a-z0-9-]+$/),
@@ -29,11 +25,7 @@ export function preflightManagedClient(input: ManagedClientPreflightInput, opts:
   request_id?: string;
 }) {
   const parsed = managedClientPreflightSchema.parse(input);
-  const preset = Object.values(MANAGED_CLIENT_PRESETS).find(
-    (candidate) => candidate.business_type === parsed.business_type
-      && candidate.management_mode === parsed.management_mode,
-  );
-  if (!preset) throw new Error("managed_preset_not_found");
+  const preset = managedPresetForBusinessType(parsed.business_type);
   const duplicated = parsed.overrides.map((o) => o.href)
     .filter((href, index, all) => all.indexOf(href) !== index);
   const overrides = [...parsed.overrides].sort((a, b) => a.href.localeCompare(b.href));

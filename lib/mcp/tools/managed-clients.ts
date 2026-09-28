@@ -1,4 +1,4 @@
-import { MANAGED_CLIENT_PRESETS, managedPresetAreas } from "@/lib/managed-clients/presets";
+import { MANAGED_CLIENT_PRESETS, managedPresetForBusinessType, managedPresetAreas } from "@/lib/managed-clients/presets";
 import { managedClientPreflightSchema } from "@/lib/managed-clients/preflight";
 import { managedOnboardingSchema, managedOnboardingService } from "@/lib/managed-clients/onboarding";
 import { z } from "zod";
@@ -37,7 +37,7 @@ export const MANAGED_CLIENT_TOOLS: ReadonlyArray<McpToolDefinition> = [
   },
   {
     name: "crm_preflight_managed_client",
-    description: "Mostra o plano e os bloqueios para uma clínica de estética gerenciada, sem criar organização, vínculo ou convite. can_execute informa elegibilidade, não executa.",
+    description: "Mostra o plano e os bloqueios para um cliente gerenciado, sem criar organização, vínculo ou convite. can_execute informa elegibilidade, não executa.",
     inputSchema: managedClientPreflightSchema.shape,
     category: "read",
     requiresRole: "agent",
@@ -51,7 +51,7 @@ export const MANAGED_CLIENT_TOOLS: ReadonlyArray<McpToolDefinition> = [
     handler: async (input, ctx) => {
       const parsed = managedClientPreflightSchema.parse(input);
       const current = await managedOnboardingService.preflight({
-        organization_name: parsed.name, preset: "managed/aesthetic-clinic",
+        organization_name: parsed.name, preset: managedPresetForBusinessType(parsed.business_type).id,
         client_email: parsed.client_email, slug: parsed.slug,
       }, onboardingActor(ctx));
       const overridesConflict = parsed.overrides.length ? ["overrides_not_supported_for_execution"] : [];
@@ -68,7 +68,7 @@ export const MANAGED_CLIENT_TOOLS: ReadonlyArray<McpToolDefinition> = [
   },
   {
     name: "crm_create_managed_client",
-    description: "Conferir ou criar uma clínica de estética gerenciada. Sem confirm=true devolve apenas preflight. Exige platform_admin full atual e capability:managed_client_onboarding.",
+    description: "Conferir ou criar um cliente gerenciado. Sem confirm=true devolve apenas preflight. Exige platform_admin full atual e capability:managed_client_onboarding.",
     inputSchema: createSchema.shape,
     category: "write",
     requiresRole: "manager",
