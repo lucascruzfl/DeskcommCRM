@@ -5,8 +5,11 @@ import { createClient } from "@supabase/supabase-js";
 import { test, expect, type Page } from "./helpers/test";
 import { managedFixture } from "./helpers/managed-client-fixture";
 import { createManagedOnboardingService } from "../../lib/managed-clients/onboarding";
+import { MANAGED_CLIENT_PRESETS } from "../../lib/managed-clients/presets";
 import { audit } from "../../lib/audit";
 
+for (const preset of Object.values(MANAGED_CLIENT_PRESETS)) {
+test.describe(preset.id, () => {
 let fixture: Awaited<ReturnType<typeof managedFixture>>;
 let organizationId: string;
 const requestId = randomUUID();
@@ -23,7 +26,7 @@ async function login(page: Page, email: string, password: string) {
 
 async function screenshot(page: Page, name: string) {
   mkdirSync("evidence/managed", { recursive: true });
-  const body = await page.screenshot({ path: `evidence/managed/${name}.png`, fullPage: true });
+  const body = await page.screenshot({ path: `evidence/managed/${preset.id.split("/")[1]}-${name}.png`, fullPage: true });
   await test.info().attach(name, { body, contentType: "image/png" });
 }
 
@@ -49,8 +52,8 @@ test.beforeAll(async () => {
     audit,
   });
   const input = {
-    organization_name: `Clínica Fase 6 ${requestId.slice(0, 8)}`,
-    preset: "managed/aesthetic-clinic" as const,
+    organization_name: `Cliente ${preset.business_type} ${requestId.slice(0, 8)}`,
+    preset: preset.id,
     client_email: client.email,
     idempotency_key: requestId,
   };
@@ -78,7 +81,7 @@ test.beforeAll(async () => {
   ]);
   expect([orgs?.length, policies?.length, managerLinks?.length, invites?.length, receipts?.length]).toEqual([1, 1, 1, 1, 1]);
   expect(managerLinks?.[0]?.role).toBe("admin");
-  expect(policies?.[0]?.preset_id).toBe("managed/aesthetic-clinic");
+  expect(policies?.[0]?.preset_id).toBe(preset.id);
   expect(receipts?.[0]?.state).toBe("completed");
   expect(orgs?.[0]?.onboarded_at).toBeNull();
 
@@ -106,18 +109,24 @@ test.afterAll(async () => {
   await fixture.cleanup();
 });
 
-test("gestor acessa a clínica criada pelo switcher e administra área da agência", async ({ page }) => {
+test("gestor acessa o cliente criado pelo switcher e administra área da agência", async ({ page }) => {
   await login(page, fixture.users.manager!.email, fixture.password);
   const switcher = page.getByTestId("tenant-switcher");
   await expect(switcher).toBeVisible();
   await switcher.click();
   await page.getByTestId(`tenant-switcher-item-${organizationId}`).click();
   await page.waitForURL(/\/app\//);
-  await expect(page.getByTestId("tenant-switcher")).toContainText("Clínica Fase 6");
+  await expect(page.getByTestId("tenant-switcher")).toContainText(`Cliente ${preset.business_type}`);
   await page.goto("/app/ai/agents");
   await expect(page).toHaveURL(/\/app\/ai\/agents/);
   await expect(page.getByRole("heading", { name: /Agents de IA/i }).first()).toBeVisible();
   await screenshot(page, "fase6-gestor-area-agencia");
+  if (preset.business_type === "internet_provider") {
+    expect((await page.request.get("/api/v1/agenda/configuracao")).status()).toBe(403);
+    await page.goto("/app/agenda");
+    await expect(page).toHaveURL(/\/403(?:\?|$)/);
+    await screenshot(page, "etapa7a-calendario-off");
+  }
 });
 
 test("cliente agent acessa operação e recebe 403 nas áreas da agência", async ({ page }) => {
@@ -141,6 +150,11 @@ test("cliente agent acessa operação e recebe 403 nas áreas da agência", asyn
   expect(own.data).toHaveLength(1);
   expect(foreign.error).toBeNull();
   expect(foreign.data).toEqual([]);
+  if (preset.business_type === "internet_provider") {
+    expect((await page.request.get("/api/v1/agenda/configuracao")).status()).toBe(403);
+    await page.goto("/app/agenda");
+    await expect(page).toHaveURL(/\/403(?:\?|$)/);
+  }
   await page.goto("/app/ai/agents");
   await expect(page).toHaveURL(/\/403(?:\?|$)/);
   await expect(page.getByRole("heading", { name: "403 — Sem permissão" })).toBeVisible();
@@ -213,7 +227,7 @@ test("MCP real faz handshake, nega admin comum e cria uma vez com confirmação"
     const frames = body.trim().startsWith("{") ? [JSON.parse(body)] : body.split("\n")
       .filter((line) => line.startsWith("data: ")).map((line) => JSON.parse(line.slice(6)));
     return frames.find((frame: { id?: number }) => frame.id === id) as {
-      result?: { tools?: Array<{ name: string }>; content?: Array<{ text: string }>; isError?: boolean };
+      result?: { tools?: Array<{ name: string; inputSchema?: { properties?: Record<string, { enum?: string[] }> } }>; content?: Array<{ text: string }>; isError?: boolean };
       error?: unknown;
     };
   }
@@ -234,22 +248,28 @@ test("MCP real faz handshake, nega admin comum e cria uma vez com confirmação"
     const listed = await call(authorizedToken, 2, "tools/list", {});
     expect(listed.result?.tools?.map((tool) => tool.name)).toContain("crm_preflight_managed_client");
     expect(listed.result?.tools?.map((tool) => tool.name)).toContain("crm_create_managed_client");
+    expect(listed.result?.tools?.find((tool) => tool.name === "crm_create_managed_client")
+      ?.inputSchema?.properties?.preset?.enum).toEqual(Object.keys(MANAGED_CLIENT_PRESETS));
+    expect(listed.result?.tools?.find((tool) => tool.name === "crm_preflight_managed_client")
+      ?.inputSchema?.properties?.business_type?.enum)
+      .toEqual(Object.values(MANAGED_CLIENT_PRESETS).map((entry) => entry.business_type));
     const limitedToken = await token(manager.id, "manager");
     const limitedList = await call(limitedToken, 9, "tools/list", {});
     expect(limitedList.result?.tools?.map((tool) => tool.name)).not.toContain("crm_create_managed_client");
     const suffix = randomUUID().slice(0, 8);
     const input = { organization_name: `Clínica MCP ${suffix}`, slug: `clinica-mcp-${suffix}`,
-      preset: "managed/aesthetic-clinic", client_email: `client-mcp-${randomUUID()}@fixture.test` };
+      preset: preset.id, client_email: `client-mcp-${randomUUID()}@fixture.test` };
     const limitedCall = await call(limitedToken, 10, "tools/call", {
       name: "crm_create_managed_client", arguments: { ...input, confirm: true },
     });
     expect(limitedCall.result?.isError || limitedCall.error).toBeTruthy();
     const legacyPreflight = payload(await call(authorizedToken, 8, "tools/call", {
       name: "crm_preflight_managed_client",
-      arguments: { name: input.organization_name, business_type: "aesthetic_clinic",
+      arguments: { name: input.organization_name, business_type: preset.business_type,
         management_mode: "managed", client_email: input.client_email, slug: input.slug },
     }));
     expect(legacyPreflight.can_execute).toBe(true);
+    expect(legacyPreflight.preset).toMatchObject({ id: preset.id });
     const preflight = payload(await call(authorizedToken, 3, "tools/call", {
       name: "crm_create_managed_client", arguments: input,
     }));
@@ -306,3 +326,6 @@ test("MCP real faz handshake, nega admin comum e cria uma vez com confirmação"
     await new Promise<void>((resolve) => smtp.close(() => resolve()));
   }
 });
+
+});
+}
