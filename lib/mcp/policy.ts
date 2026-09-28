@@ -104,6 +104,8 @@ export function managedAreaOfTool(tool: McpToolDefinition): NavDestinationId | n
     crm_save_ai_skill: "/app/ai/skills",
     crm_get_ai_skill_import_instructions: "/app/ai/skills",
     crm_validate_agent_ai_configuration: "/app/ai/agents",
+    crm_get_notification_sounds: "/app/settings/notifications",
+    crm_reset_notification_sound: "/app/settings/notifications",
     crm_get_operational_diagnostics: "/app/settings/tenant",
     crm_list_managed_client_presets: "/app/settings/tenant",
     crm_preflight_managed_client: "/app/settings/tenant",

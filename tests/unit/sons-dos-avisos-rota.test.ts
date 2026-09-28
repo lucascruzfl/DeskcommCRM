@@ -16,6 +16,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 import { DELETE, GET, POST } from "@/app/api/v1/settings/sons/route";
+import { crmGetNotificationSounds, crmResetNotificationSound } from "@/lib/mcp/tools/sons";
+import { authorizeTool, managedAreaOfTool } from "@/lib/mcp/policy";
+import type { McpContext } from "@/lib/mcp/types";
+import type { McpAuthResult } from "@/lib/mcp/auth";
 import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -51,8 +55,12 @@ function fakeAdmin(b: Banco) {
             ? { data: null, error: { message: "timeout" } }
             : { data: { settings: b.settings }, error: null },
         update: (linha: Record<string, unknown>) => {
-          b.updates.push(linha);
-          return { eq: async () => ({ error: null }) };
+          return { eq: async (coluna: string, valor: unknown) => {
+            expect([coluna, valor]).toEqual(["id", ORG]);
+            b.updates.push(linha);
+            b.settings = linha.settings as Record<string, unknown>;
+            return { error: null };
+          } };
         },
       };
       return chain;
@@ -188,5 +196,55 @@ describe("GET /api/v1/settings/sons", () => {
     const corpo = (await r.json()) as { data: Record<string, string | null> };
     expect(corpo.data).toEqual({ venda: `https://assinada/${ORG}/venda-a.mp3`, pessoa: null });
     expect(b.assinados).toEqual([`${ORG}/venda-a.mp3`]);
+  });
+});
+
+
+describe("paridade HTTP/MCP dos sons", () => {
+  function ctx(b: Banco): McpContext {
+    return { organizationId: ORG, role: "manager", requestId: "sons-test",
+      actor: { type: "api_token", id: "token", role: "manager" }, apiTokenId: "token",
+      supabase: fakeAdmin(b),
+    } as unknown as McpContext;
+  }
+
+  it("restaura o mesmo som e conserva as mesmas configurações nos dois ingressos", async () => {
+    const settings = { outra_chave: 1, sons_de_aviso: { venda: `${ORG}/venda-a.mp3`, pessoa: `${ORG}/pessoa-b.mp3` } };
+    const http = banco(settings);
+    await DELETE(new NextRequest("http://localhost/api/v1/settings/sons?tipo=venda", { method: "DELETE" }));
+    const mcp = banco(settings);
+    const context = ctx(mcp);
+    expect(await crmResetNotificationSound.handler({ tipo: "venda" }, context)).toEqual({ tipo: "venda", personalizado: false });
+    expect(mcp.updates).toEqual(http.updates);
+    expect(mcp.removidos).toEqual(http.removidos);
+    expect(await crmGetNotificationSounds.handler({}, context)).toEqual({ sons: { venda: { personalizado: false }, pessoa: { personalizado: true } } });
+    // Retry já restaurado não tenta apagar o áudio de novo.
+    await crmResetNotificationSound.handler({ tipo: "venda" }, context);
+    expect(mcp.removidos).toHaveLength(1);
+  });
+
+  it("não revela nem remove caminhos alheios; toda query usa a organização autenticada", async () => {
+    const b = banco({ sons_de_aviso: { venda: `${OUTRA}/venda.mp3` } });
+    expect(await crmGetNotificationSounds.handler({}, ctx(b))).toEqual({ sons: { venda: { personalizado: false }, pessoa: { personalizado: false } } });
+    await crmResetNotificationSound.handler({ tipo: "venda" }, ctx(b));
+    expect(b.removidos).toEqual([]);
+    expect(b.assinados).toEqual([]);
+  });
+
+  it("leitura que falha não vira configuração vazia nem sucesso MCP", async () => {
+    const b = banco({ outra_chave: 1 }, { erroNaLeitura: true });
+    await expect(crmResetNotificationSound.handler({ tipo: "pessoa" }, ctx(b))).rejects.toMatchObject({ code: "provider_unavailable" });
+    await expect(crmGetNotificationSounds.handler({}, ctx(b))).rejects.toMatchObject({ code: "provider_unavailable" });
+    expect(b.updates).toEqual([]);
+    expect(b.removidos).toEqual([]);
+  });
+
+  it("exige manager e capability destrutiva, vinculada à área de Notificações", () => {
+    expect(crmResetNotificationSound.requiresRole).toBe("manager");
+    expect(managedAreaOfTool(crmResetNotificationSound as never)).toBe("/app/settings/notifications");
+    expect(managedAreaOfTool(crmGetNotificationSounds)).toBe("/app/settings/notifications");
+    const auth = { scopes: ["mcp:write", "settings:write"] } as McpAuthResult;
+    expect(() => authorizeTool(auth, crmResetNotificationSound as never)).toThrow("capability_missing:destructive_operations");
+    expect(() => authorizeTool({ ...auth, scopes: [...auth.scopes, "capability:destructive_operations"] }, crmResetNotificationSound as never)).not.toThrow();
   });
 });

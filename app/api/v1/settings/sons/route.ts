@@ -27,56 +27,14 @@ import {
   type TipoDeSom,
 } from "@/lib/notifications/sons-da-org";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { lerConfiguracao, gravarSons, restaurarSom } from "@/lib/notifications/configuracao-sons";
 
 export const dynamic = "force-dynamic";
 
 const VALIDADE_SEGUNDOS = 3600;
 
-type Sons = Partial<Record<TipoDeSom, string>>;
-
 function ehTipo(v: unknown): v is TipoDeSom {
   return typeof v === "string" && (TIPOS_DE_SOM as readonly string[]).includes(v);
-}
-
-/**
- * `null` quando a leitura FALHOU — e quem grava tem de parar aí. Tratar a falha
- * como `settings` vazio faria o update seguinte regravar o jsonb inteiro só com
- * `sons_de_aviso`, apagando toda a configuração da organização.
- */
-async function lerConfiguracao(
-  orgId: string,
-): Promise<{ settings: Record<string, unknown>; sons: Sons } | null> {
-  const { data, error } = await createAdminClient()
-    .from("organizations")
-    .select("settings")
-    .eq("id", orgId)
-    .maybeSingle();
-  if (error) {
-    logger.error("[settings/sons] leitura de organizations.settings falhou", { detail: error.message });
-    return null;
-  }
-  const settings = ((data as { settings?: Record<string, unknown> } | null)?.settings ?? {}) as Record<string, unknown>;
-  const bruto = settings.sons_de_aviso;
-  const sons: Sons = {};
-  if (bruto && typeof bruto === "object") {
-    for (const tipo of TIPOS_DE_SOM) {
-      const caminho = (bruto as Record<string, unknown>)[tipo];
-      // Só caminho DESTA organização: a linha é gravável e o bucket é assinado pelo service_role.
-      if (typeof caminho === "string" && caminho.startsWith(`${orgId}/`)) sons[tipo] = caminho;
-    }
-  }
-  return { settings, sons };
-}
-
-async function gravarSons(orgId: string, settings: Record<string, unknown>, sons: Sons): Promise<boolean> {
-  // Cliente admin: a RLS de `organizations` só deixa platform admin escrever, e
-  // com o cliente de sessão isto casaria zero linhas dizendo "sucesso".
-  const admin = createAdminClient();
-  const { error } = await admin
-    .from("organizations")
-    .update({ settings: { ...settings, sons_de_aviso: sons } })
-    .eq("id", orgId);
-  return !error;
 }
 
 export async function GET(): Promise<Response> {
@@ -178,16 +136,9 @@ export async function DELETE(req: NextRequest): Promise<Response> {
   const tipo = new URL(req.url).searchParams.get("tipo");
   if (!ehTipo(tipo)) return fail("invalid_request", t("Aviso desconhecido."), 400, { requestId });
 
-  const atual = await lerConfiguracao(orgId);
-  if (!atual) return fail("internal_error", t("Erro ao salvar o som."), 500, { requestId });
-  const { settings, sons } = atual;
-  const caminho = sons[tipo];
-  const resto = { ...sons };
-  delete resto[tipo];
-  if (!(await gravarSons(orgId, settings, resto))) {
+  if (!(await restaurarSom(orgId, tipo))) {
     return fail("internal_error", t("Erro ao salvar o som."), 500, { requestId });
   }
-  if (caminho) await createAdminClient().storage.from(BUCKET_DOS_SONS).remove([caminho]);
 
   void audit({
     action: "settings.notification_sound_removed",

@@ -126,6 +126,20 @@
       "col": 3,
       "type": "ui",
       "label": "Notificação no celular, com o CRM fechado"
+    },
+    {
+      "id": "sons_mcp",
+      "lane": "app",
+      "col": 4,
+      "type": "service",
+      "label": "MCP: consulta estado; restaura padrão exige manager + capability; configuracao-sons é o serviço compartilhado com HTTP"
+    },
+    {
+      "id": "cliente_mcp",
+      "lane": "humano",
+      "col": 3,
+      "type": "ui",
+      "label": "Cliente MCP externo: bearer da organização, tools/list e tools/call"
     }
   ],
   "edges": [
@@ -218,6 +232,21 @@
       "from": "celular",
       "to": "contexto",
       "label": "toque abre conversa, negócio ou credenciais"
+    },
+    {
+      "from": "sons_mcp",
+      "to": "sons",
+      "label": "mesma organização, sem URL privada; auditoria MCP e estado reconsultável"
+    },
+    {
+      "from": "cliente_mcp",
+      "to": "sons_mcp",
+      "label": "consulta viewer; restaura manager + scope + capability, policy managed aplicada"
+    },
+    {
+      "from": "sons_mcp",
+      "to": "cliente_mcp",
+      "label": "estado ou erro explícito; consulta seguinte confirma o resultado"
     }
   ]
 }

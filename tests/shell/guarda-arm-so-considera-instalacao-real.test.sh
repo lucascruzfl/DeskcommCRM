@@ -250,8 +250,14 @@ check "a recusa é a do #1042" grep -q 'Use uma VPS x86_64/amd64' "$WORK/guarda.
 R3B="$WORK/caso3b"; mkdir -p "$R3B"; montar_pasta "$R3B/deskcommcrm" 0
 guarda "$R3B" aarch64
 : > "$DOCKER_LOG"
-( cd "$R3B" && env -i PATH="/usr/bin:/bin" HOME="${HOME:-/root}" FAKE_ARCH=aarch64 \
-    bash -c '. "$0"
+# `/usr/bin:/bin` não simula ausência de Docker quando o host o instala ali.
+# Isole só os comandos que o helper usa; Docker fica fora em qualquer VPS/CI.
+SEM_DOCKER_BIN="$WORK/sem-docker-bin"; mkdir -p "$SEM_DOCKER_BIN"
+for bin in bash dirname sed head tr basename; do
+  ln -s "$(command -v "$bin")" "$SEM_DOCKER_BIN/$bin"
+done
+( cd "$R3B" && env -i PATH="$SEM_DOCKER_BIN" HOME="${HOME:-/root}" FAKE_ARCH=aarch64 \
+    "$SEM_DOCKER_BIN/bash" -c '. "$0"
              if instalacao_real_do_kit_aqui; then echo REAL; else echo NOVA; fi' "$COMMON" \
 ) > "$WORK/sem-docker.txt" 2>&1
 check "sem docker no PATH, a instalação NÃO é inventada" \

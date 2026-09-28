@@ -553,6 +553,7 @@ describe("PostgREST com JWT persistido na sessão HTTP", () => {
       ["crm_get_conversation_history", { conversation_id: fixture.conversationA }],
       ["crm_get_message", { message_id: fixture.messageA }],
       ["crm_list_appointments", { contact_id: fixture.contactA }],
+      ["crm_get_notification_sounds", {}],
     ] as const) {
       const result = await call(900, "tools/call", { name, arguments: args });
       expect(result.status, name).toBe(200);
