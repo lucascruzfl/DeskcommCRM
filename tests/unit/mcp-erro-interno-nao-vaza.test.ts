@@ -1,6 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { expect, it, vi } from "vitest";
+import type { McpAuthResult } from "@/lib/mcp/auth";
 
 const auditSpy = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/mcp/audit", () => ({ auditMcpToolCall: auditSpy }));
@@ -31,7 +32,7 @@ const auth = {
   actor: { type: "ai_agent", id: "00000000-0000-4000-8000-000000000002", role: "manager" },
   apiTokenId: "00000000-0000-4000-8000-000000000003",
   scopes: ["mcp:read"],
-} as never;
+} as McpAuthResult;
 
 it("falha técnica não sai para o modelo, para o MCP público nem para o audit", async () => {
   const montadas = pickToolsFromMcp({

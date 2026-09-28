@@ -31,8 +31,9 @@ import { createClient } from "@supabase/supabase-js";
 import { carregaRadarDeRisco } from "@/lib/leads/radar-de-risco";
 
 const URL = "http://127.0.0.1:54321";
-const SERVICE = process.env.SUPABASE_LOCAL_SERVICE_ROLE_KEY;
-if (!SERVICE) throw new Error("Informe SUPABASE_LOCAL_SERVICE_ROLE_KEY da instância local.");
+const SERVICE = process.env.SUPABASE_LOCAL_SERVICE_ROLE_KEY ?? (() => {
+  throw new Error("Informe SUPABASE_LOCAL_SERVICE_ROLE_KEY da instância local.");
+})();
 
 const ORG_A = "50d0a111-0000-4000-8000-00000000000a";
 const ORG_B = "50d0a222-0000-4000-8000-00000000000b";
