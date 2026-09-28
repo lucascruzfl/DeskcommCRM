@@ -25,6 +25,20 @@ describe("fail", () => {
     });
   });
 
+  it("aceita apenas o nome público de campo como detalhe de 500", async () => {
+    const response = fail("internal_error", "SQL privado", 500, {
+      details: { motivo: "SQL privado" },
+      publicField: "number_activated_at",
+    });
+    expect(await response.json()).toEqual({
+      error: {
+        code: "internal_error",
+        message: "Não foi possível concluir a operação.",
+        details: { field: "number_activated_at" },
+      },
+    });
+  });
+
   it("mantém orientação explícita de serviço indisponível em 503", async () => {
     const response = fail("upstream_unavailable", "Tente novamente.", 503);
     expect(await response.json()).toEqual({

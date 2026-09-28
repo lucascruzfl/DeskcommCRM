@@ -189,12 +189,14 @@ export async function PUT(req: NextRequest): Promise<Response> {
       { onConflict: "organization_id,channel_session_id" },
     );
     if (upErr) {
-      // O motivo cru vai em `details`, não na `message` que o operador lê: foi a
-      // ausência dele que transformou um `not null` num diagnóstico de horas —
-      // nem a tela nem o log diziam QUAL campo o banco recusou.
+      // Mostra só o nome de um campo que esta rota conhece. O texto cru do
+      // Postgres pode trazer SQL ou outros dados internos.
+      const campoRecusado = KNOB_COLUMNS.split(", ").find((campo) =>
+        upErr.message.includes(`"${campo}"`),
+      );
       return fail("internal_error", t("Falha ao salvar os knobs."), 500, {
         requestId,
-        details: { motivo: upErr.message },
+        publicField: campoRecusado,
       });
     }
   }

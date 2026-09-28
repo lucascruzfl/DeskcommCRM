@@ -59,6 +59,8 @@ export function ok<T>(data: T, opts: OkOptions = {}): NextResponse<ApiSuccess<T>
 
 type FailOptions = {
   details?: unknown;
+  /** Campo público já escolhido pelo handler; nunca passe texto bruto do banco. */
+  publicField?: string;
   requestId?: string;
   headers?: HeadersInit;
 };
@@ -72,11 +74,21 @@ export function fail(
   // Mensagens de banco chegam aqui como `error.message` em handlers legados.
   // O 500 não pode devolver SQL, URLs internas ou credenciais.
   const erroInterno = status === 500;
+  const campoSeguro =
+    erroInterno && opts.publicField && /^[a-z][a-z0-9_]{0,63}$/.test(opts.publicField)
+      ? opts.publicField
+      : undefined;
   const body: ApiError = {
     error: {
       code,
       message: erroInterno ? "Não foi possível concluir a operação." : message,
-      ...(!erroInterno && opts.details !== undefined ? { details: opts.details } : {}),
+      ...(erroInterno
+        ? campoSeguro
+          ? { details: { field: campoSeguro } }
+          : {}
+        : opts.details !== undefined
+          ? { details: opts.details }
+          : {}),
     },
   };
 

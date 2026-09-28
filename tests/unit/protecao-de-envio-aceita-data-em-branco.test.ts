@@ -262,7 +262,7 @@ describe("PUT /api/v1/ai/pacing — data em branco não impede salvar a janela",
 });
 
 describe("PUT /api/v1/ai/pacing — erro do banco diz QUAL campo recusou", () => {
-  it("⭐ o motivo cru do Postgres chega em details, e a mensagem lida segue humana", async () => {
+  it("⭐ só o nome do campo recusado chega em details, sem o motivo cru do Postgres", async () => {
     authOk();
     makeDb(null);
     vi.mocked(createAdminClient).mockReturnValue({
@@ -290,9 +290,8 @@ describe("PUT /api/v1/ai/pacing — erro do banco diz QUAL campo recusou", () =>
     // Sem isto, um `not null` vira "Falha ao salvar os knobs." e ninguém sabe
     // qual campo recusou — foi essa ausência que custou o diagnóstico.
     expect(corpo.error.details).toBeDefined();
-    expect(JSON.stringify(corpo.error.details)).toContain("number_activated_at");
-    // E o operador continua lendo português, não uma frase do Postgres.
-    expect(corpo.error.message).toBe("Falha ao salvar os knobs.");
+    expect(corpo.error.details).toEqual({ field: "number_activated_at" });
+    expect(corpo.error.message).toBe("Não foi possível concluir a operação.");
   });
 });
 
