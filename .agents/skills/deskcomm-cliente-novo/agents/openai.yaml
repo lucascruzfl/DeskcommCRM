@@ -1,6 +1,6 @@
 interface:
   display_name: "Montar um cliente novo por nicho"
-  short_description: "Triagem, pacote do nicho e configuração tela a tela: agentes, roteadores, follow-ups, conhecimento"
-  default_prompt: "Use a skill deskcomm-cliente-novo e me ajude a configurar o DeskcommCRM para um cliente do meu nicho."
+  short_description: "Configure clientes por nicho, gerenciados e ISP, com IA + humano"
+  default_prompt: "Use $deskcomm-cliente-novo para configurar um cliente do meu nicho, incluindo provedor de internet ou cliente gerenciado quando aplicável."
 policy:
   allow_implicit_invocation: true

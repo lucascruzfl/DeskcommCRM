@@ -1,8 +1,32 @@
 # Tela a tela — a ordem que o sistema impõe, os campos e o que cada um faz
 
-Os rótulos abaixo são os do menu **Agente de IA** (v1.17.0). Cada peça exige a anterior: o
-schema recusa publicar agente sem número conectado e sem credencial validada; fluxo só roda
-publicado; material só vale com indexação pronta.
+Os rótulos abaixo foram conferidos em `lib/navigation/catalogo.ts` e nas páginas atuais da base
+`mcp/stable` em `4431d9cf5155449610b2bdb604d7f317d1aa741d`. O grupo continua **Agente de IA**;
+**Ver tudo em IA** abre o hub. Não dependa de um número de versão para encontrar a tela.
+
+| Tela/rótulo de navegação | Caminho atual |
+|---|---|
+| Conexões | `/app/connections` |
+| Credenciais / Provedores | `/app/ai/credentials` / `/app/ai/providers` |
+| CRM › Funis | `/app/kanban` |
+| CRM › Ver tudo em CRM › Etapas do funil | `/app/settings/tenant/pipelines` |
+| Conhecimento | `/app/ai/knowledge/sources` |
+| Follow-ups | `/app/ai/followups` |
+| Agentes / Novo agente / editor | `/app/ai/agents` / `/app/ai/agents/new` / `/app/ai/agents/[id]` |
+| Roteadores | `/app/ai/routers` |
+| Memória / Skills | `/app/ai/memory` / `/app/ai/skills` |
+| Inbox / Casos | `/app/inbox` / `/app/ai/cases` |
+| Uso e orçamento / Equipe | `/app/ai/usage` / `/app/team` |
+| API Tokens / Audit Log | `/app/settings/api-tokens` / `/app/audit` |
+
+Criar/editar/publicar agente pela tela exige admin; ver o editor exige manager. Outras telas têm
+guards próprios. No tenant **managed**, as áreas agency exigem membership admin; cliente agent
+opera só as áreas permitidas, e not_applicable continua bloqueado. Para provisionar um cliente,
+siga `cliente-gerenciado.md`: o fluxo gerenciado atual é MCP, sem tela nova de criação.
+
+Cada peça tem dependências: agente WhatsApp publica com número conectado e credencial resolvida;
+fluxo só roda publicado; material precisa de indexação pronta. Equivalentes MCP comprovados e
+limites estão em `por-arquivo.md`.
 
 ## 1. Conexões — o número (pré-requisito de tudo)
 
@@ -26,21 +50,24 @@ um modelo barato basta), follow-up, transcrição de áudio, embeddings (fixo: `
 da OpenAI). "Automático" usa o provedor padrão da organização. É aqui que se troca de provedor
 depois da instalação.
 
-## 4. Funil — Configurações › Funis e Etapas do funil
+## 4. Funil — CRM › Funis e Ver tudo em CRM › Etapas do funil
 
 Crie o funil com o nome do pacote; etapas na ordem, marcando exatamente uma como **ganhou** e uma
 como **perdeu** (o sistema recusa duas). Em cada etapa, o **passo do agente** (novo, contatado,
 qualificando, qualificado, negociando, ganhou, perdeu) — é o mapa que deixa o agente mover o lead;
-etapa sem passo o agente não usa. Vocabulário (como chamar cliente/negócio/ganhou/perdeu) e
+etapa sem passo não recebe movimento automático por esse mapa. Para ISP, mantenha os fechamentos
+Sem cobertura, Desistiu e Sem retorno como motivos distintos de uma etapa de perda, não três
+flags de perda. Preserve o contato sem cobertura para expansão futura. Vocabulário
+(como chamar cliente/negócio/ganhou/perdeu) e
 motivos de perda ficam na configuração do funil. O primeiro funil ativo vira o padrão.
 
-## 5. IA › Conhecimento ("O que o agente sabe")
+## 5. IA › Conhecimento — acervo de materiais
 
 **Adicionar material** → tipo: *FAQ* (pares pergunta/resposta — cole em markdown com
-`## Pergunta:` / `## Resposta:` ou preencha os pares), *documento* (PDF, MD ou TXT até 20 MB; ou
+`## Pergunta:` / `## Resposta:` ou preencha os pares), *documento* (PDF, MD, TXT ou CSV até 20 MB; ou
 texto colado), *catálogo* (vem da loja integrada) e *conversas* (aprendizado automático). Nome
-único por material. A indexação é assíncrona: o material aparece como "pronto" quando indexado;
-sem chave da OpenAI ele fica sem indexar e a tela avisa. Materiais são da organização; cada agente
+único por material. A indexação é assíncrona: confira o estado de indexação do material, além de estar ativo;
+sem chave de embeddings resolvida ele fica sem indexar e a tela avisa. Materiais são da organização; cada agente
 escolhe quais usa.
 
 ## 6. IA › Follow-ups ("Fluxos")
@@ -80,24 +107,34 @@ publicados atendem o mesmo número); o **prompt**; provedor, modelo e credencial
 instalação"); o **número** que atende; **funis** em que pode mover leads (nenhum = só conversa);
 **materiais** que consulta; **follow-ups** que arma; palavras de passagem para humano (padrão:
 "falar com humano", "atendente", "pessoa real"); casos (abrir demanda para o time); dividir
-mensagens longas; horário de atendimento (fora dele, adia). Aba **Capacidades**: os pacotes
+mensagens longas; horário de atendimento (fora dele, adia). Na seção **Capacidades** da Configuração,
+selecione os pacotes
 (*vender* já traz agenda, catálogo, conhecimento, notas e funil) e as capacidades **críticas**
 uma a uma (enviar mensagem avulsa, cancelar agenda, fechar caso) — o teto é 25.
+A aba **Capacidades** acompanha o uso; a seleção fica na Configuração.
+
+**ISP:** o pacote vender inclui agenda. Selecione só capacidades permitidas para comercial,
+conhecimento, notas/funil e passagem/casos. Agenda/calendário OFF inicialmente, sem agendamento
+de instalação/visita nem financeiro fictício; uma integração futura precisa de fonte real e
+política revisada. Suporte e Financeiro têm responsáveis humanos, sem promessa de automação total.
 
 Salvar cria a **versão 1 em rascunho**. Mudou algo depois de publicado? É versão nova — versão
 publicada é imutável, e **Reverter** cria outra a partir da anterior.
 
 ## 8. Testar (na versão, antes de publicar)
 
-Aba de teste da versão: uma mensagem, um contato fictício. Volta o texto que o agente mandaria,
+Aba **Teste** da versão, botão **Testar**: uma mensagem, um contato fictício. Volta o texto que o agente mandaria,
 as ações que tentaria (oferecer horário, registrar, mover) e os portões que passaram ou vetaram.
 Consome crédito da IA. Sem histórico nem memória do lead — é o teste da primeira mensagem.
+`crm_test_ai_agent_version` também oferece prévia controlada. Ela não confirma envio ou handoff
+real: depois valide o caso/passagem, o humano assumindo no Inbox e a retomada autorizada da IA.
 
 ## 9. Publicar
 
 Botão **Publicar** com confirmação. O sistema recusa com motivo claro quando falta credencial
 validada, o número não está WORKING, o modelo saiu do catálogo ou uma capacidade não existe. A
-publicação vale no próximo atendimento, sem reiniciar nada.
+publicação vale no próximo atendimento, sem reiniciar nada. Confira também o estado ativo do
+agente. Via MCP, publicar e ativar são operações separadas e autorizadas (`por-arquivo.md`).
 
 ## 10. IA › Roteadores (só com dois ou mais agentes no mesmo número)
 
@@ -107,6 +144,9 @@ publicação vale no próximo atendimento, sem reiniciar nada.
 fala) e **Frases de exemplo**. **Agente de fallback** para quando nenhuma casa; **Modelo do
 classificador** ("Automático" usa o provedor da organização). Ative. Roteador sem intenções e sem
 fallback não sequestra o número; membro sem versão publicada cai no fallback.
+No ISP, intenções-alvo: contratar → Comercial, internet caiu → Suporte/humano, segunda via →
+Financeiro, quando instalar → Instalação. Destinos humanos usam passagem/casos e equipe real.
+Não existe tool de criação de roteador IA no catálogo auditado; routing de atendentes é outra peça.
 
 ## 11. IA › Memória
 
@@ -117,12 +157,16 @@ melhoria e ficam para revisar.
 
 ## 12. IA › Skills
 
-As duas da plataforma (`agendamento`, `objecao-preco`) já valem para todo agente. **Instalar** cria
+As duas da plataforma (`agendamento`, `objecao-preco`) já valem para todo agente. Presença do
+texto não habilita ferramenta: no ISP, mantenha capacidades de agenda OFF e não instale uma
+personalização de `agendamento` para simular calendário. **Instalar** cria
 uma cópia da organização para personalizar; **Importar** aceita um `.zip` com `SKILL.md` (nome,
 descrição, palavras-chave que ativam) — é um roteiro condicional de texto, não um programa.
 
 ## 13. Depois
 
-Configurações › Webhooks e automações (formulário do site → funil → mensagem da IA); Equipe
+Webhooks (`/app/webhooks`) e regras de automação; Equipe
 (convites, papéis, distribuição manual ou rodízio); Uso e orçamento (teto mensal de IA). Tokens de
-API só se um sistema externo for falar com o CRM pelo MCP.
+API quando houver sistema externo via MCP ou rota REST que aceite bearer. Confira a tool/rota
+específica e seu guard; não há autorização universal. No cliente managed, o gestor troca de
+organização pelo organization switcher; tokens continuam vinculados ao tenant onde foram criados.
