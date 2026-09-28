@@ -17,8 +17,8 @@
  *      `reason` trocado não quebra tipo nenhum, e um dia vira 401 onde devia
  *      ser 500 (ou o contrário).
  *   2. `validateBearerToken` devolve os MESMOS códigos MCP e os MESMOS status
- *      HTTP de antes da extração, com as mesmas mensagens. A tabela abaixo é a
- *      régua: ela foi lida do arquivo ANTES da separação.
+ *      HTTP de antes da extração. O erro de banco usa mensagem fixa para não
+ *      revelar detalhes internos; a tabela abaixo fixa esse contrato.
  *   3. O lookup é pelo HASH, nunca pelo plaintext. É a razão de o banco não
  *      guardar o segredo (doutrina: "Bearer plaintext armazenado no DB").
  *   4. O `last_used_at` fire-and-forget continua acontecendo, DEPOIS de todas
@@ -336,7 +336,7 @@ const TABELA_DE_TRADUCAO: Array<{
     resposta: falhou,
     mcpCode: -32603,
     httpStatus: 500,
-    message: "Token lookup failed: connection reset",
+    message: "Token lookup failed.",
   },
 ];
 

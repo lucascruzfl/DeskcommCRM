@@ -1,3 +1,5 @@
+import { McpAuthError } from "./auth";
+
 export const MCP_ERROR_CODES = [
   "not_found",
   "validation_error",
@@ -82,12 +84,15 @@ export function mcpErrorPayload(error: unknown): Record<string, unknown> {
       },
     };
   }
-  const message = safeMessage(error);
-  const policy = /^(scope_missing|capability_missing|not_allowed):/.exec(message);
+  if (error instanceof McpAuthError) {
+    const message = safeMessage(error);
+    const policy = /^(scope_missing|capability_missing|not_allowed):/.exec(message);
+    return { error: { code: policy?.[1] ?? "not_allowed", message } };
+  }
   return {
     error: {
-      code: policy?.[1] ?? "not_allowed",
-      message,
+      code: "not_allowed",
+      message: "Tool execution failed.",
     },
   };
 }
