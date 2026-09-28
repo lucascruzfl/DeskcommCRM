@@ -37,6 +37,13 @@ describe("registro canônico de presets gerenciados", () => {
         "/app/settings/tenant/financeiro",
         "/app/faturamento",
         "/app/integrations/nuvemshop",
+        "/app/companies",
+        "/app/people",
+        "/app/imports",
+        "/app/proposals",
+        "/app/settings/tenant/proposals",
+        "/app/settings/tenant/proposals/modelos",
+        "/app/honorarios",
       ].sort(),
     );
     for (const href of [

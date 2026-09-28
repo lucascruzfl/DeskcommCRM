@@ -88,6 +88,8 @@ export interface ConversationsFilters {
   unread?: boolean;
   channel_session_id?: string;
   tag?: string;
+  /** A aba "Grupos" do inbox (Task 10). Ausente = sem filtro, mostra tudo. */
+  is_group?: boolean;
 }
 
 interface ListResponse {
@@ -122,6 +124,7 @@ export function useConversationsRealtime(filters: ConversationsFilters, orgId: s
       if (filters.unread) qs.set("unread", "true");
       if (filters.channel_session_id) qs.set("channel_session_id", filters.channel_session_id);
       if (filters.tag) qs.set("tag", filters.tag);
+      if (filters.is_group !== undefined) qs.set("is_group", filters.is_group ? "true" : "false");
       if (pageParam) qs.set("cursor", pageParam);
       qs.set("limit", "50");
       try {

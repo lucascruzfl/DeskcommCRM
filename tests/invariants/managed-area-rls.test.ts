@@ -79,7 +79,7 @@ describe("RLS da política gerenciada", () => {
       Number(
         lastLine(sql(`select count(*) from pg_policies where policyname = 'managed_area_gate';`)),
       ),
-    ).toBe(9);
+    ).toBe(17); // 9 históricos + 8 tabelas opcionais oficiais da integração 1.61
     sql(`set client_min_messages = warning;\n${gateMigration}`);
     sql(`set client_min_messages = warning;\n${gateMigration}`);
     const after = lastLine(

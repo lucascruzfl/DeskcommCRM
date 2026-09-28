@@ -61,6 +61,7 @@ import {
   crmSaveOrgMemory,
 } from "./evolucao";
 import { crmListContactOrders, crmSearchProducts } from "./comercio";
+import { crmGetHonorariosContrato, crmListHonorariosParcelas } from "./honorarios";
 import { crmDescribeExternalData, crmQueryExternalData } from "./dados-externos";
 import { crmListPrivacyRequests } from "./privacidade";
 import {
@@ -117,6 +118,7 @@ import { CAMPAIGN_EXTRA_MCP_TOOLS } from "./campanhas-complementos";
 import { SKILL_VERSION_MCP_TOOLS } from "./skill-versions";
 import { crmGetNotificationSounds, crmResetNotificationSound } from "./sons";
 import { MANAGED_CLIENT_TOOLS } from "./managed-clients";
+import { crmDraftProposal, crmPrepararProposta } from "./propostas";
 
 // Cast via `unknown` porque McpToolDefinition<TInput> nao e covariante
 // em TInput (handler usa TInput em posicao contravariante). Coletar
@@ -164,6 +166,9 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmSaveOrgMemory,
   crmListContactOrders,
   crmSearchProducts,
+  crmGetHonorariosContrato,
+  crmListHonorariosParcelas,
+  crmPrepararProposta,
   crmDescribeExternalData,
   crmQueryExternalData,
   crmListPrivacyRequests,
@@ -243,6 +248,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmCloseHumanCase,
   crmResumeAiAttendance,
   ...ATENDIMENTO_COMPLETO_MCP_TOOLS.filter((tool) => tool.category === "write"),
+  crmDraftProposal,
   // handoff (special)
   crmRequestHumanHandoff,
 ] as unknown as ReadonlyArray<McpToolDefinition>;

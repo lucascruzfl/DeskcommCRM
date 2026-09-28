@@ -53,6 +53,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
 import type { HandlerCtx } from "@/lib/api/handlers/types";
 import type { SendMessageInput } from "@/lib/schemas";
+import { colunasDoSelect } from "@/tests/helpers/duble-do-handler";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const CONV = "22222222-2222-4222-8222-222222222222";
@@ -150,31 +151,6 @@ vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}) }));
 
 type Row = Record<string, unknown>;
 
-/**
- * Colunas de PRIMEIRO NÍVEL de um `select` do PostgREST.
- *
- * `id, a, b:c(x, y), d` → `["id", "a", "b", "d"]`. Embeds entram pelo apelido
- * (o que vem antes de `:`), que é a chave que o PostgREST devolve.
- */
-function colunasDoSelect(select: string): string[] {
-  let profundidade = 0;
-  let atual = "";
-  const partes: string[] = [];
-  for (const ch of select) {
-    if (ch === "(") profundidade++;
-    else if (ch === ")") profundidade--;
-    if (ch === "," && profundidade === 0) {
-      partes.push(atual);
-      atual = "";
-      continue;
-    }
-    atual += ch;
-  }
-  partes.push(atual);
-  return partes
-    .map((p) => p.trim().split("(")[0]!.split(":")[0]!.trim())
-    .filter((p) => p.length > 0);
-}
 
 /** A linha como o PostgREST a devolveria: só o que o `select` pediu. */
 /**
@@ -232,9 +208,10 @@ function conversaCompleta(forma: Forma = {}): Row {
 }
 
 /**
- * Dublê de Supabase que **honra o `select`**. É a única diferença relevante em
- * relação ao dublê de `messages-handler-desfechos.test.ts`, e é ela que faz a
- * rede morder a perda de uma coluna.
+ * O dublê é o COMPARTILHADO (`tests/helpers/duble-do-handler.ts`), LIGADO EM
+ * `projetarConversa`: ele honra o `select` como o PostgREST — coluna que não
+ * foi pedida não chega —, que é o elo que este arquivo prova. As capturas que
+ * os casos leem (`estado.*`) são as do helper, lidas ao vivo.
  */
 function makeSupabase(linhaCompleta: Row, espelhoDoModelo: Row | null = null) {
   const estado: {
@@ -244,6 +221,7 @@ function makeSupabase(linhaCompleta: Row, espelhoDoModelo: Row | null = null) {
     contactFilters: Record<string, unknown>;
   } = { message: null, selects: [], contactPatch: null, contactFilters: {} };
   const client = {
+    rpc: async () => ({ data: null, error: null }),
     from(tabela: string) {
       if (["conversations", "operational_conversations"].includes(tabela)) {
         return {
@@ -355,11 +333,12 @@ function makeSupabase(linhaCompleta: Row, espelhoDoModelo: Row | null = null) {
       }
       throw new Error(`dublê: tabela inesperada '${tabela}'`);
     },
-    rpc: async () => ({ error: null }),
   };
   transporteDoTeste.client = client as unknown as SupabaseClient;
   return { supabase: transporteDoTeste.client, estado };
 }
+
+const dubleDe = makeSupabase;
 
 const ctx: HandlerCtx = {
   organization_id: ORG,
@@ -422,7 +401,7 @@ describe("o projetor do dublê é discriminante (guarda de vacuidade)", () => {
     vi.stubEnv("ZERNIO_ACCOUNT_ID", CONTA);
     vi.stubEnv("ZERNIO_API_KEY", "sk_env");
     vi.stubGlobal("fetch", respostaOk("wamid.LID"));
-    const { supabase, estado } = makeSupabase(conversaCompleta({ providerConversationId: THREAD }));
+    const { supabase, estado } = dubleDe(conversaCompleta({ providerConversationId: THREAD }));
     await sendMessageHandler(supabase, ctx, texto());
     expect(
       estado.selects.length,
@@ -449,7 +428,7 @@ describe("a thread do provider atravessa os três elos até o transporte", () =>
     const fetchMock = respostaOk("wamid.THREAD");
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase, estado } = makeSupabase(conversaCompleta({ providerConversationId: THREAD }));
+    const { supabase, estado } = dubleDe(conversaCompleta({ providerConversationId: THREAD }));
     const msg = await sendMessageHandler(supabase, ctx, texto());
 
     expect(msg.status).toBe("sent");
@@ -475,7 +454,7 @@ describe("a thread do provider atravessa os três elos até o transporte", () =>
     // com URL assinada). Usar `media_url` cairia no ramo de texto e este caso
     // viraria uma segunda cópia do anterior — cobertura aparente, elo real não
     // exercitado.
-    const { supabase } = makeSupabase(conversaCompleta({ providerConversationId: THREAD }));
+    const { supabase } = dubleDe(conversaCompleta({ providerConversationId: THREAD }));
     const msg = await sendMessageHandler(
       supabase,
       ctx,
@@ -506,7 +485,7 @@ describe("a thread do provider atravessa os três elos até o transporte", () =>
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase } = makeSupabase(conversaCompleta({ providerConversationId: null }));
+    const { supabase } = dubleDe(conversaCompleta({ providerConversationId: null }));
     const msg = await sendMessageHandler(supabase, ctx, texto());
 
     expect(msg.status).toBe("failed");
@@ -521,7 +500,7 @@ describe("a thread do provider atravessa os três elos até o transporte", () =>
     const fetchMock = vi.fn(async () => Response.json({ key: { id: "TEXT1" } }));
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase } = makeSupabase(
+    const { supabase } = dubleDe(
       conversaCompleta({ provider: "waha", providerConversationId: null }),
     );
     const msg = await sendMessageHandler(supabase, ctx, texto());
@@ -543,7 +522,7 @@ describe("nenhum desfecho diz `sent` sem nada ter saído", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase } = makeSupabase(conversaCompleta({ providerConversationId: THREAD }));
+    const { supabase } = dubleDe(conversaCompleta({ providerConversationId: THREAD }));
     const msg = await sendMessageHandler(supabase, ctx, texto());
 
     expect(fetchMock).not.toHaveBeenCalled();
@@ -561,7 +540,7 @@ describe("nenhum desfecho diz `sent` sem nada ter saído", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase } = makeSupabase(conversaCompleta({ provider: "meta_cloud" }));
+    const { supabase } = dubleDe(conversaCompleta({ provider: "meta_cloud" }));
     const msg = await sendMessageHandler(supabase, ctx, texto());
 
     expect(msg.status).toBe("queued");
@@ -588,7 +567,7 @@ describe("nenhum desfecho diz `sent` sem nada ter saído", () => {
     const fetchMock = respostaOk("wamid.TPL");
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase } = makeSupabase(conversaCompleta({ providerConversationId: THREAD }));
+    const { supabase } = dubleDe(conversaCompleta({ providerConversationId: THREAD }));
     await sendMessageHandler(
       supabase,
       ctx,
@@ -613,7 +592,7 @@ describe("nenhum desfecho diz `sent` sem nada ter saído", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase } = makeSupabase(conversaCompleta({ providerConversationId: THREAD }));
+    const { supabase } = dubleDe(conversaCompleta({ providerConversationId: THREAD }));
     const msg = await sendMessageHandler(supabase, ctx, texto());
 
     expect(msg.status).toBe("queued");
@@ -635,7 +614,7 @@ describe("canal oficial conectado pela TELA — a credencial da sessão manda (#
     const fetchMock = respostaMeta("wamid.M1");
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase } = makeSupabase(conversaCompleta({ provider: "meta_cloud" }));
+    const { supabase } = dubleDe(conversaCompleta({ provider: "meta_cloud" }));
     const msg = await sendMessageHandler(supabase, ctx, texto());
 
     expect(msg.status).toBe("sent");
@@ -651,7 +630,7 @@ describe("canal oficial conectado pela TELA — a credencial da sessão manda (#
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase } = makeSupabase(conversaCompleta({ provider: "meta_cloud" }));
+    const { supabase } = dubleDe(conversaCompleta({ provider: "meta_cloud" }));
     const msg = await sendMessageHandler(supabase, ctx, texto());
 
     expect(msg.status).toBe("queued");
@@ -665,7 +644,7 @@ describe("canal oficial conectado pela TELA — a credencial da sessão manda (#
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase } = makeSupabase(conversaCompleta({ provider: "meta_cloud" }));
+    const { supabase } = dubleDe(conversaCompleta({ provider: "meta_cloud" }));
     const msg = await sendMessageHandler(supabase, ctx, texto());
 
     expect(msg.status).toBe("failed");
@@ -680,7 +659,7 @@ describe("canal oficial conectado pela TELA — a credencial da sessão manda (#
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase } = makeSupabase(conversaCompleta({ provider: "meta_cloud" }));
+    const { supabase } = dubleDe(conversaCompleta({ provider: "meta_cloud" }));
     const msg = await sendMessageHandler(supabase, ctx, texto());
 
     expect(msg.status).toBe("queued");
@@ -693,7 +672,7 @@ describe("canal oficial conectado pela TELA — a credencial da sessão manda (#
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase } = makeSupabase(
+    const { supabase } = dubleDe(
       conversaCompleta({ provider: "meta_cloud", archivedAt: "2026-08-01T00:00:00.000Z" }),
     );
     const msg = await sendMessageHandler(supabase, ctx, texto());
@@ -712,9 +691,9 @@ describe("canal oficial conectado pela TELA — a credencial da sessão manda (#
     const fetchMock = respostaMeta("wamid.T");
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase: sbA } = makeSupabase(conversaCompleta({ provider: "meta_cloud" }));
+    const { supabase: sbA } = dubleDe(conversaCompleta({ provider: "meta_cloud" }));
     await sendMessageHandler(sbA, ctx, texto());
-    const { supabase: sbB } = makeSupabase(conversaCompleta({ provider: "meta_cloud" }));
+    const { supabase: sbB } = dubleDe(conversaCompleta({ provider: "meta_cloud" }));
     await sendMessageHandler(sbB, { ...ctx, organization_id: OUTRA }, texto());
 
     const auth = fetchMock.mock.calls.map(
@@ -761,7 +740,7 @@ describe("o MODELO do canal oficial sai pela credencial da sessão, não pelo .e
     const fetchMock = respostaMeta("wamid.MODELO");
     vi.stubGlobal("fetch", fetchMock);
 
-    const { supabase } = makeSupabase(conversaCompleta({ provider: "meta_cloud" }), espelho);
+    const { supabase } = dubleDe(conversaCompleta({ provider: "meta_cloud" }), espelho);
     const msg = await sendMessageHandler(
       supabase,
       ctx,

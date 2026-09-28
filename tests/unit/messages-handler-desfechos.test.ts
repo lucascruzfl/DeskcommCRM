@@ -85,16 +85,15 @@ function conversationRow(shape: ConversationShape = {}): Row {
 }
 
 /**
- * Fake de `SupabaseClient` com o mínimo que o handler encadeia:
- *   conversations: select().eq().maybeSingle() · update().eq()
- *   messages:      insert().select().single() · update().eq().select().maybeSingle()
- *   rpc('emit_event')
- * O update é merge raso — igual ao que o Postgres faz com um SET de colunas.
+ * O dublê é o COMPARTILHADO (`tests/helpers/duble-do-handler.ts`): tabela a
+ * tabela, encadeável sem limite, registrando patch, filtro e insert. O que este
+ * arquivo injeta POR CASO — a linha da conversa, o espelho do template, o
+ * metadata do canal e o banco sem a migration 0106 — vira opção do helper, não
+ * um sexto fake de `supabase.from()`.
  */
-function makeSupabase(
+function dubleDo(
   conversation: Row,
   templateRow: Row | null = null,
-  /** `semColunaArquivada`: banco em que a migration 0106 ainda não rodou. */
   opts: { semColunaArquivada?: boolean; channelMetadata?: Row } = {},
 ) {
   const state: { message: Row | null } = { message: null };
@@ -206,6 +205,8 @@ function makeSupabase(
   return transporteDoTeste.client;
 }
 
+const makeSupabase = dubleDo;
+
 const ctx: HandlerCtx = {
   organization_id: ORG,
   actor: { type: "user", id: USER },
@@ -278,7 +279,7 @@ describe("sendMessageHandler — os 6 desfechos do envio", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const msg = await sendMessageHandler(makeSupabase(conversationRow()), ctx, textInput());
+    const msg = await sendMessageHandler(dubleDo(conversationRow()), ctx, textInput());
 
     expect(msg.status).toBe("queued");
     expect((msg.metadata as Record<string, unknown>).queued_reason).toBe("waha_not_configured");
@@ -293,7 +294,7 @@ describe("sendMessageHandler — os 6 desfechos do envio", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const msg = await sendMessageHandler(
-      makeSupabase(conversationRow({ phoneNumber: null, waIdentity: null })),
+      dubleDo(conversationRow({ phoneNumber: null, waIdentity: null })),
       ctx,
       textInput(),
     );
@@ -335,7 +336,7 @@ describe("sendMessageHandler — os 6 desfechos do envio", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const msg = await sendMessageHandler(
-      makeSupabase(conversationRow()),
+      dubleDo(conversationRow()),
       ctx,
       textInput({
         type: "image",
@@ -359,7 +360,7 @@ describe("sendMessageHandler — os 6 desfechos do envio", () => {
     const fetchMock = vi.fn(async (..._args: unknown[]) => Response.json({ key: { id: "TEXT1" } }));
     vi.stubGlobal("fetch", fetchMock);
 
-    const msg = await sendMessageHandler(makeSupabase(conversationRow()), ctx, textInput());
+    const msg = await sendMessageHandler(dubleDo(conversationRow()), ctx, textInput());
 
     expect(msg.status).toBe("sent");
     expect(msg.external_id).toBe("TEXT1");
@@ -386,7 +387,7 @@ describe("sendMessageHandler — os 6 desfechos do envio", () => {
       vi.fn(async () => new Response("boom", { status: 500 })),
     );
 
-    const msg = await sendMessageHandler(makeSupabase(conversationRow()), ctx, textInput());
+    const msg = await sendMessageHandler(dubleDo(conversationRow()), ctx, textInput());
 
     expect(msg.status).toBe("failed");
     expect(msg.error_code).toBe("waha_error");
@@ -406,7 +407,7 @@ describe("sendMessageHandler — os 6 desfechos do envio", () => {
       }),
     );
 
-    const msg = await sendMessageHandler(makeSupabase(conversationRow()), ctx, textInput());
+    const msg = await sendMessageHandler(dubleDo(conversationRow()), ctx, textInput());
 
     expect(msg.status).toBe("failed");
     expect(msg.error_code).toBe("waha_error");
@@ -468,7 +469,7 @@ describe("sendMessageHandler — os 6 desfechos do envio", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const msg = await sendMessageHandler(
-      makeSupabase(conversationRow()),
+      dubleDo(conversationRow()),
       ctx,
       textInput({
         type: "image",
@@ -492,7 +493,7 @@ describe("sendMessageHandler — os 6 desfechos do envio", () => {
     vi.stubGlobal("fetch", vi.fn());
 
     const msg = await sendMessageHandler(
-      makeSupabase(conversationRow({ phoneNumber: null, waIdentity: null })),
+      dubleDo(conversationRow({ phoneNumber: null, waIdentity: null })),
       ctx,
       textInput(),
     );
@@ -601,7 +602,7 @@ describe("sendMessageHandler — os 6 desfechos do envio", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const msg = await sendMessageHandler(
-      makeSupabase(conversationRow(), null, { semColunaArquivada: true }),
+      dubleDo(conversationRow(), null, { semColunaArquivada: true }),
       ctx,
       textInput(),
     );
@@ -638,7 +639,7 @@ describe("sendMessageHandler — token de servidor (api_token) no ponto de uso",
     vi.stubGlobal("fetch", vi.fn());
 
     const msg = await sendMessageHandler(
-      makeSupabase(conversationRow()),
+      dubleDo(conversationRow()),
       { ...ctx, actor: tokenDeServidor },
       textInput(),
     );
@@ -692,7 +693,7 @@ describe("sendMessageHandler — token de servidor (api_token) no ponto de uso",
     vi.stubGlobal("fetch", vi.fn());
 
     const msg = await sendMessageHandler(
-      makeSupabase(conversationRow()),
+      dubleDo(conversationRow()),
       { ...ctx, actor: tokenDeServidor },
       textInput(),
     );

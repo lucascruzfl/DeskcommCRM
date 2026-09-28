@@ -226,6 +226,8 @@ function makeSupabase(botSilencedUntil: string | null, snapshot?: () => Record<s
   return { supabase: transporteDoTeste.client, patches };
 }
 
+const dubleDo = makeSupabase;
+
 const input = { conversation_id: CONV, type: "text", body: "oi" } as SendMessageInput;
 
 function wahaConfigured() {
@@ -313,7 +315,7 @@ describe("sendMessageHandler — silêncio da IA de 5min após resposta manual h
       requestId: "req-4",
     };
     const trintaMin = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-    const { supabase, patches } = makeSupabase(trintaMin);
+    const { supabase, patches } = dubleDo(trintaMin);
 
     await sendMessageHandler(supabase, ctx, input);
 
@@ -329,7 +331,7 @@ describe("sendMessageHandler — silêncio da IA de 5min após resposta manual h
       requestId: "req-5",
     };
     const umMin = new Date(Date.now() + 60 * 1000).toISOString();
-    const { supabase, patches } = makeSupabase(umMin);
+    const { supabase, patches } = dubleDo(umMin);
 
     const before = Date.now();
     await sendMessageHandler(supabase, ctx, input);
@@ -401,7 +403,7 @@ it("sink recusa close/reopen ocorrido depois da primeira leitura e receiver rece
     expect(reads).toBe(3);
     expect(received.filter((url) => url.endsWith("/sendText"))).toHaveLength(0);
     // Controle positivo: o mesmo handler e transporte chegam ao receiver quando vigente.
-    await sendMessageHandler(makeSupabase(null).supabase, ctx, input);
+    await sendMessageHandler(dubleDo(null).supabase, ctx, input);
     expect(received.filter((url) => url.endsWith("/sendText"))).toHaveLength(1);
   } finally {
     await new Promise<void>((resolve) => receiver.close(() => resolve()));

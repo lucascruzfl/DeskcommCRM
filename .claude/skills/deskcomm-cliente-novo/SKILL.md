@@ -1,6 +1,6 @@
 ---
 name: deskcomm-cliente-novo
-description: 'Guia para montar um cliente novo no DeskcommCRM por nicho — clínica, imobiliária, serviços/agência, curso/infoproduto, loja, provedor de internet — incluindo clientes gerenciados e criando os agentes de IA, roteadores, follow-ups, base de conhecimento, memória e funil, na ordem certa, pela tela ou pelas ferramentas MCP autorizadas existentes. Use SEMPRE que alguém quiser "configurar o CRM para um cliente", "criar o agente da clínica", "montar o atendimento", "que prompt eu uso", "como faço o roteador/follow-up", "subir a base de conhecimento", ou terminou o onboarding e pergunta "e agora?" — inclusive agências implantando para terceiros. Faz a triagem, monta o pacote do nicho como texto pronto para colar e conduz tela a tela até o teste.'
+description: 'Guia para montar um cliente novo no DeskcommCRM por nicho — clínica, imobiliária, serviços/agência, curso/infoproduto, loja, escritório de advocacia, provedor de internet — incluindo clientes gerenciados e criando agentes de IA, roteadores, follow-ups, base de conhecimento, memória e funil, na ordem certa, pela tela ou pelas ferramentas MCP autorizadas existentes. Use SEMPRE que alguém quiser configurar o CRM para um cliente, criar o agente da clínica, montar o atendimento, pedir um prompt, configurar roteador/follow-up, subir a base de conhecimento, ou terminou o onboarding e pergunta e agora — inclusive agências implantando para terceiros. Faz a triagem, monta o pacote do nicho como texto pronto para colar e conduz tela a tela até o teste.'
 metadata:
   publico: leigo, agência, implantador
   ponto-de-partida: criação gerenciada ou configuração após o onboarding
@@ -44,14 +44,14 @@ quem recebe, o próximo passo e quando devolver à IA; não prometa resolução 
 Pergunte, uma por vez: a instalação já está no ar e o onboarding terminou (nome do negócio,
 WhatsApp conectado, atendente básico, funil)? É para o próprio negócio ou para um cliente da
 agência? A organização já existe ou é preciso criar um cliente gerenciado? Qual o nicho —
-clínica/consultório, imobiliária, serviços/agência/obra, curso/mentoria/infoproduto, loja ou
+clínica/consultório, imobiliária, serviços/agência/obra, curso/mentoria/infoproduto, loja, escritório de advocacia ou
 **provedor de internet (ISP)**?
 
 Sem instalação: guia `deskcomm-instalar`. Criação gerenciada: siga
 `references/cliente-gerenciado.md`, com os presets `managed/aesthetic-clinic` e
 `managed/internet-provider`; só platform_admin ativo com scope full cria. Depois o gestor usa o
 membership oficial e o organization switcher para terminar a implantação. Sem WhatsApp conectado,
-o agente de WhatsApp não publica: precisa do número WORKING. Outro nicho: pacote genérico.
+o agente de WhatsApp não publica: precisa do número WORKING. Outro nicho: pacote genérico adaptado com a triagem.
 
 ## Passo 1 — a triagem
 

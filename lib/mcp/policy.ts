@@ -123,6 +123,10 @@ export function managedAreaOfTool(tool: McpToolDefinition): NavDestinationId | n
     crm_assign_conversation: "/app/inbox",
     crm_list_messaging_channels: "/app/inbox",
     crm_get_lead_import_instructions: "/app/contacts",
+    crm_get_honorarios_contrato: "/app/honorarios",
+    crm_list_honorarios_parcelas: "/app/honorarios",
+    crm_preparar_proposta: "/app/proposals",
+    crm_draft_proposal: "/app/proposals",
   };
   const exact = exactToolArea[tool.name];
   if (exact) return exact;

@@ -127,6 +127,12 @@ const ESCRITA_QUE_E_TRABALHO_DE_ATENDENTE: ReadonlyArray<string> = [
   "crm_mark_conversation_read",
   "crm_create_internal_note",
   "crm_delete_internal_note",
+  // `lib/mcp/tools/propostas.ts` — exige `agent`, de propósito. Rascunhar
+  // proposta é o mesmo tipo de escrita de `crm_create_lead`: cria um registro
+  // que uma PESSOA sempre revisa antes de qualquer efeito externo (nunca
+  // envia — só o manager envia). O dano máximo é um rascunho a mais para
+  // descartar.
+  "crm_draft_proposal",
   // `app/api/v1/conversations/[id]/drafts/` — POST exige `agent` (auth-dual).
   // Paridade medida com a própria rota: quem integra e quem atende criam
   // rascunho com o MESMO papel. O poder concedido é o MENOR possível — a tool

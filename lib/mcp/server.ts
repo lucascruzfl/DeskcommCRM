@@ -13,6 +13,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { z } from "zod";
 
 import type { ModuloOpcional } from "@/lib/instalacao/modulos";
+import type { CapacidadeDaOrganizacao } from "@/lib/organizacao/capacidades";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { auditMcpToolCall } from "./audit";
 import { ensureRole, ensureScope, type McpAuthResult } from "./auth";
@@ -20,7 +21,7 @@ import { authorizeTool } from "./policy";
 import { toolsForAuth } from "./registry";
 import { McpToolError, mcpErrorPayload, sanitizeMcpPayload } from "./errors";
 import { verificarTetoMcp } from "./rate-limit";
-import { deModuloDesligado } from "./tools/catalog";
+import { deCapacidadeDesligada, deModuloDesligado } from "./tools/catalog";
 import { higienizarUuidsDeAterro } from "./uuid-de-aterro";
 import type { McpContext } from "./types";
 
@@ -46,6 +47,7 @@ export function createMcpServer(
   auth: McpAuthResult,
   requestId: string,
   modulosLigados: readonly ModuloOpcional[] = [],
+  capacidadesLigadas: readonly CapacidadeDaOrganizacao[] = [],
   idempotencyKey?: string,
 ): McpServer {
   const server = new McpServer({
@@ -57,6 +59,7 @@ export function createMcpServer(
 
   for (const tool of toolsForAuth(auth)) {
     if (deModuloDesligado(tool.name, modulosLigados)) continue;
+    if (deCapacidadeDesligada(tool.name, capacidadesLigadas)) continue;
     server.registerTool(
       tool.name,
       {

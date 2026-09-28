@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import type { Actor } from "@/lib/api/handlers/types";
 import { emitLeadActivity } from "@/lib/leads/activity-emitter";
 import type { Tarefa } from "@/lib/tarefas/tipos";
-import type { Actor } from "@/lib/api/handlers/types";
 
 /**
  * O LAÇO DE RETORNO DA TAREFA (invariante 7 do Sistema Vivo).
@@ -20,6 +20,20 @@ import type { Actor } from "@/lib/api/handlers/types";
  * achar que a tarefa não foi criada e criar de novo). O que a falha não pode é
  * sumir — por isso ela vai para o `console` do servidor via o logger padrão do
  * emissor, que devolve `{ ok, error }` em vez de lançar.
+ *
+ * O LAÇO também vale para a tarefa automática (#1540): `lib/tarefas/criar-tarefa.ts`
+ * faz o MESMO INSERT — sem ele, o card do lead mostrava a conversa parar sem
+ * nenhum sinal de que o sistema marcou um retorno.
+ *
+ * ═══ QUEM ASSINA A LINHA ═══
+ *
+ * É `Actor` e não um `actorUserId: string` porque a terceira porta desta
+ * função — a tarefa criada pelo SISTEMA (cron de silêncio, nó `internal_task`)
+ * — não tem pessoa a nomear, e aí a escolha é entre atribuir a linha a alguém
+ * que não fez nada ou não escrever a linha. Nenhuma das duas. O ator vai
+ * explícito em cada chamador: `user` nas rotas da tela, `webhook_source` na
+ * tarefa automática, que `actorParaAtividade` traduz para `system`
+ * (`lib/leads/activity-emitter.ts`, o mesmo padrão de `nascimento-do-lead.ts`).
  */
 export async function registraAtividadeDaTarefa(
   supabase: SupabaseClient,

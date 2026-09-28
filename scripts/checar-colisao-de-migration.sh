@@ -365,6 +365,26 @@ if [ $((outras_medidas + prs_medidos)) -gt 0 ] && [ -n "$ultimo" ] && [ -n "$ult
 fi
 
 falhou=0
+# Hashes dos arquivos já publicados em v1.57.0-mcp. Esta exceção só vale
+# se o SQL oficial com o NNNN ocupado estiver preservado sob 0486–0499.
+hash_managed_157() {
+  case "$1" in
+    0462) echo 71a8cd388cf6b9a8ba5d2325d7e92d0f60fb233e1708b4926b13744bc2fbfae7 ;;
+    0463) echo f97aa083bb4f73b2d15515bd3b9c38053b63094970b333ee6caf3221c5379a14 ;;
+    0464) echo 1092d1e21a08d00c85cdf0e3bbd09237f0d46be8783ac33941b54d432f0e348f ;;
+    0465) echo 8555a1eebc1ca5ae2d65cff3c9df31f81bb66623f30905619812da248bebb48c ;;
+    0466) echo 1c91665d795cc7bf2b6aaee562f29707ac930a25cc1ce5cbcf468e7a3a48c5b5 ;;
+    0467) echo 9512f69ee26146ffcf0a882272cbbef4866002fb20ad3d30f5d761938e07cf05 ;;
+    0468) echo 4e25358b398cd01605393a85cbf989bdbcfc36e460027a4fac652bfc7e4ce50f ;;
+    0469) echo f1d63957b9fef04ebddca021a5fde664c7781f51ec739b0f9fd5f574808614c7 ;;
+    0470) echo 616a62ab4437626ac853bfa5ba2a14897082ecacf6e594a064176c31dd97b7bc ;;
+    0471) echo 6da36e434b88483e89eeb76c894b96ac268dbe2ff0edbac0bc69f0bec37432de ;;
+    0472) echo 9ff00167afc360921d0aaa44c13bedfc8f52a0b6234e1586ca537166e134d96e ;;
+    0473) echo 3ddde0cff5c9a285029d1192a7d1933860569655da7ed8a873c590aa943928d9 ;;
+    0474) echo c9314644e851003bc8df2fa7ed9ff5d5e9ae4cbc19c72bc7bfe42462b3a79db2 ;;
+    0475) echo 2bd34b9adff5497c64111eaf8b8dd6cfa257478f9e0133f270ec1a16a5c8778b ;;
+  esac
+}
 while IFS= read -r nome; do
   [ -z "$nome" ] && continue
   caminho="supabase/migrations/$nome"
@@ -380,6 +400,20 @@ while IFS= read -r nome; do
 
   colisao_n="$(grep -E "^[0-9]{14}_${nnnn}_.+\.sql$" <<<"$base_arvore" || true)"
   colisao_t="$(grep -E "^${ts}_[0-9]{4}_.+\.sql$" <<<"$base_arvore" || true)"
+  if [ -n "$(hash_managed_157 "$nnnn")" ] && [ -n "$colisao_n" ] && [ -z "$colisao_t" ]; then
+    sufixo="$(printf '%02d' "$((10#$nnnn - 458))")"
+    esperado="202609272015${sufixo}_${nnnn}_"
+    novo_n="$(printf '%04d' "$((10#$nnnn + 24))")"
+    integrado="${colisao_n/_${nnnn}_/_${novo_n}_}"
+    hash_mcp="$(git show "HEAD:$caminho" 2>/dev/null | sha256sum | cut -d' ' -f1)"
+    hash_oficial="$(git show "$BASE:supabase/migrations/$colisao_n" 2>/dev/null | sha256sum | cut -d' ' -f1)"
+    hash_integrado="$(git show "HEAD:supabase/migrations/$integrado" 2>/dev/null | sha256sum | cut -d' ' -f1)"
+    if [[ "$nome" == "$esperado"* ]] && [ "$hash_mcp" = "$(hash_managed_157 "$nnnn")" ] \
+      && [ "$hash_oficial" = "$hash_integrado" ]; then
+      echo "::notice file=$caminho::${nnnn} MCP histórica preservada; oficial integrada como ${novo_n} com timestamp e bytes iguais."
+      colisao_n=""
+    fi
+  fi
   # A distribuição MCP já publicou sua 0382. A 0382 oficial, de conteúdo
   # diferente, foi integrada como 0385 no fork mantendo o timestamp original
   # (identidade do Supabase). Aceitar SOMENTE esse par de bytes evita mandar uma
