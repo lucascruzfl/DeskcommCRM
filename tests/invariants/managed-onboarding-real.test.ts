@@ -129,7 +129,7 @@ describe.each(Object.values(MANAGED_CLIENT_PRESETS))("RPC onboarding $id", (pres
 
     it("migration forward e reaplicação preservam policy, convite e memberships existentes", () => {
       const migration = readFileSync(
-        "supabase/migrations/20260928180000_0483_presets_oficiais_onboarding_gerenciado.sql",
+        "supabase/migrations/20260928220000_0485_presets_oficiais_onboarding_gerenciado.sql",
         "utf8",
       );
       const output = sql(`begin; ${fixture}

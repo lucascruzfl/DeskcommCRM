@@ -45023,7 +45023,7 @@ grant execute on function public.fn_update_budget_consumption() to service_role;
 -- Tabelas novas também recebem as travas de suporte, após todo o apêndice.
 do $f$ begin perform public.fn_aplicar_travas_de_suporte(); end $f$;
 
--- ---- presets oficiais do onboarding gerenciado (migration 0483) ----
+-- ---- presets oficiais do onboarding gerenciado (migration 0485) ----
 -- Presets oficiais do onboarding gerenciado. Gerado por:
 -- pnpm exec tsx scripts/gerar-managed-onboarding-rpc.ts
 -- Sem backfill: políticas já persistidas permanecem intactas.
