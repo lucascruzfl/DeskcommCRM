@@ -1,8 +1,21 @@
 # A triagem — o que perguntar, em que ordem, e por que o sistema precisa disso
 
 Uma pergunta por vez. Cada bloco existe porque uma tela ou uma regra do produto exige a resposta;
-o "por quê" está ao lado para você explicar quando a pessoa hesitar. Registre tudo em
-`pacote-<cliente>.md`.
+o "por quê" está ao lado para explicar quando a pessoa hesitar. Registre decisões e pendências
+em `pacote-<cliente>.md`, sem segredos ou dados pessoais. Credenciais entram somente na superfície
+oficial; não peça a chave na conversa nem a copie para documentação.
+
+## 0. Organização e modelo de gestão
+
+| pergunta | por quê |
+|---|---|
+| É o próprio negócio ou cliente da agência? A organização já existe? | decide entre configurar o tenant atual e o onboarding de cliente gerenciado |
+| Qual nicho: clínica, imobiliária, serviços, curso, loja ou provedor de internet (ISP)? | escolhe o pacote; ISP tem limites de cobertura, calendário e billing próprios |
+| Se vai criar managed: o operador é platform_admin ativo scope full? | admin comum, manager e agent não criam; `cliente-gerenciado.md` explica o preflight e os gates |
+| Quem será o gestor e quem receberá o convite oficial? | gestor ganha membership admin; cliente é convidado agent e acessa pelo organization switcher |
+
+Em managed, consulte `managed/aesthetic-clinic` ou `managed/internet-provider` e as áreas
+client/agency/shared/not_applicable. Não proponha criar outro tenant se o cliente já tem um.
 
 ## 1. O negócio
 
@@ -24,15 +37,15 @@ o "por quê" está ao lado para você explicar quando a pessoa hesitar. Registre
 
 | pergunta | por quê |
 |---|---|
-| Qual provedor (OpenRouter, Anthropic, OpenAI, Google) e a chave | credencial precisa ser **validada** para publicar; Google só funciona como credencial da organização |
-| Tem chave da OpenAI para áudio e base de conhecimento? | sem ela o agente não ouve áudio nem consulta documentos — e não avisa |
+| Qual provedor (OpenRouter, Anthropic, OpenAI, Google) e se a credencial já foi cadastrada | credencial precisa ser **validada** para publicar; Google só funciona como credencial da organização |
+| Tem chave da OpenAI para áudio e base de conhecimento? | sem chave resolvida na organização ou instalação, transcrição/indexação ficam indisponíveis; confira o estado e a pendência |
 | Teto de gasto mensal com IA | o produto pausa o agente ao estourar; sem teto, não pausa |
 
 ## 4. O funil
 
 | pergunta | por quê |
 |---|---|
-| As etapas do pacote do nicho servem? Quer renomear alguma? | exatamente uma etapa "ganhou" e uma "perdeu"; 4 a 8 etapas |
+| As etapas do pacote do nicho servem? Quer renomear alguma? | revise os limites da tela/schema atual; uma etapa de ganho e uma de perda, com motivos distintos para os fechamentos ISP |
 | Como vocês chamam o cliente, o negócio, o "ganhou" e o "perdeu"? (paciente/consulta marcada; interessado/fechou) | é o vocabulário que aparece na tela e que o agente usa para não falar "lead" com paciente |
 | Motivos de perda que valem registrar | vão para a lista de motivos e para a análise depois |
 
@@ -83,12 +96,28 @@ só se a tabela existir.
 ## 11. Automações e integrações
 
 Formulário do site, anúncios (Meta), loja (Nuvemshop), agenda (Google): o que entra no funil e o que
-o agente faz quando entra.
+o agente faz quando entra. Para ISP, calendário OFF inicialmente; cobertura e billing precisam de
+fonte real. Financeiro do CRM não substitui a fatura de assinante.
 
 ## 12. O time
 
 Quem atende quando a IA passa, com que e-mail e papel (atendente, gerente, admin); como as
-conversas se distribuem (manual ou rodízio).
+conversas se distribuem (manual ou rodízio). A IA atende normalmente; quando precisa de pessoa,
+abre caso/passagem, e o humano assume no Inbox. Combine retorno à IA depois da resolução.
+
+## 13. Provedor de internet — dados e limites antes da oferta
+
+| pergunta | por quê |
+|---|---|
+| Quais regiões atendem e quem confirma cobertura? Existe integração funcionando ou verificação manual? | não há consulta ISP de cobertura no preset; endereço/CEP/bairro são dados para qualificar, não prova de cobertura |
+| Quais planos, preços e condições oficiais podem ser apresentados? | Produtos é catálogo comercial simples; não modela assinatura, periodicidade ou contrato |
+| Quais dados são necessários para qualificar e depois contratar? | coletar endereço/CEP/bairro, telefone e plano de interesse quando aplicável, sem pedir documentos sensíveis no chat |
+| Quem recebe Comercial, Suporte, Financeiro e Instalação, e em qual horário? | os assuntos têm destinos distintos; queda de internet requer triagem conservadora e humano quando necessário |
+| Como preservar quem está sem cobertura e rever na expansão? | classificar sem apagar, com tag/motivo e próximo passo; o retorno depende de revisão real da equipe |
+| Como a equipe confirma instalação e informa fatura hoje? | agenda OFF; instalação/visita pode ter agenda futura, fatura/PIX/pagamento/desbloqueio dependem de integração real futura |
+
+Não pergunte chave PIX para colocá-la como texto fixo. Não prometa segunda via, baixa de pagamento,
+desbloqueio ou visita agendada automaticamente sem ferramenta e fonte reais.
 
 ## O que você não pergunta
 

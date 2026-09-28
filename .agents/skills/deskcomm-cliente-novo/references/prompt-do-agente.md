@@ -68,7 +68,21 @@ Mensagens curtas, uma pergunta por vez, sem jargão. {emoji: nunca / com parcim�
 
 O botão **Testar** da versão roda o motor real em modo sandbox com uma mensagem: mostra o texto
 proposto, os portões que passaram ou vetaram, as ações que o agente tentaria. Limites: uma
-mensagem sem histórico, contato fictício, consome crédito. Roteiro por nicho em `nichos.md`.
+mensagem sem histórico, contato fictício, consome crédito. `crm_test_ai_agent_version` oferece
+prévia controlada via MCP autorizado (`por-arquivo.md`). Roteiro por nicho em `nichos.md`, incluindo
+ISP. A prévia não prova roteamento, envio ou tomada humana: valide esses passos no Inbox.
+
+## Operação híbrida e ISP
+
+A IA atende normalmente. Se não consegue resolver ou o assunto exige pessoa, abre caso/passagem
+para atendimento humano; o humano pode assumir e devolver à IA quando apropriado. Descreva no
+prompt as situações de passagem, sem prometer que todo assunto termina automaticamente.
+
+No ISP, queda de internet segue triagem conservadora com orientações aprovadas, escalando ao
+suporte quando necessário. Cobertura depende de verificação real, e sem cobertura permanece
+classificado e recuperável para expansão. Agenda/calendário fica OFF no preset inicial.
+Financeiro do CRM não é fonte de fatura do assinante; fatura, PIX, pagamento e desbloqueio
+exigem integração oficial futura. PIX nunca deve ser estático ou inventado.
 
 ## Depois: otimizar com dados
 

@@ -1,44 +1,57 @@
 ---
 name: deskcomm-cliente-novo
-description: 'Guia para montar um cliente novo no DeskcommCRM por nicho — clínica, imobiliária, serviços/agência, curso/infoproduto, loja — criando os agentes de IA, roteadores, follow-ups, base de conhecimento, memória e funil, na ordem certa e pela tela. Use SEMPRE que alguém quiser "configurar o CRM para um cliente", "criar o agente da clínica", "montar o atendimento", "que prompt eu uso", "como faço o roteador/follow-up", "subir a base de conhecimento", ou terminou o onboarding e pergunta "e agora?" — inclusive agências implantando para terceiros. Faz a triagem, monta o pacote do nicho como texto pronto para colar e conduz tela a tela até o teste.'
+description: 'Guia para montar um cliente novo no DeskcommCRM por nicho — clínica, imobiliária, serviços/agência, curso/infoproduto, loja, provedor de internet — incluindo clientes gerenciados e criando os agentes de IA, roteadores, follow-ups, base de conhecimento, memória e funil, na ordem certa, pela tela ou pelas ferramentas MCP autorizadas existentes. Use SEMPRE que alguém quiser "configurar o CRM para um cliente", "criar o agente da clínica", "montar o atendimento", "que prompt eu uso", "como faço o roteador/follow-up", "subir a base de conhecimento", ou terminou o onboarding e pergunta "e agora?" — inclusive agências implantando para terceiros. Faz a triagem, monta o pacote do nicho como texto pronto para colar e conduz tela a tela até o teste.'
 metadata:
   publico: leigo, agência, implantador
-  ponto-de-partida: depois do onboarding (o wizard para no funil e nos convites)
+  ponto-de-partida: criação gerenciada ou configuração após o onboarding
 ---
 
 # Montar um cliente novo, por nicho
 
-O onboarding do produto vai até o funil e os convites. O que faz um agente **vender de verdade**
-para um nicho — o prompt que conhece o negócio, o roteador quando há mais de um agente, os
-follow-ups que puxam quem sumiu, a base de conhecimento, a memória da organização, as capacidades
-certas — fica para depois, e não há tela que conduza isso. Este guia é o passo 8 que o wizard não
-tem. Um usuário pediu exatamente isto na discussão #673 do repositório.
+Este guia monta a operação por nicho depois do onboarding e também orienta a criação de
+**cliente gerenciado** (managed client) pela agência. O onboarding gerenciado provisiona a
+organização, a política de áreas, o membership do gestor e o convite oficial; não monta agentes,
+funil ou tags de ISP. A implantação continua com prompt, roteamento, follow-ups, conhecimento,
+memória e capacidades revisados para o negócio.
+
+O atendimento é **IA + humano**: a IA atende normalmente, abre caso/passa para atendimento humano
+quando precisa de uma pessoa ou não consegue resolver, e o humano pode assumir no Inbox. Combine
+quem recebe, o próximo passo e quando devolver à IA; não prometa resolução automática de tudo.
 
 ## Como você age
 
 - **Triagem antes de qualquer configuração.** Você não sabe o negócio da pessoa; ela sabe. Uma
   pergunta por vez, do que o sistema exige (`references/triagem.md`).
-- **Monta o pacote como texto, depois aplica pela tela.** O produto tem portões que só a tela
-  atravessa (auditoria, publicação com validação, indexação da base). Não crie nada por SQL — o
-  motor lê a **versão publicada** do agente, não a tabela; editar direto não muda nada e pula a
-  auditoria. O caminho por arquivo, para técnicos, está em `references/por-arquivo.md`.
+- **Monta o pacote como texto e usa os caminhos oficiais.** Pela tela, siga
+  `references/pela-tela.md`; para MCP, confira as ferramentas e limites em
+  `references/por-arquivo.md`. Há configuração via MCP, mas nem toda configuração tem tool.
+  Não configure por SQL: isso pula validação, auditoria e eventos; o agente usa a versão publicada.
+- **Cliente gerenciado tem permissões próprias.** Leia `references/cliente-gerenciado.md` antes
+  de criar ou administrar um. Preset de áreas não concede acesso universal nem instala o pacote
+  operacional do nicho.
 - **Não inventa regra de negócio.** Preço, prazo, política de cancelamento, horário: vêm da
   pessoa ou dos documentos dela. O que não está escrito vira pergunta, não suposição.
 - **Não repete no prompt o que o motor já impõe.** Apresentar-se como assistente, não inventar
   preço, respeitar STOP, horário de envio, promessa sem caso aberto — tudo isso é portão mecânico
   (`references/prompt-do-agente.md`). Prompt que repete gasta contexto e vaza vocabulário.
-- **Publicar é ato humano.** Você deixa tudo em rascunho, testa com o botão Testar (que roda o
-  motor real em modo sandbox) e mostra o que o agente responderia; o clique em "Publicar" é da
-  pessoa, ou vem depois de um "pode publicar" explícito.
+- **Publicar requer decisão da pessoa.** Deixe em rascunho e mostre o teste pelo botão Testar
+  ou pela tool de prévia autorizada. Publique só após autorização explícita; publicação e
+  ativação via MCP têm capabilities distintas. Não repita a aprovação se ela já foi dada no
+  escopo desta implantação.
 
 ## Passo 0 — onde a pessoa está
 
 Pergunte, uma por vez: a instalação já está no ar e o onboarding terminou (nome do negócio,
-WhatsApp conectado, atendente básico, funil)? É para o próprio negócio ou para um cliente? Qual o
-nicho — clínica/consultório, imobiliária, serviços/agência/obra, curso/mentoria/infoproduto, loja?
+WhatsApp conectado, atendente básico, funil)? É para o próprio negócio ou para um cliente da
+agência? A organização já existe ou é preciso criar um cliente gerenciado? Qual o nicho —
+clínica/consultório, imobiliária, serviços/agência/obra, curso/mentoria/infoproduto, loja ou
+**provedor de internet (ISP)**?
 
-Sem instalação: guia `deskcomm-instalar`. Sem WhatsApp conectado: nada publica — o agente exige um
-número com status WORKING. Nicho fora dos cinco: use o pacote genérico e adapte com a triagem.
+Sem instalação: guia `deskcomm-instalar`. Criação gerenciada: siga
+`references/cliente-gerenciado.md`, com os presets `managed/aesthetic-clinic` e
+`managed/internet-provider`; só platform_admin ativo com scope full cria. Depois o gestor usa o
+membership oficial e o organization switcher para terminar a implantação. Sem WhatsApp conectado,
+o agente de WhatsApp não publica: precisa do número WORKING. Outro nicho: pacote genérico.
 
 ## Passo 1 — a triagem
 
@@ -50,8 +63,9 @@ com dois ou mais agentes no mesmo número), os follow-ups (silêncio, no-show, a
 conhecimento (FAQ, documentos, catálogo), a memória (regras da casa), as promessas (piso de preço,
 desconto, parcelas), as automações e o time.
 
-Registre as respostas num arquivo `pacote-<cliente>.md` na pasta que a pessoa indicar — é o
-documento de implantação, e é o que você vai colar nas telas.
+Registre o plano num arquivo `pacote-<cliente>.md` na pasta indicada. Mantenha prompts,
+conteúdo aprovado e pendências; não grave credenciais, tokens, dados pessoais de clientes ou URLs
+privadas. Os exemplos deste guia são fictícios e os campos entre chaves exigem preenchimento.
 
 ## Passo 2 — monte o pacote do nicho
 
@@ -62,44 +76,54 @@ negócio faz, diagnóstico antes da oferta, qualificação, situações e o que 
 limites, estilo, quando chamar uma pessoa. Nada de nomear ferramenta, nada de "encaminhe ao
 gerente Fulano" para tudo que não souber — isso faz o modelo parar de usar a agenda.
 
-## Passo 3 — aplique pela tela, nesta ordem (o schema impõe)
+## Passo 3 — configure pelas superfícies oficiais, nesta ordem
 
-A ordem importa porque cada peça exige a anterior. Tela a tela, com os campos e o que cada um
-faz: `references/pela-tela.md`.
+Resolva as dependências antes de publicar. Os nomes e caminhos atuais estão em
+`references/pela-tela.md`; o equivalente MCP comprovado, quando houver, em
+`references/por-arquivo.md`. No tenant managed, a agência com membership admin configura as áreas
+agency; a pessoa do cliente convidada como agent opera as áreas permitidas.
 
 1. **Conexões** — o número precisa estar WORKING (o onboarding já fez).
-2. **IA › Credenciais** — a chave do provedor (validada em segundo plano; só credencial validada
-   publica) e, se a IA não for OpenAI, a chave da OpenAI para áudio e base de conhecimento.
+2. **IA › Credenciais** — a credencial validada do provedor, ou a chave resolvida pela instalação
+   quando permitido; confira também a chave da OpenAI para áudio e indexação de conhecimento.
 3. **IA › Provedores** — o modelo dos auxiliares (classificador do roteador, follow-up) num modelo
    barato; o do atendimento num modelo que usa ferramentas.
-4. **Funil** — etapas do pacote, exatamente uma "ganhou" e uma "perdeu", o mapa dos 7 passos do
-   agente (novo, contatado, qualificando, qualificado, negociando, ganhou, perdeu), vocabulário.
-5. **IA › Conhecimento** — FAQ (pares pergunta/resposta) e documentos (PDF/MD/TXT até 20 MB);
-   a indexação é assíncrona e precisa da chave da OpenAI — confira o status "pronto".
+4. **Funil** — etapas do pacote, uma "ganhou" e uma "perdeu" (fechamentos ISP como motivos), o mapa dos
+   7 passos do agente (novo, contatado, qualificando, qualificado, negociando, ganhou, perdeu), vocabulário.
+5. **IA › Conhecimento** — FAQ (pares pergunta/resposta) e documentos (PDF/MD/TXT/CSV até 20 MB);
+   a indexação é assíncrona e precisa da chave de embeddings resolvida — confira a indexação concluída.
 6. **IA › Follow-ups** — crie, monte o fluxo (gatilho → espera → mensagem → condição → fim),
    publique. Fluxo não publicado não roda.
 7. **IA › Agentes** — um agente por papel: prompt, provedor/modelo/credencial, canal, funis que
    ele pode mover, fontes de conhecimento, follow-ups que arma, capacidades (pacotes; as críticas
    uma a uma), palavras de passagem para humano, casos. Salve como rascunho.
-8. **Testar** — o botão roda o motor real em modo sandbox com uma mensagem: veja o texto, as ações
-   que ele tentaria e os portões que barraram. Roteiro de 5 mensagens do nicho em
+8. **Testar** — o botão ou `crm_test_ai_agent_version` roda a prévia controlada com uma mensagem:
+   veja o texto e as ações propostas. Isso não prova envio, roteamento ou handoff real. Roteiro do nicho em
    `references/nichos.md`.
-9. **Publicar** — a pessoa clica. Só depois: **IA › Roteadores** (dois ou mais agentes no mesmo
-   número: intenções com descrição e exemplos, fallback), **IA › Memória** (regras da casa),
+9. **Publicar** — pela pessoa ou via MCP expressamente autorizado; confirme também a ativação.
+   Só depois: **IA › Roteadores** (dois ou mais agentes no mesmo número: intenções com descrição,
+   exemplos e fallback), **IA › Memória** (regras da casa),
    **IA › Skills** (instalar `agendamento` e `objecao-preco` se for personalizar), automações,
-   convites do time.
+   convites do time. Para ISP, agenda/calendário fica OFF inicialmente: não instale `agendamento`
+   nem selecione capacidades de agenda. Reveja o pacote *vender*, que inclui agenda; selecione
+   apenas capacidades permitidas para ISP. Financeiro do CRM não consulta fatura de assinante.
 
 ## Passo 4 — entregue
 
 Checklist final, medido na tela: agente publicado com o número certo; roteador ativo com todos
-os membros publicados; follow-ups ativos; base com status "pronto"; memória publicada; um teste
-de cada situação do roteiro respondido como esperado; a pessoa sabe onde muda cada coisa. Se algo
-ficou de fora (sem chave da OpenAI, sem documentos), escreva no `pacote-<cliente>.md` o que falta e
+os membros publicados; follow-ups ativos e ligados ao agente; indexação dos materiais concluída;
+memória revisada (documento publicado quando usado); roteiro do nicho respondido como esperado;
+passagem e tomada por humano verificadas no Inbox; a pessoa sabe onde muda cada coisa.
+No ISP, confirme calendário OFF, preservação de contatos sem cobertura e ausência de cobrança
+fictícia. Em managed, prove também o acesso do gestor e do cliente pelo seletor de organização.
+Se algo ficou de fora (sem chave da OpenAI, sem documentos), escreva no `pacote-<cliente>.md` o que falta e
 o que acontece enquanto falta — não deixe a lacuna invisível.
 
 ## O que você nunca faz
 
-- Não escreve nem altera tabela do banco para configurar (não muda nada e pula a auditoria).
+- Não configura por SQL, não cria impersonation nem supertoken cross-tenant.
+- Não anuncia cobertura, consulta de fatura, PIX, pagamento ou desbloqueio de ISP sem integração
+  real. PIX nunca é estático ou inventado.
 - Não publica versão de agente sem a pessoa ver o teste e mandar publicar.
 - Não põe preço, prazo ou política no prompt se existe catálogo ou base de conhecimento para isso
   — duas fontes de verdade divergem.

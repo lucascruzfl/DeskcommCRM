@@ -1,17 +1,23 @@
 # Pacotes por nicho — o ponto de partida que a triagem completa
 
-Cada pacote traz: funil (as etapas que o onboarding já oferece, com o passo do agente), vocabulário,
+Cada pacote traz: funil-alvo para revisar na implantação, vocabulário,
 esqueleto de prompt preenchido, agentes e intenções do roteador (quando vale ter mais de um),
 follow-ups, perguntas de FAQ para pedir à pessoa, itens de memória, capacidades e promessas, e o
 roteiro de teste. **Nada aqui é regra de negócio do cliente** — preço, prazo, política e horário
 vêm da triagem e dos documentos. Onde está entre chaves, preencha; onde não couber, corte.
+
+O preset managed define áreas e acessos; não instala estes roteiros operacionais. Para clínica
+de estética gerenciada e ISP, veja `cliente-gerenciado.md`. A IA e o humano trabalham juntos:
+a IA atende, pede passagem/abre caso quando necessário, o humano assume e pode devolver à IA.
 
 Capacidades: o pacote **vender** (o padrão do onboarding) já inclui agenda (marcar, remarcar,
 confirmar), consulta ao catálogo e ao conhecimento, notas e movimentação no funil. As capacidades
 **críticas** (enviar mensagem avulsa, cancelar agenda, fechar caso) nunca entram por pacote — ligue
 uma a uma, explicando o que cada uma permite ao agente fazer sozinho. Skills do produto
 `agendamento` e `objecao-preco` já valem para toda organização; "instalar" só serve para
-personalizar o texto.
+personalizar o texto. **Exceção ISP:** calendário OFF inicialmente; não ligue capacidades de
+agenda nem personalize/instale `agendamento` para esse preset. Selecione capacidades permitidas
+individualmente, em vez de aplicar o pacote vender inteiro.
 
 ---
 
@@ -172,6 +178,116 @@ grátis a partir de X. **Teste**: "tem o {produto} no tamanho M?", "quanto fica 
 
 ---
 
+## Provedor de internet (ISP)
+
+**Estado atual:** `managed/internet-provider` é preset oficial de cliente gerenciado. Provisiona
+organização, policy de áreas, membership e convite; **não cria este funil, estas tags ou estes
+agentes**. O pacote abaixo é o alvo operacional planejado para configurar e testar após a triagem.
+Não há integração ISP de consulta de cobertura ou billing nesse preset.
+
+**Funil-alvo:** Novo lead → Verificar cobertura → Plano apresentado → Aguardando documentos →
+Instalação → Cliente ativado. **Fechamentos:** Sem cobertura, Desistiu, Sem retorno.
+O CRM admite uma etapa de ganho e uma de perda: Cliente ativado representa ganho; registre os
+três fechamentos como motivos distintos da etapa de perda escolhida com a pessoa, sem tentar
+criar três etapas marcadas como perda. Revise o mapa dos passos do agente na tela.
+**Vocabulário:** cliente = *interessado/assinante*, negócio = *contratação*, ganhou = *ativado*,
+perdeu = *não ativado*.
+
+**Tags planejadas:** `lead`, `sem-cobertura`, `aguardando-documentos`, `instalacao`,
+`cliente-ativo`, `suporte`, `financeiro`, `cancelamento`. Criar o preset não cadastra essas tags.
+
+**Prompt (preencha com materiais e destinos reais):**
+
+```markdown
+# Quem você é
+Você atende os interessados e assinantes de {provedor}, que oferece internet em {região}.
+Seu nome é {nome}. Fale com clareza e cordialidade, uma pergunta por vez.
+
+# O que você faz primeiro
+Entenda se a pessoa quer contratar, relatar problema, falar de fatura ou acompanhar instalação.
+Na contratação, colete quando necessário endereço, CEP, bairro, telefone, plano de interesse e
+os dados mínimos de qualificação aprovados pela empresa. Consulte o que já foi informado.
+
+# Como você decide o próximo passo
+- Contratar: registre o local para a equipe verificar cobertura. Sem fonte real confirmada,
+  explique que depende dessa verificação. Apresente apenas ofertas dos materiais oficiais.
+- Sem cobertura confirmada pela equipe: registre o motivo, mantenha o interesse e combine como
+  a empresa poderá retomar quando houver expansão. Não apague o contato.
+- Queda de internet: pergunte desde quando, se afeta todos os aparelhos e o estado das luzes.
+  Use só orientações simples aprovadas pelo suporte. Se não resolver, houver dúvida ou pedido
+  de pessoa, passe ao suporte humano com o resumo. Não peça reset de fábrica nem acesso remoto.
+- Segunda via/pagamento: encaminhe ao financeiro para a consulta no sistema oficial. Enquanto
+  não houver integração real, não consulte ou apresente fatura, PIX, pagamento ou desbloqueio.
+- Instalação: registre a solicitação e encaminhe à equipe de instalação para confirmar status
+  e prazo. Não ofereça horários como se já houvesse agenda ativa.
+
+# Limites
+Não promete cobertura, velocidade garantida, desconto, prazo de instalação ou retorno de rede
+sem confirmação oficial. Não realiza configuração de rede nem desbloqueio financeiro.
+Não pede documentos sensíveis no chat; orienta o canal oficial aprovado para essa etapa.
+Quando o atendimento precisar de pessoa, registre a demanda e o que falta confirmar.
+
+# Estilo
+Mensagens curtas, sem jargão técnico ou cobrança de resposta. Sem emoji.
+```
+
+**Roteamento-alvo:**
+
+| Intenção/exemplo fictício | Destino | Conduta |
+|---|---|---|
+| contratar internet / "quero contratar um plano" | Comercial | qualificar, registrar local e pedir verificação real de cobertura |
+| internet caiu / "estou sem internet desde cedo" | Suporte/humano | triagem conservadora; escalar quando necessário; não garantir reparo automático |
+| segunda via / "preciso da segunda via da fatura" | Financeiro | encaminhar à equipe; integração oficial futura, sem fatura ou PIX inventado |
+| quando instalar / "quando vão instalar minha internet?" | Instalação | equipe confirma; calendário OFF, sem agendamento fictício |
+
+Defina os responsáveis humanos de cada destino. Se separar agentes de IA, configure intenções
+no roteador pela tela; um destino humano é passagem/caso, não um agente artificial para simular
+uma integração. Na dúvida, atendimento humano. Não tente configurar `ai_routers` com as tools de
+routing de atendentes. Valide o roteamento real no Inbox além do Testar da versão.
+
+**Sem cobertura:** classifique com `sem-cobertura`, mantenha contato, contexto e motivo de perda,
+sem excluir/anonimizar como rotina de fechamento. Permanece recuperável para expansão futura.
+Combine uma revisão pela equipe; não prometa notificação automática por cobertura que não existe.
+**Desistiu/Sem retorno:** registre o motivo e encerre a régua combinada; silêncio não autoriza
+excluir histórico ou enviar indefinidamente. Respeite consentimento e pedido para parar.
+
+**Follow-ups planejados:** acompanhamento comercial, documentos pendentes e confirmação manual
+da instalação, com prazo/texto definidos pela empresa. Pausar/cancelar ao assumir humano ou
+responder, conforme a política combinada. Não criar cobrança, PIX fixo ou aviso automático de
+expansão/reparo sem evento e fonte oficiais. Sem cobertura não entra em perseguição comercial.
+
+**FAQ para pedir:** planos/preços aprovados, regiões e processo de verificação de cobertura,
+dados/documentos e canal seguro para contratar, procedimento de instalação, orientações básicas
+aprovadas pelo suporte, horário e contatos oficiais, canal para segunda via e cancelamento.
+**Memória:** regras aprovadas de triagem, limites das ofertas, destinos/responsáveis humanos,
+tratamento de sem cobertura e processo de revisão para expansão. **Produtos:** catálogo simples
+para descrever ofertas; não modela assinatura, periodicidade, cobertura ou billing recorrente.
+
+**Calendário e financeiro:** agenda/calendário OFF inicialmente em `managed/internet-provider`,
+inclusive para o gestor. Instalação/visita pode ganhar agenda depois, com revisão da policy e
+capacidades; não é configurável por override de onboarding hoje. Financeiro genérico do CRM não
+é fonte oficial de fatura do assinante. Fatura, boleto, PIX, pagamento e desbloqueio dependem de
+integração real futura; **PIX nunca estático ou inventado**. Assinatura da plataforma não é
+cobrança do assinante.
+
+**Roteiro de teste (somente exemplos fictícios):**
+
+| Mensagem/cenário | Resultado esperado |
+|---|---|
+| "Quero contratar internet para o meu bairro" | Comercial; pergunta local/plano conforme o que falta; não confirma cobertura automaticamente |
+| "A equipe verificou que não tem cobertura aqui" | registra sem cobertura, preserva contato e interesse para expansão, sem prometer consulta/retorno automático |
+| "Minha internet caiu e já tentei a orientação básica" | triagem conservadora e passagem ao suporte humano; humano consegue assumir no Inbox |
+| "Preciso da segunda via e do PIX" | Financeiro; informa encaminhamento, não emite fatura, chave PIX ou confirmação de pagamento |
+| "Paguei, pode desbloquear?" | pede conferência pela equipe oficial; não confirma baixa ou desbloqueia |
+| "Quando vão instalar? Tem horário amanhã?" | Instalação; equipe confirma, sem calendário ativo ou promessa de data |
+| "Quero cancelar e falar com uma pessoa" | registra demanda, classifica cancelamento e passa para humano |
+
+No Testar, confira texto e propostas de ação; depois valide roteamento, caso/passagem e tomada
+humana pela tela. Para managed, confira o seletor de organização, áreas do cliente e recusas de
+configuração técnica/calendário. Não declare integração de cobertura/billing provada pela prévia.
+
+---
+
 ## Outro tipo de negócio (genérico)
 
 **Funil "Clientes"**: Novo contato → Já respondi → Entendendo a necessidade → Proposta enviada →
@@ -186,4 +302,6 @@ pessoa listar, memória com horário, região e o que não fazem.
 Para cada mensagem do nicho: o texto respondeu à pergunta **sem** inventar dado que não está nos
 materiais? Fez **uma** pergunta por vez? Tentou a ação certa (oferecer horário, consultar catálogo,
 registrar, chamar humano)? Algum portão vetou — e o veto veio do prompt (jargão, promessa)? Anote
-o que ajustar no `pacote-<cliente>.md` antes de publicar.
+o que ajustar no `pacote-<cliente>.md` antes de publicar. A prévia não prova roteador, envio ou
+handoff real: valide a passagem, a tomada humana e a retomada pela tela em ambiente de teste.
+Use apenas mensagens/dados fictícios nos roteiros e na evidência.
