@@ -6,7 +6,7 @@
   "mcp_base_commit": "d52ea52591174fbff0e338c0e14a5f45cb11b929",
   "tool_count_is_requirement": false,
   "gaps_a": 0,
-  "mcp_compatible": false,
+  "mcp_compatible": true,
   "pending_domains": [],
-  "note": "Integração cumulativa v1.53.0-mcp → v1.57.0 com Fase 5 e Fase 6 de clientes gerenciados. A tag oficial v1.57.0 é ancestral da árvore; migrations oficiais 0440–0442 e managed 0458–0475 foram reconciliadas. A auditoria fechou os dois gaps A encontrados: configurar aviso de etapa e consultar/restaurar o som padrão, com serviços compartilhados, isolamento por organização e policy MCP preservados. AUDIT-1.57.0.md registra classificação, segurança e gates. Publicação sujeita ao workflow da release; sem tag, release ou deploy nesta PR. Veredito de compatibilidade ainda bloqueado até concluir os gates da árvore final."
+  "note": "Integração cumulativa v1.53.0-mcp → v1.57.0 com Fase 5 e Fase 6 de clientes gerenciados. A tag oficial v1.57.0 é ancestral da árvore; migrations oficiais 0440–0442 e managed 0458–0475 foram reconciliadas. A auditoria fechou os dois gaps A encontrados: configurar aviso de etapa e consultar/restaurar o som padrão, com serviços compartilhados, isolamento por organização e policy MCP preservados. No SHA 31dc7ff27, a PR #24 passou verify, invariants (PG 15 e 17), e2e (cinco partes), imagens-ok e build-and-size. AUDIT-1.57.0.md registra classificação, segurança e limites. Publicação sujeita ao workflow da release; sem tag, release ou deploy nesta PR."
 }

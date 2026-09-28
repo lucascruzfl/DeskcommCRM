@@ -116,19 +116,24 @@ ou manifesto. Esse gate permanece obrigatório no corte da release.
   um expected fail e um skip já declarados pela suíte** (2.497 casos no total).
   Nenhum gate/caso foi removido ou enfraquecido; o harness encerrou seu container.
   A rodada precedeu a atualização do snapshot managed, que é revalidado abaixo.
-- `pnpm test:unit` completo permanece em execução. Uma rodada com Node 22.16
-  falhou no teste real de tsx/PDF; Node 22.23.3 passou os 16 casos sem mudar o
-  teste. A suíte foi reiniciada com essa versão. A cerca de hidratação
-  ultrapassou o timeout local na suíte ampla; isolada, passou os seis casos
-  sem mudar o timeout. A cerca estrutural do CI também passou.
+- `pnpm test:unit --maxWorkers=2` completo com Node 22.23.3: **1.552 arquivos
+  passaram e um falhou; 16.478 casos PASS, um timeout e um expected fail**.
+  A falha foi `hidratacao-useState-nao-le-o-navegador.test.ts`, limite de 15 s,
+  durante a varredura global; isolada, passou os seis casos sem mudar timeout
+  ou assertion. `verify` e cercas estruturais completos passaram no CI de
+  `31dc7ff27`, portanto o resultado local não foi convertido em PASS.
+  A tentativa anterior com Node 22.16 falhou no teste real de tsx/PDF;
+  Node 22.23.3 passou os 16 casos sem mudar o teste.
+- Mapa atualizado com entrada do cliente MCP, resposta/erro e serviço
+  compartilhado: **188 casos PASS** em `mapas-de-arquitetura.test.ts`.
 - Controle negativo após commit, em worktree descartável: remover o
   encaminhamento de `avisar_na_central` derrubou exatamente os dois casos
   previstos; remover a chamada de restauração derrubou exatamente dois de
   14 casos dos sons (paridade e falha de leitura). Fontes restauradas, 16
   testes PASS; worktree descartável removido, branch principal preservada.
 - Build e E2E/QA visual desta candidata não foram medidos localmente: memória
-  limitada e ausência de ambiente E2E fresco configurado. CI/E2E da PR #20
-  medem a base, não certificam as correções desta PR.
+  limitada e ausência de ambiente E2E fresco configurado. Na PR #24, o CI
+  passou build-and-size e as cinco partes E2E no SHA `31dc7ff27`.
 - A proteção de `fork/mcp/stable` foi consultada pela API: requer `verify`,
   `invariants`, `imagens-ok` e `e2e`, com `enforce_admins=true` e force-push
   desabilitado. `build-and-size` também roda e passou; nenhuma regra foi alterada.
@@ -140,15 +145,17 @@ ou manifesto. Esse gate permanece obrigatório no corte da release.
   saída sem metadado privado; a restauração entra na lista de chamadas diretas
   negadas ao cliente agent. Nenhuma policy ou assertion foi afrouxada; nova
   medição local do invariante e onboarding em PG 15 e 17: **25 casos PASS
-  em cada major**, com containers encerrados. Nova medição do CI é exigida.
-  Esta PR precisa repetir os checks no seu próprio SHA. O workflow
+  em cada major**, com containers encerrados. O CI de `31dc7ff27`
+  passou verify, invariants (PG 15 e 17), imagens-ok, build-and-size e E2E
+  (cinco partes e check agregado).
+  O workflow
   `publish-mcp-release.yml` verifica ancestralidade, JSON, salto de banco,
   typecheck, lint, testes, build, quatro imagens e digests antes de publicar.
   Este documento não substitui esses gates nem autoriza atualizar a VPS.
 
-`mcp_compatible = false` mantém o veredito bloqueado enquanto os gates da
-árvore final não estiverem confirmados. A cobertura funcional A não implica
-publicação autorizada. Nenhuma tag
+`mcp_compatible = true` registra a compatibilidade após os gates verdes da
+PR #24 no SHA `31dc7ff27`, com `gaps_a = 0`. A cobertura e os checks desta
+PR não executam o workflow de publicação. Nenhuma tag
 `v1.57.0-mcp`, GitHub Release, manifesto de publicação ou deploy é criada por
 esta PR de preparação.
 
