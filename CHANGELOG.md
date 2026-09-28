@@ -8,6 +8,74 @@ Se você roda o DeskcommCRM numa VPS, **leia a seção da versão para a qual es
 
 ## [Não lançado]
 
+## [1.62.0] — 2026-09-28
+
+### Adicionado
+
+- **Perguntar ao acervo direto da conversa, e a busca do atendente ganha gráfico próprio em Evolução** Quem atende ganha, no painel ao lado da conversa, uma caixa "Acervo" para perguntar sobre o material da própria empresa (as fontes que a IA usa nas respostas). A resposta traz os trechos que passaram no limiar, com a semelhança de cada um, e separa três situações que antes chegavam iguais: o acervo está vazio, a base não tem essa informação, ou há algo parecido abaixo do limiar. É a mesma busca e o mesmo limiar que a IA usa; não existe uma segunda régua para a tela.
+
+  Cada pergunta gasta uma chamada de embedding na chave da organização, então a caixa tem limite de 12 perguntas por pessoa e 60 por organização a cada minuto, e a pergunta vai até 1000 caracteres. Sem chave de embedding cadastrada, a caixa diz isso e aponta Credenciais.
+
+  A pergunta do atendente passa a ser registrada, e a tela de Evolução a mostra num gráfico próprio, "Consultas da equipe ao acervo". Ela não entra nos números do agente nem nas "perguntas de clientes sem resposta". Não há ação para quem opera a VPS: a migração é aditiva e roda sozinha na atualização.
+
+  Contribuição de @webtecnica (#1877, entrou pelo #1882).
+
+- **Anexo de imagem, arquivo, áudio ou vídeo dentro de nota interna** A nota interna de conversa passa a aceitar anexo. Quem escreve nota pode anexar imagem, documento, áudio ou vídeo, e o anexo aparece na própria nota como apoio para o time. Documento aparece como cartão com o tipo e o tamanho do arquivo; o nome original do arquivo não é guardado.
+
+  O arquivo não sai da empresa: ele fica num espaço de armazenamento próprio (`internal-media`), separado da mídia de conversa, e **nunca vai para o cliente no WhatsApp**. Ele também fica fora da retenção por idade da mídia de conversa (a que a empresa configura): enquanto a nota existir, o anexo continua lá.
+
+  Para quem lê a nota, o anexo abre por um endereço temporário (60 segundos) e só se a pessoa puder ver a conversa daquela nota — a mesma regra de permissão que a própria nota já tinha, sem permissão nova.
+
+  **Limpeza**: quando uma nota com anexo é apagada, a rotina diária de limpeza remove o arquivo dela depois de 1 dia. Quando um contato pede exclusão de dados (LGPD), o texto das notas das conversas dele é redigido e o anexo vai para a fila de remoção. A exportação de dados do titular passa a listar as notas internas, com os dados do anexo (tipo, tamanho e caminho), sem o arquivo em si.
+
+  **Para quem opera a VPS**: anexo de nota que continua existindo **não expira** e ocupa o armazenamento da instalação (o mesmo espaço da mídia do WhatsApp). Cada anexo pode ter até 50 MB.
+
+  **Sem mudança de comportamento para a nota sem anexo**: ela continua como estava.
+
+  Contribuição de @webtecnica (#1883).
+
+- **A base de conhecimento pode ser preparada pelo Google (Gemini), não só pela OpenAI** Quem só tem a chave do Google passa a ter base de conhecimento: em **IA › Conhecimento**, o cadastro de chave oferece Google ao lado de OpenAI e OpenRouter, e a tela mostra quem prepara a base hoje, com o botão para trocar. Trocar entre OpenAI e Google **refaz a base inteira** — todo o material é preparado de novo com o novo provedor, e a tela avisa isso antes de trocar. Enquanto o material é refeito, o agente pode não encontrar o que ainda não foi refeito.
+
+  Nada muda para quem já usa a OpenAI: a chave do Google só é usada sozinha quando não há nenhuma chave OpenAI, OpenRouter ou gateway, e trocar é sempre uma escolha feita na tela. Depois que a base é preparada, o provedor fica fixo: cadastrar ou remover uma chave não o troca — se a chave do provedor da base deixar de funcionar, a tela diz isso e oferece a troca, em vez de passar a buscar com outro provedor e não achar nada. Não há mudança no banco: o Google entrega vetores do mesmo tamanho (1536) que a OpenAI. Não exige ação.
+
+  Contribuição de @vgamkt (#1130, entrou pelo #1864).
+
+- **Filtre a lista por várias etiquetas de uma vez — todas (E) ou qualquer uma (OU)** O filtro de etiqueta passa a aceitar mais de uma escolha nas três listas: Inbox, Funil e Contatos. Você marca quantas quiser no menu (o menu não fecha mais a cada clique) e escolhe o sentido:
+
+  - **Todas (E)** — a lista mostra só quem tem todas as etiquetas escolhidas, juntas na mesma caixa (na conversa ou no contato), que era o sentido de filtrar por duas e comparar na cabeça.
+  - **Qualquer uma (OU)** — a lista mostra quem tem pelo menos uma delas, em qualquer caixa.
+
+  O modo aparece no menu só quando há duas ou mais etiquetas, porque com uma ele não muda nada. O gatilho do filtro resume a escolha ("vip +1") e "Limpar filtros" continua limpando tudo. Os filtros continuam nos endereços: `?tag=vip&tag=orçamento` com `&modo=ou`, e qualquer link salvo ou chamada de API com uma etiqueta só segue funcionando igual, sem mudança.
+
+  Uma combinação ainda não é possível: "vip na conversa **e** orçamento no contato", misturando as caixas. Ela fica registrada como decisão de produto pendente — as duas caixas de hoje não a expressam, e o filtro não finge que expressa.
+
+  Contribuição de @webtecnica (#1886, issue #1274).
+
+- **Uma área só mostra todos os recursos opcionais, se estão ligados e onde se ajustam** Os recursos que se ligam e desligam estavam espalhados: os módulos do servidor numa tela chamada "Comportamento", as chaves de cada empresa em pelo menos nove telas, e os que dependem do servidor em tela nenhuma. Agora há um lugar que junta tudo.
+
+  - **Quem administra o servidor:** a entrada **Comportamento** do Admin passa a se chamar **Recursos opcionais**, na mesma tela, em três blocos: **Módulos** (os interruptores de sempre), **Comportamento** (as chaves de sempre, mais o caminho para Cadastro e Destinos internos) e **Depende do servidor**, só leitura, que diz se e-mail, Google Agenda, API oficial da Meta, WhatsApp oficial por parceiro, chamada de voz, Nuvemshop, Google Ads, notificação com a aba fechada e transcrição estão configurados, com o que fazer em uma linha. Nenhum valor de segredo aparece, só "configurado" ou "não configurado". A telefonia por SIP aparece como "não dá para ver daqui": ela vive nos contêineres do servidor, fora do alcance do app.
+  - **Cada empresa:** tela nova em **Configurações › Sua empresa › Recursos opcionais**, para administrador e gerente. Lista os módulos do servidor ("disponível nesta instalação" ou "desligado por quem administra o servidor"), as chaves da empresa com o estado e as dos agentes numa linha só. O botão **Ajustar** leva à tela onde a chave mora. O gerente vê a lista inteira, mas só ganha o botão onde a tela de destino o aceita.
+
+  A tela central não liga nada: quem liga continua sendo a tela de cada assunto, para não existirem dois lugares gravando a mesma chave. Não há mudança no banco. Não exige ação.
+
+  Pedido do mantenedor (#1876).
+
+- **Confira a senha ao entrar ou criar sua conta** O login e o cadastro, inclusive pelo link de convite, permitem mostrar ou ocultar cada senha digitada. No cadastro, o indicador de força ajuda a escolher uma senha melhor sem mudar as regras de aceitação atuais. Crédito: @matheuspedro360.
+
+  Contribuição de @matheuspedro360 (#1871).
+
+### Corrigido
+
+- **O caminho de um arquivo enviado não sai mais da pasta da conversa por `..`** A conferência de que um arquivo pertence à conversa (`isMediaPathOwnedBy`) olhava só o começo do caminho, `{organização}/{conversa}/`. Um caminho como `{organização}/{conversa}/../../{outra}/arquivo` passava nessa conferência. Agora, depois do prefixo, só são aceitos nomes comuns: nada de `..`, `.`, segmento vazio ou barra invertida. A regra vale para o envio de mídia ao cliente e para o anexo da nota interna. Não foi medido se o Storage chegava a resolver o `..`; o conserto fecha a porta sem depender disso. Nada muda para quem opera a instalação.
+
+  Achado na revisão do #1883, de @webtecnica (#1884).
+
+- **O assistente não grava mais no negócio de outro cliente** Quando o assistente anota algo num negócio durante uma conversa (valor, campos, etapa), ele informa qual negócio é — e às vezes informa errado. Medido em produção em 15 de setembro: o cliente respondeu "sim, já tenho os textos", o assistente tentou anotar num negócio que não existia, a anotação foi recusada e a resposta se perdeu. O caso pior não chegava a dar erro: se o código informado fosse de um negócio real de **outro** cliente, no mesmo funil, a anotação era aceita e ia para a ficha errada.
+
+  Agora toda anotação do assistente numa conversa é conferida contra os negócios da pessoa com quem ele está falando. Se o negócio informado é dessa pessoa, segue. Se não é e ela tem um único negócio aberto, a anotação vai para ele. Com nenhum ou com vários abertos, o assistente recebe a recusa com o motivo e segue a conversa, em vez de escolher por palpite. Anotações feitas por pessoas, pela API ou por automações não mudam. Crédito: @paulolimajr77.
+
+  Contribuição de @paulolimajr77 (#1874).
+
 ## [1.61.0] — 2026-09-28
 
 ### Adicionado
@@ -9299,7 +9367,8 @@ Primeira versão marcada do DeskcommCRM. O projeto vinha sendo desenvolvido publ
 
 - **Node 22 é obrigatório para desenvolvimento.** A suíte de invariantes instancia o cliente do Supabase, que exige o `WebSocket` global — nativo apenas a partir do Node 22. Isso não afeta quem apenas hospeda: a VPS roda a imagem pronta.
 
-[Não lançado]: https://github.com/melgarafael/DeskcommCRM/compare/v1.61.0...HEAD
+[Não lançado]: https://github.com/melgarafael/DeskcommCRM/compare/v1.62.0...HEAD
+[1.62.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.61.0...v1.62.0
 [1.61.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.60.0...v1.61.0
 [1.60.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.59.0...v1.60.0
 [1.59.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.58.1...v1.59.0

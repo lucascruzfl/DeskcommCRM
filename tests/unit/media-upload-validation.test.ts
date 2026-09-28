@@ -1,6 +1,25 @@
 import { describe, expect, it } from "vitest";
 
-import { validateOutboundMedia } from "@/lib/messaging/media/upload-validation";
+import { isMediaPathOwnedBy, validateOutboundMedia } from "@/lib/messaging/media/upload-validation";
+
+describe("posse do arquivo no Storage", () => {
+  const org = "org-a";
+  const conversation = "conv-a";
+
+  it("aceita apenas arquivo dentro da conversa", () => {
+    expect(isMediaPathOwnedBy(`${org}/${conversation}/anexo.pdf`, org, conversation)).toBe(true);
+    for (const path of [
+      `${org}/${conversation}/../conv-b/anexo.pdf`,
+      `${org}/${conversation}/./anexo.pdf`,
+      `${org}/${conversation}//anexo.pdf`,
+      `${org}/${conversation}/pasta\\anexo.pdf`,
+      `${org}/conv-b/anexo.pdf`,
+      `${org}/${conversation}/`,
+    ]) {
+      expect(isMediaPathOwnedBy(path, org, conversation), path).toBe(false);
+    }
+  });
+});
 
 describe("validateOutboundMedia", () => {
   it("classifica mimes suportados no kind certo", () => {
