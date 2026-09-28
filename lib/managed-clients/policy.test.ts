@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import ts from "typescript";
+import { MANAGED_CLIENT_PRESETS } from "./presets";
 import { NAV_CATALOG } from "@/lib/navigation/catalogo";
 import {
   buildManagedAreaPolicy,
@@ -10,8 +11,8 @@ import {
   managedAreaForResource,
 } from "./policy";
 
-describe("política canônica das áreas do catálogo", () => {
-  const policy = buildManagedAreaPolicy("managed/aesthetic-clinic");
+describe.each(Object.values(MANAGED_CLIENT_PRESETS))("política $id", (preset) => {
+  const policy = buildManagedAreaPolicy(preset.id);
 
   it("o snapshot contém exatamente os destinos do CRM", () => {
     expect(Object.keys(policy.areas).sort()).toEqual(NAV_CATALOG.map((area) => area.href).sort());
@@ -28,7 +29,7 @@ describe("política canônica das áreas do catálogo", () => {
   );
 
   it("override muda a mesma decisão sem alterar o preset versionado", () => {
-    const changed = buildManagedAreaPolicy("managed/aesthetic-clinic", [
+    const changed = buildManagedAreaPolicy(preset.id, [
       { href: "/app/campaigns", classification: "client" },
     ]);
     expect(canAccessManagedArea(policy, "agent", "/app/campaigns")).toBe(false);
@@ -96,7 +97,7 @@ describe("política canônica das áreas do catálogo", () => {
     const area = managedAreaForResource("settings_sons");
     expect(area).toBe("/app/settings/notifications");
     expect(canAccessManagedArea(policy, "agent", area!)).toBe(true);
-    const restricted = buildManagedAreaPolicy("managed/aesthetic-clinic", [
+    const restricted = buildManagedAreaPolicy(preset.id, [
       { href: "/app/settings/notifications", classification: "agency" },
     ]);
     expect(canAccessManagedArea(restricted, "agent", area!)).toBe(false);

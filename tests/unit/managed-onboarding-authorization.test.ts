@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MANAGED_CLIENT_PRESETS } from "@/lib/managed-clients/presets";
 import { buildManagedAreaPolicy } from "@/lib/managed-clients/policy";
 
 const fixture = vi.hoisted(() => ({
@@ -67,39 +68,41 @@ vi.mock("@/lib/supabase/admin", () => ({
 import { requireOnboardingCtx } from "@/app/actions/onboarding/_shared";
 import { dadosDoPasso } from "@/app/actions/onboarding/montarQuadro";
 
-beforeEach(() => {
-  fixture.policy = buildManagedAreaPolicy("managed/aesthetic-clinic");
-  fixture.role = "agent";
-  fixture.accepted = true;
-  fixture.revoked = false;
-  fixture.tables = [];
-});
+describe.each(Object.values(MANAGED_CLIENT_PRESETS))("ações de configuração $id", (preset) => {
+  beforeEach(() => {
+    fixture.policy = buildManagedAreaPolicy(preset.id);
+    fixture.role = "agent";
+    fixture.accepted = true;
+    fixture.revoked = false;
+    fixture.tables = [];
+  });
 
-describe("ações existentes de configuração não contornam o perfil gerenciado", () => {
-  it("cliente não alcança convite, criação de agente ou escrita do quadro", async () => {
-    await expect(requireOnboardingCtx()).rejects.toMatchObject({ code: "forbidden" });
-    expect(fixture.tables).toEqual(["managed_client_policies", "user_organizations"]);
-  });
-  it.each(["pending", "revoked"])("membership %s não concede configuração", async (kind) => {
-    fixture.role = "admin";
-    fixture.accepted = kind !== "pending";
-    fixture.revoked = kind === "revoked";
-    await expect(requireOnboardingCtx()).rejects.toMatchObject({ code: "forbidden" });
-  });
-  it("gestor com membership oficial mantém a configuração", async () => {
-    fixture.role = "admin";
-    await expect(requireOnboardingCtx()).resolves.toMatchObject({ orgId: fixture.orgId });
-  });
-  it("leitura do quadro não aceita tenant alheio mesmo para gestor", async () => {
-    fixture.role = "admin";
-    await expect(
-      dadosDoPasso("33333333-3333-4333-8333-333333333333", "Clínica"),
-    ).rejects.toMatchObject({ code: "forbidden" });
-    expect(fixture.tables).toEqual(["managed_client_policies", "user_organizations"]);
-  });
-  it("cliente não alcança a leitura administrativa do próprio quadro", async () => {
-    await expect(dadosDoPasso(fixture.orgId, "Clínica")).rejects.toMatchObject({
-      code: "forbidden",
+  describe("ações existentes de configuração não contornam o perfil gerenciado", () => {
+    it("cliente não alcança convite, criação de agente ou escrita do quadro", async () => {
+      await expect(requireOnboardingCtx()).rejects.toMatchObject({ code: "forbidden" });
+      expect(fixture.tables).toEqual(["managed_client_policies", "user_organizations"]);
+    });
+    it.each(["pending", "revoked"])("membership %s não concede configuração", async (kind) => {
+      fixture.role = "admin";
+      fixture.accepted = kind !== "pending";
+      fixture.revoked = kind === "revoked";
+      await expect(requireOnboardingCtx()).rejects.toMatchObject({ code: "forbidden" });
+    });
+    it("gestor com membership oficial mantém a configuração", async () => {
+      fixture.role = "admin";
+      await expect(requireOnboardingCtx()).resolves.toMatchObject({ orgId: fixture.orgId });
+    });
+    it("leitura do quadro não aceita tenant alheio mesmo para gestor", async () => {
+      fixture.role = "admin";
+      await expect(
+        dadosDoPasso("33333333-3333-4333-8333-333333333333", "Clínica"),
+      ).rejects.toMatchObject({ code: "forbidden" });
+      expect(fixture.tables).toEqual(["managed_client_policies", "user_organizations"]);
+    });
+    it("cliente não alcança a leitura administrativa do próprio quadro", async () => {
+      await expect(dadosDoPasso(fixture.orgId, "Clínica")).rejects.toMatchObject({
+        code: "forbidden",
+      });
     });
   });
 });

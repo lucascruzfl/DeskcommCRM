@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MANAGED_CLIENT_PRESETS } from "./presets";
 import { buildManagedAreaPolicy } from "./policy";
 
 const state = vi.hoisted(() => ({
@@ -13,12 +14,25 @@ vi.mock("@/lib/supabase/admin", () => ({
     from: (table: string) => {
       const query = {
         select: () => query,
-        eq: (column: string, value: unknown) => { state.filters.push(`${table}.eq.${column}.${value}`); return query; },
-        is: (column: string, value: unknown) => { state.filters.push(`${table}.is.${column}.${value}`); return query; },
-        not: (column: string, operator: string, value: unknown) => { state.filters.push(`${table}.not.${column}.${operator}.${value}`); return query; },
-        maybeSingle: async () => table === "managed_client_policies"
-          ? { data: state.policy, error: state.policyError ? { message: "db_error" } : null }
-          : { data: state.role ? { role: state.role } : null, error: state.memberError ? { message: "db_error" } : null },
+        eq: (column: string, value: unknown) => {
+          state.filters.push(`${table}.eq.${column}.${value}`);
+          return query;
+        },
+        is: (column: string, value: unknown) => {
+          state.filters.push(`${table}.is.${column}.${value}`);
+          return query;
+        },
+        not: (column: string, operator: string, value: unknown) => {
+          state.filters.push(`${table}.not.${column}.${operator}.${value}`);
+          return query;
+        },
+        maybeSingle: async () =>
+          table === "managed_client_policies"
+            ? { data: state.policy, error: state.policyError ? { message: "db_error" } : null }
+            : {
+                data: state.role ? { role: state.role } : null,
+                error: state.memberError ? { message: "db_error" } : null,
+              },
       };
       return query;
     },
@@ -27,9 +41,9 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 import { managedAreaAllowedForActor } from "./server";
 
-describe("gate de área em server action com service_role", () => {
+describe.each(Object.values(MANAGED_CLIENT_PRESETS))("gate service_role $id", (preset) => {
   beforeEach(() => {
-    state.policy = buildManagedAreaPolicy("managed/aesthetic-clinic");
+    state.policy = buildManagedAreaPolicy(preset.id);
     state.role = "agent";
     state.policyError = false;
     state.memberError = false;
@@ -38,7 +52,9 @@ describe("gate de área em server action com service_role", () => {
 
   it("nega ao cliente uma área da agência e uma não aplicável", async () => {
     expect(await managedAreaAllowedForActor("org", "agent", "/app/ai/agents")).toBe(false);
-    expect(await managedAreaAllowedForActor("org", "agent", "/app/integrations/nuvemshop")).toBe(false);
+    expect(await managedAreaAllowedForActor("org", "agent", "/app/integrations/nuvemshop")).toBe(
+      false,
+    );
   });
 
   it("permite ao gestor com membership aceito a área da agência", async () => {
@@ -48,11 +64,13 @@ describe("gate de área em server action com service_role", () => {
     expect(state.filters).toContain("user_organizations.eq.user_id.manager");
     expect(state.filters).toContain("user_organizations.is.revoked_at.null");
     expect(state.filters).toContain("user_organizations.not.accepted_at.is.null");
-    expect(await managedAreaAllowedForActor("org", "manager", "/app/integrations/nuvemshop")).toBe(false);
+    expect(await managedAreaAllowedForActor("org", "manager", "/app/integrations/nuvemshop")).toBe(
+      false,
+    );
   });
 
   it("a mesma linha de política aplica um override", async () => {
-    state.policy = buildManagedAreaPolicy("managed/aesthetic-clinic", [
+    state.policy = buildManagedAreaPolicy(preset.id, [
       { href: "/app/campaigns", classification: "client" },
     ]);
     expect(await managedAreaAllowedForActor("org", "agent", "/app/campaigns")).toBe(true);
@@ -68,6 +86,8 @@ describe("gate de área em server action com service_role", () => {
 
   it("não atribui preset aos tenants antigos", async () => {
     state.policy = null;
-    expect(await managedAreaAllowedForActor("legacy", "actor", "/app/integrations/nuvemshop")).toBe(true);
+    expect(await managedAreaAllowedForActor("legacy", "actor", "/app/integrations/nuvemshop")).toBe(
+      true,
+    );
   });
 });

@@ -1,5 +1,5 @@
 {
-  "scope": "Todas as funções de public, excluindo extensões; catálogo medido no baseline aplicado em banco descartável durante a Fase 6. Não substitui provas de comportamento e UI.",
+  "scope": "Todas as funções de public, excluindo extensões; catálogo medido no baseline aplicado em banco descartável durante a Fase 6, com revisão da RPC de onboarding na Etapa 7A. Não substitui provas de comportamento e UI.",
   "functions": [
     {
       "signature": "activate_kb_version(uuid,uuid)",
@@ -347,9 +347,9 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "7f04208b27e55b7f1b3961c3f54903a0598570d702bb9a91c8d03fdb6f95a69a",
+      "body_sha256": "0c3821b33735b4fe645c1002bb034b211c3bc37471b4aa01a780273fb53f80ad",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "EXECUTE somente service_role; revalida platform_admin full no banco e chama a RPC oficial para criar organização, policy, membership e convite lógico na mesma transação."
+      "reason": "EXECUTE somente service_role; revalida platform_admin ativo full no banco e aceita apenas o par ID/tipo/modo do snapshot gerado de MANAGED_CLIENT_PRESETS. Preserva RPC oficial, transação, idempotência, policy, membership admin e convite agent. Prova em managed-onboarding-real.test.ts para clínica e ISP."
     },
     {
       "signature": "fn_buscar_trechos_das_fontes(uuid,uuid[],vector,integer,real,text)",

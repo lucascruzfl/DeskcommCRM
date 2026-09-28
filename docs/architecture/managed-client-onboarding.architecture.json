@@ -13,6 +13,7 @@
   ],
   "mainPath": ["tool", "preflight", "service", "rpc", "receipt", "invite", "client"],
   "nodes": [
+    { "id": "presets", "lane": "service", "col": 0, "type": "service", "label": "MANAGED_CLIENT_PRESETS", "sublabel": "clínica e ISP; enums tipados e snapshot SQL oficial, sem backfill" },
     { "id": "tool", "lane": "mcp", "col": 0, "type": "tool", "label": "crm_create_managed_client", "sublabel": "confirm=false só planeja; confirm=true pede execução" },
     { "id": "preflight", "lane": "service", "col": 1, "type": "service", "label": "managedOnboardingService.preflight", "sublabel": "ator full atual, membership de origem, preset, slug, e-mail e recibo" },
     { "id": "service", "lane": "service", "col": 2, "type": "service", "label": "managedOnboardingService.execute", "sublabel": "revalida e coordena envio retomável, sem expor link" },
@@ -37,6 +38,8 @@
     { "id": "e10", "from": "rpc", "to": "manager", "label": "membership admin oficial" },
     { "id": "e11", "from": "manager", "to": "tool", "label": "pode conferir resultado e tenant" },
     { "id": "e12", "from": "service", "to": "audit", "label": "estado visível" },
-    { "id": "e13", "from": "audit", "to": "manager", "label": "falha orienta retry" }
+    { "id": "e13", "from": "audit", "to": "manager", "label": "falha orienta retry" },
+    { "id": "e14", "from": "presets", "to": "preflight", "label": "schema, preset e áreas canônicos" },
+    { "id": "e15", "from": "presets", "to": "rpc", "label": "snapshot SQL gerado e verificado" }
   ]
 }
