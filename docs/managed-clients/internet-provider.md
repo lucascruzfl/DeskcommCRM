@@ -40,7 +40,8 @@ MCP/API anunciam os mesmos schemas. Não existe novo endpoint de criação.
 
 A RPC guarda a projeção dos IDs/tipos/modos oficiais como snapshot SQL gerado por
 `pnpm exec tsx scripts/gerar-managed-onboarding-rpc.ts`. Ao registrar outro preset,
-publique a saída em **nova migration**, apêndice do baseline e MANIFEST; nunca
+publique a saída em **nova migration**, apêndice do baseline antes do bloco final
+`VARREDURA anon` e MANIFEST; nunca
 edite a migration já aplicada. `lib/managed-clients/presets.test.ts` compara a
 última definição das duas fontes SQL com o gerador, para impedir divergência.
 As políticas persistidas não recebem backfill e continuam sendo a autoridade.
