@@ -379,6 +379,8 @@ describe("o handler do cron — a falha do arquivo sai pelo mesmo canal das irm�
       error: { details: { arquivo_forense: { esvaziadas: number; apagadas: number } } };
     };
     expect(corpo.error.details.arquivo_forense).toMatchObject({ esvaziadas: 2, apagadas: 0 });
+    expect(corpo.error.details).not.toHaveProperty("erro");
+    expect(JSON.stringify(corpo)).not.toContain("permission denied");
   });
 
   it("a falha do arquivo NÃO leva a captação junto — ela roda no mesmo tique", async () => {
@@ -418,5 +420,9 @@ describe("o handler do cron — a falha do arquivo sai pelo mesmo canal das irm�
     expect(auditou).toHaveBeenCalledTimes(2);
     const podas = auditou.mock.calls.map((c) => (c[0] as { metadata: { poda: string } }).metadata.poda);
     expect(podas.sort()).toEqual(["webhook_events_log", "webhook_lead_captures"]);
+    const corpo = await resposta.json();
+    expect(corpo.error.details.arquivo_forense_falhou).toBe(true);
+    expect(corpo.error.details).not.toHaveProperty("erro");
+    expect(JSON.stringify(corpo)).not.toContain("permission denied");
   });
 });

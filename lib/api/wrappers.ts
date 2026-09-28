@@ -61,6 +61,10 @@ type FailOptions = {
   details?: unknown;
   /** Campo público já escolhido pelo handler; nunca passe texto bruto do banco. */
   publicField?: string;
+  /** Texto fixo ou construído com dados já autorizados; nunca `error.message`. */
+  publicMessage?: string;
+  /** Progresso operacional estruturado, sem texto de erro nem payload bruto. */
+  publicDetails?: Record<string, unknown>;
   requestId?: string;
   headers?: HeadersInit;
 };
@@ -81,9 +85,11 @@ export function fail(
   const body: ApiError = {
     error: {
       code,
-      message: erroInterno ? "Não foi possível concluir a operação." : message,
+      message: erroInterno ? (opts.publicMessage ?? "Não foi possível concluir a operação.") : message,
       ...(erroInterno
-        ? campoSeguro
+        ? opts.publicDetails !== undefined
+          ? { details: opts.publicDetails }
+          : campoSeguro
           ? { details: { field: campoSeguro } }
           : {}
         : opts.details !== undefined

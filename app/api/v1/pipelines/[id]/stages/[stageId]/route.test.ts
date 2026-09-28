@@ -669,13 +669,11 @@ describe("DELETE /api/v1/pipelines/[id]/stages/[stageId]", () => {
     expect(db.escritas.map((e) => e.table)).toEqual(["crm_leads"]);
     expect(db.tabelas.crm_stages.find((e) => e.id === "e2")?.is_archived).toBe(false);
 
-    // A frase é escrita para leigo — o texto do banco vai em `details`, nunca
-    // colado nela. Sem esta metade, `${error.message}` no meio da mensagem
-    // passa despercebido.
-    const body = (await res.json()) as { error: { message: string; details: { erro: string } } };
+    // A frase explica o próximo passo; o texto bruto do banco não sai na API.
+    const body = (await res.json()) as { error: { message: string; details?: unknown } };
     expect(body.error.message).toContain("«Proposta»");
     expect(body.error.message).not.toContain("connection failure");
-    expect(body.error.details.erro).toBe("connection failure");
+    expect(body.error.details).toBeUndefined();
   });
 });
 

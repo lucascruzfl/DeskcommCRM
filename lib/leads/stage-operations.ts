@@ -550,14 +550,16 @@ export async function arquivarEtapa(
       .eq("organization_id", deps.organizationId)
       .eq("stage_id", stageId);
     if (error) {
-      // O texto do Postgres vai em `details`, não colado na frase: a mensagem é
-      // o que a tela mostra ao dono da clínica.
+      // A mensagem da tela descreve a etapa; o texto do Postgres fica só no
+      // erro interno, nunca na resposta HTTP.
+      const mensagem = `Não consegui mover os negócios de «${alvo.name}». A etapa continua no quadro — tente de novo.`;
       throw new ApiError(
         500,
         "internal_error",
         { erro: error.message },
         deps.requestId,
-        `Não consegui mover os negócios de «${alvo.name}». A etapa continua no quadro — tente de novo.`,
+        mensagem,
+        mensagem,
       );
     }
   }

@@ -17,7 +17,11 @@ import { fail } from "@/lib/api/wrappers";
 
 export function respostaDeRecusa(err: unknown, requestId: string): Response {
   if (err instanceof ApiError) {
-    return fail(err.code, err.message, err.status, { requestId, details: err.details });
+    return fail(err.code, err.message, err.status, {
+      requestId,
+      details: err.details,
+      publicMessage: err.publicMessage,
+    });
   }
   throw err;
 }

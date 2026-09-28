@@ -39,6 +39,21 @@ describe("fail", () => {
     });
   });
 
+  it("preserva progresso e orientação explicitamente públicos sem repassar a causa bruta", async () => {
+    const response = fail("internal_error", "SQL privado", 500, {
+      details: { erro: "SQL privado" },
+      publicMessage: "A rodada falhou; tente de novo.",
+      publicDetails: { arquivo_forense: { esvaziadas: 2, apagadas: 0 } },
+    });
+    expect(await response.json()).toEqual({
+      error: {
+        code: "internal_error",
+        message: "A rodada falhou; tente de novo.",
+        details: { arquivo_forense: { esvaziadas: 2, apagadas: 0 } },
+      },
+    });
+  });
+
   it("mantém orientação explícita de serviço indisponível em 503", async () => {
     const response = fail("upstream_unavailable", "Tente novamente.", 503);
     expect(await response.json()).toEqual({

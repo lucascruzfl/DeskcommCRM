@@ -19,6 +19,7 @@ export class ApiError extends Error {
     public readonly details: Record<string, unknown> | undefined,
     public readonly requestId: string,
     message?: string,
+    public readonly publicMessage?: string,
   ) {
     super(message ?? code);
     this.name = "ApiError";
