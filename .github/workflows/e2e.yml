@@ -1693,9 +1693,10 @@ jobs:
           #    `@upstash/redis` do produto manda o cabeçalho; a sonda tem de
           #    mandar também, senão prova um protocolo que ninguém usa.
           redis_pronto=""
+          redis_credencial="e2e-token-nao-e-segredo"
           for _ in $(seq 1 30); do
             resposta=$(curl -s -X POST \
-              -H "Authorization: Bearer e2e-token-nao-e-segredo" \
+              -H "Authorization: Bearer $redis_credencial" \
               -H "Content-Type: application/json" \
               -d '["PING"]' -w ' http=%{http_code}' \
               http://127.0.0.1:8079/ || true)

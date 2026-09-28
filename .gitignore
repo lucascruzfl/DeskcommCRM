@@ -168,6 +168,20 @@ backups/
 # commit posterior de remoção não tira o blob.
 .qa-backups/
 *.dump
+# Cópias e bancos locais podem conter senhas, tokens e dados de clientes.
+*.bak
+*.sql.gz
+*.sql.zst
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+# Chaves privadas e certificados exportados para operação local.
+*.pem
+*.key
+*.p12
+*.pfx
 docker-compose.override.yml
 .prova/
 
