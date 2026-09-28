@@ -193,3 +193,5 @@ anterior à v1.0.0; regenere (`/graphify .`) antes de confiar em detalhe fino.
   nome de pasta, portanto **INFERIDO**.
 
 - [Acompanhamento administrativo por sessão](support-sessions.md) — autoridade, somente leitura, saída e contratos OAuth.
+
+- [Preset gerenciado de provedor de internet](managed-clients/internet-provider.md) — Etapa 7A: áreas, contratos e próximo alvo operacional.

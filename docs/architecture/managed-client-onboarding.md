@@ -1,7 +1,7 @@
 # Living System Checklist — onboarding de cliente gerenciado
 
 - **Entrada:** `crm_preflight_managed_client` e `crm_create_managed_client` recebem o pedido no MCP. `managedOnboardingService.preflight` revalida o ator no banco antes da criação.
-- **Saída:** `fn_begin_managed_client_onboarding` chama `fn_create_tenant_with_owner`; o tenant aparece em `user_organizations` e no organization switcher. O convite oficial cria o caminho de aceite para a pessoa da clínica.
+- **Saída:** `fn_begin_managed_client_onboarding` chama `fn_create_tenant_with_owner`; o tenant aparece em `user_organizations` e no organization switcher. O convite oficial cria o caminho de aceite para a pessoa do cliente gerenciado.
 - **Atividade:** `managed_client.onboarding_started`, `managed_client.onboarding_completed` e `managed_client.onboarding_failed` entram em `api_audit_log` e são visíveis em `/app/audit`. `managed_client_onboardings` guarda estado, horário e erro sanitizado para retomada.
 - **Tela e porta:** o gestor entra no tenant pelo organization switcher e consulta a trilha em `/app/audit`, já presente em `lib/navigation/catalogo.ts`. Não há nova tela nesta fase.
 - **Precondições da operação:** o recibo `completed` confirma provisionamento e envio do convite; não substitui `organizations.onboarded_at`, gravado ao concluir o wizard de configuração pela agência. O cliente `agent` não recebe acesso ao wizard. No MCP, um token no tenant gerenciado também respeita seu teto de role: as tools de configuração exigem `role:admin` nesse tenant, além de `platform_admin full` atual e capability para criar outro cliente.
@@ -11,3 +11,5 @@
 - **Continuidade IA↔humano:** o MCP mostra o plano e exige `confirm=true` da pessoa antes do efeito. A pessoa convidada conclui autenticação pelo aceite normal. Não há turno de agente ou handoff de conversa neste fluxo.
 - **Laço de retorno:** falha de envio muda o recibo para `failed`, registra a ação de auditoria e devolve `retryable=true`; a repetição consulta o recibo e retoma sem criar outra organização. Resultado concluído devolve `already_completed` com o mesmo ID.
 - **Mapa vivo:** `managed-client-onboarding.architecture.json` liga entrada, serviço, RPC, recibo, convite, memberships, pessoas e auditoria.
+
+- **Registro oficial:** `MANAGED_CLIENT_PRESETS` alimenta os enums de criação/preflight e o snapshot SQL gerado da RPC; `managed/internet-provider` prepara operação ISP sem agenda nem cobrança fictícia. A intenção e o alvo seguinte estão em [internet-provider.md](../managed-clients/internet-provider.md).
