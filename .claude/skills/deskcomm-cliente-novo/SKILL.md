@@ -11,7 +11,8 @@ metadata:
 Este guia monta a operação por nicho depois do onboarding e também orienta a criação de
 **cliente gerenciado** (managed client) pela agência. O onboarding gerenciado provisiona a
 organização, a política de áreas, o membership do gestor e o convite oficial. Para ISP, a tool
-`crm_configure_managed_internet_provider` mostra o preflight e, com confirmação da agência,
+`crm_configure_managed_internet_provider`, usando token vinculado ao provedor alvo,
+mostra o preflight e, com confirmação da agência,
 instala o funil, motivos, campos e tags. A implantação continua com prompt, roteamento, follow-ups, conhecimento,
 memória e capacidades revisados para o negócio.
 

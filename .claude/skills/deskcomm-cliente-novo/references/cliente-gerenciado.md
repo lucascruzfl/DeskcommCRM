@@ -17,7 +17,8 @@ Os presets **managed** existem no registro oficial:
 
 Eles persistem uma política por área. O snapshot aplicado à organização continua sendo a
 autoridade; uma atualização do código não troca silenciosamente seus acessos. O preset ISP
-por si só não cria operação. Após o onboarding, `crm_configure_managed_internet_provider`
+por si só não cria operação. Após o onboarding, com token do provedor alvo,
+`crm_configure_managed_internet_provider`
 planeja e, com confirmação, instala funil, motivos, campos e vocabulário de tags.
 Agentes, roteador, follow-ups e integrações exigem implantação posterior.
 

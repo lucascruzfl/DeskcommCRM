@@ -49,18 +49,18 @@ describe("tools MCP de onboarding gerenciado", () => {
       idempotency_key_present: false,
     });
   });
-  it("pacote ISP exige organização explícita e passa confirmação separada ao serviço", async () => {
+  it("pacote ISP usa a organização autenticada e passa confirmação separada ao serviço", async () => {
     const tool = MANAGED_CLIENT_TOOLS[3]!;
-    const target = "00000000-0000-4000-8000-000000000010";
     mocks.ispExecute.mockResolvedValue({ can_execute: true });
-    await tool.handler({ organization_id: target }, actor);
-    await tool.handler({ organization_id: target, confirm: true }, actor);
+    await tool.handler({}, actor);
+    await tool.handler({ confirm: true }, actor);
     expect(mocks.ispExecute.mock.calls).toEqual([
-      [target, expect.objectContaining({ userId: actor.provisionedByUserId }), false],
-      [target, expect.objectContaining({ userId: actor.provisionedByUserId }), true],
+      [actor.organizationId, expect.objectContaining({ userId: actor.provisionedByUserId }), false],
+      [actor.organizationId, expect.objectContaining({ userId: actor.provisionedByUserId }), true],
     ]);
-    expect(tool.redigirParaAuditoria?.({ organization_id: target, confirm: true })).toEqual({ organization_id: target, confirm: true });
-    await expect(tool.handler({ organization_id: "not-an-id", confirm: true }, actor)).rejects.toThrow();
+    expect(tool.redigirParaAuditoria?.({ confirm: true })).toEqual({ confirm: true });
+    expect(Object.keys(tool.inputSchema)).not.toContain("organization_id");
+    await expect(tool.handler({ organization_id: "00000000-0000-4000-8000-000000000010", confirm: true }, actor)).rejects.toThrow();
   });
 
   it.each(Object.values(MANAGED_CLIENT_PRESETS))(

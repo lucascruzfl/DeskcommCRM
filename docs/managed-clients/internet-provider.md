@@ -59,7 +59,9 @@ a mesma chave explícita com outro preset conflita.
 ## Pacote operacional 7B
 
 Após criar a organização, a agência usa `crm_configure_managed_internet_provider`
-com `organization_id`. Sem `confirm=true`, a tool informa o que será criado,
+com um token MCP vinculado ao provedor alvo. A tool recebe a organização do
+contexto autenticado; não aceita `organization_id` como entrada pública. O serviço
+interno recebe esse ID explicitamente. Sem `confirm=true`, a tool informa o que será criado,
 conflitos e dependências; com confirmação, exige platform admin full e vínculo
 admin atual no tenant. Segunda execução reaproveita o que já existe. Configuração
 do mesmo identificador que diverge vira conflito, sem sobrescrever personalização.

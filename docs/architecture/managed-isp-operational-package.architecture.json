@@ -23,7 +23,7 @@
     { "id": "pending", "lane": "human", "col": 4, "type": "frontend", "label": "Pendências 7C", "sublabel": "agentes, canal, roteador e prazos de follow-up" }
   ],
   "edges": [
-    { "id": "e1", "from": "tool", "to": "service", "label": "organização explícita e confirmação" },
+    { "id": "e1", "from": "tool", "to": "service", "label": "organização do token e confirmação" },
     { "id": "e2", "from": "service", "to": "tool", "label": "criado, existente, conflitos e pendências" },
     { "id": "e3", "from": "service", "to": "policy", "label": "valida preset e ator" },
     { "id": "e4", "from": "service", "to": "pipeline", "label": "cria ou continua via operações canônicas" },
