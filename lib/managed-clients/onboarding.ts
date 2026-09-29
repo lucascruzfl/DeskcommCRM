@@ -187,10 +187,6 @@ export function createManagedOnboardingService(deps: Dependencies = defaults) {
       }, true);
     };
     if (_internal.receipt?.state === "completed") {
-      // A RPC e o pacote usam operações separadas. Retry do mesmo receipt
-      // também repara pacote interrompido após o convite ter sido concluído.
-      try { await applyPackage(_internal.receipt.organization_id); }
-      catch { throw sanitizedFailure("managed_isp_package_unavailable"); }
       return { status: "already_completed", organization_id: _internal.receipt.organization_id,
         invite_id: _internal.receipt.invite_id, client_role: "agent", email_dispatched: _internal.receipt.email_dispatched };
     }
