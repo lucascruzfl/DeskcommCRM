@@ -57,10 +57,11 @@ describe("sentinelas de compatibilidade do MCP", () => {
     expect(MCP_REGISTRY.filter((tool) => !managerNames.has(tool.name)).map((tool) => tool.name)).toEqual([
       "crm_create_managed_client",
       "crm_configure_managed_internet_provider",
+      "crm_configure_managed_internet_provider_ai",
     ]);
-    expect(profile).toHaveLength(MCP_TOOL_COUNT - 2);
+    expect(profile).toHaveLength(MCP_TOOL_COUNT - 3);
     expect(profile.map((tool) => tool.name).sort()).toEqual(
-      MCP_REGISTRY.filter((tool) => !["crm_create_managed_client", "crm_configure_managed_internet_provider"].includes(tool.name))
+      MCP_REGISTRY.filter((tool) => !["crm_create_managed_client", "crm_configure_managed_internet_provider", "crm_configure_managed_internet_provider_ai"].includes(tool.name))
         .map((tool) => tool.name).sort(),
     );
   });
