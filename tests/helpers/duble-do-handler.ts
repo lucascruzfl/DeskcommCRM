@@ -162,7 +162,7 @@ export function criarDubleDoHandler(
 
   const client = {
     from(tabela: string) {
-      tabela = tabela.replace(/^operational_(conversations|messages)$/, "$1");
+      tabela = tabela.replace(/^operational_(conversations|messages|organizations)$/, "$1");
       if (tabela === "conversations") {
         return {
           select: (colunas = "") => {

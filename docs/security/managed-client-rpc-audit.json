@@ -1,5 +1,5 @@
 {
-  "scope": "Todas as funções de public, excluindo extensões; catálogo medido no baseline aplicado em banco descartável durante a Fase 6, com revisão da RPC de onboarding na Etapa 7A. Não substitui provas de comportamento e UI.",
+  "scope": "Todas as funções de public, excluindo extensões; catálogo medido no baseline v1.62.0 integrado em PostgreSQL descartável. Funções novas e redefinidas revisadas quanto a EXECUTE, SECURITY DEFINER, organização e alcance managed. Não substitui provas de comportamento e UI.",
   "functions": [
     {
       "signature": "activate_kb_version(uuid,uuid)",
@@ -17,7 +17,7 @@
       "security_definer": true,
       "authenticated_execute": true,
       "anonymous_execute": false,
-      "body_sha256": "69e75fb960237bb6c36d69396298514dee2417cb5d2e23969ab96ff42eb1242c",
+      "body_sha256": "e90ceae8876b4cfa34e774633d55607c0e8acb1896c6e1b7d4a16be2c8b05c50",
       "status": "FIXED",
       "reason": "Coluna calculada sem nome de parâmetro, não exposta como RPC pelo PostgREST; SECURITY DEFINER lê contatos apenas pelo id e organization_id da conversa. Prova de isolamento em comando-da-conversa-espelha-o-ts.test.ts e gate sem parâmetro nomeado."
     },
@@ -392,6 +392,16 @@
       "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
     },
     {
+      "signature": "fn_cancelar_propostas_rascunho_do_lead()",
+      "name": "fn_cancelar_propostas_rascunho_do_lead",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "be2112eaa3a6d18fb46ae42c8e1cc78fdb17220efdec20c6c9e6c42457c07a8f",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Trigger SECURITY DEFINER sem EXECUTE para anon/authenticated; cancela apenas rascunhos do lead OLD e da mesma organization_id."
+    },
+    {
       "signature": "fn_carimba_detected_at()",
       "name": "fn_carimba_detected_at",
       "security_definer": false,
@@ -492,14 +502,24 @@
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
     {
-      "signature": "fn_comando_da_conversa(text,uuid,timestamp with time zone,boolean,boolean,timestamp with time zone)",
+      "signature": "fn_comando_da_conversa(text,uuid,timestamp with time zone,boolean,boolean,timestamp with time zone,boolean)",
       "name": "fn_comando_da_conversa",
       "security_definer": false,
       "authenticated_execute": true,
       "anonymous_execute": false,
-      "body_sha256": "14b76e7fb5f16340eda05d45cb51e71e6b44e718465532cf77ffc6c2c9a0c3e3",
+      "body_sha256": "77fcedf2eb85fcce6701d3116871beb13a9985f307c19e7b0d177d62f76ba1c4",
       "status": "SAFE",
-      "reason": "Função pura sobre os argumentos, ou recusa de replay do request; não consulta configuração privada nem concede escrita."
+      "reason": "Função SQL invoker pura, sem leitura de tabela nem escrita; argumento de grupo acrescentado ao comando da conversa sem elevar privilégios."
+    },
+    {
+      "signature": "fn_company_people_same_org()",
+      "name": "fn_company_people_same_org",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "b036c4523c656d67142b9f26dc8868d00d1d4747b20ee6a14f6d00554952bdbb",
+      "status": "SAFE",
+      "reason": "Trigger invoker valida que empresa, pessoa e vínculo compartilham organization_id; retorno trigger não é chamado como RPC normal."
     },
     {
       "signature": "fn_conferir_modulos_instalados()",
@@ -530,6 +550,16 @@
       "body_sha256": "2df34f491f433c19352bffd104a7809679c3e81ea94f6a22d259ed1481a70ba3",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_contacts_person_same_org()",
+      "name": "fn_contacts_person_same_org",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "888e63d41ba273496c624c436bfd7ee93f52f424e7068e9f7c04f906d094a886",
+      "status": "SAFE",
+      "reason": "Trigger invoker recusa person_id de outra organização; não faz escrita externa nem usa service_role."
     },
     {
       "signature": "fn_contar_mensagem_ignorada(uuid)",
@@ -610,6 +640,16 @@
       "body_sha256": "ec9fdfea7b105aa39b019d00da22d3e880e3510d09b784fb2566aecd943f59d5",
       "status": "SAFE",
       "reason": "Trigger SECURITY INVOKER lê operational_crm_stages filtrando organização do lead; mantém RLS e grava/limpa origem da perda na transição oficial 1.53. Sem ingresso RPC direto de trigger."
+    },
+    {
+      "signature": "fn_crm_proposals_transicao_da_sessao()",
+      "name": "fn_crm_proposals_transicao_da_sessao",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "dde45c7b19e78826835d33b2bc300f4202ad46d95ce69ee5ca6178c13bccd890",
+      "status": "SAFE",
+      "reason": "Trigger invoker limita campos e transições de propostas para authenticated; o envio continua reservado ao servidor."
     },
     {
       "signature": "fn_decrypt_oauth(bytea)",
@@ -787,7 +827,7 @@
       "security_definer": false,
       "authenticated_execute": true,
       "anonymous_execute": true,
-      "body_sha256": "3de31e867fe91001aee6e5d35fdd6b6d00d4444b9e55e4e8524d82847e60b2ad",
+      "body_sha256": "217c3a11c8c17b6dd69417679257601ad96ad54e50b5e742d30dc890e3ea2cf9",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "Retorno trigger: execução exclusivamente por gatilho, não exposta como RPC pelo PostgREST."
     },
@@ -827,7 +867,7 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "981f9744992d6396a468c32215db9470cc02bed048849bb8ac2e775f9091c674",
+      "body_sha256": "2c08111b3a09fb59dfbf7395060a7f70b0dbb9ea6d8e81af0d2f79903ad902e6",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "Corpo da 0435 inclui a contagem de linhas expurgadas; EXECUTE permanece exclusivo do service_role, sem alcance direto por authenticated ou anon."
     },
@@ -1312,6 +1352,36 @@
       "reason": "0416–0423: guarda de área/membership ou projeção operacional explícita; filtro de tenant e retorno mínimo revisados."
     },
     {
+      "signature": "fn_honorarios_parcela_pagar(uuid,uuid,uuid,uuid)",
+      "name": "fn_honorarios_parcela_pagar",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "4e2aca3933ec5ea9d4d28ff5766a49d746c209ac65fd4a1f79e6b37abb34cfe7",
+      "status": "FIXED",
+      "reason": "SECURITY DEFINER exige auth.uid, papel manager, área managed de Honorários e confere parcela, conta e plano por organization_id antes de gravar."
+    },
+    {
+      "signature": "fn_honorarios_provisionar()",
+      "name": "fn_honorarios_provisionar",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "626c3df4b2f014f2f2ac9fa4f3b91ca30da60eeb5797162371f47d9869c983c5",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Provisionadora SECURITY DEFINER sem EXECUTE para anon/authenticated; acionada pelo fluxo administrativo de instalação do módulo e instala RLS managed."
+    },
+    {
+      "signature": "fn_import_rows_same_org()",
+      "name": "fn_import_rows_same_org",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "88920207b2b87462f2ee86340cdbf11f201237de59b65365358ca86b759cb6d8",
+      "status": "SAFE",
+      "reason": "Trigger invoker garante que linha importada e lote têm a mesma organization_id; retorno trigger não oferece RPC de dados."
+    },
+    {
       "signature": "fn_is_platform_admin()",
       "name": "fn_is_platform_admin",
       "security_definer": true,
@@ -1367,7 +1437,7 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "0a5b352f3d147faf2231f44ae9dedd485a9cf16d9ae5fa7c6f8af5973300625e",
+      "body_sha256": "666347510d94cc850457c0bde26fc67beeae782fe71f503d6e8224d8ae559f14",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
@@ -1572,16 +1642,6 @@
       "reason": "Primitiva de autorização: identidade derivada de auth.uid()/sessão de suporte oficial; retorno próprio ou booleano restritivo, sem configuração bruta."
     },
     {
-      "signature": "fn_metricas_links_rastreaveis(uuid)",
-      "name": "fn_metricas_links_rastreaveis",
-      "security_definer": true,
-      "authenticated_execute": false,
-      "anonymous_execute": false,
-      "body_sha256": "dc64142a8cb30d4164a3ad0e1c6e1d83907eab4f0610d94de6b52a68d5411464",
-      "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "RPC de métricas com EXECUTE só para service_role; filtra cliques e leads por organization_id e não é chamável por authenticated ou anon."
-    },
-    {
       "signature": "fn_mesclar_contatos(uuid,uuid,uuid[])",
       "name": "fn_mesclar_contatos",
       "security_definer": true,
@@ -1600,6 +1660,16 @@
       "body_sha256": "d5b4efea04c12157e50eb0f506830265651d5a968c4c4b213aac2ab08a77a75f",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_metricas_links_rastreaveis(uuid)",
+      "name": "fn_metricas_links_rastreaveis",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "dc64142a8cb30d4164a3ad0e1c6e1d83907eab4f0610d94de6b52a68d5411464",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "RPC de métricas com EXECUTE só para service_role; filtra cliques e leads por organization_id e não é chamável por authenticated ou anon."
     },
     {
       "signature": "fn_modulo_instalar(uuid,uuid,text)",
@@ -1690,6 +1760,16 @@
       "body_sha256": "89d3613af1ae13a2521dd3850bff93779e4db7baf1d0708ac31ad3dd69c8bd79",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "Revisão pré-Fase 6 contra baseline 1.53 aplicado: sem EXECUTE para authenticated, PUBLIC ou anon; efeito só via trigger/servidor e ingressos autenticados existentes. Função nova oficial de retenção, referência, configuração ou conversão; não abre chamada direta ao cliente."
+    },
+    {
+      "signature": "fn_proposta_aloca_numero(uuid,integer)",
+      "name": "fn_proposta_aloca_numero",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "230a68b2f89046c7b6cd1709cf04f72448789965739f8a832aec7db3cfbc3fae",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "SECURITY DEFINER sem EXECUTE para anon/authenticated; aloca contador da proposta somente no fluxo de servidor que fornece organização confiável."
     },
     {
       "signature": "fn_prospecting_refuse_erased_candidate()",
@@ -1802,6 +1882,16 @@
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
     {
+      "signature": "fn_redigir_b2b_do_contato_anonimizado()",
+      "name": "fn_redigir_b2b_do_contato_anonimizado",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "66ab11fd3260882989dbf4e4056180774fc3c531ac71624516c99d9d2b2753bc",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Trigger SECURITY DEFINER sem EXECUTE para anon/authenticated; redação LGPD limita importação, pessoa e vínculos à organization_id do contato NEW."
+    },
+    {
       "signature": "fn_redigir_campanhas_do_contato_anonimizado()",
       "name": "fn_redigir_campanhas_do_contato_anonimizado",
       "security_definer": true,
@@ -1827,7 +1917,7 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "fb8e567dd90c094c1669acb5fe2783605e0f03230ad596e752743a3da8b6be73",
+      "body_sha256": "9b96a3865182e8ce7f52bbe6c452e4272550d612061d42ef0e64113adec5737c",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
@@ -1867,7 +1957,7 @@
       "security_definer": false,
       "authenticated_execute": true,
       "anonymous_execute": false,
-      "body_sha256": "7b830995c350b5f9669bfd387837ca38fd4b4a69eee6ba2ac95ff6cb62bbd5c5",
+      "body_sha256": "8453350feea5a58a7eb6c49282822fe23ef34180e9d43e3ee6c7188ebbe7e086",
       "status": "SAFE",
       "reason": "SECURITY INVOKER: queries sujeitas à RLS do chamador; filtros de organization_id/referência revisados; retorno operacional."
     },
@@ -2027,7 +2117,7 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "98e74d52b740955d28053def741e9189ea902dcd321e9e25a2e85024369309b2",
+      "body_sha256": "41c2aa499fabd356bc8603eddea9db7c010856cd0dacbeb60025aa64403cda61",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
@@ -2530,6 +2620,26 @@
       "body_sha256": "fcdf6e04dd09b3e72325dda109613fa050ca00a7cacdf5f29ab173321ad16792",
       "status": "SAFE",
       "reason": "Trigger SECURITY INVOKER lê operational_crm_pipelines sujeito à RLS; valida motivos textuais e objetos pelo label da 1.53, preservando o portão operacional managed."
+    },
+    {
+      "signature": "fn_verificar_org_da_proposta()",
+      "name": "fn_verificar_org_da_proposta",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "628f8604acfdaa76218e0a426cabe5d5bab0ebf0f8bebafc3ca7822194581271",
+      "status": "SAFE",
+      "reason": "Trigger invoker recusa lead, contato ou conversa de outra organização antes de gravar proposta."
+    },
+    {
+      "signature": "fn_verificar_org_do_item_da_proposta()",
+      "name": "fn_verificar_org_do_item_da_proposta",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "6eab57c20f4081571f9424a628aa2e9fc91d0a0c2dc908b877f70bc9d1dcdabc",
+      "status": "SAFE",
+      "reason": "Trigger invoker recusa item cuja organização difere da proposta pai; não lê dados de outro tenant para resposta."
     },
     {
       "signature": "fn_vocabulario_de_tags(uuid)",

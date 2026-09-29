@@ -163,6 +163,8 @@ const SITES: { arquivo: string; fronteira: string; papel?: "gerador" | "validado
   { arquivo: "workers/lgpd-export-worker.ts", fronteira: "storage.chave-de-objeto" },
   { arquivo: "workers/media-persist-worker.ts", fronteira: "storage.chave-de-objeto" },
   { arquivo: "lib/ai/skills/install.ts", fronteira: "storage.chave-de-objeto" },
+  // A tool MCP usa a organização autenticada e randomUUID para o Markdown.
+  { arquivo: "lib/mcp/tools/knowledge-administracao.ts", fronteira: "storage.chave-de-objeto" },
   { arquivo: "app/api/v1/products/[id]/fotos/route.ts", fronteira: "storage.chave-de-objeto" },
   { arquivo: "app/api/v1/cron/contact-avatars/route.ts", fronteira: "storage.chave-de-objeto" },
   { arquivo: "app/api/v1/channels/partner/templates/media/route.ts", fronteira: "storage.chave-de-objeto" },

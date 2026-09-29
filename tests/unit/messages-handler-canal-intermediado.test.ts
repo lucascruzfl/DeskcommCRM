@@ -47,13 +47,17 @@
  * oficial: o envio que SAI com a credencial da sessão e a fila com motivo
  * nomeado quando não há credencial nenhuma.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
 import type { HandlerCtx } from "@/lib/api/handlers/types";
 import type { SendMessageInput } from "@/lib/schemas";
-import { colunasDoSelect } from "@/tests/helpers/duble-do-handler";
+import {
+  colunasDoEmbed,
+  colunasDoSelect,
+  criarDubleDoHandler,
+  projetar,
+} from "@/tests/helpers/duble-do-handler";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const CONV = "22222222-2222-4222-8222-222222222222";
@@ -84,7 +88,7 @@ const credencialDaSessao: {
   decifravel: boolean;
 } = { token: null, porOrg: null, erro: null, decifravel: true };
 
-const transporteDoTeste = vi.hoisted(() => ({ client: null as SupabaseClient | null }));
+const transporteDoTeste = vi.hoisted(() => ({ client: null as unknown as { from: (table: string) => unknown } }));
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     storage: {
@@ -99,9 +103,8 @@ vi.mock("@/lib/supabase/admin", () => ({
     // identificador do provider E `archived_at is null` (issue #236 /
     // migration 0165). Um stub em que `eq()` já entrega `maybeSingle` deixa de
     // casar com o código real — e mock que não casa testa o mock.
-    from: (tabela: string) => {
-      if (["conversations", "operational_conversations"].includes(tabela))
-        return transporteDoTeste.client!.from(tabela);
+    from: (table: string) => {
+      if (table === "conversations") return transporteDoTeste.client.from(table);
       const filtros: Record<string, unknown> = {};
       const alvo: Record<string, unknown> = {
         maybeSingle: async () => {
@@ -137,9 +140,7 @@ vi.mock("@/lib/supabase/admin", () => ({
         return { data: null, error: null };
       }
       const cifrado = String(args?.ciphertext ?? "");
-      const daOrg = Object.values(credencialDaSessao.porOrg ?? {}).find(
-        (s) => s.cifrado === cifrado,
-      );
+      const daOrg = Object.values(credencialDaSessao.porOrg ?? {}).find((s) => s.cifrado === cifrado);
       return {
         data: daOrg?.token ?? (credencialDaSessao.porOrg ? null : credencialDaSessao.token),
         error: null,
@@ -152,26 +153,6 @@ vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}) }));
 type Row = Record<string, unknown>;
 
 
-/** A linha como o PostgREST a devolveria: só o que o `select` pediu. */
-/**
- * Colunas de DENTRO de um embed (`contacts:contact_id(phone_number, wa_lid)`).
- * `colunasDoSelect` devolve só o primeiro nível e descarta o miolo do embed —
- * então sem isto não há como aferir que uma coluna do embed foi pedida, e foi
- * exatamente ali que a perda passou despercebida.
- */
-function colunasDoEmbed(select: string, apelido: string): string[] {
-  const m = new RegExp(`${apelido}\\s*:[^(]*\\(([^)]*)\\)`).exec(select);
-  if (m === null) return [];
-  return m[1]!
-    .split(",")
-    .map((c) => c.trim())
-    .filter(Boolean);
-}
-
-function projetar(linha: Row, select: string): Row {
-  const querem = new Set(colunasDoSelect(select));
-  return Object.fromEntries(Object.entries(linha).filter(([k]) => querem.has(k)));
-}
 
 interface Forma {
   providerConversationId?: string | null;
@@ -190,12 +171,7 @@ function conversaCompleta(forma: Forma = {}): Row {
     is_group: false,
     group_chat_id: null,
     provider_conversation_id: forma.providerConversationId ?? null,
-    contacts: {
-      phone_number: "+595991733685",
-      wa_identity: null,
-      wa_lid: "999888",
-      is_blocked: false,
-    },
+    contacts: { phone_number: "+595991733685", wa_identity: null, wa_lid: "999888", is_blocked: false },
     channel_sessions: {
       provider,
       waha_session_name: provider === "waha" ? "default" : null,
@@ -213,132 +189,33 @@ function conversaCompleta(forma: Forma = {}): Row {
  * foi pedida não chega —, que é o elo que este arquivo prova. As capturas que
  * os casos leem (`estado.*`) são as do helper, lidas ao vivo.
  */
-function makeSupabase(linhaCompleta: Row, espelhoDoModelo: Row | null = null) {
-  const estado: {
-    message: Row | null;
-    selects: string[];
-    contactPatch: Row | null;
-    contactFilters: Record<string, unknown>;
-  } = { message: null, selects: [], contactPatch: null, contactFilters: {} };
-  const client = {
-    rpc: async () => ({ data: null, error: null }),
-    from(tabela: string) {
-      if (["conversations", "operational_conversations"].includes(tabela)) {
-        return {
-          select: (cols: string) => {
-            if (tabela === "conversations") estado.selects.push(cols);
-            // Encadeável SEM LIMITE de propósito: a consulta da conversa filtra
-            // por id E por `organization_id` (este handler também roda com o
-            // client de service role, que bypassa RLS). Um dublê que fixa a
-            // quantidade de `eq` quebra quando a consulta ganha o filtro que
-            // fecha o vazamento entre organizações — com um erro que não fala
-            // do comportamento sob teste.
-            const cadeia: Record<string, unknown> = {
-              eq: () => cadeia,
-              maybeSingle: async () => ({ data: projetar(linhaCompleta, cols), error: null }),
-            };
-            return cadeia;
-          },
-          update: () => ({ eq: async () => ({ error: null }) }),
-        };
-      }
-      if (tabela === "meta_templates") {
-        // O espelho da definição aprovada, consultado pelo pré-voo que roda
-        // ANTES de escolher transporte. `null` = não espelhada, e o pré-voo
-        // deixa passar de propósito: recusar o que não se sabe barraria todo
-        // envio de modelo numa instalação cujo sync ainda não rodou.
-        //
-        // O caminho do canal OFICIAL (`sendTemplateForSession`) é mais estrito:
-        // sem linha no espelho ele recusa com `template_missing` antes da rede.
-        // Quem precisa ver o modelo SAIR por esse caminho passa a linha em
-        // `espelhoDoModelo`.
-        //
-        // Encadeável sem limite: um dublê que fixa a quantidade de filtros faz
-        // o teste quebrar quando a consulta ganha um `eq` novo, com um erro que
-        // não fala do comportamento sob teste.
-        const cadeia: Record<string, unknown> = {
-          eq: () => cadeia,
-          is: () => cadeia,
-          maybeSingle: async () => ({ data: espelhoDoModelo, error: null }),
-        };
-        return { select: () => cadeia };
-      }
-      if (tabela === "channel_sessions") {
-        // A busca da definição do modelo pergunta o provedor e a conta oficial
-        // da sessão antes de aceitar uma linha sem conexão (lib/channels/
-        // linha-do-espelho.ts). Responde com a sessão DESTA conversa.
-        const sessao = (linhaCompleta.channel_sessions ?? {}) as Row;
-        const cadeia: Record<string, unknown> = {
-          eq: () => cadeia,
-          maybeSingle: async () => ({
-            data: { provider: sessao.provider ?? null, meta_waba_id: sessao.meta_waba_id ?? null },
-            error: null,
-          }),
-        };
-        return { select: () => cadeia };
-      }
-      if (["messages", "operational_messages"].includes(tabela)) {
-        return {
-          insert: (row: Row) => {
-            estado.message = {
-              id: "msg-1",
-              external_id: null,
-              ack: null,
-              error_code: null,
-              error_message: null,
-              ...row,
-            };
-            return {
-              select: () => ({
-                single: async () => ({ data: { ...estado.message }, error: null }),
-              }),
-            };
-          },
-          update: (patch: Row) => {
-            estado.message = { ...estado.message, ...patch };
-            return {
-              eq: () => ({
-                select: () => ({
-                  maybeSingle: async () => ({ data: { ...estado.message }, error: null }),
-                }),
-              }),
-            };
-          },
-        };
-      }
-      if (tabela === "contacts") {
-        // O envio carimba `contacts.last_activity_at` (migration 0162), com
-        // filtro por id E por organização — este handler também roda com o
-        // client de service role, que bypassa RLS.
-        //
-        // Encadeável sem limite, pelo mesmo motivo escrito no dublê de
-        // `meta_templates` logo acima: um dublê que fixa a quantidade de
-        // filtros quebra quando a consulta ganha um `eq` novo, com um erro que
-        // não fala do comportamento sob teste. Foi exatamente o que aconteceu
-        // aqui quando o filtro de tenant entrou.
-        const cadeia: Record<string, unknown> = {
-          eq: (col: string, val: unknown) => {
-            estado.contactFilters[col] = val;
-            return cadeia;
-          },
-          then: (resolve: (v: { error: null }) => unknown) =>
-            Promise.resolve({ error: null }).then(resolve),
-        };
-        return {
-          update: (patch: Row) => {
-            estado.contactPatch = patch;
-            return cadeia;
-          },
-        };
-      }
-      throw new Error(`dublê: tabela inesperada '${tabela}'`);
+function dubleDe(linhaCompleta: Row, espelhoDoModelo: Row | null = null) {
+  const { supabase, capturas } = criarDubleDoHandler({
+    conversation: linhaCompleta,
+    templateRow: espelhoDoModelo,
+    projetarConversa: true,
+  });
+  transporteDoTeste.client = supabase;
+  const estado = {
+    get selects() {
+      // A projeção operacional faz um SELECT mínimo de visibilidade (`id`).
+      // A prova das colunas do transporte inspeciona só o SELECT completo.
+      return capturas.selects.conversations!.filter((select) => select !== "id");
+    },
+    get message() {
+      return capturas.inserts.messages!.at(-1) ?? null;
+    },
+    get contactPatch() {
+      return capturas.patches.contacts!.at(-1) ?? null;
+    },
+    get contactFilters() {
+      return Object.fromEntries(
+        (capturas.filtros.contacts ?? []).map((f) => [f.coluna, f.valor]),
+      );
     },
   };
-  transporteDoTeste.client = client as unknown as SupabaseClient;
-  return { supabase: transporteDoTeste.client, estado };
+  return { supabase, estado };
 }
-
-const dubleDe = makeSupabase;
 
 const ctx: HandlerCtx = {
   organization_id: ORG,
@@ -403,10 +280,7 @@ describe("o projetor do dublê é discriminante (guarda de vacuidade)", () => {
     vi.stubGlobal("fetch", respostaOk("wamid.LID"));
     const { supabase, estado } = dubleDe(conversaCompleta({ providerConversationId: THREAD }));
     await sendMessageHandler(supabase, ctx, texto());
-    expect(
-      estado.selects.length,
-      "guarda de vacuidade: o handler consultou a conversa",
-    ).toBeGreaterThan(0);
+    expect(estado.selects.length, "guarda de vacuidade: o handler consultou a conversa").toBeGreaterThan(0);
     expect(estado.selects.every((sel) => colunasDoEmbed(sel, "contacts").includes("wa_lid"))).toBe(
       true,
     );
@@ -439,9 +313,9 @@ describe("a thread do provider atravessa os três elos até o transporte", () =>
     expect(url).not.toContain("595991733685");
     // E a coluna foi de fato PEDIDA — a prova de que o elo existe, sem depender
     // de onde ela aparece na string.
-    expect(
-      estado.selects.every((s) => colunasDoSelect(s).includes("provider_conversation_id")),
-    ).toBe(true);
+    expect(estado.selects.every((s) => colunasDoSelect(s).includes("provider_conversation_id"))).toBe(
+      true,
+    );
   });
 
   it("mídia passa pela MESMA thread — os dois call sites, não só o de texto", async () => {
@@ -571,18 +445,11 @@ describe("nenhum desfecho diz `sent` sem nada ter saído", () => {
     await sendMessageHandler(
       supabase,
       ctx,
-      texto({
-        type: "template",
-        body: undefined,
-        template_name: "cuenta_activa",
-        template_language: "es",
-      }),
+      texto({ type: "template", body: undefined, template_name: "cuenta_activa", template_language: "es" }),
     );
 
     const urls = fetchMock.mock.calls.map((c) => String(c[0]));
-    expect(urls.join(" "), "o modelo saiu pela Graph API da Meta").not.toMatch(
-      /graph\.facebook\.com/,
-    );
+    expect(urls.join(" "), "o modelo saiu pela Graph API da Meta").not.toMatch(/graph\.facebook\.com/);
     expect(urls.join(" ")).toMatch(/zernio/);
   });
 
@@ -621,9 +488,7 @@ describe("canal oficial conectado pela TELA — a credencial da sessão manda (#
     expect(msg.external_id).toBe("wamid.M1");
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(String(url)).toContain("/1103328999528818/messages");
-    expect((init as { headers: Record<string, string> }).headers.Authorization).toBe(
-      "Bearer tok-da-sessao",
-    );
+    expect((init as { headers: Record<string, string> }).headers.Authorization).toBe("Bearer tok-da-sessao");
   });
 
   it("sessão ausente e sem ambiente: `queued` com `meta_not_configured`, nada na rede", async () => {
@@ -756,10 +621,7 @@ describe("o MODELO do canal oficial sai pela credencial da sessão, não pelo .e
     expect(msg.status).toBe("sent");
     expect(msg.external_id).toBe("wamid.MODELO");
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] as [
-      string,
-      RequestInit & { headers: Record<string, string> },
-    ];
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }];
     expect(String(url)).toContain(`/${NUMERO_DA_SESSAO}/messages`);
     expect(String(url)).not.toContain(NUMERO_DO_ENV);
     expect(init.headers.Authorization).toBe("Bearer tok-da-sessao");

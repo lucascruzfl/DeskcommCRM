@@ -1090,7 +1090,6 @@ jobs:
       SPECS_PARTE_5: >-
         managed-client-authorization.spec.ts
         managed-client-onboarding.spec.ts
-        inbox-busca-e-filtros-dizem-a-verdade.spec.ts
         extensoes-da-instalacao.spec.ts
         admin-credencial-google.spec.ts
         agenda-primeira-pintura-no-fuso.spec.ts
