@@ -69,14 +69,14 @@ const TOOLS_DO_SEED = [
   "crm_get_lead",
   "crm_move_lead_stage",
   "crm_list_leads",
-  // ⚠️ AS SEIS ABAIXO NÃO SÃO ENFEITE: elas existem para o cenário ESTOURAR.
+  // ⚠️ AS OITO ABAIXO NÃO SÃO ENFEITE: elas existem para o cenário ESTOURAR.
   //
   // A jornada do teto (issue #162) só existe se a soma passar do teto: eram 3
   // do seed + 18 de "Atender" = 21 contra teto 20, e a tela recusava dizendo
   // "faltam 1 vaga". Com teto 25 essas mesmas 21 passam, a recusa nunca acontece
   // e o caso vira um clique que sempre dá certo — verde sem medir nada.
   //
-  // Estas nove ficam fora do pacote. O teste lê quantas vagas faltam da tela,
+  // Estas oito ficam fora do pacote. O teste lê quantas vagas faltam da tela,
   // pois o pacote cresce quando uma release traz novas capacidades.
   //
   // O pacote "Atender" tinha 17 depois da #528, e foi ela que mudou o número:
@@ -87,15 +87,16 @@ const TOOLS_DO_SEED = [
   //
   // As escolhidas ficam FORA do pacote "Atender" de propósito — se alguma
   // estivesse dentro, a união seria menor que a soma e a conta acima não valeria.
-  // Quatro são a família de agenda, que é o assunto do defeito que subiu o teto.
+  // Quatro são a família de agenda, que é o assunto do defeito que subiu o teto
+  // pela primeira vez; as quatro últimas são leitura pura de outros pacotes,
+  // para a aritmética continuar estourando a cada subida.
   "crm_find_free_slots",
   "crm_list_appointments",
   "crm_book_appointment",
   "crm_reschedule_appointment",
   "crm_list_pipelines",
-  // A NONA: leitura pura, fora de "Atender" — que é o que a conta acima exige.
-  // Existe para a aritmética continuar estourando depois da #528; sem ela o
-  // cenário de recusa vira um clique que sempre dá certo.
+  "crm_list_event_types",
+  "crm_list_human_cases",
   "crm_list_knowledge_sources",
 ];
 
@@ -226,7 +227,7 @@ test.describe("Configurar o que o agente pode fazer", () => {
 
     // O TETO ENTRA NA JORNADA (issue #162), e entra antes do clique.
     //
-    // O pacote cresce entre releases. As nove tools do seed ficam fora de
+    // O pacote cresce entre releases. As 11 tools do seed ficam fora de
     // "Atender"; a prova exige recusa e libera a quantidade que a tela medir.
     //
     // Antes da correção a tela aceitava o pacote, chegava a 20 exatas e deixava

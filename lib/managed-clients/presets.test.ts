@@ -7,6 +7,12 @@ import { preflightManagedClient } from "./preflight";
 
 const isp = MANAGED_CLIENT_PRESETS["managed/internet-provider"];
 
+describe("área de recursos opcionais", () => {
+  it.each(Object.values(MANAGED_CLIENT_PRESETS))("$id mantém a configuração com a agência", (preset) => {
+    expect(preset.areas["/app/settings/recursos"]).toBe("agency");
+  });
+});
+
 describe("registro canônico de presets gerenciados", () => {
   it("IDs e tipos de negócio são únicos e cada chave corresponde ao ID", () => {
     const presets = Object.values(MANAGED_CLIENT_PRESETS);
@@ -37,6 +43,13 @@ describe("registro canônico de presets gerenciados", () => {
         "/app/settings/tenant/financeiro",
         "/app/faturamento",
         "/app/integrations/nuvemshop",
+        "/app/companies",
+        "/app/people",
+        "/app/imports",
+        "/app/proposals",
+        "/app/settings/tenant/proposals",
+        "/app/settings/tenant/proposals/modelos",
+        "/app/honorarios",
       ].sort(),
     );
     for (const href of [

@@ -64,6 +64,7 @@ function Resultados({ aoEscolher }: { aoEscolher: () => void }) {
         activeOrg?.interface_settings,
         activeOrg?.modulos_ligados ?? [],
         activeOrg?.managed_policy,
+        activeOrg?.capacidades_ligadas ?? [],
       ),
     [
       user.is_platform_admin,
@@ -72,6 +73,7 @@ function Resultados({ aoEscolher }: { aoEscolher: () => void }) {
       activeOrg?.interface_settings,
       activeOrg?.modulos_ligados,
       activeOrg?.managed_policy,
+      activeOrg?.capacidades_ligadas,
     ],
   );
 

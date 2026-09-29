@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { ROLE_RANK, type Role } from "@/lib/auth/types";
 import type { ModuloOpcional } from "@/lib/instalacao/modulos";
+import type { CapacidadeDaOrganizacao } from "@/lib/organizacao/capacidades";
 import { NAV_CATALOG, type NavMetadata, type NavDestinationId } from "./catalogo";
 import { canAccessManagedArea, type ManagedAreaPolicy } from "@/lib/managed-clients/policy";
 
@@ -74,9 +75,13 @@ export function permitidos(
   platform: boolean,
   role: Role | null,
   modulos?: readonly ModuloOpcional[],
+  capacidades?: readonly CapacidadeDaOrganizacao[],
 ): NavMetadata[] {
   return (NAV_CATALOG as readonly NavMetadata[]).filter(
-    (d) => canSee(d, platform, role) && (!modulos || !d.modulo || modulos.includes(d.modulo)),
+    (d) =>
+      canSee(d, platform, role) &&
+      (!modulos || !d.modulo || modulos.includes(d.modulo)) &&
+      (!capacidades || !d.capacidade || capacidades.includes(d.capacidade)),
   );
 }
 /** Leitura tolera versões antigas/removidas sem lançar no layout. */
@@ -106,9 +111,10 @@ export function destinosDaInterface(
   role: Role | null,
   modulos?: readonly ModuloOpcional[],
   managedPolicy?: ManagedAreaPolicy | null,
+  capacidades?: readonly CapacidadeDaOrganizacao[],
 ): NavMetadata[] {
   const { settings } = lerInterface(raw);
-  const allowed = permitidos(platform, role, modulos);
+  const allowed = permitidos(platform, role, modulos, capacidades);
   const chosen =
     settings.destinos ?? (settings.preset === "simplificada" ? SIMPLIFICADA : undefined);
   return allowed.filter(
