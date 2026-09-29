@@ -101,6 +101,7 @@ describe.each(Object.values(MANAGED_CLIENT_PRESETS))("transporte MCP $id", (pres
       const listed = await POST(requestFor("tools/list") as never);
       const body = await listed.text();
       expect(body.includes("crm_create_managed_client")).toBe(platformAdminFull);
+      expect(body.includes("crm_configure_managed_internet_provider")).toBe(platformAdminFull);
       if (!platformAdminFull) {
         const called = await POST(
           requestFor("tools/call", {

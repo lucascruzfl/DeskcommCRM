@@ -979,6 +979,7 @@ export const AUDIT_ACTIONS = [
   "managed_client.onboarding_started",
   "managed_client.onboarding_completed",
   "managed_client.onboarding_failed",
+  "managed_client.operational_package_applied",
 
   // ── Grupos de WhatsApp na inbox (2026-09-23) ─────────────────────────────
   // Ligar/desligar QUAL grupo de um número entra no CRM. O filtro do WhatsApp é

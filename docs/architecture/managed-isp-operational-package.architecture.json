@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Pacote operacional do provedor gerenciado",
+    "subtitle": "Preflight e aplicação idempotente com configuração visível, sem agente publicado"
+  },
+  "lanes": [
+    { "id": "mcp", "label": "Pedido" },
+    { "id": "service", "label": "Autorização e domínio" },
+    { "id": "database", "label": "Dados da organização" },
+    { "id": "human", "label": "Operação" }
+  ],
+  "mainPath": ["tool", "service", "policy", "pipeline", "kanban"],
+  "nodes": [
+    { "id": "tool", "lane": "mcp", "col": 0, "type": "tool", "label": "crm_configure_managed_internet_provider", "sublabel": "sem confirm planeja; confirmação explícita aplica" },
+    { "id": "service", "lane": "service", "col": 1, "type": "service", "label": "ispPackageService", "sublabel": "autoridade atual, leitura, conflito e retomada" },
+    { "id": "policy", "lane": "database", "col": 2, "type": "database", "label": "managed_client_policies", "sublabel": "somente managed/internet-provider" },
+    { "id": "pipeline", "lane": "database", "col": 3, "type": "database", "label": "crm_pipelines + crm_stages", "sublabel": "operações oficiais, campos e motivos em settings" },
+    { "id": "tags", "lane": "database", "col": 3, "type": "database", "label": "organizations.settings.tags", "sublabel": "vocabulário curado sem duplicar nem apagar tags existentes" },
+    { "id": "kanban", "lane": "human", "col": 4, "type": "frontend", "label": "Kanban e Contatos", "sublabel": "lead perdido segue consultável por motivo e tag" },
+    { "id": "audit", "lane": "human", "col": 4, "type": "frontend", "label": "Auditoria", "sublabel": "criação e configuração do funil; aplicação do pacote" },
+    { "id": "pending", "lane": "human", "col": 4, "type": "frontend", "label": "Pendências 7C", "sublabel": "agentes, canal, roteador e prazos de follow-up" }
+  ],
+  "edges": [
+    { "id": "e1", "from": "tool", "to": "service", "label": "organização explícita e confirmação" },
+    { "id": "e2", "from": "service", "to": "tool", "label": "criado, existente, conflitos e pendências" },
+    { "id": "e3", "from": "service", "to": "policy", "label": "valida preset e ator" },
+    { "id": "e4", "from": "service", "to": "pipeline", "label": "cria ou continua via operações canônicas" },
+    { "id": "e5", "from": "service", "to": "tags", "label": "acrescenta tags ausentes" },
+    { "id": "e6", "from": "pipeline", "to": "kanban", "label": "etapas, motivos e campos" },
+    { "id": "e7", "from": "tags", "to": "kanban", "label": "filtros de recuperação" },
+    { "id": "e8", "from": "service", "to": "audit", "label": "efeito registrado" },
+    { "id": "e9", "from": "audit", "to": "service", "label": "falha orienta nova tentativa" },
+    { "id": "e10", "from": "service", "to": "pending", "label": "expõe dependências sem ativá-las" }
+  ]
+}

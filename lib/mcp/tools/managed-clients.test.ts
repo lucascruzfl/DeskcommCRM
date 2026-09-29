@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ preflight: vi.fn(), execute: vi.fn() }));
+const mocks = vi.hoisted(() => ({ preflight: vi.fn(), execute: vi.fn(), ispExecute: vi.fn() }));
 vi.mock("@/lib/managed-clients/onboarding", async (importOriginal) => {
   const original = (await importOriginal()) as Record<string, unknown>;
   return { ...original, managedOnboardingService: mocks };
+});
+vi.mock("@/lib/managed-clients/isp-package", async (importOriginal) => {
+  const original = (await importOriginal()) as Record<string, unknown>;
+  return { ...original, ispPackageService: { execute: mocks.ispExecute } };
 });
 
 import { z } from "zod";
@@ -26,6 +30,7 @@ describe("tools MCP de onboarding gerenciado", () => {
       "crm_list_managed_client_presets",
       "crm_preflight_managed_client",
       "crm_create_managed_client",
+      "crm_configure_managed_internet_provider",
     ]);
     const create = MANAGED_CLIENT_TOOLS[2]!;
     expect(create.category).toBe("write");
@@ -43,6 +48,19 @@ describe("tools MCP de onboarding gerenciado", () => {
       confirm: true,
       idempotency_key_present: false,
     });
+  });
+  it("pacote ISP exige organização explícita e passa confirmação separada ao serviço", async () => {
+    const tool = MANAGED_CLIENT_TOOLS[3]!;
+    const target = "00000000-0000-4000-8000-000000000010";
+    mocks.ispExecute.mockResolvedValue({ can_execute: true });
+    await tool.handler({ organization_id: target }, actor);
+    await tool.handler({ organization_id: target, confirm: true }, actor);
+    expect(mocks.ispExecute.mock.calls).toEqual([
+      [target, expect.objectContaining({ userId: actor.provisionedByUserId }), false],
+      [target, expect.objectContaining({ userId: actor.provisionedByUserId }), true],
+    ]);
+    expect(tool.redigirParaAuditoria?.({ organization_id: target, confirm: true })).toEqual({ organization_id: target, confirm: true });
+    await expect(tool.handler({ organization_id: "not-an-id", confirm: true }, actor)).rejects.toThrow();
   });
 
   it.each(Object.values(MANAGED_CLIENT_PRESETS))(

@@ -16,6 +16,7 @@ ser fonte sem ninguém decidir isso.
 
 | arquivo | escopo |
 |---|---|
+| `managed-isp-operational-package.architecture.json` | preflight, aplicação idempotente do funil e tags ISP, auditoria e pendências da 7C |
 | `managed-client-onboarding.architecture.json` | criação transacional de cliente gerenciado por platform admin full, convite agent retomável, membership do gestor, preflight MCP e auditoria |
 | `mcp-fundacao-ia.architecture.json` | fundação do MCP e administração de IA — registry único, autorização de manager por domínio/tool/capability, isolamento por organização, catálogo real de provider/model/credencial e auditoria sem segredos |
 | `conversoes-de-anuncios.architecture.json` | venda, entrega, protocolo assíncrono, pendências e reprocessamento |

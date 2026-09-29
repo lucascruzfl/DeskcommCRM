@@ -31,4 +31,14 @@ export const TOOLS_MANAGED_CLIENTS = declararTools([
     pacotes: ["organizar"],
     apenasHumano: true,
   },
+  {
+    name: "crm_configure_managed_internet_provider",
+    category: "write",
+    rotulo: "Preparar operação de provedor gerenciado",
+    explicacao: "Confere o plano e, após confirmação, cria o funil, os motivos, campos e marcadores de um provedor de internet gerenciado.",
+    oQueToca: "Funil, etapas, motivos de perda, campos e marcadores do cliente",
+    risco: "critico",
+    pacotes: ["organizar"],
+    apenasHumano: true,
+  },
 ]);

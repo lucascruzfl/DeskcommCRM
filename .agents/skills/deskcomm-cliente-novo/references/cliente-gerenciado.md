@@ -17,8 +17,9 @@ Os presets **managed** existem no registro oficial:
 
 Eles persistem uma política por área. O snapshot aplicado à organização continua sendo a
 autoridade; uma atualização do código não troca silenciosamente seus acessos. O preset ISP
-**não cria funil, tags, agentes, roteador ou integração de rede/billing**. O pacote de
-`nichos.md` é conteúdo para implantação posterior, revisado com a pessoa.
+por si só não cria operação. Após o onboarding, `crm_configure_managed_internet_provider`
+planeja e, com confirmação, instala funil, motivos, campos e vocabulário de tags.
+Agentes, roteador, follow-ups e integrações exigem implantação posterior.
 
 | Classificação | Significado operacional |
 | --- | --- |

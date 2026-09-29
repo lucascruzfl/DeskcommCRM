@@ -10,8 +10,9 @@ metadata:
 
 Este guia monta a operação por nicho depois do onboarding e também orienta a criação de
 **cliente gerenciado** (managed client) pela agência. O onboarding gerenciado provisiona a
-organização, a política de áreas, o membership do gestor e o convite oficial; não monta agentes,
-funil ou tags de ISP. A implantação continua com prompt, roteamento, follow-ups, conhecimento,
+organização, a política de áreas, o membership do gestor e o convite oficial. Para ISP, a tool
+`crm_configure_managed_internet_provider` mostra o preflight e, com confirmação da agência,
+instala o funil, motivos, campos e tags. A implantação continua com prompt, roteamento, follow-ups, conhecimento,
 memória e capacidades revisados para o negócio.
 
 O atendimento é **IA + humano**: a IA atende normalmente, abre caso/passa para atendimento humano
@@ -81,7 +82,7 @@ gerente Fulano" para tudo que não souber — isso faz o modelo parar de usar a 
 Resolva as dependências antes de publicar. Os nomes e caminhos atuais estão em
 `references/pela-tela.md`; o equivalente MCP comprovado, quando houver, em
 `references/por-arquivo.md`. No tenant managed, a agência com membership admin configura as áreas
-agency; a pessoa do cliente convidada como agent opera as áreas permitidas.
+  agency; a pessoa do cliente convidada como agent opera as áreas permitidas.
 
 1. **Conexões** — o número precisa estar WORKING (o onboarding já fez).
 2. **IA › Credenciais** — a credencial validada do provedor, ou a chave resolvida pela instalação

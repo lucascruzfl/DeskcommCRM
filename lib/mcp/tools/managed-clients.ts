@@ -1,6 +1,7 @@
 import { MANAGED_CLIENT_PRESETS, managedPresetForBusinessType, managedPresetAreas } from "@/lib/managed-clients/presets";
 import { managedClientPreflightSchema } from "@/lib/managed-clients/preflight";
 import { managedOnboardingSchema, managedOnboardingService } from "@/lib/managed-clients/onboarding";
+import { ispPackageInputSchema, ispPackageService } from "@/lib/managed-clients/isp-package";
 import { z } from "zod";
 import type { McpToolDefinition } from "../types";
 import type { McpContext } from "../types";
@@ -15,6 +16,7 @@ function onboardingActor(ctx: McpContext) {
 }
 
 const createSchema = managedOnboardingSchema.extend({ confirm: z.boolean().default(false) });
+const ispSchema = ispPackageInputSchema.extend({ confirm: z.boolean().default(false) });
 
 export const MANAGED_CLIENT_TOOLS: ReadonlyArray<McpToolDefinition> = [
   {
@@ -89,6 +91,22 @@ export const MANAGED_CLIENT_TOOLS: ReadonlyArray<McpToolDefinition> = [
       const parsed = createSchema.parse(input);
       const { confirm, ...request } = parsed;
       return managedOnboardingService.execute(request, onboardingActor(ctx), confirm);
+    },
+  },
+  {
+    name: "crm_configure_managed_internet_provider",
+    description: "Planeja ou aplica o pacote operacional de um provedor de internet gerenciado. Sem confirm=true apenas mostra conflitos e pendências da 7C. Exige platform_admin full, vínculo admin atual no cliente e capability:managed_client_onboarding.",
+    inputSchema: ispSchema.shape,
+    category: "write",
+    requiresRole: "manager",
+    requiresScope: "mcp:write",
+    domain: "settings",
+    capabilities: ["managed_client_onboarding"],
+    redigirParaAuditoria: (args) => ({ organization_id: args.organization_id, confirm: args.confirm === true }),
+    auditResource: (args) => ({ type: "organization", id: String(args.organization_id) }),
+    handler: async (input, ctx) => {
+      const parsed = ispSchema.parse(input);
+      return ispPackageService.execute(parsed.organization_id, onboardingActor(ctx), parsed.confirm);
     },
   },
 ];
