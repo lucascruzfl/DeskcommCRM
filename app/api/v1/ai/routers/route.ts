@@ -15,7 +15,7 @@ import { z } from "zod";
 import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
-import { ARCHIVED_AT, queryTolerantToMissingArchived } from "@/lib/channels/archived";
+import { createAiRouter } from "@/lib/ai/agents/router-create";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { traduzir } from "@/lib/i18n/dicionario";
 
@@ -101,53 +101,23 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   const admin = createAdminClient();
 
-  // Arquivado não é destino válido — a linha só sobrevive por causa das FKs.
-  //
-  // Tolerante à coluna ausente, e o erro NÃO vira 404. Esta consulta produziu o
-  // 404 mais enganoso do produto: num banco sem a migration 0106 o PostgREST
-  // devolve 42703, `data` vem null, e descartar o `error` transformava "a
-  // consulta falhou" em "esse número não é seu" — sobre um número WORKING que a
-  // tela ao lado listava. O usuário só podia concluir que o CRM tinha perdido o
-  // canal dele. Falhar aberto na informação: se não deu para verificar, dizemos
-  // que não deu, em vez de afirmar a ausência (ver lib/channels/archived).
-  const base = () =>
-    admin
-      .from("channel_sessions")
-      .select("id")
-      .eq("id", input.channel_session_id)
-      .eq("organization_id", org.orgId);
-  const { data: session, error: sessionErr } = await queryTolerantToMissingArchived(
-    () => base().is(ARCHIVED_AT, null).maybeSingle(),
-    () => base().maybeSingle(),
-  );
-  if (sessionErr) {
-    return fail("internal_error", t("Erro ao verificar o número de WhatsApp."), 500, { requestId });
+  const created = await createAiRouter(admin, org.orgId, {
+    name: input.name, channel_session_id: input.channel_session_id,
+    fallback_agent_id: input.fallback_agent_id, config: input.config,
+    created_by: authUser.id,
+  });
+  if (!created.ok && created.error === "internal_error") {
+    return fail("internal_error", t("Erro ao criar router."), 500, { requestId });
   }
-  if (!session) {
+  if (!created.ok && created.error === "channel_session_not_found") {
     return fail("channel_session_not_found", t("Número de WhatsApp não encontrado nesta organização."), 404, {
       requestId,
     });
   }
-
-  const { data: created, error: insErr } = await admin
-    .from("ai_routers")
-    .insert({
-      organization_id: org.orgId,
-      name: input.name,
-      channel_session_id: input.channel_session_id,
-      fallback_agent_id: input.fallback_agent_id ?? null,
-      ...(input.config !== undefined ? { config: input.config } : {}),
-      created_by: authUser.id,
-    })
-    .select("id")
-    .single();
-
-  if (insErr || !created) {
-    if (insErr?.code === "23505") {
-      return fail("router_already_exists", t("Este número já tem um roteador ativo."), 409, { requestId });
-    }
-    return fail("internal_error", "Erro ao criar router.", 500, { requestId });
+  if (!created.ok && created.error === "fallback_agent_not_found") {
+    return fail("validation_failed", t("Agente de reserva não encontrado nesta organização."), 422, { requestId });
   }
+  if (!created.ok) return fail("router_already_exists", t("Este número já tem um roteador ativo."), 409, { requestId });
 
   void audit({
     action: "ai.router_created",

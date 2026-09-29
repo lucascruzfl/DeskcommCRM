@@ -127,6 +127,15 @@ describe("wave 2 — human-cases repositório", () => {
     );
     expect(events.rows).toHaveLength(1);
     expect(events.rows[0]).toMatchObject({ kind: "opened", actor_kind: "agent" });
+
+    // Caso é retaguarda: a conversa continua com a IA. Silêncio só pertence ao handoff.
+    const { rows: attendance } = await pool.query(
+      `select v.status, v.bot_silenced_until, c.force_human
+         from conversations v join contacts c on c.organization_id=v.organization_id and c.id=v.contact_id
+        where v.organization_id=$1 and v.id=$2`,
+      [ORG_A, CONV_A],
+    );
+    expect(attendance[0]).toMatchObject({ status: "ai_handling", bot_silenced_until: null, force_human: false });
   });
 
   it("hasOpenCaseForContact reflete o ciclo de vida do caso", async () => {

@@ -35,6 +35,7 @@ const TARGET_WORDS = [
   "gerente",
   "supervisor",
   "departamento",
+  "financeiro",
 ] as const;
 const TARGET_WORD_SET = new Set<string>(TARGET_WORDS);
 const TARGET = `(?:${TARGET_WORDS.join("|")})`;

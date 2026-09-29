@@ -41,4 +41,14 @@ export const TOOLS_MANAGED_CLIENTS = declararTools([
     pacotes: ["organizar"],
     apenasHumano: true,
   },
+  {
+    name: "crm_configure_managed_internet_provider_ai",
+    category: "write",
+    rotulo: "Preparar IA e atendimento humano do provedor",
+    explicacao: "Mostra pendências ou prepara agentes, roteador e lembretes internos em rascunho, sem publicar nem enviar mensagens.",
+    oQueToca: "Agentes, roteador de intenções e rascunhos de acompanhamento do provedor",
+    risco: "critico",
+    pacotes: ["organizar"],
+    apenasHumano: true,
+  },
 ]);
