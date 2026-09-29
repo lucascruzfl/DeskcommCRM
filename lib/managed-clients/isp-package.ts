@@ -98,6 +98,29 @@ function equivalent(a: unknown, b: unknown): boolean {
 }
 function unavailable(): never { throw new Error("managed_isp_package_unavailable"); }
 
+async function appendPackageTags(
+  admin: ReturnType<typeof createAdminClient>,
+  organizationId: string,
+  tagsToAdd: readonly string[],
+): Promise<string[]> {
+  const { data: org, error: readError } = await admin.from("organizations")
+    .select("settings").eq("id", organizationId).maybeSingle();
+  if (readError || !org) unavailable();
+  const settings = (org.settings ?? {}) as Row;
+  if (settings.tags !== undefined && !Array.isArray(settings.tags)) unavailable();
+  const current = Array.isArray(settings.tags) ? settings.tags : [];
+  const present = new Set(current.map(tagName).filter((name): name is string => !!name).map(chaveDaEtiqueta));
+  const additions = tagsToAdd.filter((tag) => !present.has(tag));
+  if (additions.length) {
+    const { data: updated, error: writeError } = await admin.from("organizations")
+      .update({ settings: { ...settings, tags: [...current, ...additions] } })
+      .eq("id", organizationId).filter("settings", "eq", JSON.stringify(settings))
+      .select("id").maybeSingle();
+    if (writeError || !updated) unavailable();
+  }
+  return additions;
+}
+
 /** A aplicação é retomável: cada escrita tem leitura, conflito e chave estável. */
 export function createIspPackageService(deps: Deps = defaults) {
   async function plan(organizationId: string, actor: IspPackageActor) {
@@ -241,22 +264,8 @@ export function createIspPackageService(deps: Deps = defaults) {
     }
     const tagsToAdd = ISP_TAGS.filter((tag) => before.a_criar.includes(`tag:${tag}`));
     if (tagsToAdd.length) {
-      const { data: org, error: readError } = await db.from("organizations")
-        .select("settings").eq("id", organizationId).maybeSingle();
-      if (readError || !org) unavailable();
-      const settings = (org.settings ?? {}) as Row;
-      if (settings.tags !== undefined && !Array.isArray(settings.tags)) unavailable();
-      const current = Array.isArray(settings.tags) ? settings.tags : [];
-      const present = new Set(current.map(tagName).filter((name): name is string => !!name).map(chaveDaEtiqueta));
-      const additions = tagsToAdd.filter((tag) => !present.has(tag));
-      if (additions.length) {
-        const { data: updated, error: writeError } = await db.from("organizations")
-          .update({ settings: { ...settings, tags: [...current, ...additions] } })
-          .eq("id", organizationId).filter("settings", "eq", JSON.stringify(settings))
-          .select("id").maybeSingle();
-        if (writeError || !updated) unavailable();
-        created.push(...additions.map((tag) => `tag:${tag}`));
-      }
+      const additions = await appendPackageTags(db, organizationId, tagsToAdd);
+      created.push(...additions.map((tag) => `tag:${tag}`));
     }
     if (created.length) await deps.audit({ action: "managed_client.operational_package_applied",
       organizationId, actorUserId: actor.userId, actorApiTokenId: actor.apiTokenId ?? null,
