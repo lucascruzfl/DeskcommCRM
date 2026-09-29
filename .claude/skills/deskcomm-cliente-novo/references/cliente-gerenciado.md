@@ -6,7 +6,7 @@ managed existente. Contrato conferido na base `mcp/stable` em
 consulte `lib/managed-clients/presets.ts`, `policy.ts`, `onboarding.ts`, `lib/mcp/auth.ts` e
 `lib/mcp/tools/managed-clients.ts`; o catálogo recebido por `tools/list` decide o que o token pode usar.
 
-## Preset de áreas e pacote operacional são etapas diferentes
+## Preset de áreas e pacote operacional
 
 Os presets **managed** existem no registro oficial:
 
@@ -17,9 +17,9 @@ Os presets **managed** existem no registro oficial:
 
 Eles persistem uma política por área. O snapshot aplicado à organização continua sendo a
 autoridade; uma atualização do código não troca silenciosamente seus acessos. O preset ISP
-por si só não cria operação. Após o onboarding, com token do provedor alvo,
-`crm_configure_managed_internet_provider`
-planeja e, com confirmação, instala funil, motivos, campos e vocabulário de tags.
+aplica o pacote operacional automaticamente ao novo tenant durante o onboarding.
+Com token do provedor alvo, `crm_configure_managed_internet_provider`
+planeja, tenta novamente ou repara explicitamente funil, motivos, campos, rules e tags.
 Agentes, roteador, follow-ups e integrações exigem implantação posterior.
 
 | Classificação | Significado operacional |

@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { evaluateConditions } from "@/lib/automation/conditions";
+import { getAction } from "@/lib/automation/actions";
+import "@/lib/automation/actions/add-tag";
 
 const operations = vi.hoisted(() => ({ create: vi.fn(), configure: vi.fn(), update: vi.fn() }));
 vi.mock("@/lib/pipelines/operations", () => ({
@@ -23,6 +26,7 @@ interface Data {
   crm_stages: Record<string, unknown>[];
   crm_leads: Record<string, unknown>[];
   organizations: Record<string, unknown>[];
+  automation_rules: Record<string, unknown>[];
 }
 
 function fixture() {
@@ -31,7 +35,7 @@ function fixture() {
     user_organizations: [{ organization_id: ORG, user_id: USER, role: "admin", revoked_at: null, accepted_at: "2026-01-01" }],
     managed_client_policies: [{ organization_id: ORG, business_type: "internet_provider", management_mode: "managed", preset_id: "managed/internet-provider" }],
     crm_pipelines: [], crm_stages: [], crm_leads: [],
-    organizations: [{ id: ORG, settings: { tags: ["minha-tag"] } }],
+    organizations: [{ id: ORG, settings: { tags: ["minha-tag"] } }], automation_rules: [],
   };
   const writes: string[] = [];
   const audit = vi.fn(async () => undefined);
@@ -55,6 +59,11 @@ function fixture() {
       not: (key: string, _operator: string, value: unknown) => { conditions.push((row) => row[key] !== value); return q; },
       order: (key: string) => { orderKey = key; return q; },
       update: (patch: Record<string, unknown>) => { update = patch; return q; },
+      insert: async (row: Record<string, unknown>) => {
+        data[table].push(row);
+        writes.push(table);
+        return { error: null };
+      },
       maybeSingle: async () => {
         const rows = data[table].filter((row) => conditions.every((check) => check(row)));
         if (rows.length > 1) return { data: null, error: { code: "PGRST116" } };
@@ -82,6 +91,7 @@ function fixture() {
     data.crm_pipelines.push({ id: PIPE, organization_id: ORG, name: input.name, slug: "vendas-internet", is_archived: false,
       is_default: !data.crm_pipelines.some((row) => row.is_default), settings: {} });
     data.crm_stages.push(...ISP_STAGES.map((stage, index) => ({
+      id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
       organization_id: ORG, pipeline_id: PIPE, name: stage.nome, is_won: stage.passo === "won",
       is_lost: stage.passo === "lost", agent_stage_hint: stage.passo, is_archived: false, position: index + 1,
     })));
@@ -128,6 +138,70 @@ describe("pacote operacional ISP gerenciado", () => {
     expect(f.audit).toHaveBeenCalledTimes(1);
   });
 
+  it("rules tenant-scoped reconhecem só a etapa de entrada e add_tag é idempotente", async () => {
+    const f = fixture();
+    await f.service.execute(ORG, f.actor, true);
+    const expected = [
+      ["Aguardando documentos", "aguardando-documentos"],
+      ["Instalação", "instalacao"],
+      ["Cliente ativado", "cliente-ativo"],
+    ];
+    expect(f.data.automation_rules).toHaveLength(3);
+    const lead = { id: "lead-1", organization_id: ORG, tags: [] as string[] };
+    const events: string[] = [];
+    const admin = {
+      from: (table: string) => {
+        expect(table).toBe("crm_leads");
+        let patch: { tags: string[] };
+        const filters: Record<string, string> = {};
+        const q = { update: (value: { tags: string[] }) => { patch = value; return q; },
+          eq: (key: string, value: string) => { filters[key] = value; return q; },
+          then: (resolve: (value: { error: null }) => unknown) => {
+            expect(filters).toEqual({ id: lead.id, organization_id: ORG });
+            lead.tags = patch.tags;
+            return Promise.resolve(resolve({ error: null }));
+          } };
+        return q;
+      },
+      rpc: async (name: string, args: { p_organization_id: string }) => {
+        expect(name).toBe("emit_event");
+        events.push(args.p_organization_id);
+        return { error: null };
+      },
+    };
+    for (const [stageName, tag] of expected) {
+      const stage = f.data.crm_stages.find((row) => row.name === stageName)!;
+      const rule = f.data.automation_rules.find((row) => row.name === `ISP: entrada em ${tag}`)!;
+      expect(rule.organization_id).toBe(ORG);
+      expect(rule.trigger_event).toBe("lead.stage_changed");
+      expect(evaluateConditions(rule.conditions as never, { event: { to_stage_id: stage.id } })).toBe(true);
+      expect(evaluateConditions(rule.conditions as never, { event: { to_stage_id: "other-stage" } })).toBe(false);
+      const action = (rule.actions as Array<{ type: string; config: Record<string, unknown> }>)[0]!;
+      const ctx = { admin: admin as never, organizationId: ORG, ruleId: String(rule.id), ruleName: String(rule.name),
+        event: {} as never, requestId: "isp-test", context: { lead } };
+      expect((await getAction(action.type)!.execute(ctx, action.config)).detail?.added).toEqual([tag]);
+      expect((await getAction(action.type)!.execute(ctx, action.config)).detail?.added).toEqual([]);
+    }
+    expect(lead.tags).toEqual(expected.map(([, tag]) => tag));
+    expect(events).toEqual([ORG, ORG, ORG]);
+    expect(f.data.automation_rules.some((rule) => JSON.stringify(rule).includes("sem-cobertura"))).toBe(false);
+  });
+
+  it("retry recria somente rule ausente e recusa sobrescrever rule personalizada", async () => {
+    const f = fixture();
+    await f.service.execute(ORG, f.actor, true);
+    const removed = f.data.automation_rules.pop()!;
+    expect((await f.service.execute(ORG, f.actor, true)).criado).toEqual(["automation:cliente-ativo"]);
+    expect(f.data.automation_rules).toHaveLength(3);
+    const personalized = f.data.automation_rules.find((row) => row.id === removed.id)!;
+    personalized.is_active = false;
+    const before = f.writes.length;
+    expect((await f.service.preflight(ORG, f.actor)).conflitos).toContain("automation:cliente-ativo_conflict");
+    await expect(f.service.execute(ORG, f.actor, true)).rejects.toThrow("managed_isp_package_denied");
+    expect(f.writes).toHaveLength(before);
+    expect(personalized.is_active).toBe(false);
+  });
+
   it("falha fechado para clínica, organização comum, outro tenant e ator sem privilégio", async () => {
     const f = fixture();
     f.data.managed_client_policies[0]!.preset_id = "managed/aesthetic-clinic";
@@ -149,7 +223,8 @@ describe("pacote operacional ISP gerenciado", () => {
     f.data.crm_stages.push(...[
       "Carrinho abandonado", "Aguardando pagamento", "Pago", "Em separação",
       "Enviado", "Entregue", "Pós-venda", "Cancelado",
-    ].map((name, index) => ({ name, is_won: name === "Pago", is_lost: name === "Cancelado",
+    ].map((name, index) => ({ id: `00000000-0000-4000-8001-${String(index + 1).padStart(12, "0")}`,
+      name, is_won: name === "Pago", is_lost: name === "Cancelado",
       is_archived: false, organization_id: ORG, pipeline_id: seedId, position: index + 1 })));
     const before = await f.service.preflight(ORG, f.actor);
     expect(before.a_criar).toContain("pipeline.default");
@@ -168,7 +243,8 @@ describe("pacote operacional ISP gerenciado", () => {
     f.data.crm_stages.push(...[
       "Carrinho abandonado", "Aguardando pagamento", "Pago", "Em separação",
       "Enviado", "Entregue", "Pós-venda", "Cancelado",
-    ].map((name, index) => ({ name, is_won: name === "Pago", is_lost: name === "Cancelado",
+    ].map((name, index) => ({ id: `00000000-0000-4000-8001-${String(index + 1).padStart(12, "0")}`,
+      name, is_won: name === "Pago", is_lost: name === "Cancelado",
       is_archived: false, organization_id: ORG, pipeline_id: seedId, position: index + 1 })));
     f.data.crm_leads.push({ organization_id: ORG, pipeline_id: seedId });
     const plan = await f.service.preflight(ORG, f.actor);
@@ -182,7 +258,8 @@ describe("pacote operacional ISP gerenciado", () => {
   it("recusa configuração conflitante sem alterar a personalização", async () => {
     const f = fixture();
     f.data.crm_pipelines.push({ id: PIPE, organization_id: ORG, name: "Vendas — Internet", slug: "vendas-internet", settings: { fields: [{ key: "cep", label: "CEP privado", type: "text" }] }, is_archived: false });
-    f.data.crm_stages.push(...ISP_STAGES.map((stage, index) => ({ organization_id: ORG, pipeline_id: PIPE,
+    f.data.crm_stages.push(...ISP_STAGES.map((stage, index) => ({ id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+      organization_id: ORG, pipeline_id: PIPE,
       name: stage.nome, is_won: stage.passo === "won", is_lost: stage.passo === "lost",
       agent_stage_hint: stage.passo, is_archived: false, position: index + 1 })));
     const preflight = await f.service.preflight(ORG, f.actor);
@@ -205,8 +282,9 @@ describe("pacote operacional ISP gerenciado", () => {
     const result = await f.service.execute(ORG, f.actor, true);
     expect(result.pendencias.join(" ")).toMatch(/Comercial.*Suporte.*Financeiro.*Instalação/);
     expect(result.roteamento).toHaveLength(4);
-    expect(result.followups.every((flow) => flow.dias === null && flow.acao === "tarefa_interna")).toBe(true);
-    expect(f.writes).toEqual(["crm_pipelines", "crm_stages", "crm_pipelines.settings", "organizations"]);
+    expect(result.followup_plan.every((flow) => flow.dias === null && flow.acao === "tarefa_interna")).toBe(true);
+    expect(f.writes).toEqual(["crm_pipelines", "crm_stages", "crm_pipelines.settings", "organizations",
+      "automation_rules", "automation_rules", "automation_rules"]);
     expect(f.data.crm_pipelines[0]!.settings).not.toHaveProperty("coverage_available");
     expect(f.data.organizations[0]!.settings).not.toHaveProperty("agenda");
   });

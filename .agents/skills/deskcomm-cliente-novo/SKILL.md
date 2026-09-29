@@ -10,10 +10,10 @@ metadata:
 
 Este guia monta a operação por nicho depois do onboarding e também orienta a criação de
 **cliente gerenciado** (managed client) pela agência. O onboarding gerenciado provisiona a
-organização, a política de áreas, o membership do gestor e o convite oficial. Para ISP, a tool
-`crm_configure_managed_internet_provider`, usando token vinculado ao provedor alvo,
-mostra o preflight e, com confirmação da agência,
-instala o funil, motivos, campos e tags. A implantação continua com prompt, roteamento, follow-ups, conhecimento,
+organização, a política de áreas, o membership do gestor e o convite oficial. Para ISP, o
+onboarding também aplica o pacote operacional. A tool `crm_configure_managed_internet_provider`,
+com token vinculado ao provedor alvo, permanece para preflight, retry e reparo explícito.
+A implantação continua com prompt, roteamento, follow-ups, conhecimento,
 memória e capacidades revisados para o negócio.
 
 O atendimento é **IA + humano**: a IA atende normalmente, abre caso/passa para atendimento humano
@@ -29,8 +29,8 @@ quem recebe, o próximo passo e quando devolver à IA; não prometa resolução 
   `references/por-arquivo.md`. Há configuração via MCP, mas nem toda configuração tem tool.
   Não configure por SQL: isso pula validação, auditoria e eventos; o agente usa a versão publicada.
 - **Cliente gerenciado tem permissões próprias.** Leia `references/cliente-gerenciado.md` antes
-  de criar ou administrar um. Preset de áreas não concede acesso universal nem instala o pacote
-  operacional do nicho.
+  de criar ou administrar um. Preset de áreas não concede acesso universal; o onboarding ISP
+  aplica o pacote operacional no mesmo tenant.
 - **Não inventa regra de negócio.** Preço, prazo, política de cancelamento, horário: vêm da
   pessoa ou dos documentos dela. O que não está escrito vira pergunta, não suposição.
 - **Não repete no prompt o que o motor já impõe.** Apresentar-se como assistente, não inventar

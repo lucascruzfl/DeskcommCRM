@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { audit } from "@/lib/audit";
@@ -21,6 +22,11 @@ export const ISP_STAGES: PropostaDeFunil["etapas"] = [
   { nome: "Não contratado", passo: "lost" },
 ];
 export const ISP_TAGS = ["lead", "sem-cobertura", "aguardando-documentos", "instalacao", "cliente-ativo", "suporte", "financeiro", "cancelamento"] as const;
+const STAGE_TAG_RULES = [
+  { stage: "Aguardando documentos", tag: "aguardando-documentos" },
+  { stage: "Instalação", tag: "instalacao" },
+  { stage: "Cliente ativado", tag: "cliente-ativo" },
+] as const;
 export const ISP_LOST_REASONS = [
   { label: "Sem cobertura", categoria: "Nós" },
   { label: "Desistiu", categoria: "Cliente" },
@@ -42,7 +48,8 @@ export const ISP_ROUTING = [
   { intencao: "segunda via", destino: "Financeiro", estado: "pendente_7c" },
   { intencao: "quando instalar", destino: "Instalação", estado: "pendente_7c" },
 ] as const;
-export const ISP_FOLLOWUPS = [
+/** Plano pendente de decisão de prazos; não representa flows provisionados. */
+export const ISP_FOLLOWUP_PLAN = [
   { gatilho: "dias_na_mesma_etapa", etapa: "Aguardando documentos", acao: "tarefa_interna", dias: null },
   { gatilho: "dias_na_mesma_etapa", etapa: "Instalação", acao: "tarefa_interna", dias: null },
   { gatilho: "dias_sem_mensagem", etapa: "Plano apresentado", acao: "tarefa_interna", dias: null },
@@ -144,7 +151,7 @@ export function createIspPackageService(deps: Deps = defaults) {
     }
     // Não revelar se a organização existe a um ator sem autoridade atual.
     if (conflicts.length) return { organization_id: organizationId, a_criar: toCreate, criado: [], ja_existia: existing,
-      conflitos: conflicts, pendencias: [...PENDENCIAS], roteamento: ISP_ROUTING, followups: ISP_FOLLOWUPS,
+      conflitos: conflicts, pendencias: [...PENDENCIAS], roteamento: ISP_ROUTING, followup_plan: ISP_FOLLOWUP_PLAN,
       warnings, can_execute: false, requires_confirmation: true };
 
     const { data: policy, error: policyError } = await db.from("managed_client_policies")
@@ -153,7 +160,7 @@ export function createIspPackageService(deps: Deps = defaults) {
     if (policy?.management_mode !== "managed" || policy.preset_id !== "managed/internet-provider" || policy.business_type !== "internet_provider")
       conflicts.push("managed_internet_provider_required");
     if (conflicts.length) return { organization_id: organizationId, a_criar: toCreate, criado: [], ja_existia: existing,
-      conflitos: conflicts, pendencias: [...PENDENCIAS], roteamento: ISP_ROUTING, followups: ISP_FOLLOWUPS,
+      conflitos: conflicts, pendencias: [...PENDENCIAS], roteamento: ISP_ROUTING, followup_plan: ISP_FOLLOWUP_PLAN,
       warnings, can_execute: false, requires_confirmation: true };
 
     const { data: allPipelines, error: pipelineError } = await db.from("crm_pipelines")
@@ -168,12 +175,12 @@ export function createIspPackageService(deps: Deps = defaults) {
       else {
         existing.push("pipeline");
         const { data: stages, error: stageError } = await db.from("crm_stages")
-          .select("name,is_won,is_lost,agent_stage_hint,is_archived")
+          .select("id,name,is_won,is_lost,agent_stage_hint,is_archived")
           .eq("organization_id", organizationId).eq("pipeline_id", String(pipeline.id))
           .order("position", { ascending: true });
         if (stageError) unavailable();
         const expected = ISP_STAGES.map((s) => ({ name: s.nome, is_won: s.passo === "won", is_lost: s.passo === "lost", agent_stage_hint: s.passo, is_archived: false }));
-        if (!equivalent(stages, expected)) conflicts.push("pipeline_stages_conflict");
+        if (!equivalent((stages ?? []).map(({ id: _id, ...stage }) => stage), expected)) conflicts.push("pipeline_stages_conflict");
         else existing.push("stages");
         const settings = (pipeline.settings ?? {}) as Row;
         for (const [key, target] of Object.entries(CONFIG)) {
@@ -226,8 +233,26 @@ export function createIspPackageService(deps: Deps = defaults) {
       else if (counts.has(tag)) existing.push(`tag:${tag}`);
       else toCreate.push(`tag:${tag}`);
     }
+    if (pipeline && !conflicts.includes("pipeline_stages_conflict")) {
+      const { data: stages, error: stageError } = await db.from("crm_stages")
+        .select("id,name").eq("organization_id", organizationId).eq("pipeline_id", String(pipeline.id));
+      if (stageError) unavailable();
+      for (const item of STAGE_TAG_RULES) {
+        const stage = (stages ?? []).find((row) => row.name === item.stage);
+        if (!stage) { conflicts.push(`automation:${item.tag}_stage_missing`); continue; }
+        const rule = stageTagRule(organizationId, String(stage.id), item.tag);
+        const { data: current, error } = await db.from("automation_rules")
+          .select("name,trigger_event,conditions,actions,is_active")
+          .eq("organization_id", organizationId).eq("id", rule.id).maybeSingle();
+        if (error) unavailable();
+        if (!current) toCreate.push(`automation:${item.tag}`);
+        else if (Object.entries(rule).every(([key, value]) => ["id", "organization_id"].includes(key) || equivalent((current as Row)[key], value)))
+          existing.push(`automation:${item.tag}`);
+        else conflicts.push(`automation:${item.tag}_conflict`);
+      }
+    } else if (!pipeline) toCreate.push(...STAGE_TAG_RULES.map((item) => `automation:${item.tag}`));
     return { organization_id: organizationId, a_criar: toCreate, criado: [], ja_existia: existing,
-      conflitos: conflicts, pendencias: [...PENDENCIAS], roteamento: ISP_ROUTING, followups: ISP_FOLLOWUPS,
+      conflitos: conflicts, pendencias: [...PENDENCIAS], roteamento: ISP_ROUTING, followup_plan: ISP_FOLLOWUP_PLAN,
       warnings, can_execute: conflicts.length === 0,
       requires_confirmation: true, pipeline_id: pipeline?.id ?? null,
       previous_default_id: currentDefault?.id ?? null };
@@ -267,16 +292,43 @@ export function createIspPackageService(deps: Deps = defaults) {
       const additions = await appendPackageTags(db, organizationId, tagsToAdd);
       created.push(...additions.map((tag) => `tag:${tag}`));
     }
+    const { data: stageRows, error: stageError } = await db.from("crm_stages")
+      .select("id,name").eq("organization_id", organizationId).eq("pipeline_id", pipelineId);
+    if (stageError) unavailable();
+    for (const item of STAGE_TAG_RULES) {
+      const stage = (stageRows ?? []).find((row) => row.name === item.stage);
+      if (!stage) unavailable();
+      const rule = stageTagRule(organizationId, String(stage.id), item.tag);
+      const { data: current, error: readError } = await db.from("automation_rules")
+        .select("name,trigger_event,conditions,actions,is_active")
+        .eq("organization_id", organizationId).eq("id", rule.id).maybeSingle();
+      if (readError) unavailable();
+      if (current) {
+        if (!Object.entries(rule).every(([key, value]) => ["id", "organization_id"].includes(key) || equivalent((current as Row)[key], value))) unavailable();
+        continue;
+      }
+      const { error: insertError } = await db.from("automation_rules").insert(rule);
+      if (insertError) unavailable();
+      created.push(`automation:${item.tag}`);
+    }
     if (created.length) await deps.audit({ action: "managed_client.operational_package_applied",
       organizationId, actorUserId: actor.userId, actorApiTokenId: actor.apiTokenId ?? null,
       actingAsPlatformAdmin: true, bypassedRls: true, resourceType: "crm_pipeline",
       resourceId: pipelineId, requestId: actor.requestId, metadata: { package: "managed/internet-provider", created } });
     return { organization_id: organizationId, pipeline_id: pipelineId, criado: created,
       ja_existia: before.ja_existia, conflitos: [], pendencias: [...PENDENCIAS], warnings: before.warnings,
-      roteamento: ISP_ROUTING, followups: ISP_FOLLOWUPS,
+      roteamento: ISP_ROUTING, followup_plan: ISP_FOLLOWUP_PLAN,
       status: created.length ? "applied" : "already_applied" };
   }
   return { preflight: plan, execute };
 }
 
 export const ispPackageService = createIspPackageService();
+
+function stageTagRule(organizationId: string, stageId: string, tag: string) {
+  const hash = createHash("sha256").update(`managed/internet-provider:${organizationId}:${tag}`).digest("hex");
+  const id = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+  return { id, organization_id: organizationId, name: `ISP: entrada em ${tag}`,
+    trigger_event: "lead.stage_changed", conditions: [{ field: "event.to_stage_id", op: "eq", value: stageId }],
+    actions: [{ type: "add_tag", config: { tags: [tag] } }], is_active: true };
+}

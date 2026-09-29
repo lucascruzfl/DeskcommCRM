@@ -3,8 +3,8 @@
 Destino: **infraestrutura + preset**. A operação comum continua inteira sem aplicar
 este perfil. `managed/internet-provider`, versão `1.0.0`, business_type
 `internet_provider`, usa o catálogo real de navegação. A clínica existente mantém
-seu preset e suas áreas. Nenhum funil, tag, agente ou integração de ISP é criado
-por este preset nesta etapa.
+seu preset e suas áreas. Ao criar um novo tenant ISP pelo onboarding managed,
+o pacote 7B é aplicado ao mesmo receipt; nenhum agente ou integração é criado.
 
 | Classificação                        | Áreas                                                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -58,8 +58,12 @@ a mesma chave explícita com outro preset conflita.
 
 ## Pacote operacional 7B
 
-Após criar a organização, a agência usa `crm_configure_managed_internet_provider`
-com um token MCP vinculado ao provedor alvo. A tool recebe a organização do
+O `crm_create_managed_client` aplica o pacote 7B no novo tenant ISP antes de
+enviar o convite. Como a RPC de criação e as operações do pacote não compartilham
+transação, falha parcial libera o claim e o retry do mesmo onboarding/receipt
+retoma no mesmo tenant. Receipt concluído também revalida o pacote no retry.
+`crm_configure_managed_internet_provider` continua disponível para preflight,
+retry e reparo explícito com token MCP vinculado ao provedor alvo. A tool recebe a organização do
 contexto autenticado; não aceita `organization_id` como entrada pública. O serviço
 interno recebe esse ID explicitamente. Sem `confirm=true`, a tool informa o que será criado,
 conflitos e dependências; com confirmação, exige platform admin full e vínculo
@@ -85,14 +89,26 @@ número, complemento, bairro, cidade e plano de interesse para qualificação
 comercial; código do cliente/contrato para preencher **após ativação**. Todos
 são opcionais na 7B. CPF/CNPJ não entra no pacote.
 
-**Sem cobertura** é perda com o motivo próprio, seguida da tag `sem-cobertura`
-no contato ou negócio. O fechamento preserva o registro; o filtro de negócios
-por `lost_reason` e por tag permite retomar contatos quando a área expandir.
+**Sem cobertura** é perda com o motivo próprio. A tag `sem-cobertura` depende
+de classificação humana: o evento `lead.stage_changed` traz a etapa de perda,
+mas não distingue esse motivo dos outros. O fechamento preserva a origem;
+`crm_retomar_lead` / `POST /api/v1/leads/{id}/retomar` cria novo negócio aberto
+no mesmo tenant, ligado por `retomado_de_lead_id`, quando a área expandir.
+As três regras de entrada em Aguardando documentos, Instalação e Cliente ativado
+usam `lead.stage_changed` com IDs das etapas resolvidos no provisionamento e
+`add_tag` no lead. Seus IDs são estáveis por tenant e a reaplicação não duplica
+rules nem sobrescreve edições conflitantes.
 O pacote não consulta cobertura e não classifica endereços sozinho. O operador
 faz a decisão real. O plano deixa explícita a dependência de roteamento de
 Comercial, Suporte/humano, Financeiro e Instalação, assim como os prazos de
-follow-up. Na 7C serão definidos canal, agentes publicados e equipe, e os
-limiares de dias sem mensagem/na etapa antes de criar tarefas automáticas.
+follow-up. `ISP_FOLLOWUP_PLAN` é somente o plano pendente; não há flow
+provisionado. O grafo real exige `wait.config.duration_ms` (ou faixa smart),
+`internal_task.config.vence_em_dias` e o gatilho de silêncio exige
+`trigger_config.params.threshold_minutes` (ver `lib/followup/graph-schema.ts` e
+`lib/followup/api-schemas.ts`). Um DRAFT sem esses valores não representaria o
+follow-up pedido; um grafo trigger → tarefa criaria tarefa imediatamente, sem
+esperar dias na etapa. Na 7C devem ser aprovados os limiares e prazos antes de
+criar flows DRAFT/INATIVOS, sem canal nem agente.
 Nenhuma mensagem automática é enviada na 7B.
 
 Agenda/calendário fica OFF. Billing, PIX, ERP, OLT, ONU, RADIUS e consulta

@@ -180,9 +180,9 @@ grátis a partir de X. **Teste**: "tem o {produto} no tamanho M?", "quanto fica 
 
 ## Provedor de internet (ISP)
 
-**Estado atual:** `managed/internet-provider` é preset oficial de cliente gerenciado. Provisiona
-organização, policy de áreas, membership e convite; **não cria este funil, estas tags ou estes
-agentes**. O pacote abaixo é o alvo operacional planejado para configurar e testar após a triagem.
+**Estado atual:** `managed/internet-provider` é preset oficial de cliente gerenciado. O onboarding
+provisiona organização, policy de áreas, membership, convite e pacote operacional 7B, com funil,
+tags e três rules de etapa; **não cria agentes**. O restante depende da triagem.
 Não há integração ISP de consulta de cobertura ou billing nesse preset.
 
 **Funil-alvo:** Novo lead → Verificar cobertura → Plano apresentado → Aguardando documentos →
@@ -193,8 +193,9 @@ criar três etapas marcadas como perda. Revise o mapa dos passos do agente na te
 **Vocabulário:** cliente = *interessado/assinante*, negócio = *contratação*, ganhou = *ativado*,
 perdeu = *não ativado*.
 
-**Tags planejadas:** `lead`, `sem-cobertura`, `aguardando-documentos`, `instalacao`,
-`cliente-ativo`, `suporte`, `financeiro`, `cancelamento`. Criar o preset não cadastra essas tags.
+**Tags do pacote:** `lead`, `sem-cobertura`, `aguardando-documentos`, `instalacao`,
+`cliente-ativo`, `suporte`, `financeiro`, `cancelamento`. A tag `sem-cobertura` requer
+classificação humana; as três tags de etapa são aplicadas por rules tenant-scoped.
 
 **Prompt (preencha com materiais e destinos reais):**
 
