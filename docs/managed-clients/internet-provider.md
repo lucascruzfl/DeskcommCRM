@@ -1,10 +1,10 @@
-# Provedor de internet — cliente gerenciado (Etapa 7A)
+# Provedor de internet — cliente gerenciado (Etapas 7A e 7B)
 
 Destino: **infraestrutura + preset**. A operação comum continua inteira sem aplicar
 este perfil. `managed/internet-provider`, versão `1.0.0`, business_type
 `internet_provider`, usa o catálogo real de navegação. A clínica existente mantém
-seu preset e suas áreas. Nenhum funil, tag, agente ou integração de ISP é criado
-por este preset nesta etapa.
+seu preset e suas áreas. Ao criar um novo tenant ISP pelo onboarding managed,
+o pacote 7B é aplicado ao mesmo receipt; nenhum agente ou integração é criado.
 
 | Classificação                        | Áreas                                                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -56,7 +56,65 @@ Não se cria impersonation nem supertoken. Erros internos e links secretos de
 convite não saem no resultado. O hash e a chave automática consideram o preset;
 a mesma chave explícita com outro preset conflita.
 
-## Alvo da próxima etapa (planejado, não implementado)
+## Pacote operacional 7B
+
+O `crm_create_managed_client` aplica o pacote 7B no novo tenant ISP antes de
+enviar o convite. Como a RPC de criação e as operações do pacote não compartilham
+transação, falha parcial libera o claim e o retry do mesmo onboarding/receipt
+retoma no mesmo tenant. Receipt concluído também revalida o pacote no retry.
+`crm_configure_managed_internet_provider` continua disponível para preflight,
+retry e reparo explícito com token MCP vinculado ao provedor alvo. A tool recebe a organização do
+contexto autenticado; não aceita `organization_id` como entrada pública. O serviço
+interno recebe esse ID explicitamente. Sem `confirm=true`, a tool informa o que será criado,
+conflitos e dependências; com confirmação, exige platform admin full e vínculo
+admin atual no tenant. Segunda execução reaproveita o que já existe. Configuração
+do mesmo identificador que diverge vira conflito, sem sobrescrever personalização.
+Num cliente recém-criado, o funil ISP vira padrão somente se `Pedidos`, semeado
+pelo produto, estiver intacto e sem negócios. Um padrão já usado ou personalizado
+é preservado e aparece como aviso no preflight.
+
+O pacote cria o funil **Vendas — Internet** com as seis etapas abaixo e a sétima
+**Não contratado**, necessária para fechar perdas no modelo real. **Cliente
+ativado** é a única etapa de ganho. A etapa **Instalação** não recebe hint de IA,
+pois a 7B não automatiza a instalação. Motivos de perda em
+`crm_pipelines.settings.lost_reasons`: **Sem cobertura** (Nós), **Desistiu**
+(Cliente) e **Sem retorno** (Ausência). A migration 0501 faz o trigger de perda
+ler a configuração canônica do funil: a projeção operacional anterior removia
+motivos categorizados e recusava esses fechamentos.
+
+Tags em `organizations.settings.tags`: `lead`, `sem-cobertura`,
+`aguardando-documentos`, `instalacao`, `cliente-ativo`, `suporte`, `financeiro`,
+`cancelamento`. Campos em `crm_pipelines.settings.fields`: CEP, endereço,
+número, complemento, bairro, cidade e plano de interesse para qualificação
+comercial; código do cliente/contrato para preencher **após ativação**. Todos
+são opcionais na 7B. CPF/CNPJ não entra no pacote.
+
+**Sem cobertura** é perda com o motivo próprio. A tag `sem-cobertura` depende
+de classificação humana: o evento `lead.stage_changed` traz a etapa de perda,
+mas não distingue esse motivo dos outros. O fechamento preserva a origem;
+`crm_retomar_lead` / `POST /api/v1/leads/{id}/retomar` cria novo negócio aberto
+no mesmo tenant, ligado por `retomado_de_lead_id`, quando a área expandir.
+As três regras de entrada em Aguardando documentos, Instalação e Cliente ativado
+usam `lead.stage_changed` com IDs das etapas resolvidos no provisionamento e
+`add_tag` no lead. Seus IDs são estáveis por tenant e a reaplicação não duplica
+rules nem sobrescreve edições conflitantes.
+O pacote não consulta cobertura e não classifica endereços sozinho. O operador
+faz a decisão real. O plano deixa explícita a dependência de roteamento de
+Comercial, Suporte/humano, Financeiro e Instalação, assim como os prazos de
+follow-up. `ISP_FOLLOWUP_PLAN` é somente o plano pendente; não há flow
+provisionado. O grafo real exige `wait.config.duration_ms` (ou faixa smart),
+`internal_task.config.vence_em_dias` e o gatilho de silêncio exige
+`trigger_config.params.threshold_minutes` (ver `lib/followup/graph-schema.ts` e
+`lib/followup/api-schemas.ts`). Um DRAFT sem esses valores não representaria o
+follow-up pedido; um grafo trigger → tarefa criaria tarefa imediatamente, sem
+esperar dias na etapa. Na 7C devem ser aprovados os limiares e prazos antes de
+criar flows DRAFT/INATIVOS, sem canal nem agente.
+Nenhuma mensagem automática é enviada na 7B.
+
+Agenda/calendário fica OFF. Billing, PIX, ERP, OLT, ONU, RADIUS e consulta
+real de cobertura não são instalados por este pacote.
+
+## Especificação original da 7A
 
 Funil: **Novo lead → Verificar cobertura → Plano apresentado → Aguardando
 documentos → Instalação → Cliente ativado**.
@@ -73,8 +131,8 @@ Tags: `lead`, `sem-cobertura`, `aguardando-documentos`, `instalacao`,
 | segunda via        | Financeiro     |
 | quando instalar    | Instalação     |
 
-Lead fora da cobertura deverá ser preservado, classificado e recuperável para
-expansão, sem descarte. Esta PR não consulta cobertura ou fatura, não integra ERP,
+Lead fora da cobertura é preservado, classificado e recuperável para
+expansão, sem descarte. O pacote não consulta cobertura ou fatura, não integra ERP,
 ONU, OLT ou RADIUS e não automatiza rede, cobrança ou calendário de instalação.
 
 O [checklist do onboarding](../architecture/managed-client-onboarding.md) e o

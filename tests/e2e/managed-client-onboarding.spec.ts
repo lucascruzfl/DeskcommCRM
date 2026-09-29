@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { test, expect, type Page } from "./helpers/test";
 import { managedFixture } from "./helpers/managed-client-fixture";
 import { createManagedOnboardingService } from "../../lib/managed-clients/onboarding";
+import { createIspPackageService } from "../../lib/managed-clients/isp-package";
 import { MANAGED_CLIENT_PRESETS } from "../../lib/managed-clients/presets";
 import { audit } from "../../lib/audit";
 
@@ -50,6 +51,7 @@ test.beforeAll(async () => {
       email_dispatched: true, email_error: undefined, accept_url: "fixture-only-no-email",
     }),
     audit,
+    applyIspPackage: createIspPackageService({ admin: () => fixture.db, audit }).execute,
   });
   const input = {
     organization_name: `Cliente ${preset.business_type} ${requestId.slice(0, 8)}`,

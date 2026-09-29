@@ -48,7 +48,7 @@ export function domainScope(tool: McpToolDefinition): string {
 }
 
 export function authorizeTool(auth: McpAuthResult, tool: McpToolDefinition): void {
-  if (tool.name === "crm_create_managed_client" && !auth.platformAdminFull) {
+  if (["crm_create_managed_client", "crm_configure_managed_internet_provider"].includes(tool.name) && !auth.platformAdminFull) {
     throw new McpAuthError(-32002, 403, "platform_admin_full_required");
   }
   if (auth.managedPolicy) {
@@ -110,6 +110,7 @@ export function managedAreaOfTool(tool: McpToolDefinition): NavDestinationId | n
     crm_list_managed_client_presets: "/app/settings/tenant",
     crm_preflight_managed_client: "/app/settings/tenant",
     crm_create_managed_client: "/app/settings/tenant",
+    crm_configure_managed_internet_provider: "/app/settings/tenant",
     crm_prepare_mcp_token_management: "/app/settings/api-tokens",
     crm_list_message_templates: "/app/templates",
     crm_get_message_template: "/app/templates",

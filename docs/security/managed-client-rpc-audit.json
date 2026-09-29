@@ -2617,9 +2617,9 @@
       "security_definer": false,
       "authenticated_execute": true,
       "anonymous_execute": false,
-      "body_sha256": "fcdf6e04dd09b3e72325dda109613fa050ca00a7cacdf5f29ab173321ad16792",
+      "body_sha256": "dd817e544feb4a81b42f9dd16f5002a71d691a76cb91dad629e7ae1f2c9c8043",
       "status": "SAFE",
-      "reason": "Trigger SECURITY INVOKER lê operational_crm_pipelines sujeito à RLS; valida motivos textuais e objetos pelo label da 1.53, preservando o portão operacional managed."
+      "reason": "Trigger SECURITY INVOKER consulta somente rótulos da view operacional com membership e área kanban, filtrando pipeline_id e organization_id do lead; array vazio recusa motivo inválido, sem expor crm_pipelines.settings nem aceitar funil de outro tenant."
     },
     {
       "signature": "fn_verificar_org_da_proposta()",

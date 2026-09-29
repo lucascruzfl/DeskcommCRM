@@ -6,6 +6,7 @@ import { emailConfigurado } from "@/lib/email/roteador";
 import { issueInvite } from "@/lib/auth/issue-invite";
 import { audit } from "@/lib/audit";
 import { buildManagedAreaPolicy } from "./policy";
+import { ispPackageService } from "./isp-package";
 import { MANAGED_CLIENT_PRESETS, MANAGED_PRESET_IDS, managedPresetAreas } from "./presets";
 
 export const managedOnboardingSchema = z.object({
@@ -31,6 +32,7 @@ interface Dependencies {
   emailConfigured: () => Promise<boolean>;
   issueInvite: InviteIssuer;
   audit: AuditWriter;
+  applyIspPackage: typeof ispPackageService.execute;
 }
 
 const defaults: Dependencies = {
@@ -38,6 +40,7 @@ const defaults: Dependencies = {
   emailConfigured: emailConfigurado,
   issueInvite,
   audit,
+  applyIspPackage: ispPackageService.execute,
 };
 
 function slugFrom(name: string): string {
@@ -177,6 +180,12 @@ export function createManagedOnboardingService(deps: Dependencies = defaults) {
     }
     const db = deps.admin();
     const input = managedOnboardingSchema.parse(raw);
+    const applyPackage = async (organizationId: string) => {
+      if (input.preset !== "managed/internet-provider") return;
+      await deps.applyIspPackage(organizationId, {
+        userId: actor.userId, apiTokenId: actor.apiTokenId, requestId: actor.requestId,
+      }, true);
+    };
     if (_internal.receipt?.state === "completed") {
       return { status: "already_completed", organization_id: _internal.receipt.organization_id,
         invite_id: _internal.receipt.invite_id, client_role: "agent", email_dispatched: _internal.receipt.email_dispatched };
@@ -215,6 +224,26 @@ export function createManagedOnboardingService(deps: Dependencies = defaults) {
     if (!claim?.claimed) {
       return { status: claim?.state === "completed" ? "already_completed" : "in_progress",
         organization_id: organizationId, invite_id: inviteId, client_role: "agent" };
+    }
+    try { await applyPackage(organizationId); }
+    catch {
+      // Libera o claim do MESMO receipt para retry; nunca cria outra organização.
+      const { data: released, error: releaseError } = await db.from("managed_client_onboardings")
+        .update({ state: "failed", last_error_code: "managed_isp_package_unavailable",
+          claim_id: null, updated_at: new Date().toISOString() })
+        .eq("organization_id", organizationId).eq("actor_user_id", actor.userId)
+        .eq("idempotency_key", planned.idempotency_key).eq("claim_id", claimId)
+        .select("organization_id").maybeSingle();
+      if (releaseError || !released) throw sanitizedFailure("managed_onboarding_state_failed");
+      await deps.audit({
+        action: "managed_client.onboarding_failed", actorUserId: actor.userId,
+        actorApiTokenId: actor.apiTokenId, actingAsPlatformAdmin: true, bypassedRls: true,
+        organizationId, resourceType: "organization", resourceId: organizationId,
+        requestId: actor.requestId,
+        metadata: { idempotency_key: planned.idempotency_key, preset: input.preset,
+          invite_id: inviteId, state: "failed", error_code: "managed_isp_package_unavailable" },
+      });
+      throw sanitizedFailure("managed_isp_package_unavailable");
     }
     const issuedAt = Math.floor(Date.now() / 1000);
     const expiresAt = new Date((issuedAt + 86400) * 1000).toISOString();

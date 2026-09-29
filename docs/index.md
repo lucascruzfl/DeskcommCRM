@@ -195,4 +195,4 @@ anterior à v1.0.0; regenere (`/graphify .`) antes de confiar em detalhe fino.
 
 - [Acompanhamento administrativo por sessão](support-sessions.md) — autoridade, somente leitura, saída e contratos OAuth.
 
-- [Preset gerenciado de provedor de internet](managed-clients/internet-provider.md) — Etapa 7A: áreas, contratos e próximo alvo operacional.
+- [Provedor de internet gerenciado](managed-clients/internet-provider.md) — Etapas 7A/7B: áreas, pacote operacional e dependências da 7C.

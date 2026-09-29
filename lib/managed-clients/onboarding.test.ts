@@ -34,6 +34,7 @@ function fixture(
     revoked?: boolean;
     accepted?: boolean;
     beginError?: { code: string; message: string };
+    failFirstPackage?: boolean;
   } = {},
 ) {
   const state = {
@@ -58,6 +59,8 @@ function fixture(
   const policies: unknown[] = [];
   const auditCalls: Array<{ action: string }> = [];
   const emailCalls: string[] = [];
+  const packageCalls: string[] = [];
+  const effectOrder: string[] = [];
   const db = {
     auth: {
       admin: {
@@ -163,6 +166,7 @@ function fixture(
   } as unknown as SupabaseClient;
   const issueInvite = vi.fn(async () => {
     emailCalls.push("send");
+    effectOrder.push("invite");
     return {
       invite_id: inviteId,
       email: clinicInput.client_email,
@@ -180,8 +184,14 @@ function fixture(
     audit: async (entry) => {
       auditCalls.push(entry);
     },
+    applyIspPackage: async (organizationId) => {
+      packageCalls.push(organizationId);
+      effectOrder.push("package");
+      if (opts.failFirstPackage && packageCalls.length === 1) throw new Error("internal package failure");
+      return { status: "applied" } as never;
+    },
   });
-  return { service, state, policies, rpcCalls, auditCalls, emailCalls, issueInvite };
+  return { service, state, policies, rpcCalls, auditCalls, emailCalls, packageCalls, effectOrder, issueInvite };
 }
 
 describe.each(Object.values(MANAGED_CLIENT_PRESETS))("onboarding $id", (preset) => {
@@ -299,6 +309,41 @@ describe.each(Object.values(MANAGED_CLIENT_PRESETS))("onboarding $id", (preset) 
       "managed_client.onboarding_failed",
       "managed_client.onboarding_completed",
     ]);
+  });
+  it("ISP aplica antes do convite e receipt concluído não repete efeitos", async () => {
+    const f = fixture();
+    const input = { ...clinicInput, preset: "managed/internet-provider" as const };
+    await expect(f.service.execute(input, actor, true)).resolves.toMatchObject({ status: "completed", organization_id: targetOrg });
+    const rpcCalls = [...f.rpcCalls];
+    const auditCalls = [...f.auditCalls];
+    await expect(f.service.execute(input, actor, true)).resolves.toMatchObject({
+      status: "already_completed", organization_id: targetOrg, invite_id: inviteId,
+    });
+    expect(f.packageCalls).toEqual([targetOrg]);
+    expect(f.effectOrder).toEqual(["package", "invite"]);
+    expect([f.state.organizations, f.state.policies, f.state.memberships, f.state.invites]).toEqual([1, 1, 1, 1]);
+    expect(f.emailCalls).toHaveLength(1);
+    expect(f.rpcCalls).toEqual(rpcCalls);
+    expect(f.auditCalls).toEqual(auditCalls);
+  });
+
+  it("falha parcial do pacote libera o mesmo receipt para retry sem segundo tenant", async () => {
+    const f = fixture({ failFirstPackage: true });
+    const input = { ...clinicInput, preset: "managed/internet-provider" as const };
+    await expect(f.service.execute(input, actor, true)).rejects.toThrow(/^managed_isp_package_unavailable$/);
+    expect(f.state.receipt?.state).toBe("failed");
+    expect(f.emailCalls).toEqual([]);
+    await expect(f.service.execute(input, actor, true)).resolves.toMatchObject({ status: "completed", organization_id: targetOrg });
+    expect(f.packageCalls).toEqual([targetOrg, targetOrg]);
+    expect(f.effectOrder).toEqual(["package", "package", "invite"]);
+    expect([f.state.organizations, f.state.policies, f.state.memberships, f.state.invites]).toEqual([1, 1, 1, 1]);
+  });
+
+  it("clínica não chama o pacote ISP", async () => {
+    const f = fixture();
+    await f.service.execute(clinicInput, actor, true);
+    expect(f.packageCalls).toEqual([]);
+    expect(f.effectOrder).toEqual(["invite"]);
   });
   it.each([{ revoked: true }, { mfaRequired: true }, { accepted: false }])(
     "revalida admin ativo, MFA e membership aceito: %j",

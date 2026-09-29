@@ -14,6 +14,8 @@ import {
   validarNomeDeFunil,
 } from "@/lib/pipelines/pipeline-editing";
 import { pipelineConfigPatchSchema, type PipelineConfigPatch } from "@/lib/schemas/settings";
+import { etapasParaGravar, normalizarProposta, validarProposta, type PropostaDeFunil } from "@/lib/onboarding/proposta-de-funil";
+import { slugDeNome } from "@/lib/leads/stage-editing";
 
 export interface PipelineOperationContext {
   supabase: SupabaseClient;
@@ -80,10 +82,16 @@ export async function obterPipelineOperacional(ctx: PipelineOperationContext, pi
 
 export async function criarPipeline(
   ctx: PipelineOperationContext,
-  input: { name: string; description?: string | null },
+  input: { name: string; description?: string | null; etapas?: PropostaDeFunil["etapas"] },
 ) {
   const funis = await lerFunis(ctx.supabase, ctx.organizationId);
   const name = input.name.trim();
+  const proposta = input.etapas ? normalizarProposta({ nome: name, etapas: input.etapas }) : null;
+  if (proposta) {
+    const vereditoEtapas = validarProposta(proposta);
+    if (!vereditoEtapas.ok)
+      throw new ApiError(422, "unprocessable_entity", undefined, ctx.requestId, vereditoEtapas.erros.join(" "));
+  }
   const veredito = validarNomeDeFunil(name, funis, null);
   if (!veredito.ok)
     throw new ApiError(422, "unprocessable_entity", undefined, ctx.requestId, veredito.erro);
@@ -112,15 +120,17 @@ export async function criarPipeline(
       error?.message,
     );
   const pipelineId = String(data.id);
+  const iniciais = proposta
+    ? etapasParaGravar(proposta, slugDeNome).map((s) => ({
+        name: s.nome, slug: s.slug, position: s.position,
+        is_won: s.is_won, is_lost: s.is_lost, agent_stage_hint: s.agent_stage_hint,
+      }))
+    : ETAPAS_INICIAIS.map((s, index) => ({ ...s, position: (index + 1) * 1000 }));
   const { error: stagesError } = await ctx.supabase.from("crm_stages").insert(
-    ETAPAS_INICIAIS.map((s, index) => ({
+    iniciais.map((s) => ({
       organization_id: ctx.organizationId,
       pipeline_id: pipelineId,
-      name: s.name,
-      slug: s.slug,
-      position: (index + 1) * 1000,
-      is_won: s.is_won,
-      is_lost: s.is_lost,
+      ...s,
     })),
   );
   if (stagesError) {

@@ -56,10 +56,12 @@ describe("sentinelas de compatibilidade do MCP", () => {
     const managerNames = new Set(profile.map((tool) => tool.name));
     expect(MCP_REGISTRY.filter((tool) => !managerNames.has(tool.name)).map((tool) => tool.name)).toEqual([
       "crm_create_managed_client",
+      "crm_configure_managed_internet_provider",
     ]);
-    expect(profile).toHaveLength(MCP_TOOL_COUNT - 1);
+    expect(profile).toHaveLength(MCP_TOOL_COUNT - 2);
     expect(profile.map((tool) => tool.name).sort()).toEqual(
-      MCP_REGISTRY.filter((tool) => tool.name !== "crm_create_managed_client").map((tool) => tool.name).sort(),
+      MCP_REGISTRY.filter((tool) => !["crm_create_managed_client", "crm_configure_managed_internet_provider"].includes(tool.name))
+        .map((tool) => tool.name).sort(),
     );
   });
 
