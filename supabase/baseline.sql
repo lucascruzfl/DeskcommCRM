@@ -48869,14 +48869,31 @@ grant execute on function public.fn_honorarios_parcela_pagar(uuid, uuid, uuid, u
 
 notify pgrst, 'reload schema';
 
--- ---- 0501 — motivo de perda consulta configuração canônica ----
--- A 0472 trocou a leitura do trigger pela projeção operational_crm_pipelines.
--- A projeção, por desenho, filtra motivos em forma de objeto; desde a 0426 a
--- configuração canônica aceita {label,categoria}. O trigger via projeção
--- recusava qualquer perda categorizada com lost_reason_invalid. A função de
--- trigger corre na escrita da própria linha e recebe pipeline_id validado pelo
--- FK; a tabela base é a fonte correta para validar a configuração completa.
--- Sem mudança de dados ou coluna; CREATE OR REPLACE é idempotente no upgrade.
+-- ---- 0501 — motivo de perda por rótulos operacionais ----
+-- A projeção geral filtra motivos em forma de objeto, aceitos desde a 0426.
+-- Expor somente os rótulos necessários à operação mantém settings privados;
+-- a view aplica membership e área kanban antes de entregar qualquer linha.
+-- O trigger permanece invoker e cruza id + organização do lead. Array vazio
+-- (inclusive quando não há linha visível) recusa motivo não canônico.
+create or replace view public.operational_crm_lost_reason_labels
+with (security_barrier = true) as
+select p.id, p.organization_id,
+       array(
+         select case when jsonb_typeof(reason.value) = 'object' then reason.value->>'label'
+                     else reason.value #>> '{}' end
+         from jsonb_array_elements(case when jsonb_typeof(p.settings->'lost_reasons') = 'array'
+           then p.settings->'lost_reasons' else '[]'::jsonb end) as reason(value)
+         where (jsonb_typeof(reason.value) = 'object' and nullif(reason.value->>'label', '') is not null)
+            or (jsonb_typeof(reason.value) = 'string' and nullif(reason.value #>> '{}', '') is not null)
+       ) as labels
+from public.crm_pipelines p
+where (p.organization_id in (select public.fn_user_org_ids())
+       and public.fn_managed_area_allowed(p.organization_id, '/app/kanban'))
+   or public.fn_is_platform_admin()
+   or current_user in ('service_role', 'postgres');
+revoke all on public.operational_crm_lost_reason_labels from public, anon, authenticated, service_role;
+grant select on public.operational_crm_lost_reason_labels to authenticated, service_role;
+
 create or replace function public.fn_validate_lost_reason_required()
 returns trigger language plpgsql set search_path to 'public', 'pg_temp' as $function$
 declare
@@ -48889,17 +48906,11 @@ begin
     if new.lost_reason is null or length(new.lost_reason) = 0 then
       raise exception 'lost_reason_required' using errcode = '22023';
     end if;
-    select coalesce(
-      array(
-        select case when jsonb_typeof(e) = 'object'
-                    then nullif(e ->> 'label', '')
-                    else nullif(e #>> '{}', '') end
-          from jsonb_array_elements(settings->'lost_reasons') as t(e)
-      ), '{}'::text[]
-    ) into v_pipeline_extra
-    from public.crm_pipelines
+    select labels into v_pipeline_extra
+    from public.operational_crm_lost_reason_labels
     where id = new.pipeline_id and organization_id = new.organization_id;
-    if not (new.lost_reason = any (v_canonical) or new.lost_reason = any (v_pipeline_extra)) then
+    if not (new.lost_reason = any (v_canonical)
+            or new.lost_reason = any (coalesce(v_pipeline_extra, '{}'::text[]))) then
       raise exception 'lost_reason_invalid: %', new.lost_reason using errcode = '22023';
     end if;
   end if;
