@@ -22,7 +22,7 @@
     { "id": "rules", "lane": "database", "col": 3, "type": "database", "label": "automation_rules", "sublabel": "três tags por etapa; motivo de perda fica com humano" },
     { "id": "kanban", "lane": "human", "col": 4, "type": "frontend", "label": "Kanban e Contatos", "sublabel": "lead perdido segue consultável por motivo e tag" },
     { "id": "audit", "lane": "human", "col": 4, "type": "frontend", "label": "Auditoria", "sublabel": "criação e configuração do funil; aplicação do pacote" },
-    { "id": "pending", "lane": "human", "col": 4, "type": "frontend", "label": "Pendências 7C", "sublabel": "agentes, canal, roteador e prazos de follow-up" }
+    { "id": "pending", "lane": "human", "col": 4, "type": "frontend", "label": "Próximo passo: configuração IA", "sublabel": "7C prepara drafts; 7D decide canal, conhecimento, equipe e ativação" }
   ],
   "edges": [
     { "id": "e0", "from": "onboarding", "to": "service", "label": "organização do receipt e retry" },

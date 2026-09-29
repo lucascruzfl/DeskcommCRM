@@ -13,6 +13,9 @@ Este guia monta a operação por nicho depois do onboarding e também orienta a 
 organização, a política de áreas, o membership do gestor e o convite oficial. Para ISP, o
 onboarding também aplica o pacote operacional. A tool `crm_configure_managed_internet_provider`,
 com token vinculado ao provedor alvo, permanece para preflight, retry e reparo explícito.
+O pacote de IA + humano é separado: `crm_configure_managed_internet_provider_ai`
+faz preflight ou prepara drafts quando recebe provider/model/credencial reais.
+Sem canal real, não cria router; sem prazos reais, não cria follow-ups.
 A implantação continua com prompt, roteamento, follow-ups, conhecimento,
 memória e capacidades revisados para o negócio.
 
@@ -85,7 +88,7 @@ Resolva as dependências antes de publicar. Os nomes e caminhos atuais estão em
 `references/por-arquivo.md`. No tenant managed, a agência com membership admin configura as áreas
   agency; a pessoa do cliente convidada como agent opera as áreas permitidas.
 
-1. **Conexões** — o número precisa estar WORKING (o onboarding já fez).
+1. **Conexões** — o número precisa estar WORKING antes de publicar; o onboarding ISP 7B não exige nem conecta um número.
 2. **IA › Credenciais** — a credencial validada do provedor, ou a chave resolvida pela instalação
    quando permitido; confira também a chave da OpenAI para áudio e indexação de conhecimento.
 3. **IA › Provedores** — o modelo dos auxiliares (classificador do roteador, follow-up) num modelo
@@ -99,6 +102,9 @@ Resolva as dependências antes de publicar. Os nomes e caminhos atuais estão em
 7. **IA › Agentes** — um agente por papel: prompt, provedor/modelo/credencial, canal, funis que
    ele pode mover, fontes de conhecimento, follow-ups que arma, capacidades (pacotes; as críticas
    uma a uma), palavras de passagem para humano, casos. Salve como rascunho.
+   No ISP gerenciado, use `crm_configure_managed_internet_provider_ai` para preflight e
+   preparo retomável dos cinco drafts; Comercial separa fala e escrita no CRM pelo
+   Operador canônico. A tool não publica nem ativa nada.
 8. **Testar** — o botão ou `crm_test_ai_agent_version` roda a prévia controlada com uma mensagem:
    veja o texto e as ações propostas. Isso não prova envio, roteamento ou handoff real. Roteiro do nicho em
    `references/nichos.md`.
@@ -118,6 +124,11 @@ memória revisada (documento publicado quando usado); roteiro do nicho respondid
 passagem e tomada por humano verificadas no Inbox; a pessoa sabe onde muda cada coisa.
 No ISP, confirme calendário OFF, preservação de contatos sem cobertura e ausência de cobrança
 fictícia. Em managed, prove também o acesso do gestor e do cliente pelo seletor de organização.
+No ISP, confirme ainda que os cinco agentes estão em draft e o Intent Router inativo
+até a pessoa revisar as versões e autorizar publicação/ativação. Caso humano mantém
+a IA na conversa; handoff entrega a conversa à pessoa e silencia a IA. Só a pessoa
+devolve ao automático. Cobertura não é simulada, e segunda via, PIX e boleto não
+são gerados sem integração real.
 Se algo ficou de fora (sem chave da OpenAI, sem documentos), escreva no `pacote-<cliente>.md` o que falta e
 o que acontece enquanto falta — não deixe a lacuna invisível.
 

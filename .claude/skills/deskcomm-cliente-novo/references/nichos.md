@@ -184,6 +184,12 @@ grátis a partir de X. **Teste**: "tem o {produto} no tamanho M?", "quanto fica 
 provisiona organização, policy de áreas, membership, convite e pacote operacional 7B, com funil,
 tags e três rules de etapa; **não cria agentes**. O restante depende da triagem.
 Não há integração ISP de consulta de cobertura ou billing nesse preset.
+Após a triagem, `crm_configure_managed_internet_provider_ai` prepara cinco agentes
+em draft (Geral, Comercial, Suporte, Financeiro, Instalação). O Intent Router só
+nasce inativo com canal real; intents `comercial`, `suporte`, `financeiro` e
+`instalacao` apontam para esses papéis, com Geral como fallback. Sem prazos reais,
+nenhum follow-up nasce. Caso humano mantém a IA conversando; handoff silencia a
+IA e só uma pessoa pode devolver o atendimento. Não simule cobertura, boleto ou PIX.
 
 **Funil-alvo:** Novo lead → Verificar cobertura → Plano apresentado → Aguardando documentos →
 Instalação → Cliente ativado. **Fechamentos:** Sem cobertura, Desistiu, Sem retorno.

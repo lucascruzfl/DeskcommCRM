@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "ISP gerenciado — IA e humano 7C",
+    "subtitle": "Preparação retomável, ativação explícita e continuidade das demandas"
+  },
+  "lanes": [
+    { "id": "config", "label": "Configuração" },
+    { "id": "runtime", "label": "Atendimento" },
+    { "id": "human", "label": "Pessoas" }
+  ],
+  "mainPath": ["tool", "service", "drafts", "router", "turn", "case", "human", "return", "turn"],
+  "nodes": [
+    {
+      "id": "tool",
+      "lane": "config",
+      "col": 0,
+      "type": "tool",
+      "label": "crm_configure_managed_internet_provider_ai",
+      "sublabel": "confirm=false preflight; confirm=true prepare"
+    },
+    {
+      "id": "service",
+      "lane": "config",
+      "col": 1,
+      "type": "service",
+      "label": "ispAiService",
+      "sublabel": "policy managed, tenant, referência real, comparação e retry"
+    },
+    {
+      "id": "drafts",
+      "lane": "config",
+      "col": 2,
+      "type": "database",
+      "label": "ai_agents + ai_agent_versions",
+      "sublabel": "cinco mcp_agent em draft, fora do ar"
+    },
+    {
+      "id": "router",
+      "lane": "config",
+      "col": 3,
+      "type": "database",
+      "label": "ai_routers + ai_router_members",
+      "sublabel": "quatro intents, reserva geral, inativo até decisão"
+    },
+    {
+      "id": "followup",
+      "lane": "config",
+      "col": 2,
+      "type": "database",
+      "label": "followup_flow_pointers",
+      "sublabel": "rascunhos internos só com prazos explícitos"
+    },
+    {
+      "id": "knowledge",
+      "lane": "config",
+      "col": 2,
+      "type": "database",
+      "label": "ai_knowledge_sources",
+      "sublabel": "somente material real do tenant"
+    },
+    {
+      "id": "turn",
+      "lane": "runtime",
+      "col": 4,
+      "type": "service",
+      "label": "resolveTurnAgent + inbound-turn",
+      "sublabel": "classificador existente, fallback e guardrails"
+    },
+    {
+      "id": "case",
+      "lane": "runtime",
+      "col": 5,
+      "type": "service",
+      "label": "openCase + case_reply_turn",
+      "sublabel": "retaguarda; IA continua conversando"
+    },
+    {
+      "id": "handoff",
+      "lane": "runtime",
+      "col": 5,
+      "type": "service",
+      "label": "performHumanHandoff",
+      "sublabel": "briefing, fila e silêncio da IA"
+    },
+    {
+      "id": "human",
+      "lane": "human",
+      "col": 6,
+      "type": "frontend",
+      "label": "Casos + Inbox",
+      "sublabel": "pessoa resolve caso ou assume conversa"
+    },
+    {
+      "id": "return",
+      "lane": "human",
+      "col": 7,
+      "type": "tool",
+      "label": "crm_resume_ai_attendance",
+      "sublabel": "só pessoa devolve; resumo entra no próximo turno"
+    },
+    {
+      "id": "audit",
+      "lane": "human",
+      "col": 2,
+      "type": "frontend",
+      "label": "/app/audit",
+      "sublabel": "preparo e correções ficam visíveis"
+    }
+  ],
+  "edges": [
+    { "id": "e1", "from": "tool", "to": "service", "label": "pedido tenant-scoped" },
+    { "id": "e2", "from": "service", "to": "tool", "label": "pendências e conflitos para revisão" },
+    { "id": "e3", "from": "service", "to": "drafts", "label": "cria sem publicar" },
+    { "id": "e4", "from": "drafts", "to": "service", "label": "retry compara e preserva edição" },
+    { "id": "e5", "from": "service", "to": "router", "label": "cria inativo se houver canal" },
+    { "id": "e6", "from": "router", "to": "service", "label": "membros e fallback verificados" },
+    { "id": "e7", "from": "service", "to": "followup", "label": "prazos reais viram drafts" },
+    { "id": "e8", "from": "followup", "to": "service", "label": "diferença vira conflito" },
+    { "id": "e9", "from": "knowledge", "to": "service", "label": "IDs ativos do tenant" },
+    { "id": "e10", "from": "service", "to": "knowledge", "label": "não cria FAQ fictícia" },
+    { "id": "e11", "from": "router", "to": "turn", "label": "após ativação explícita" },
+    { "id": "e12", "from": "turn", "to": "case", "label": "bloqueio de retaguarda" },
+    { "id": "e13", "from": "case", "to": "human", "label": "caso visível" },
+    { "id": "e14", "from": "human", "to": "case", "label": "resposta estruturada" },
+    { "id": "e15", "from": "case", "to": "turn", "label": "retorno da retaguarda" },
+    { "id": "e16", "from": "turn", "to": "handoff", "label": "pessoa assume a conversa" },
+    { "id": "e17", "from": "handoff", "to": "human", "label": "briefing e fila" },
+    { "id": "e18", "from": "human", "to": "return", "label": "devolução humana" },
+    { "id": "e19", "from": "return", "to": "turn", "label": "continuidade no próximo turno" },
+    { "id": "e20", "from": "service", "to": "audit", "label": "ação de preparo" },
+    { "id": "e21", "from": "audit", "to": "tool", "label": "operador inspeciona e ajusta" }
+  ]
+}
