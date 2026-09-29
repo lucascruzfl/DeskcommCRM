@@ -109,6 +109,15 @@ function montarMundoDeFerramenta(opts?: MundoOpts) {
           single: vi.fn(async () => resposta),
         };
       }
+      if (table === "operational_organizations") {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: { currency: opts?.moedaDaOrganizacao ?? "BRL" }, error: null }),
+            }),
+          }),
+        };
+      }
       if (table === "crm_leads") {
         return {
           select: vi.fn(function (this: any) {

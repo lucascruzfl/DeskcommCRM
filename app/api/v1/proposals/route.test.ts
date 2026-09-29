@@ -208,6 +208,15 @@ function montarMundoDeProposta(opts: MundoOpts = {}) {
           }),
         };
       }
+      if (tabela === "operational_organizations") {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: { currency: opts.moedaDaOrganizacao ?? "BRL" }, error: null }),
+            }),
+          }),
+        };
+      }
       throw new Error(`tabela não mockada neste teste: ${tabela}`);
     },
   };

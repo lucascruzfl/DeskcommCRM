@@ -9,7 +9,7 @@ vi.mock("@/lib/mcp/rate-limit", () => ({ verificarTetoMcp: vi.fn() }));
 import type { McpAuthResult } from "@/lib/mcp/auth";
 import { MCP_OPERATION_PRESET } from "@/lib/mcp/scopes";
 import { toolsForAuth } from "@/lib/mcp/registry";
-import { deModuloDesligado } from "@/lib/mcp/tools/catalog";
+import { deCapacidadeDesligada, deModuloDesligado } from "@/lib/mcp/tools/catalog";
 import { createMcpServer } from "@/lib/mcp/server";
 
 const auth: McpAuthResult = {
@@ -41,7 +41,10 @@ describe("release MCP — tools/list pelo transporte real", () => {
       expect(names.length).toBeGreaterThan(0);
       expect(names.length - new Set(names).size).toBe(0);
       expect(names.sort()).toEqual(
-        toolsForAuth(auth).filter((tool) => !deModuloDesligado(tool.name, [])).map((tool) => tool.name).sort(),
+        toolsForAuth(auth)
+          .filter((tool) => !deModuloDesligado(tool.name, []) && !deCapacidadeDesligada(tool.name, []))
+          .map((tool) => tool.name)
+          .sort(),
       );
       expect(names).toContain("crm_retomar_lead");
       expect(names).toContain("crm_get_pipeline_forecast");
