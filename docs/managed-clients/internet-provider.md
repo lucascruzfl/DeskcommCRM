@@ -61,9 +61,10 @@ a mesma chave explícita com outro preset conflita.
 O `crm_create_managed_client` aplica o pacote 7B no novo tenant ISP antes de
 enviar o convite. Como a RPC de criação e as operações do pacote não compartilham
 transação, falha parcial libera o claim e o retry do mesmo onboarding/receipt
-retoma no mesmo tenant. Receipt concluído também revalida o pacote no retry.
-`crm_configure_managed_internet_provider` continua disponível para preflight,
-retry e reparo explícito com token MCP vinculado ao provedor alvo. A tool recebe a organização do
+retoma no mesmo tenant. Um receipt `completed` retorna `already_completed` no retry:
+não reaplica o pacote, não recria o tenant e não reenvia convite. Revalidação e
+reparo exigem chamada explícita a `crm_configure_managed_internet_provider`,
+com token MCP vinculado ao provedor alvo. A tool recebe a organização do
 contexto autenticado; não aceita `organization_id` como entrada pública. O serviço
 interno recebe esse ID explicitamente. Sem `confirm=true`, a tool informa o que será criado,
 conflitos e dependências; com confirmação, exige platform admin full e vínculo
@@ -101,14 +102,10 @@ rules nem sobrescreve edições conflitantes.
 O pacote não consulta cobertura e não classifica endereços sozinho. O operador
 faz a decisão real. O plano deixa explícita a dependência de roteamento de
 Comercial, Suporte/humano, Financeiro e Instalação, assim como os prazos de
-follow-up. `ISP_FOLLOWUP_PLAN` é somente o plano pendente; não há flow
-provisionado. O grafo real exige `wait.config.duration_ms` (ou faixa smart),
-`internal_task.config.vence_em_dias` e o gatilho de silêncio exige
-`trigger_config.params.threshold_minutes` (ver `lib/followup/graph-schema.ts` e
-`lib/followup/api-schemas.ts`). Um DRAFT sem esses valores não representaria o
-follow-up pedido; um grafo trigger → tarefa criaria tarefa imediatamente, sem
-esperar dias na etapa. Na 7C devem ser aprovados os limiares e prazos antes de
-criar flows DRAFT/INATIVOS, sem canal nem agente.
+follow-up. `ISP_FOLLOWUP_PLAN` é somente o plano pendente; a 7B não provisiona
+flow. A 7C permite preparar flows DRAFT/INATIVOS de tarefas internas quando
+`wait_minutes` e `task_due_days` reais são informados. Sem esses valores, não
+cria flow. Os valores reais do primeiro provedor serão definidos na 7D.
 Nenhuma mensagem automática é enviada na 7B.
 
 Agenda/calendário fica OFF. Billing, PIX, ERP, OLT, ONU, RADIUS e consulta
