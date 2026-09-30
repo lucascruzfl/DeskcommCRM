@@ -2,8 +2,8 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "ISP gerenciado — IA e humano 7C",
-    "subtitle": "Preparação retomável, ativação explícita e continuidade das demandas"
+    "title": "ISP gerenciado — IA e humano 7C/7D",
+    "subtitle": "Preparação retomável, prévia MCP do router e continuidade das demandas"
   },
   "lanes": [
     { "id": "config", "label": "Configuração" },
@@ -45,6 +45,14 @@
       "sublabel": "quatro intents, reserva geral, inativo até decisão"
     },
     {
+      "id": "preview",
+      "lane": "config",
+      "col": 4,
+      "type": "tool",
+      "label": "crm_get_ai_router + crm_test_ai_router",
+      "sublabel": "inspeção e prévia tenant-scoped do draft; classificador e fallback reais, sem envio"
+    },
+    {
       "id": "followup",
       "lane": "config",
       "col": 2,
@@ -59,6 +67,14 @@
       "type": "database",
       "label": "ai_knowledge_sources",
       "sublabel": "somente material real do tenant"
+    },
+    {
+      "id": "memory",
+      "lane": "config",
+      "col": 3,
+      "type": "database",
+      "label": "org_memory_entries",
+      "sublabel": "regra da reunião salva pelo operador como manual; ideia do agente como agent"
     },
     {
       "id": "turn",
@@ -130,6 +146,12 @@
     { "id": "e18", "from": "human", "to": "return", "label": "devolução humana" },
     { "id": "e19", "from": "return", "to": "turn", "label": "continuidade no próximo turno" },
     { "id": "e20", "from": "service", "to": "audit", "label": "ação de preparo" },
-    { "id": "e21", "from": "audit", "to": "tool", "label": "operador inspeciona e ajusta" }
+    { "id": "e21", "from": "audit", "to": "tool", "label": "operador inspeciona e ajusta" },
+    { "id": "e22", "from": "preview", "to": "router", "label": "carrega draft pelo tenant do token" },
+    { "id": "e23", "from": "router", "to": "preview", "label": "intenção, confiança e fallback para revisão" },
+    { "id": "e24", "from": "preview", "to": "audit", "label": "chamada auditada sem texto da mensagem" },
+    { "id": "e25", "from": "tool", "to": "memory", "label": "regra confirmada com autoria humana via MCP" },
+    { "id": "e26", "from": "memory", "to": "turn", "label": "regra durável lida no atendimento" },
+    { "id": "e27", "from": "memory", "to": "audit", "label": "recurso auditado sem corpo da regra" }
   ]
 }

@@ -28,6 +28,8 @@ const entradas: Entrada[] = [
   { name: "crm_preflight_ai_agent_version", category: "read", rotulo: "Conferir versão antes de publicar", explicacao: "Executa todas as conferências de uma versão existente e explica qualquer impedimento antes da publicação.", oQueToca: "Versões do agente" },
   { name: "crm_publish_ai_agent_version", category: "write", rotulo: "Publicar versão do agente", explicacao: "Publica de forma atômica uma versão validada, sem ativar novamente um agente que esteja pausado.", oQueToca: "Versões do agente", risco: "critico" },
   { name: "crm_test_ai_agent_version", category: "write", rotulo: "Testar versão do agente", explicacao: "Executa uma prévia controlada sem enviar mensagem real nem produzir qualquer efeito externo no canal.", oQueToca: "Versões do agente" },
+  { name: "crm_get_ai_router", category: "read", rotulo: "Consultar roteador de IA", explicacao: "Mostra o roteador e as intenções do tenant, inclusive quando ainda está inativo.", oQueToca: "Roteador de intenções" },
+  { name: "crm_test_ai_router", category: "write", rotulo: "Testar roteador de IA", explicacao: "Classifica uma mensagem em um roteador, inclusive inativo, sem criar conversa ou enviar mensagem pelo canal.", oQueToca: "Roteador de intenções" },
   { name: "crm_list_ai_agent_runs", category: "read", rotulo: "Ver execuções do agente", explicacao: "Mostra execuções recentes, estado, consumo e erros básicos sem expor chaves ou outros segredos.", oQueToca: "Execuções do agente" },
   { name: "crm_get_ai_agent_run", category: "read", rotulo: "Consultar execução do agente", explicacao: "Mostra o resultado e o consumo de uma execução específica para facilitar diagnóstico e acompanhamento.", oQueToca: "Execuções do agente" },
 ];

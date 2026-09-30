@@ -54,7 +54,7 @@ function arquivosDeCodigo(dir: string): string[] {
   return saida;
 }
 
-/** `source: "x"` de todo insert/upsert em `org_memory_entries`, com o arquivo de onde veio. */
+/** Literais da origem (direta ou ternário de ator) em todo insert/upsert de memória. */
 function origensGravadas(): Array<{ arquivo: string; valor: string }> {
   const achados: Array<{ arquivo: string; valor: string }> = [];
   for (const raiz of ["lib", "app", "workers", "scripts"]) {
@@ -63,9 +63,13 @@ function origensGravadas(): Array<{ arquivo: string; valor: string }> {
       for (const m of fonte.matchAll(
         /\.from\(\s*["']org_memory_entries["']\s*\)\s*\.(?:insert|upsert)\(\s*\{([\s\S]*?)\}\s*\)/g,
       )) {
-        for (const s of m[1]!.matchAll(/\bsource:\s*["']([^"']+)["']/g)) {
-          achados.push({ arquivo: arquivo.slice(RAIZ.length + 1), valor: s[1]! });
-        }
+        const trecho = m[1]!;
+        const diretas = [...trecho.matchAll(/\bsource:\s*["']([^"']+)["']/g)].map((s) => s[1]!);
+        const condicionais = [...trecho.matchAll(/\bsource:\s*[^?\n]*\?\s*["']([^"']+)["']\s*:\s*["']([^"']+)["']/g)]
+          .flatMap((s) => [s[1]!, s[2]!]);
+        const valores = [...diretas, ...condicionais];
+        if (valores.length === 0) throw new Error(`origem dinâmica não aferida: ${arquivo}`);
+        for (const valor of valores) achados.push({ arquivo: arquivo.slice(RAIZ.length + 1), valor });
       }
     }
   }
@@ -73,13 +77,14 @@ function origensGravadas(): Array<{ arquivo: string; valor: string }> {
 }
 
 describe("org_memory_entries.source — o que o código grava cabe no CHECK", () => {
-  it("a ferramenta MCP grava 'agent' e o CHECK do baseline aceita", () => {
+  it("a ferramenta MCP distingue manual/agent e o CHECK do baseline aceita", () => {
     const gravadas = origensGravadas();
     // Controle positivo: os três gravadores conhecidos têm de ser achados. Sem
     // isto, um regex quebrado devolveria zero achados e o teste abaixo passaria.
     expect(gravadas).toEqual(
       expect.arrayContaining([
         { arquivo: "lib/mcp/tools/evolucao.ts", valor: "agent" },
+        { arquivo: "lib/mcp/tools/evolucao.ts", valor: "manual" },
         { arquivo: "lib/ai/apply-proposal.ts", valor: "flywheel" },
         { arquivo: "app/api/v1/ai/memory/entries/route.ts", valor: "manual" },
       ]),

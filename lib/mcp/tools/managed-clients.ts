@@ -28,7 +28,7 @@ export const MANAGED_CLIENT_TOOLS: ReadonlyArray<McpToolDefinition> = [
     requiresRole: "agent",
     requiresScope: "mcp:read",
     domain: "settings",
-    handler: async () => Object.values(MANAGED_CLIENT_PRESETS).map((preset) => ({
+    handler: async () => ({ presets: Object.values(MANAGED_CLIENT_PRESETS).map((preset) => ({
       id: preset.id,
       version: preset.version,
       business_type: preset.business_type,
@@ -36,7 +36,7 @@ export const MANAGED_CLIENT_TOOLS: ReadonlyArray<McpToolDefinition> = [
       label: preset.label,
       executable: preset.executable,
       areas: managedPresetAreas(preset.id),
-    })),
+    })) }),
   },
   {
     name: "crm_preflight_managed_client",

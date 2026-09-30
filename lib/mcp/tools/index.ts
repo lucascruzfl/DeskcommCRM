@@ -118,6 +118,7 @@ import { CAMPAIGN_EXTRA_MCP_TOOLS } from "./campanhas-complementos";
 import { SKILL_VERSION_MCP_TOOLS } from "./skill-versions";
 import { crmGetNotificationSounds, crmResetNotificationSound } from "./sons";
 import { MANAGED_CLIENT_TOOLS } from "./managed-clients";
+import { crmGetAiRouter, crmTestAiRouter } from "./router-preview";
 import { crmDraftProposal, crmPrepararProposta } from "./propostas";
 
 // Cast via `unknown` porque McpToolDefinition<TInput> nao e covariante
@@ -127,6 +128,8 @@ import { crmDraftProposal, crmPrepararProposta } from "./propostas";
 // unknown>` e cada handler valida no Zod do registerTool.
 export const allTools: ReadonlyArray<McpToolDefinition> = [
   ...MANAGED_CLIENT_TOOLS,
+  crmGetAiRouter,
+  crmTestAiRouter,
   crmGetNotificationSounds,
   crmResetNotificationSound,
   ...CAMPAIGN_MCP_TOOLS.filter((tool) => tool.category === "read"),

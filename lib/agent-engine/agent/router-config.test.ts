@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type pg from 'pg';
 
-import { loadActiveRouter } from './router-config';
+import { loadActiveRouter, loadRouterForPreview } from './router-config';
 
 function poolSeq(responses: Array<{ rows: unknown[] }>): pg.Pool {
   const query = vi.fn();
@@ -42,6 +42,27 @@ describe('loadActiveRouter', () => {
     expect(router?.classifierModel).toBeNull();
     expect(router?.sticky).toBe(true);
     expect(router?.minConfidence).toBe(0.6);
+  });
+});
+
+describe('loadRouterForPreview', () => {
+  it('carrega draft pelo par organização/router e mantém a régua do runtime', async () => {
+    const pool = poolSeq([
+      { rows: [{ id: 'r1', name: 'Rascunho', config: { min_confidence: 0.7 }, fallback_agent_id: 'a-fb' }] },
+      { rows: [{ agent_id: 'a1', intent_name: 'comercial', intent_description: 'Contratação', examples: [] }] },
+    ]);
+    const loaded = await loadRouterForPreview(pool, 'org-a', 'r1');
+    expect(loaded).toMatchObject({ id: 'r1', minConfidence: 0.7, fallbackAgentId: 'a-fb' });
+    expect(loaded?.members[0]?.intentName).toBe('comercial');
+    expect(vi.mocked(pool.query).mock.calls[0]?.[1]).toEqual(['org-a', 'r1']);
+    expect(vi.mocked(pool.query).mock.calls[1]?.[1]).toEqual(['org-a', 'r1']);
+    expect(String(vi.mocked(pool.query).mock.calls[0]?.[0])).not.toContain('is_active');
+  });
+
+  it('não carrega router ausente do tenant', async () => {
+    const pool = poolSeq([{ rows: [] }]);
+    expect(await loadRouterForPreview(pool, 'org-b', 'r1')).toBeNull();
+    expect(pool.query).toHaveBeenCalledTimes(1);
   });
 });
 

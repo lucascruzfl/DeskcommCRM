@@ -190,23 +190,33 @@ const gravarMemoriaInputShape = {
 export const crmSaveOrgMemory: McpToolDefinition<typeof gravarMemoriaInputShape> = {
   name: "crm_save_org_memory",
   description:
-    "Registra um aprendizado que vale para toda a operação, não para um cliente só. Nasce com " +
-    "origem 'agent' para o humano distinguir o que a IA anotou do que ele mesmo escreveu.",
+    "Registra regra durável da organização, não de um cliente final. A origem distingue " +
+    "o agente de um operador humano com token; confirme a regra com a empresa antes de salvá-la.",
   inputSchema: gravarMemoriaInputShape,
   category: "write",
-  // `ai_operator`: a rota equivalente (`ai/memory/entries` POST) exige `manager`
-  // — um atendente humano não escreve política da empresa pela tela, e a IA não
-  // pode ter mais poder que uma pessoa do mesmo papel.
-  requiresRole: "ai_operator",
+  // A rota equivalente (`ai/memory/entries` POST) exige manager. Regra durável
+  // da organização requer o mesmo papel também pelo MCP.
+  requiresRole: "manager",
   requiresScope: "mcp:write",
+  redigirParaAuditoria: (args) => ({
+    titulo_present: typeof args.titulo === "string",
+    corpo_length: typeof args.corpo === "string" ? args.corpo.length : 0,
+  }),
+  auditResource: (_input, result) => ({
+    type: "org_memory_entry",
+    id: (result as { anotacao?: { id?: string } })?.anotacao?.id,
+  }),
   handler: async (input, ctx) => {
+    const author = ctx.actor.type === "user" ? ctx.actor.id
+      : ctx.actor.type === "api_token" ? ctx.provisionedByUserId ?? null : null;
     const { data, error } = await ctx.supabase
       .from("org_memory_entries")
       .insert({
         organization_id: ctx.organizationId,
         title: input.titulo,
         body: input.corpo,
-        source: "agent",
+        source: ctx.actor.type === "ai_agent" ? "agent" : "manual",
+        created_by: author,
         status: "active",
       })
       .select("id, title, status, created_at")

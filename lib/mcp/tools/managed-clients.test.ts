@@ -29,6 +29,12 @@ const actor = {
 
 describe("tools MCP de onboarding gerenciado", () => {
   beforeEach(() => vi.clearAllMocks());
+  it("lista presets em objeto aceito por structuredContent do MCP", async () => {
+    const result = await MANAGED_CLIENT_TOOLS[0]!.handler({}, actor);
+    expect(result).toMatchObject({ presets: expect.arrayContaining([
+      expect.objectContaining({ id: "managed/internet-provider" }),
+    ]) });
+  });
   it("preserva catálogo e redige PII e confirmação na auditoria", () => {
     expect(MANAGED_CLIENT_TOOLS.map((tool) => tool.name)).toEqual([
       "crm_list_managed_client_presets",
@@ -137,15 +143,15 @@ describe("tools MCP de onboarding gerenciado", () => {
     expect(create.properties?.preset).toMatchObject({ enum: MANAGED_PRESET_IDS });
     expect(preflight.properties?.business_type).toMatchObject({ enum: MANAGED_BUSINESS_TYPES });
     const result = await MANAGED_CLIENT_TOOLS[0]!.handler({}, actor);
-    expect(result).toEqual(
-      Object.values(MANAGED_CLIENT_PRESETS).map((preset) =>
+    expect(result).toEqual({
+      presets: Object.values(MANAGED_CLIENT_PRESETS).map((preset) =>
         expect.objectContaining({
           id: preset.id,
           business_type: preset.business_type,
           areas: expect.any(Array),
         }),
       ),
-    );
+    });
   });
 
   it("presets e tipos desconhecidos não alcançam o serviço", async () => {

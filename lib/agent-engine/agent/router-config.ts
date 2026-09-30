@@ -68,6 +68,44 @@ interface MemberRow {
   flow_pointer_id: string | null;
 }
 
+function materializeRouter(router: RouterRow, memberRows: MemberRow[]): LoadedRouter {
+  const cfg = (router.config ?? {}) as {
+    classifier_model?: unknown;
+    classifier_provider?: unknown;
+    sticky?: unknown;
+    min_confidence?: unknown;
+  };
+  const classifierModel =
+    typeof cfg.classifier_model === 'string' && cfg.classifier_model.trim() !== ''
+      ? cfg.classifier_model
+      : null;
+  const classifierProvider =
+    typeof cfg.classifier_provider === 'string' && cfg.classifier_provider.trim() !== ''
+      ? cfg.classifier_provider
+      : null;
+  const sticky = typeof cfg.sticky === 'boolean' ? cfg.sticky : true;
+  const minConfidence =
+    typeof cfg.min_confidence === 'number' && cfg.min_confidence >= 0 && cfg.min_confidence <= 1
+      ? cfg.min_confidence
+      : 0.6;
+  return {
+    id: router.id,
+    name: router.name,
+    classifierModel,
+    classifierProvider,
+    sticky,
+    minConfidence,
+    fallbackAgentId: router.fallback_agent_id,
+    members: memberRows.map((member) => ({
+      agentId: member.agent_id,
+      intentName: member.intent_name,
+      intentDescription: member.intent_description,
+      examples: member.examples ?? [],
+      flowPointerId: member.flow_pointer_id,
+    })),
+  };
+}
+
 export async function loadActiveRouter(
   db: pg.Pool,
   organizationId: string,
@@ -93,40 +131,27 @@ export async function loadActiveRouter(
     [router.id, organizationId],
   );
 
-  const cfg = (router.config ?? {}) as {
-    classifier_model?: unknown;
-    classifier_provider?: unknown;
-    sticky?: unknown;
-    min_confidence?: unknown;
-  };
-  const classifierModel =
-    typeof cfg.classifier_model === 'string' && cfg.classifier_model.trim() !== ''
-      ? cfg.classifier_model
-      : null;
-  const classifierProvider =
-    typeof cfg.classifier_provider === 'string' && cfg.classifier_provider.trim() !== ''
-      ? cfg.classifier_provider
-      : null;
-  const sticky = typeof cfg.sticky === 'boolean' ? cfg.sticky : true;
-  const minConfidence =
-    typeof cfg.min_confidence === 'number' && cfg.min_confidence >= 0 && cfg.min_confidence <= 1
-      ? cfg.min_confidence
-      : 0.6;
+  return materializeRouter(router, memberRows);
+}
 
-  return {
-    id: router.id,
-    name: router.name,
-    classifierModel,
-    classifierProvider,
-    sticky,
-    minConfidence,
-    fallbackAgentId: router.fallback_agent_id,
-    members: memberRows.map((m) => ({
-      agentId: m.agent_id,
-      intentName: m.intent_name,
-      intentDescription: m.intent_description,
-      examples: m.examples ?? [],
-      flowPointerId: m.flow_pointer_id,
-    })),
-  };
+/** Prévia de um router específico, inclusive draft. Nunca é usada no turno real. */
+export async function loadRouterForPreview(
+  db: pg.Pool,
+  organizationId: string,
+  routerId: string,
+): Promise<LoadedRouter | null> {
+  const { rows } = await db.query<RouterRow>(
+    `select id, name, config, fallback_agent_id
+     from ai_routers where organization_id = $1 and id = $2`,
+    [organizationId, routerId],
+  );
+  const row = rows[0];
+  if (!row) return null;
+  const { rows: memberRows } = await db.query<MemberRow>(
+    `select agent_id, intent_name, intent_description, examples, flow_pointer_id
+     from ai_router_members where organization_id = $1 and router_id = $2
+     order by position asc, intent_name asc`,
+    [organizationId, routerId],
+  );
+  return materializeRouter(row, memberRows);
 }
