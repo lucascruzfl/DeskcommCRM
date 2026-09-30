@@ -2,6 +2,7 @@ import { MANAGED_CLIENT_PRESETS, managedPresetForBusinessType, managedPresetArea
 import { managedClientPreflightSchema } from "@/lib/managed-clients/preflight";
 import { managedOnboardingSchema, managedOnboardingService } from "@/lib/managed-clients/onboarding";
 import { ispPackageService } from "@/lib/managed-clients/isp-package";
+import { ispAiInputSchema, ispAiService } from "@/lib/managed-clients/isp-ai";
 import { z } from "zod";
 import type { McpToolDefinition } from "../types";
 import type { McpContext } from "../types";
@@ -95,7 +96,7 @@ export const MANAGED_CLIENT_TOOLS: ReadonlyArray<McpToolDefinition> = [
   },
   {
     name: "crm_configure_managed_internet_provider",
-    description: "Planeja ou aplica o pacote operacional no provedor de internet gerenciado vinculado ao token MCP. Sem confirm=true mostra conflitos e pendências da 7C. Exige platform_admin full, vínculo admin atual no cliente e capability:managed_client_onboarding.",
+    description: "Planeja ou aplica o pacote operacional 7B no provedor de internet gerenciado vinculado ao token MCP. Sem confirm=true mostra conflitos e pendências. Exige platform_admin full, vínculo admin atual no cliente e capability:managed_client_onboarding.",
     inputSchema: ispSchema.shape,
     category: "write",
     requiresRole: "manager",
@@ -109,6 +110,25 @@ export const MANAGED_CLIENT_TOOLS: ReadonlyArray<McpToolDefinition> = [
     handler: async (input, ctx) => {
       const parsed = ispSchema.parse(input);
       return ispPackageService.execute(ctx.organizationId, onboardingActor(ctx), parsed.confirm);
+    },
+  },
+  {
+    name: "crm_configure_managed_internet_provider_ai",
+    description: "Confere ou prepara em draft cinco agentes ISP, Intent Router inativo e follow-ups internos com prazos explícitos. Nunca publica, ativa ou envia mensagem.",
+    inputSchema: ispAiInputSchema.shape,
+    category: "write",
+    requiresRole: "manager",
+    requiresScope: "mcp:write",
+    domain: "settings",
+    capabilities: ["managed_client_onboarding"],
+    redigirParaAuditoria: (args) => ({ confirm: args.confirm === true,
+      ai_config_present: Boolean(args.ai), followup_keys: Object.keys(args.followups ?? {}) }),
+    auditResource: (_args, result) => ({ type: "organization",
+      id: result && typeof result === "object" && "organization_id" in result
+        ? String(result.organization_id) : null }),
+    handler: async (input, ctx) => {
+      if (ctx.actor.type === "ai_agent") throw new Error("managed_isp_ai_requires_person");
+      return ispAiService.execute(ctx.organizationId, onboardingActor(ctx), input);
     },
   },
 ];

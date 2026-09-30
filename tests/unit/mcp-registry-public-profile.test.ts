@@ -33,10 +33,12 @@ describe("registry público MCP", () => {
     expect(MCP_REGISTRY.filter((tool) => !managerNames.has(tool.name)).map((tool) => tool.name)).toEqual([
       "crm_create_managed_client",
       "crm_configure_managed_internet_provider",
+      "crm_configure_managed_internet_provider_ai",
     ]);
-    expect(profile).toHaveLength(MCP_TOOL_COUNT - 2);
+    expect(profile).toHaveLength(MCP_TOOL_COUNT - 3);
     expect(managerNames.has("crm_create_managed_client")).toBe(false);
     expect(managerNames.has("crm_configure_managed_internet_provider")).toBe(false);
+    expect(managerNames.has("crm_configure_managed_internet_provider_ai")).toBe(false);
     expect(profile.some((tool) => tool.name === "crm_publish_ai_agent_version")).toBe(true);
     expect(profile.every((tool) => tool.requiresRole !== "admin")).toBe(true);
 

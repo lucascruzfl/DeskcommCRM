@@ -20,7 +20,11 @@ autoridade; uma atualização do código não troca silenciosamente seus acessos
 aplica o pacote operacional automaticamente ao novo tenant durante o onboarding.
 Com token do provedor alvo, `crm_configure_managed_internet_provider`
 planeja, tenta novamente ou repara explicitamente funil, motivos, campos, rules e tags.
-Agentes, roteador, follow-ups e integrações exigem implantação posterior.
+`crm_configure_managed_internet_provider_ai`, com o mesmo token do tenant,
+faz preflight sem escrita ou prepara cinco agentes `mcp_agent` em draft. Com
+canal real prepara o Intent Router inativo; com prazos explícitos prepara flows
+internos inativos. Publicação, ativação, equipe e conhecimento real são passos
+posteriores. Nenhuma integração de cobertura ou cobrança nasce com o pacote.
 
 | Classificação | Significado operacional |
 | --- | --- |

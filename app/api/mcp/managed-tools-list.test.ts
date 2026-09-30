@@ -101,15 +101,15 @@ describe.each(Object.values(MANAGED_CLIENT_PRESETS))("transporte MCP $id", (pres
       const listed = await POST(requestFor("tools/list") as never);
       const body = await listed.text();
       expect(body.includes("crm_create_managed_client")).toBe(platformAdminFull);
-      expect(body.includes("crm_configure_managed_internet_provider")).toBe(platformAdminFull);
+      expect(/"name"\s*:\s*"crm_configure_managed_internet_provider"/.test(body)).toBe(platformAdminFull);
+      expect(/"name"\s*:\s*"crm_configure_managed_internet_provider_ai"/.test(body)).toBe(platformAdminFull);
       if (!platformAdminFull) {
-        const called = await POST(
-          requestFor("tools/call", {
-            name: "crm_create_managed_client",
-            arguments: {},
-          }) as never,
-        );
-        expect(await called.text()).toMatch(/not found|Unknown tool|not_allowed/i);
+        for (const name of ["crm_create_managed_client", "crm_configure_managed_internet_provider_ai"]) {
+          const called = await POST(
+            requestFor("tools/call", { name, arguments: {} }) as never,
+          );
+          expect(await called.text()).toMatch(/not found|Unknown tool|not_allowed/i);
+        }
       }
     }
   });

@@ -151,19 +151,37 @@ export async function validateVersionForMcp(db: Db, orgId: string, raw: unknown)
   return version;
 }
 
-export async function createAiAgent(db: Db, orgId: string, userId: string, raw: unknown) {
+export async function createAiAgent(db: Db, orgId: string, userId: string, raw: unknown, options: {
+  agentId?: string;
+  versionId?: string;
+  config?: Record<string, unknown>;
+  provisioningOrigin?: string;
+  inactive?: boolean;
+  preserveOnVersionFailure?: boolean;
+} = {}) {
   const input = agentMcpCreateSchema.parse(raw);
   await validateVersionForMcp(db, orgId, input.version);
-  const records = mcpAgentDraftRecords({ orgId, userId }, input);
-  const { data: agent, error: agentError } = await db.from("ai_agents").insert(records.agent)
+  const records = mcpAgentDraftRecords({ orgId, userId }, input, {
+    agentId: options.agentId, versionId: options.versionId,
+  });
+  const { data: agent, error: agentError } = await db.from("ai_agents").insert({
+    ...records.agent,
+    ...(options.config ? { config: options.config } : {}),
+    ...(options.inactive ? { is_active: false } : {}),
+  })
     .select(MCP_AGENT_COLUMNS).single();
-  if (agentError || !agent) throw new Error(agentError?.message ?? "agent_insert_failed");
+  if (agentError) throw options.preserveOnVersionFailure ? agentError : new Error(agentError.message);
+  if (!agent) throw new Error("agent_insert_failed");
   const { data: version, error: versionError } = await db.from("ai_agent_versions")
-    .insert(records.version).select(MCP_VERSION_COLUMNS).single();
+    .insert({ ...records.version,
+      ...(options.provisioningOrigin ? { provisioning_origin: options.provisioningOrigin } : {}),
+    }).select(MCP_VERSION_COLUMNS).single();
   if (versionError || !version) {
-    await db.from("ai_agents").update({ archived_at: new Date().toISOString() })
+    if (!options.preserveOnVersionFailure) await db.from("ai_agents")
+      .update({ archived_at: new Date().toISOString() })
       .eq("organization_id", orgId).eq("id", records.agent.id);
-    throw new Error(versionError?.message ?? "version_insert_failed");
+    if (versionError) throw options.preserveOnVersionFailure ? versionError : new Error(versionError.message);
+    throw new Error("version_insert_failed");
   }
   return { agent, version };
 }

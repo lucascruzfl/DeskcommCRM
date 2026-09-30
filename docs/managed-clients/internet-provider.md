@@ -1,4 +1,4 @@
-# Provedor de internet — cliente gerenciado (Etapas 7A e 7B)
+# Provedor de internet — cliente gerenciado (Etapas 7A, 7B e 7C)
 
 Destino: **infraestrutura + preset**. A operação comum continua inteira sem aplicar
 este perfil. `managed/internet-provider`, versão `1.0.0`, business_type
@@ -61,9 +61,10 @@ a mesma chave explícita com outro preset conflita.
 O `crm_create_managed_client` aplica o pacote 7B no novo tenant ISP antes de
 enviar o convite. Como a RPC de criação e as operações do pacote não compartilham
 transação, falha parcial libera o claim e o retry do mesmo onboarding/receipt
-retoma no mesmo tenant. Receipt concluído também revalida o pacote no retry.
-`crm_configure_managed_internet_provider` continua disponível para preflight,
-retry e reparo explícito com token MCP vinculado ao provedor alvo. A tool recebe a organização do
+retoma no mesmo tenant. Um receipt `completed` retorna `already_completed` no retry:
+não reaplica o pacote, não recria o tenant e não reenvia convite. Revalidação e
+reparo exigem chamada explícita a `crm_configure_managed_internet_provider`,
+com token MCP vinculado ao provedor alvo. A tool recebe a organização do
 contexto autenticado; não aceita `organization_id` como entrada pública. O serviço
 interno recebe esse ID explicitamente. Sem `confirm=true`, a tool informa o que será criado,
 conflitos e dependências; com confirmação, exige platform admin full e vínculo
@@ -101,18 +102,82 @@ rules nem sobrescreve edições conflitantes.
 O pacote não consulta cobertura e não classifica endereços sozinho. O operador
 faz a decisão real. O plano deixa explícita a dependência de roteamento de
 Comercial, Suporte/humano, Financeiro e Instalação, assim como os prazos de
-follow-up. `ISP_FOLLOWUP_PLAN` é somente o plano pendente; não há flow
-provisionado. O grafo real exige `wait.config.duration_ms` (ou faixa smart),
-`internal_task.config.vence_em_dias` e o gatilho de silêncio exige
-`trigger_config.params.threshold_minutes` (ver `lib/followup/graph-schema.ts` e
-`lib/followup/api-schemas.ts`). Um DRAFT sem esses valores não representaria o
-follow-up pedido; um grafo trigger → tarefa criaria tarefa imediatamente, sem
-esperar dias na etapa. Na 7C devem ser aprovados os limiares e prazos antes de
-criar flows DRAFT/INATIVOS, sem canal nem agente.
+follow-up. `ISP_FOLLOWUP_PLAN` é somente o plano pendente; a 7B não provisiona
+flow. A 7C permite preparar flows DRAFT/INATIVOS de tarefas internas quando
+`wait_minutes` e `task_due_days` reais são informados. Sem esses valores, não
+cria flow. Os valores reais do primeiro provedor serão definidos na 7D.
 Nenhuma mensagem automática é enviada na 7B.
 
 Agenda/calendário fica OFF. Billing, PIX, ERP, OLT, ONU, RADIUS e consulta
 real de cobertura não são instalados por este pacote.
+
+## 7C — IA + humano
+
+### Implementado na 7C
+
+`crm_configure_managed_internet_provider_ai` é a etapa explícita e retomável do
+tenant `managed/internet-provider`. Com `confirm=false`, consulta a policy atual,
+o administrador da agência, o funil 7B, provider/model/credencial reais, canal,
+fontes de conhecimento e roteiros opcionais do tenant, e informa pendências e
+conflitos sem escrever. Com `confirm=true`, prepara somente o que foi informado.
+Não faz parte do onboarding automático 7B.
+
+Quando há provider, model e credencial válidos, prepara cinco `mcp_agent` com
+versões `draft`: **Atendimento geral ISP** (reserva), **Comercial**, **Suporte**,
+**Financeiro** e **Instalação**. Todos nascem fora do ar, com `cases_enabled` e
+`handoff_tool_enabled`, sem follow-up ativo. Comercial usa o Operador canônico
+para escritas no CRM; os outros papéis ficam sem Operador. Os prompts usam apenas
+contexto e conhecimento real. Sem material vinculado, não há FAQ de exemplo.
+As capacidades de Comercial permitem usar o funil e seus campos oficiais;
+Suporte não recebe operação de rede; Financeiro não recebe ferramenta de
+cobrança; Instalação não recebe agenda.
+
+Se um `channel_session_id` real for informado, o configurador prepara um
+`ai_routers` **inativo** no mesmo tenant, com quatro `ai_router_members`: `comercial`,
+`suporte`, `financeiro`, `instalacao`. `fallback_agent_id` aponta para Atendimento
+geral ISP. A configuração `{}` herda os defaults do runtime: sticky ligado e
+confiança mínima 0,6. Sem canal, o preflight registra a pendência e nenhum router
+é criado. Um canal sem estado WORKING aparece como pendência de ativação.
+`flow_pointer_id` é opcional e só aceita roteiro `atendimento` do mesmo tenant.
+
+Prazos explícitos permitem preparar rascunhos de follow-up **internos**, com
+gatilho, espera, tarefa para o dono do lead e fim, sem enviar mensagem. Existem
+quatro propostas: Plano apresentado sem resposta, Aguardando documentos,
+Instalação parada e recuperação futura de Sem cobertura. As três primeiras usam
+entrada na etapa do funil ISP; a recuperação de Sem cobertura fica em gatilho
+manual porque o evento de perda não traz o motivo de modo seguro. A proposta de
+Plano apresentado cancela ao receber resposta. Cada prazo precisa de
+`wait_minutes` e `task_due_days` fornecidos pelo operador; sem eles não nasce
+flow. Publicar e ativar os flows usa as ferramentas genéricas do motor.
+
+IDs de agente, versão, router, membro e flow são estáveis por tenant. O preflight
+compara os drafts existentes; alteração manual em prompt, tools, membro, router
+ou flow vira conflito, sem sobrescrita. A criação usa a validação oficial de
+provider/model/credencial e os schemas de agente e follow-up existentes.
+Nenhuma migration foi necessária: `ai_agents.config` e
+`ai_agent_versions.provisioning_origin` guardam a identidade do pacote.
+
+O caso humano é retaguarda: a IA continua conversando, e a resposta da equipe
+volta ao turno por `case_reply_turn`. O handoff usa a passagem canônica, entrega
+briefing e silencia a IA. Só uma pessoa pode chamar
+`crm_resume_ai_attendance`; o retorno grava a continuidade para o próximo turno.
+Fila, disponibilidade, rodízio e acompanhamento seguem as primitivas atuais.
+
+### Configurável na 7D
+
+O primeiro provedor escolherá provider, modelo, credencial validada ou chave
+real da instalação, canal WORKING, fontes de conhecimento reais, equipe humana,
+políticas e prazos. A sequência é: preflight e prepare; revisar e testar cada
+versão com `crm_test_ai_agent_version` (dry run); publicar versões pela tool
+genérica; ativar agentes; conferir o router inativo na tela, testar intenções e
+reserva; ativar o router explicitamente; revisar, publicar e ativar follow-ups
+aprovados; fazer piloto com conversa real. O pacote não antecipa essas decisões.
+
+### Futuro ERP/ISP
+
+Cobertura por API, ERP, billing, boleto, PIX, confirmação de pagamento,
+desbloqueio, ONU, OLT, RADIUS, provisionamento técnico e agenda técnica
+integrada continuam fora. O calendário ISP segue OFF.
 
 ## Especificação original da 7A
 

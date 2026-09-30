@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ preflight: vi.fn(), execute: vi.fn(), ispExecute: vi.fn() }));
+const mocks = vi.hoisted(() => ({ preflight: vi.fn(), execute: vi.fn(), ispExecute: vi.fn(), ispAiExecute: vi.fn() }));
 vi.mock("@/lib/managed-clients/onboarding", async (importOriginal) => {
   const original = (await importOriginal()) as Record<string, unknown>;
   return { ...original, managedOnboardingService: mocks };
@@ -8,6 +8,10 @@ vi.mock("@/lib/managed-clients/onboarding", async (importOriginal) => {
 vi.mock("@/lib/managed-clients/isp-package", async (importOriginal) => {
   const original = (await importOriginal()) as Record<string, unknown>;
   return { ...original, ispPackageService: { execute: mocks.ispExecute } };
+});
+vi.mock("@/lib/managed-clients/isp-ai", async (importOriginal) => {
+  const original = (await importOriginal()) as Record<string, unknown>;
+  return { ...original, ispAiService: { execute: mocks.ispAiExecute } };
 });
 
 import { z } from "zod";
@@ -31,6 +35,7 @@ describe("tools MCP de onboarding gerenciado", () => {
       "crm_preflight_managed_client",
       "crm_create_managed_client",
       "crm_configure_managed_internet_provider",
+      "crm_configure_managed_internet_provider_ai",
     ]);
     const create = MANAGED_CLIENT_TOOLS[2]!;
     expect(create.category).toBe("write");
@@ -48,6 +53,23 @@ describe("tools MCP de onboarding gerenciado", () => {
       confirm: true,
       idempotency_key_present: false,
     });
+  });
+  it("7C usa somente tenant autenticado, redige input e exige pessoa", async () => {
+    const tool = MANAGED_CLIENT_TOOLS[4]!;
+    mocks.ispAiExecute.mockResolvedValue({ organization_id: actor.organizationId });
+    await tool.handler({ confirm: false }, actor);
+    expect(mocks.ispAiExecute).toHaveBeenCalledWith(
+      actor.organizationId,
+      expect.objectContaining({ userId: actor.provisionedByUserId }),
+      { confirm: false },
+    );
+    expect(Object.keys(tool.inputSchema)).not.toContain("organization_id");
+    expect(tool.redigirParaAuditoria?.({ confirm: true, ai: { provider: "a" }, followups: { instalacao: {} } })).toEqual({
+      confirm: true,
+      ai_config_present: true,
+      followup_keys: ["instalacao"],
+    });
+    await expect(tool.handler({ confirm: true }, { ...actor, actor: { type: "ai_agent", id: "agent" } } as typeof actor)).rejects.toThrow("managed_isp_ai_requires_person");
   });
   it("pacote ISP usa a organização autenticada e passa confirmação separada ao serviço", async () => {
     const tool = MANAGED_CLIENT_TOOLS[3]!;

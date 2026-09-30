@@ -14,6 +14,7 @@ import { detectHumanPromise } from "@/lib/agent-engine/guardrails/human-promise"
 // DEVE detectar: promessa clara de envolver retaguarda humana/equipe/setor.
 const PROMISES: readonly string[] = [
   "vou verificar com a equipe",
+  "Vou verificar com o financeiro e te aviso",
   "nosso time vai resolver isso",
   "assim que liberarem eu te aviso",
   "vou acionar o responsável",
