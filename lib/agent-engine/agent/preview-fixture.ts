@@ -14,18 +14,6 @@ export function previewFixtureRegistry() {
       | { type: 'tool-call'; toolCallId: string; toolName: string; input: string }
     > = [];
     if (!options.tools?.length) {
-      // O classificador do router passa pelo mesmo provider controlado no E2E.
-      // Esta resposta determinística só existe sob INTERNAL_AGENT_RUN_STUB; não
-      // ensina uma regra de negócio ao router nem prova qualidade de um LLM real.
-      if (text.includes('Mensagem do lead a classificar:')) {
-        const signal = text.split('Mensagem do lead a classificar:\\n')[1]?.split('\\n\\n')[0] ?? '';
-        const intent = /segunda via|paguei|pagamento/i.test(signal) ? 'financeiro'
-          : /técnico|instalação/i.test(signal) ? 'instalacao'
-          : /internet caiu|sem internet/i.test(signal) ? 'suporte'
-          : /contratar|planos|cobertura|bairro|cep/i.test(signal) ? 'comercial'
-          : 'none';
-        content.push({ type: 'text', text: JSON.stringify({ intent, confidence: intent === 'none' ? 0 : 0.95 }) });
-      } else {
       // A CONSULTA INTERNA DO CASO vem ANTES dos ramos de JSON.
       //
       // Os ramos abaixo devolvem JSON (memória, compactação, checkpoint) porque
@@ -63,7 +51,6 @@ export function previewFixtureRegistry() {
       // Prosa sai como prosa; os ramos de JSON continuam serializados. Um
       // `JSON.stringify` cego poria a resposta do chat entre aspas na tela.
       content.push({ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value) });
-      }
     } else {
       const has = (name: string) =>
         options.tools?.some((t) => t.type === 'function' && t.name === name);

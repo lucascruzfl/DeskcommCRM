@@ -18,8 +18,15 @@ const ORG = "11111111-1111-4111-8111-111111111111";
 const ROUTER = "22222222-2222-4222-8222-222222222222";
 const GENERAL = "33333333-3333-4333-8333-333333333333";
 const SALES = "44444444-4444-4444-8444-444444444444";
+const SUPPORT = "55555555-5555-4555-8555-555555555555";
+const FINANCE = "66666666-6666-4666-8666-666666666666";
+const INSTALLATION = "77777777-7777-4777-8777-777777777777";
 
-function context(agents = [{ id: GENERAL, name: "Atendimento geral ISP" }, { id: SALES, name: "Comercial ISP" }]) {
+function context(agents = [
+  { id: GENERAL, name: "Atendimento geral ISP" }, { id: SALES, name: "Comercial ISP" },
+  { id: SUPPORT, name: "Suporte ISP" }, { id: FINANCE, name: "Financeiro ISP" },
+  { id: INSTALLATION, name: "Instalação ISP" },
+]) {
   const query = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
@@ -40,7 +47,12 @@ describe("crm_test_ai_router — prévia do draft via MCP", () => {
       id: ROUTER, name: "ISP · Intent Router", classifierModel: null,
       classifierProvider: null, sticky: true, minConfidence: 0.6,
       fallbackAgentId: GENERAL,
-      members: [{ agentId: SALES, intentName: "comercial", intentDescription: "Contratação", examples: [], flowPointerId: null }],
+      members: [
+        { agentId: SALES, intentName: "comercial", intentDescription: "Contratação", examples: [], flowPointerId: null },
+        { agentId: SUPPORT, intentName: "suporte", intentDescription: "Suporte", examples: [], flowPointerId: null },
+        { agentId: FINANCE, intentName: "financeiro", intentDescription: "Financeiro", examples: [], flowPointerId: null },
+        { agentId: INSTALLATION, intentName: "instalacao", intentDescription: "Instalação", examples: [], flowPointerId: null },
+      ],
     });
   });
 
@@ -53,6 +65,7 @@ describe("crm_test_ai_router — prévia do draft via MCP", () => {
     expect(mocks.classify).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({
       tenantId: ORG, leadId: null, jobId: null, signal: "Quero contratar internet",
     }), expect.anything());
+    expect(mocks.classify.mock.calls[0]?.[3]).not.toHaveProperty("runModelCall");
     expect(out).toMatchObject({ intent_name: "comercial", agent_id: SALES, is_dry_run: true });
     expect(crmTestAiRouter.redigirParaAuditoria?.({ router_id: ROUTER, message: "segredo fictício" })).toEqual({
       router_id: ROUTER, message_present: true,
@@ -61,12 +74,29 @@ describe("crm_test_ai_router — prévia do draft via MCP", () => {
     expect(crmTestAiRouter.requiresRole).toBe("manager");
   });
 
+  it("usa os quatro destinos configurados sem regras ISP na implementação", async () => {
+    for (const [intent, message, agentId] of [
+      ["comercial", "Quero contratar internet", SALES],
+      ["suporte", "Minha internet caiu", SUPPORT],
+      ["financeiro", "Me manda a segunda via", FINANCE],
+      ["instalacao", "Quando o técnico vem?", INSTALLATION],
+    ] as const) {
+      mocks.classify.mockResolvedValueOnce({ intentName: intent, confidence: 0.95 });
+      const out = await crmTestAiRouter.handler({ router_id: ROUTER, message }, context() as never);
+      expect(out).toMatchObject({ intent_name: intent, outcome: "classified", agent_id: agentId, is_dry_run: true });
+    }
+    expect(mocks.classify).toHaveBeenCalledTimes(4);
+  });
+
   it("baixa confiança e falha do classificador vão para Atendimento geral", async () => {
     const ctx = context();
-    for (const verdict of [{ intentName: "comercial", confidence: 0.2 }, null]) {
+    for (const [verdict, outcome] of [
+      [{ intentName: "comercial", confidence: 0.2 }, "no_match"],
+      [null, "classifier_failed"],
+    ] as const) {
       mocks.classify.mockResolvedValueOnce(verdict);
       const out = await crmTestAiRouter.handler({ router_id: ROUTER, message: "Mensagem ambígua" }, ctx as never);
-      expect(out).toMatchObject({ agent_id: GENERAL, agent_name: "Atendimento geral ISP" });
+      expect(out).toMatchObject({ outcome, agent_id: GENERAL, agent_name: "Atendimento geral ISP" });
     }
   });
 

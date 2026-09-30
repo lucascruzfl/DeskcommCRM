@@ -228,27 +228,6 @@ test("Fibra Horizonte Demo: reunião → tenant → acervo/memória MCP → draf
     expect(router).toMatchObject({ is_active: false, fallback_agent_id: ispAiId(orgId, "agent:geral") });
     const routerPublic = await call(targetToken, "crm_get_ai_router", { router_id: router.id });
     expect((routerPublic.members as unknown[])).toHaveLength(4);
-    for (const [message, intent, role] of [
-      ["Quero contratar internet", "comercial", "comercial"],
-      ["Vocês atendem o bairro Centro?", "comercial", "comercial"],
-      ["Meu CEP é 00000-000, tem cobertura?", "comercial", "comercial"],
-      ["Quais planos vocês têm?", "comercial", "comercial"],
-      ["Minha internet caiu", "suporte", "suporte"],
-      ["Me manda a segunda via", "financeiro", "financeiro"],
-      ["Já paguei, libera minha internet", "financeiro", "financeiro"],
-      ["Quando o técnico vem?", "instalacao", "instalacao"],
-    ] as const) {
-      const preview = await call(targetToken, "crm_test_ai_router", { router_id: router.id, message });
-      expect(preview).toMatchObject({
-        intent_name: intent, outcome: "classified", agent_id: ispAiId(orgId, `agent:${role}`), is_dry_run: true,
-      });
-    }
-    const fallback = await call(targetToken, "crm_test_ai_router", {
-      router_id: router.id, message: "Preciso de uma orientação geral",
-    });
-    expect(fallback).toMatchObject({
-      intent_name: null, agent_id: ispAiId(orgId, "agent:geral"), is_dry_run: true,
-    });
     expect(check(await fixture.db.from("ai_router_members").select("intent_name")
       .eq("organization_id", orgId).eq("router_id", router.id)).map((row) => row.intent_name).sort())
       .toEqual(["comercial", "financeiro", "instalacao", "suporte"]);

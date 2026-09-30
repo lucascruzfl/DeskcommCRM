@@ -51,7 +51,6 @@ export const crmTestAiRouter: McpToolDefinition<typeof shape> = {
     const { classifyIntent } = await import("@/lib/agent-engine/agent/intent-classifier");
     const { destinoDoVeredito } = await import("@/lib/agent-engine/agent/resolve-turn-agent");
     const { llmEdgeConfigFromEnv } = await import("@/lib/agent-engine/edge/llm/credentials");
-    const { runModelCall } = await import("@/lib/agent-engine/edge/llm/run-model-call");
     const { createLogger } = await import("@/lib/agent-engine/obs/logger");
     const { env } = await import("@/lib/env");
 
@@ -71,23 +70,13 @@ export const crmTestAiRouter: McpToolDefinition<typeof shape> = {
       throw new McpToolError("conflict", "router_agent_not_in_tenant");
     }
 
-    const fixture = process.env.INTERNAL_AGENT_RUN_STUB === "true";
-    const llmConfig = llmEdgeConfigFromEnv(env);
-    if (fixture) llmConfig.anthropicApiKey = "local-controlled-provider";
-    const fixtureRegistry = fixture
-      ? (await import("@/lib/agent-engine/agent/preview-fixture")).previewFixtureRegistry()
-      : null;
-    const verdict = await classifyIntent(pool, llmConfig, {
+    const verdict = await classifyIntent(pool, llmEdgeConfigFromEnv(env), {
       tenantId: ctx.organizationId,
       leadId: null,
       jobId: null,
       router,
       signal: input.message,
-    }, {
-      log: createLogger(),
-      ...(fixtureRegistry ? { runModelCall: (db, cfg, request, deps) =>
-        runModelCall(db, cfg, request, { ...deps, registry: fixtureRegistry }) } : {}),
-    });
+    }, { log: createLogger() });
     const chosen = destinoDoVeredito(router, undefined, null, verdict);
     const agentId = chosen.membro?.agentId ?? router.fallbackAgentId;
     return {
