@@ -190,8 +190,8 @@ const gravarMemoriaInputShape = {
 export const crmSaveOrgMemory: McpToolDefinition<typeof gravarMemoriaInputShape> = {
   name: "crm_save_org_memory",
   description:
-    "Registra regra durável da organização, não de um cliente final. A origem distingue " +
-    "o agente de um operador humano com token; confirme a regra com a empresa antes de salvá-la.",
+    "Permite a uma pessoa registrar uma regra durável da organização, não de um cliente final, " +
+    "depois de confirmá-la com a empresa.",
   inputSchema: gravarMemoriaInputShape,
   category: "write",
   // A rota equivalente (`ai/memory/entries` POST) exige manager. Regra durável
@@ -207,15 +207,16 @@ export const crmSaveOrgMemory: McpToolDefinition<typeof gravarMemoriaInputShape>
     id: (result as { anotacao?: { id?: string } })?.anotacao?.id,
   }),
   handler: async (input, ctx) => {
+    if (ctx.actor.type === "ai_agent") throw new Error("org_memory_write_requires_person");
     const author = ctx.actor.type === "user" ? ctx.actor.id
-      : ctx.actor.type === "api_token" ? ctx.provisionedByUserId ?? null : null;
+      : ctx.provisionedByUserId ?? null;
     const { data, error } = await ctx.supabase
       .from("org_memory_entries")
       .insert({
         organization_id: ctx.organizationId,
         title: input.titulo,
         body: input.corpo,
-        source: ctx.actor.type === "ai_agent" ? "agent" : "manual",
+        source: "manual",
         created_by: author,
         status: "active",
       })

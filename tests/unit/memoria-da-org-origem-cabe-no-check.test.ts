@@ -77,13 +77,12 @@ function origensGravadas(): Array<{ arquivo: string; valor: string }> {
 }
 
 describe("org_memory_entries.source — o que o código grava cabe no CHECK", () => {
-  it("a ferramenta MCP distingue manual/agent e o CHECK do baseline aceita", () => {
+  it("a ferramenta MCP grava manual e o CHECK do baseline aceita", () => {
     const gravadas = origensGravadas();
     // Controle positivo: os três gravadores conhecidos têm de ser achados. Sem
     // isto, um regex quebrado devolveria zero achados e o teste abaixo passaria.
     expect(gravadas).toEqual(
       expect.arrayContaining([
-        { arquivo: "lib/mcp/tools/evolucao.ts", valor: "agent" },
         { arquivo: "lib/mcp/tools/evolucao.ts", valor: "manual" },
         { arquivo: "lib/ai/apply-proposal.ts", valor: "flywheel" },
         { arquivo: "app/api/v1/ai/memory/entries/route.ts", valor: "manual" },
