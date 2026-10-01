@@ -270,16 +270,18 @@ export async function escolherDiaDesenhado(page: Page, dias: readonly string[]):
         .evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")!.slice(4)))
     ).filter((k) => dias.includes(k));
 
-  // Até a consulta de horários responder, TODO dia nasce indisponível — uma
-  // varredura feita antes disso leria "nenhum dia da semana desenhada" onde há.
-  await expect(
-    page.locator('[data-testid^="dia-"][data-disponivel="true"]').first(),
-    "nenhum dia disponível no painel — o seed da agenda não deixou jornada publicada",
-  ).toBeVisible({ timeout: 20_000 });
-
+  const meses = [await mesVisivelNoPainel(page)];
   let candidatos = await disponiveis();
+  if (candidatos.length === 0 && dias.some((dia) => dia.startsWith(meses[0]!))) {
+    try {
+      await expect.poll(disponiveis, { timeout: 20_000 }).not.toEqual([]);
+      candidatos = await disponiveis();
+    } catch {
+      // Pode não haver vaga no mês atual; só o próximo período decide isso.
+    }
+  }
   if (candidatos.length === 0) {
-    await page.getByTestId("mes-seguinte").click();
+    meses.push(await avancarMesNoPainel(page));
     // ⚠️ ESPERA PELOS DIAS DA SEMANA DESENHADA, não por "algum dia disponível".
     //
     // O mês visível mora em DOIS estados: o `mes` do painel, que o clique troca
@@ -304,7 +306,7 @@ export async function escolherDiaDesenhado(page: Page, dias: readonly string[]):
         timeout: 20_000,
         message:
           `nenhum dia da semana desenhada (${dias.join(", ")}) ficou disponível no painel ` +
-          "depois de avançar o mês — o alvo e a grade deixariam de falar do mesmo período",
+          `nos meses ${meses.join(" → ")} — o alvo e a grade deixariam de falar do mesmo período`,
       })
       .not.toEqual([]);
     candidatos = await disponiveis();
@@ -313,7 +315,7 @@ export async function escolherDiaDesenhado(page: Page, dias: readonly string[]):
   const escolhido = candidatos.sort()[0];
   expect(
     escolhido,
-    `nenhum dia da semana desenhada (${dias.join(", ")}) está disponível no painel — ` +
+    `nenhum dia da semana desenhada (${dias.join(", ")}) está disponível nos meses ${meses.join(" → ")} — ` +
       "o alvo e a grade deixariam de falar do mesmo período",
   ).toBeTruthy();
   await page.getByTestId(`dia-${escolhido}`).click();
@@ -369,25 +371,49 @@ async function diasCheios(page: Page): Promise<string[]> {
     return chaves.filter((k) => k > hoje).sort();
   };
 
-  await expect(
-    page.locator('[data-testid^="dia-"][data-disponivel="true"]').first(),
-    "nenhum dia disponível — o seed da agenda não deixou jornada publicada, e sem " +
-      "dia clicável a coluna de horários nunca abre (o defeito ficaria invisível)",
-  ).toBeVisible({ timeout: 20_000 });
+  const meses = [await mesVisivelNoPainel(page)];
+  // O painel pode abrir em 30/09 sem uma única vaga em setembro. O humano
+  // clica em "Próximo mês"; o harness faz o mesmo, com teto de dois cliques.
+  for (let salto = 0; salto < 3; salto++) {
+    const cheios = await varrer();
+    if (cheios.length) return cheios;
+    if (salto === 0) {
+      // A primeira consulta pode ainda estar em trânsito quando o painel abre.
+      // Esperar por um dia observável evita pular uma vaga do mês atual.
+      try {
+        await expect.poll(varrer, { timeout: 5_000 }).not.toEqual([]);
+        return varrer();
+      } catch {
+        // Sem vaga observável neste mês; a navegação humana segue adiante.
+      }
+    }
+    if (salto === 2) break;
+    meses.push(await avancarMesNoPainel(page));
+    try {
+      await expect.poll(varrer, { timeout: 20_000 }).not.toEqual([]);
+    } catch {
+      // O mês consultado não ofereceu dia; a próxima iteração avança ou
+      // encerra. Erro de produto/consulta não vira sucesso: o teto reprova.
+    }
+  }
+  throw new Error(`nenhum dia FUTURO disponível nos meses inspecionados: ${meses.join(" → ")}`);
+}
 
-  const cheios = await varrer();
-  if (cheios.length > 0) return cheios;
+/** O 21º botão sempre pertence ao mês central da grade de 42 dias. */
+async function mesVisivelNoPainel(page: Page): Promise<string> {
+  const chave = await page.locator('[data-testid^="dia-"]').nth(20).getAttribute("data-testid");
+  expect(chave, "o mini-calendário não desenhou 21 dias").toMatch(/^dia-\d{4}-\d{2}-\d{2}$/);
+  return chave!.slice(4, 11);
+}
 
-  // Hoje é o último dia útil do mês visível: o próximo dia com jornada cai no
-  // mês seguinte, e o mini-calendário só torna clicável o que é `isSameMonth` do
-  // mês em tela. Sem este passo as specs reprovariam nos dias 30/31 — a mesma
-  // classe de vermelho-por-calendário que este módulo existe para fechar.
+async function avancarMesNoPainel(page: Page): Promise<string> {
+  const anterior = await mesVisivelNoPainel(page);
   await page.getByTestId("mes-seguinte").click();
-  await expect(
-    page.locator('[data-testid^="dia-"][data-disponivel="true"]').first(),
-    "nem o mês seguinte oferece dia — a consulta deveria ter pedido o mês visível",
-  ).toBeVisible({ timeout: 20_000 });
-  return varrer();
+  await expect.poll(() => mesVisivelNoPainel(page), {
+    timeout: 10_000,
+    message: `o painel não avançou de ${anterior} após o clique em mes-seguinte`,
+  }).not.toBe(anterior);
+  return mesVisivelNoPainel(page);
 }
 
 function exigirDia(cheios: readonly string[], qual: string): string {

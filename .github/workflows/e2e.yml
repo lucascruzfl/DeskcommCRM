@@ -79,18 +79,37 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      checks: read
       pull-requests: read
     outputs:
       e2e: ${{ steps.alcance.outputs.e2e }}
+      docs_safe: ${{ steps.docs.outputs.docs_safe }}
     steps:
       - uses: actions/checkout@v7
         if: github.event_name == 'pull_request'
         with:
-          sparse-checkout: scripts/pr-alcanca-o-e2e.sh
+          ref: ${{ github.event.pull_request.base.sha }}
+          sparse-checkout: |
+            scripts/pr-alcanca-o-e2e.sh
+            scripts/ci-docs-safe-delta.mjs
           sparse-checkout-cone-mode: false
+
+      - name: Provar delta documental e HEAD anterior verde
+        id: docs
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f scripts/ci-docs-safe-delta.mjs ]; then
+            node scripts/ci-docs-safe-delta.mjs
+          else
+            echo "docs_safe=nao" >> "$GITHUB_OUTPUT"
+            echo "FAST_PATH_DOCS_SAFE=nao — motivo: detector ausente na base confiável" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: O PR alcança o que o e2e mede?
         id: alcance
+        if: steps.docs.outputs.docs_safe != 'sim'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ github.event.pull_request.number }}
@@ -151,7 +170,7 @@ jobs:
   # `tests/unit/e2e-parte-4-fala-com-os-servicos-do-runner.test.ts` reprova.
   e2e-parte:
     needs: [e2e-alcance]
-    if: needs.e2e-alcance.outputs.e2e == 'sim'
+    if: needs.e2e-alcance.outputs.docs_safe != 'sim' && needs.e2e-alcance.outputs.e2e == 'sim'
     # Executor próprio para trabalho NOSSO (push na main, PR de branch deste
     # repo) quando a variável de repositório EXECUTOR_PROPRIO vale `ligado`;
     # máquinas do GitHub para todo o resto, fork inclusive. A expressão decide
@@ -2146,6 +2165,7 @@ jobs:
           PORTAO: ${{ needs.e2e-alcance.result }}
           ALCANCE: ${{ needs.e2e-alcance.outputs.e2e }}
           PARTES: ${{ needs.e2e-parte.result }}
+          DOCS_SAFE: ${{ needs.e2e-alcance.outputs.docs_safe }}
         run: |
           set -euo pipefail
           echo "evento=${EVENTO} e2e-alcance=${PORTAO} e2e=${ALCANCE:-<vazio>}"
@@ -2153,6 +2173,12 @@ jobs:
           # A pergunta tem de ter sido RESPONDIDA: job de alcance que falhou
           # deixa as partes `skipped`, e isso não pode ler como aprovação.
           [ "$PORTAO" = "success" ]
+          if [ "$EVENTO" = "pull_request" ] && [ "$DOCS_SAFE" = "sim" ]; then
+            [ "$PARTES" = "skipped" ]
+            [ -z "$ALCANCE" ]
+            echo "e2e: sucesso por delta docs-safe e parent integralmente verde" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           # `skipped` das partes só é aceito com `e2e=nao` em pull_request — PR
           # que não alcança nada que o e2e mede (scripts/pr-alcanca-o-e2e.sh).
           # Qualquer outra combinação exige `success`: parte pulada não mediu

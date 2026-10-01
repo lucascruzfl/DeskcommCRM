@@ -16,7 +16,7 @@
  */
 import { test, expect } from "./helpers/test";
 
-import { escolherDiaDesenhado } from "./helpers/agenda-semana-integra";
+import { escolherDiaDesenhado, escolherPrimeiroDiaCheio } from "./helpers/agenda-semana-integra";
 
 test.use({ timezoneId: "UTC" });
 
@@ -89,4 +89,18 @@ test("depois de 'mês seguinte', o dia escolhido é da semana desenhada, não do
   await expect(page.getByTestId("dia-2026-09-28")).toHaveAttribute("data-disponivel", "true");
 
   expect(await escolherDiaDesenhado(page, SEMANA_DESENHADA)).toBe("2026-10-05");
+});
+
+test("30/09 sem vaga visível navega até a jornada de 01/10", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-09-30T23:30:00Z"));
+  await page.route(`${ORIGEM}/api/v1/agenda/horarios-livres*`, async (rota) => {
+    const de = new Date(new URL(rota.request().url()).searchParams.get("de")!);
+    await rota.fulfill({ json: de.getUTCMonth() === 9 ? { "2026-10-01": true } : {} });
+  });
+  await page.route(`${ORIGEM}/`, (rota) => rota.fulfill({ contentType: "text/html", body: PAGINA }));
+  await page.goto(`${ORIGEM}/`);
+  await expect(page.getByTestId("dia-2026-09-30")).toHaveAttribute("data-disponivel", "false");
+
+  expect(await escolherPrimeiroDiaCheio(page)).toBe("2026-10-01");
+  await expect(page.getByTestId("dia-2026-10-01")).toHaveAttribute("data-disponivel", "true");
 });

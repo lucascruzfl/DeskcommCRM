@@ -86,6 +86,32 @@ permissions:
 # segue no grupo do PR, e o push novo continua cancelando o velho.
 
 jobs:
+  docs-safe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+      pull-requests: read
+    outputs:
+      docs_safe: ${{ steps.detect.outputs.docs_safe }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.sha }}
+          sparse-checkout: scripts/ci-docs-safe-delta.mjs
+          sparse-checkout-cone-mode: false
+      - name: Provar delta documental e HEAD anterior verde
+        id: detect
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f scripts/ci-docs-safe-delta.mjs ]; then
+            node scripts/ci-docs-safe-delta.mjs
+          else
+            echo "docs_safe=nao" >> "$GITHUB_OUTPUT"
+            echo "FAST_PATH_DOCS_SAFE=nao — motivo: detector ausente na base confiável" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   # A suíte de unit em TRÊS partes paralelas (duas até 22/09/2026 — ver o fim
   # deste bloco), e o check obrigatório `verify` é o
   # agregador lá embaixo — mesmo padrão do `invariants`.
@@ -472,11 +498,14 @@ jobs:
     permissions: {}
     steps:
       - name: Falhar se qualquer parte não passou
+        env:
+          PARTES: ${{ needs.verify-parte.result }}
         run: |
-          echo "verify-parte: ${{ needs.verify-parte.result }}"
+          set -euo pipefail
+          echo "verify-parte=${PARTES}"
           # `success` só com TODAS as partes verdes; `skipped` e `cancelled`
           # reprovam — parte que não rodou não mediu nada.
-          [ "${{ needs.verify-parte.result }}" = "success" ]
+          [ "$PARTES" = "success" ]
 
   # Gate de isolamento multi-tenant + invariantes de governança.
   # Job separado de propósito: roda em paralelo ao verify (não atrasa o feedback
@@ -567,7 +596,8 @@ jobs:
     # Executor próprio para trabalho nosso quando EXECUTOR_PROPRIO=ligado; o
     # porquê e a guarda contra fork: comentário do e2e-parte no e2e.yml.
     runs-on: ${{ vars.EXECUTOR_PROPRIO == 'ligado' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && 'deskcomm-proprio' || 'ubuntu-latest' }}
-    needs: [invariants-alcance]
+    needs: [docs-safe, invariants-alcance]
+    if: github.event_name != 'pull_request' || needs.docs-safe.outputs.docs_safe != 'sim'
     concurrency:
       group: ${{ github.workflow }}-invariants-majors-pg${{ matrix.pg }}-${{ github.event.pull_request.number || github.ref }}${{ github.event_name == 'pull_request' && github.run_attempt != '1' && format('-reentrada-{0}', github.event.pull_request.head.sha) || '' }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -617,7 +647,7 @@ jobs:
   # sempre um check que nenhum run produz, e NENHUM PR mergearia.
   invariants:
     if: always()
-    needs: [invariants-alcance, invariants-majors]
+    needs: [docs-safe, invariants-alcance, invariants-majors]
     runs-on: ubuntu-latest
     # Nenhuma permissão: este job só lê o resultado de `needs`.
     permissions: {}
@@ -628,13 +658,22 @@ jobs:
           PORTAO: ${{ needs.invariants-alcance.result }}
           PISO: ${{ needs.invariants-alcance.outputs.piso }}
           MAJORS: ${{ needs.invariants-majors.result }}
+          DETECTOR: ${{ needs.docs-safe.result }}
+          DOCS_SAFE: ${{ needs.docs-safe.outputs.docs_safe }}
         run: |
           set -euo pipefail
           echo "evento=${EVENTO} invariants-alcance=${PORTAO} piso=${PISO:-<vazio>}"
           echo "invariants-majors: ${MAJORS}"
+          [ "$DETECTOR" = "success" ]
+          # Mesmo no fast path, a decisão leve de majors precisa ter respondido.
+          [ "$PORTAO" = "success" ]
+          if [ "$EVENTO" = "pull_request" ] && [ "$DOCS_SAFE" = "sim" ]; then
+            [ "$MAJORS" = "skipped" ]
+            echo "invariants: sucesso por delta docs-safe e parent integralmente verde" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           # A pergunta tem de ter sido RESPONDIDA: portão que falhou deixa a
           # matriz `skipped`, e isso não pode ler como aprovação.
-          [ "$PORTAO" = "success" ]
           # Fora de pull_request o piso é OBRIGATÓRIO: a `main` mede as duas.
           if [ "$EVENTO" != "pull_request" ]; then
             [ "$PISO" = "sim" ]

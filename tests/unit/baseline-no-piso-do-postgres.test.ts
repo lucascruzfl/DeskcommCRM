@@ -251,7 +251,7 @@ describe("o baseline fica no piso de Postgres que dizemos suportar", () => {
     //    protection da `main` exige esse nome exato, e job de matrix se chama
     //    `invariants-majors (15)`: sem a fachada, nenhum PR mergearia.
     expect(ci).toMatch(
-      /^\s{2}invariants:\n\s+if: always\(\)\n\s+needs: \[invariants-alcance, invariants-majors\]/m,
+      /^\s{2}invariants:\n\s+if: always\(\)\n\s+needs: \[docs-safe, invariants-alcance, invariants-majors\]/m,
     );
   });
 });

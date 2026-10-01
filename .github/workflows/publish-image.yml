@@ -97,16 +97,34 @@ jobs:
     # `pull-requests: read` é para listar os arquivos do PR.
     permissions:
       contents: read
+      checks: read
       pull-requests: read
     outputs:
       imagem: ${{ steps.alcance.outputs.imagem }}
+      docs_safe: ${{ steps.docs.outputs.docs_safe }}
     steps:
       # Só o script, não o repositório: o job é de segundos e segue assim.
       - uses: actions/checkout@v7
         if: github.event_name == 'pull_request'
         with:
-          sparse-checkout: scripts/pr-mexe-na-imagem.sh
+          ref: ${{ github.event.pull_request.base.sha }}
+          sparse-checkout: |
+            scripts/pr-mexe-na-imagem.sh
+            scripts/ci-docs-safe-delta.mjs
           sparse-checkout-cone-mode: false
+
+      - name: Provar delta documental e HEAD anterior verde
+        id: docs
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f scripts/ci-docs-safe-delta.mjs ]; then
+            node scripts/ci-docs-safe-delta.mjs
+          else
+            echo "docs_safe=nao" >> "$GITHUB_OUTPUT"
+            echo "FAST_PATH_DOCS_SAFE=nao — motivo: detector ausente na base confiável" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       # `sim` constrói; `nao` pula os builds e o `imagens-ok` aceita o pulo.
       # Fora de pull_request é SEMPRE `sim` — push na main e tag publicam, e
@@ -115,6 +133,7 @@ jobs:
       # porquê de cada caminho, estão no cabeçalho do script.
       - name: O PR alcança alguma imagem?
         id: alcance
+        if: steps.docs.outputs.docs_safe != 'sim'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ github.event.pull_request.number }}
@@ -825,6 +844,7 @@ jobs:
           BUILD: ${{ needs.build-and-push.result }}
           APP: ${{ needs.imagem-do-app-sobe.result }}
           FUNDO: ${{ needs.imagens-de-fundo-sobem.result }}
+          DOCS_SAFE: ${{ needs.a-tag-veio-da-main.outputs.docs_safe }}
         run: |
           set -euo pipefail
           echo "evento=${EVENTO} a-tag-veio-da-main=${PORTAO} imagem=${ALCANCE:-<vazio>}"
@@ -834,6 +854,14 @@ jobs:
           # O portão reprova antes de tudo: tag fora da main deixa os builds
           # `skipped`, e nenhum `skipped` abaixo pode ler isso como aceitável.
           [ "$PORTAO" = "success" ]
+          if [ "$EVENTO" = "pull_request" ] && [ "$DOCS_SAFE" = "sim" ]; then
+            [ "$BUILD" = "skipped" ]
+            [ "$APP" = "skipped" ]
+            [ "$FUNDO" = "skipped" ]
+            [ -z "$ALCANCE" ]
+            echo "imagens-ok: sucesso por delta docs-safe e parent integralmente verde" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           # Em pull_request o build-and-push é sempre `skipped` (as mesmas
           # imagens são construídas pelos dois jobs de baixo). Fora de PR ele
           # publica, e só `success` serve.
