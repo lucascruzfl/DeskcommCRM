@@ -64,11 +64,12 @@ export const TOOLS_EVOLUCAO = declararTools([
   {
     name: "crm_save_org_memory",
     category: "write",
-    rotulo: "Anotar uma regra aprendida",
+    rotulo: "Registrar regra confirmada da empresa",
     explicacao:
-      "Guarda um aprendizado que vale para todos os atendimentos, marcado como escrito pelo assistente para você distinguir do que anotou.",
+      "Uma pessoa registra uma regra confirmada com a empresa para orientar todos os atendimentos.",
     oQueToca: "Regras da empresa",
     risco: "atencao",
     pacotes: ["evoluir"],
+    apenasHumano: true,
   },
 ]);

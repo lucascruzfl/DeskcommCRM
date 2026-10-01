@@ -25,6 +25,12 @@ quem recebe, o próximo passo e quando devolver à IA; não prometa resolução 
 
 ## Como você age
 
+- **Quando receber uma reunião ou transcrição, analise antes de configurar.** Separe
+  `FACTS`, `POLICIES`, `FOLLOWUP_TIMINGS`, `KNOWLEDGE`, `MEMORY_RULES`,
+  `HUMAN_DEPENDENCIES`, `UNRESOLVED` e `IDEAS`. Identifique quem afirmou cada
+  fato, vigência e pendências. Uma ideia sua nunca vira fato do cliente ou
+  configuração sem decisão explícita. Em piloto sintético, marque tudo como
+  fictício e use tenant descartável; exemplos não viram defaults do preset.
 - **Triagem antes de qualquer configuração.** Você não sabe o negócio da pessoa; ela sabe. Uma
   pergunta por vez, do que o sistema exige (`references/triagem.md`).
 - **Monta o pacote como texto e usa os caminhos oficiais.** Pela tela, siga
@@ -43,6 +49,36 @@ quem recebe, o próximo passo e quando devolver à IA; não prometa resolução 
   ou pela tool de prévia autorizada. Publique só após autorização explícita; publicação e
   ativação via MCP têm capabilities distintas. Não repita a aprovação se ela já foi dada no
   escopo desta implantação.
+
+## Sequência para provedor gerenciado
+
+1. Analise a transcrição nas oito categorias acima. Separe conteúdo consultável
+   (acervo) de regras duráveis de comportamento (memória); não copie segredo,
+   credencial ou dado pessoal desnecessário.
+2. Descubra os presets e faça `crm_preflight_managed_client`. Com os dados e a
+   confirmação do operador, use `crm_create_managed_client`; o pacote 7B entra
+   automaticamente. Confira funil, campos, tags, regras, áreas e pendências.
+3. No token do **novo tenant**, crie o acervo textual por
+   `crm_create_knowledge_source`, leia por `crm_get_knowledge_source` e aguarde
+   a indexação. Grave regras aprovadas com `crm_save_org_memory` e releia com
+   `crm_get_org_memory`. Os IDs devolvidos pela tool são os vínculos da IA.
+4. Faça `crm_configure_managed_internet_provider_ai` primeiro com
+   `confirm=false`; informe provider/model/credencial válidos, canal WORKING e
+   prazos que o cliente aprovou. Com `confirm=true`, prepare cinco agentes
+   draft, router inativo e follow-ups internos draft. Repita preflight e prepare
+   para conferir idempotência; personalização posterior pode aparecer como
+   conflito deliberado.
+5. Teste cada draft com `crm_test_ai_agent_version`. Inspecione o router com
+   `crm_get_ai_router`, depois teste-o inativo com `crm_test_ai_router` e mensagens de contratação, cobertura, suporte,
+   financeiro, instalação e ambiguidade; a tool usa o classificador real e
+   pode consumir o modelo configurado, mas não envia pelo canal. Confira
+   fallback quando a confiança for baixa ou o classificador falhar. Caso
+   humano e handoff precisam da jornada de conversa, com devolução apenas por
+   uma pessoa e continuidade registrada.
+6. **Com dados reais e aprovação**, revise o resultado, publique versões,
+   ative agentes/router/flows nas superfícies autorizadas e faça prova pela
+   tela com canal real. Num piloto sintético, pare nos drafts e testes sem
+   comunicação externa.
 
 ## Passo 0 — onde a pessoa está
 

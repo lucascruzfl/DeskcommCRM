@@ -156,6 +156,7 @@ function fixture(preset = "managed/internet-provider") {
             published_version_id: null,
             archived_at: null,
             active_version_id: null,
+            provisioning_origin: null,
             ...row,
           });
           writes++;
@@ -234,7 +235,8 @@ describe("pacote ISP 7C", () => {
     ).toBe(true);
     expect(
       f.rows.ai_agent_versions?.every(
-        (v) => v.status === "draft" && v.cases_enabled === true && v.handoff_tool_enabled === true,
+        (v) => v.status === "draft" && v.cases_enabled === true &&
+          v.handoff_tool_enabled === true && v.provisioning_origin === null,
       ),
     ).toBe(true);
     const comercial = f.rows.ai_agent_versions?.find(
@@ -349,7 +351,10 @@ describe("pacote ISP 7C", () => {
         spec.tools.some((id) => /agenda|calendar|invoice|payment|pix|olt|onu|radius/i.test(id)),
       ).toBe(false);
       if (role === "financeiro") expect(spec.prompt).toContain("Não gere boleto ou PIX");
-      if (role === "instalacao") expect(spec.prompt).toContain("não marque no calendário genérico");
+      if (role === "instalacao") {
+        expect(spec.prompt).toContain("não marque no calendário genérico");
+        expect(spec.tools).toContain("crm_search_knowledge");
+      }
     }
   });
 

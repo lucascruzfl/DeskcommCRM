@@ -116,6 +116,7 @@ export const ISP_AI_ROLES = {
       "crm_get_contact",
       "crm_get_lead",
       "crm_get_lead_timeline",
+      "crm_search_knowledge",
       "crm_list_internal_notes",
       "crm_get_org_memory",
     ],
@@ -440,7 +441,9 @@ export function createIspAiService(deps: Deps = defaults) {
           if (!version) create.push(`version:${role}`);
           else if (
             version.status !== "draft" ||
-            version.provisioning_origin !== PACKAGE ||
+            // Esta coluna tem CHECK restrito a onboarding/legacy_reconciliation.
+            // O marcador específico do pacote vive em ai_agents.config.
+            version.provisioning_origin !== null ||
             Object.entries(expected).some(
               ([key, value]) =>
                 value !== undefined && !same((version as Record<string, unknown>)[key], value),
@@ -626,7 +629,6 @@ export function createIspAiService(deps: Deps = defaults) {
                 agentId,
                 versionId,
                 config: { managed_package: PACKAGE, role },
-                provisioningOrigin: PACKAGE,
                 inactive: true,
                 preserveOnVersionFailure: true,
               },
@@ -646,7 +648,7 @@ export function createIspAiService(deps: Deps = defaults) {
           );
           const { error } = await db
             .from("ai_agent_versions")
-            .insert({ ...records.version, provisioning_origin: PACKAGE });
+            .insert(records.version);
           if (error && error.code !== "23505") failed();
           created.push(`version:${role}`);
         }

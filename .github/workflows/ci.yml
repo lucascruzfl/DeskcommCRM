@@ -233,8 +233,12 @@ jobs:
         if: matrix.parte == 3
         run: pnpm cercas
 
+      # tsc frio excedeu o heap padrão em medição local; 6144 MB só ampliam a memória disponível.
+      # Seleção, cobertura e semântica seguem iguais; otimização estrutural do CI fica fora desta PR.
       - name: Typecheck
         if: matrix.parte == 1
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
         run: pnpm typecheck
 
       # Na parte 2, não na 1: o porquê e a conta estão no cabeçalho do job.

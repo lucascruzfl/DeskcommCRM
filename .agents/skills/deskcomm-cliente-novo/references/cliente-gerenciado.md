@@ -25,6 +25,12 @@ faz preflight sem escrita ou prepara cinco agentes `mcp_agent` em draft. Com
 canal real prepara o Intent Router inativo; com prazos explícitos prepara flows
 internos inativos. Publicação, ativação, equipe e conhecimento real são passos
 posteriores. Nenhuma integração de cobertura ou cobrança nasce com o pacote.
+Antes dessa etapa, uma transcrição de reunião deve ser classificada em fatos,
+políticas, prazos de follow-up, acervo, memória, dependências humanas,
+pendências e ideias. Ideias do assistente não são decisões do cliente. Crie
+acervo e memória pelas tools do tenant alvo e use os IDs reais das fontes no
+preflight 7C. `crm_get_ai_router` inspeciona os membros, e `crm_test_ai_router` permite testar o draft sem ativar o canal;
+o resultado é uma prévia, não prova de resposta final ou entrega pelo WhatsApp.
 
 | Classificação | Significado operacional |
 | --- | --- |
