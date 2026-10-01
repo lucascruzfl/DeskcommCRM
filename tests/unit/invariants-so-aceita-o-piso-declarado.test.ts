@@ -49,7 +49,7 @@ for EVENTO in pull_request push; do
 done
 true`;
   return execFileSync("bash", ["-c", programa], {
-    env: { ...process.env, SCRIPT_DO_JOB: SCRIPT },
+    env: { ...process.env, SCRIPT_DO_JOB: SCRIPT, DETECTOR: "success", DOCS_SAFE: "nao" },
     encoding: "utf-8",
   })
     .split("\n")
@@ -57,6 +57,19 @@ true`;
 }
 
 describe("invariants só aceita a matriz reduzida onde ela foi declarada", () => {
+  it("fast path comprovado passa; detector inválido ou major pulada sem prova reprova", () => {
+    const run = (detector: string, docs: string, majors: string, evento = "pull_request") => {
+      try {
+        execFileSync("bash", ["-c", SCRIPT], { env: { ...process.env, EVENTO: evento, DETECTOR: detector, DOCS_SAFE: docs, PORTAO: "success", PISO: "sim", MAJORS: majors, GITHUB_STEP_SUMMARY: "/dev/null" }, stdio: "ignore" });
+        return true;
+      } catch { return false; }
+    };
+    expect(run("success", "sim", "skipped")).toBe(true);
+    expect(run("failure", "sim", "skipped")).toBe(false);
+    expect(run("success", "nao", "skipped")).toBe(false);
+    expect(run("success", "nao", "success")).toBe(true);
+    expect(run("success", "sim", "skipped", "push")).toBe(false);
+  });
   it("controle positivo: o recorte pegou o script que lê os três resultados", () => {
     for (const v of ["$PORTAO", "$PISO", "$MAJORS", "$EVENTO"]) expect(SCRIPT).toContain(v);
   });

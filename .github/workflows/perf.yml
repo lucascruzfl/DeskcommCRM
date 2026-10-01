@@ -19,6 +19,10 @@ permissions:
 
 jobs:
   build-and-size:
+    permissions:
+      contents: read
+      checks: read
+      pull-requests: read
     # Executor próprio para trabalho nosso quando EXECUTOR_PROPRIO=ligado; o
     # porquê e a guarda contra fork: comentário do e2e-parte no e2e.yml.
     runs-on: ${{ vars.EXECUTOR_PROPRIO == 'ligado' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && 'deskcomm-proprio' || 'ubuntu-latest' }}
@@ -29,12 +33,35 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - uses: actions/setup-node@v7
+        if: github.event_name == 'pull_request'
+        with:
+          node-version: 22
+
+      - name: Provar delta documental e HEAD anterior verde
+        id: docs
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if git fetch --no-tags origin "$BASE_SHA" &&
+             git show "${BASE_SHA}:scripts/ci-docs-safe-delta.mjs" > "$RUNNER_TEMP/ci-docs-safe-delta.mjs" 2>/dev/null; then
+            node "$RUNNER_TEMP/ci-docs-safe-delta.mjs"
+          else
+            echo "docs_safe=nao" >> "$GITHUB_OUTPUT"
+            echo "FAST_PATH_DOCS_SAFE=nao — motivo: detector ausente na base confiável" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - uses: ./.github/actions/preparar-node
+        if: steps.docs.outputs.docs_safe != 'sim'
         # O teto do preâmbulo mora aqui porque passo de composite action não
         # aceita `timeout-minutes`. Razão e medições: o cabeçalho da action.
         timeout-minutes: 5
 
       - name: Build
+        if: steps.docs.outputs.docs_safe != 'sim'
         run: pnpm build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
@@ -45,6 +72,7 @@ jobs:
           SENTRY_DSN: "off"
 
       - name: Report bundle sizes
+        if: steps.docs.outputs.docs_safe != 'sim'
         run: |
           {
             echo "## Build output sizes"

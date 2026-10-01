@@ -59,7 +59,7 @@ for EVENTO in pull_request push; do
 done
 true`;
   return execFileSync("bash", ["-c", programa], {
-    env: { ...process.env, SCRIPT_DO_JOB: SCRIPT },
+    env: { ...process.env, SCRIPT_DO_JOB: SCRIPT, DOCS_SAFE: "nao" },
     encoding: "utf-8",
   })
     .split("\n")
@@ -69,6 +69,17 @@ true`;
 const SCRIPT = scriptDoImagensOk();
 
 describe("imagens-ok só aceita o pulo declarado", () => {
+  it("fast path comprovado passa; detector ou build inválido reprova", () => {
+    const run = (docs: string, gate: string, app: string, fundo: string) => {
+      try {
+        execFileSync("bash", ["-c", SCRIPT], { env: { ...process.env, EVENTO: "pull_request", DOCS_SAFE: docs, PORTAO: gate, BUILD: "skipped", APP: app, FUNDO: fundo, ALCANCE: "", GITHUB_STEP_SUMMARY: "/dev/null" }, stdio: "ignore" });
+        return true;
+      } catch { return false; }
+    };
+    expect(run("sim", "success", "skipped", "skipped")).toBe(true);
+    expect(run("sim", "failure", "skipped", "skipped")).toBe(false);
+    expect(run("nao", "success", "skipped", "skipped")).toBe(false);
+  });
   it("controle positivo: o recorte pegou o script que lê os quatro resultados", () => {
     for (const v of ["$PORTAO", "$BUILD", "$APP", "$FUNDO", "$ALCANCE", "$EVENTO"]) {
       expect(SCRIPT).toContain(v);

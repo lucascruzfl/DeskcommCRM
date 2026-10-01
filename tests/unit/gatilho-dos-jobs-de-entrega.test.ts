@@ -164,9 +164,13 @@ const GATILHO_ESPERADO: Record<string, { condicao: string | null; efeito: string
   // --- os outros checks obrigatórios ------------------------------------------
   // Mesmo mecanismo, mesmo desfecho: `skipped` conta como check satisfeito.
   // Desligar qualquer um destes faz o PR entrar sem ter sido testado.
+  "ci.yml::docs-safe": {
+    condicao: null,
+    efeito: "Prova HEAD anterior verde e delta documental. Sem ele os agregadores reprovam o atalho.",
+  },
   "ci.yml::verify-parte": {
     condicao: null,
-    efeito: "São as partes da suíte (typecheck + lint + test:unit); sem elas o `verify` não tem o que ler.",
+    efeito: "São as partes da suíte; rodam mesmo com delta documental, pois as guardas leem docs, evidências e fragmentos.",
   },
   // A suíte foi dividida em partes (tempo medido, ver ci.yml); o nome que a
   // branch protection exige continua sendo `verify`, agora o agregado.
@@ -197,7 +201,7 @@ const GATILHO_ESPERADO: Record<string, { condicao: string | null; efeito: string
   // `cancelled` em vez de medir as duas — cobertura declarada que o CI cancela é
   // o modo de falha que a #454 fecha.
   "ci.yml::invariants-majors": {
-    condicao: null,
+    condicao: "github.event_name != 'pull_request' || needs.docs-safe.outputs.docs_safe != 'sim'",
     efeito:
       "São as duas majors que este repo diz suportar: pg15 é o PISO real do `baseline.sql` " +
       "(`security_invoker` em view) e onde quem digita `pnpm test:db` na própria máquina cai por " +
@@ -228,7 +232,7 @@ const GATILHO_ESPERADO: Record<string, { condicao: string | null; efeito: string
       "rodam e o agregador `e2e` reprova — o PORTAO dele exige `success` aqui.",
   },
   "e2e.yml::e2e-parte": {
-    condicao: "needs.e2e-alcance.outputs.e2e == 'sim'",
+    condicao: "needs.e2e-alcance.outputs.docs_safe != 'sim' && needs.e2e-alcance.outputs.e2e == 'sim'",
     efeito:
       "São as partes da matriz Playwright. Só pulam em PR que não alcança nada que o " +
       "e2e mede (scripts/pr-alcanca-o-e2e.sh), e o agregador `e2e` só aceita o pulo com " +

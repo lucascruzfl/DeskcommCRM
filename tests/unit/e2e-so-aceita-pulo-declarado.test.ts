@@ -50,7 +50,7 @@ for EVENTO in pull_request push; do
 done
 true`;
   return execFileSync("bash", ["-c", programa], {
-    env: { ...process.env, SCRIPT_DO_JOB: SCRIPT, GITHUB_STEP_SUMMARY: "/dev/null" },
+    env: { ...process.env, SCRIPT_DO_JOB: SCRIPT, GITHUB_STEP_SUMMARY: "/dev/null", DOCS_SAFE: "nao" },
     encoding: "utf-8",
   })
     .split("\n")
@@ -58,6 +58,18 @@ true`;
 }
 
 describe("e2e só aceita o pulo declarado", () => {
+  it("fast path comprovado passa; detector ausente ou parte pulada sem prova reprova", () => {
+    const run = (docs: string, gate: string, parts: string, reach = "") => {
+      try {
+        execFileSync("bash", ["-c", SCRIPT], { env: { ...process.env, EVENTO: "pull_request", DOCS_SAFE: docs, PORTAO: gate, PARTES: parts, ALCANCE: reach, GITHUB_STEP_SUMMARY: "/dev/null" }, stdio: "ignore" });
+        return true;
+      } catch { return false; }
+    };
+    expect(run("sim", "success", "skipped")).toBe(true);
+    expect(run("sim", "failure", "skipped")).toBe(false);
+    expect(run("nao", "success", "skipped", "sim")).toBe(false);
+    expect(run("nao", "success", "success", "sim")).toBe(true);
+  });
   it("controle positivo: o recorte pegou o script que lê os três resultados", () => {
     for (const v of ["$PORTAO", "$ALCANCE", "$PARTES", "$EVENTO"]) {
       expect(SCRIPT).toContain(v);
