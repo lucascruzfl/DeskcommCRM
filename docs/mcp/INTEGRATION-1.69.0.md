@@ -53,19 +53,21 @@ base permanecem byte-a-byte intactas. A ordenação é pelo timestamp: a oficial
 
 ## Conflitos: A = base comum, B = upstream, C = overlay
 
-| Arquivo | Semântica B + C aplicada |
-|---|---|
-| app/api/v1/contacts/_handler.ts | B: piso e normalização de busca; exclusão em RPC atômica com rollback. C: actor e proveniência de token, organização explícita e auditoria mantidos. DELETE continua ação humana; sem tool nova. |
-| docs/testing/user-journey-map.md | Jornada J38 upstream e jornada managed clínica/ISP preservadas. |
-| lib/auth/types.ts | Moeda/país upstream coexistem com managed_policy. |
-| lib/database.types.ts | União estrutural gerada dos tipos da base e dos dois lados; todos os membros e novos campos preservados. Opcionalidade de channel_session_id no Insert do fork permanece. |
-| package.json | União dos gates test:shell, incluindo merge guards, módulos opcionais, MCP e runtime do agente. |
-| supabase/baseline.sql | Blocos upstream e managed coexistem. Seed do playbook upstream é fechado antes dos presets managed. Cabeçalho deslocado da varredura removido; scan real continua único e final. Última provisionadora Honorários preserva gates managed e forma upstream segura para updates antigos. |
-| tests/e2e/helpers/agenda-semana-integra.ts | Navegação multi-mês do fork espera mudança de mês e, no chamador, o próprio critério de dias futuros upstream; não devolve horários de frame transitório. |
-| tests/shell/guarda-arm-so-considera-instalacao-real.test.sh | PATH sem Docker realmente isolado do fork; cenário sem imagem usa riscv64 porque upstream passou a suportar ARM64. |
-| tests/unit/contato-delete.test.ts | Expectativas de transação única, organização e rollback, sem DELETEs parciais. |
-| tests/unit/imagens-ok-so-aceita-pulo-declarado.test.ts | Docs-safe comprovado coexistindo com manifesto multiarch; manifesto inválido reprova também no fast path. |
-| tests/unit/memoria-da-org-origem-cabe-no-check.test.ts | Origem manual/ternária do fork e detecção de origem dinâmica preservadas; caminhos Windows normalizados e controle upstream mantido. |
+Base comum real: `f12130953174088b201f1591779f8e484eb76976` (git merge-base).
+
+| Arquivo | Comportamento A | Semântica B + C aplicada |
+|---|---|---|
+| app/api/v1/contacts/_handler.ts | Busca anterior sem novo piso/normalização; exclusão em três DELETEs separados. | B: piso e normalização de busca; exclusão em RPC atômica com rollback. C: actor e proveniência de token, organização explícita e auditoria mantidos. DELETE irreversível conserva contrato/capability preexistentes; nenhuma nova delegação LGPD. |
+| docs/testing/user-journey-map.md | Mapa upstream v1.62, sem as novas jornadas dos dois lados. | Jornada J38 upstream e jornada managed clínica/ISP preservadas. |
+| lib/auth/types.ts | ActiveOrg com sessão/role/fuso, sem currency/country ou managed_policy. | Moeda/país upstream coexistem com managed_policy. |
+| lib/database.types.ts | Tipos do schema oficial v1.62, antes das novas tabelas/campos e extensões managed. | União estrutural gerada dos tipos da base e dos dois lados; todos os membros e novos campos preservados. Opcionalidade de channel_session_id no Insert do fork permanece. |
+| package.json | Gates upstream existentes até v1.62, antes das adições de cada lado. | União dos gates test:shell, incluindo merge guards, módulos opcionais, MCP e runtime do agente. |
+| supabase/baseline.sql | Schema oficial v1.62 e seed da agenda anterior; sem delta v1.69 nem extensões do fork. | Blocos upstream e managed coexistem. Seed do playbook upstream é fechado antes dos presets managed. Cabeçalho deslocado da varredura removido; scan real continua único e final. Última provisionadora Honorários preserva gates managed e forma upstream segura para updates antigos. |
+| tests/e2e/helpers/agenda-semana-integra.ts | Helper de navegação/seleção de horário anterior aos reforços de espera de cada lado. | Navegação multi-mês do fork espera mudança de mês e, no chamador, o próprio critério de dias futuros upstream; não devolve horários de frame transitório. |
+| tests/shell/guarda-arm-so-considera-instalacao-real.test.sh | Cenário de arquitetura sem imagem usava aarch64 e PATH ainda não isolava Docker do host. | PATH sem Docker realmente isolado do fork; cenário sem imagem usa riscv64 porque upstream passou a suportar ARM64. |
+| tests/unit/contato-delete.test.ts | Asserções da exclusão sequencial, antes da RPC atômica. | Expectativas de transação única, organização e rollback, sem DELETEs parciais. |
+| tests/unit/imagens-ok-so-aceita-pulo-declarado.test.ts | Gate de imagens anterior a manifesto multiarch e fast path MCP. | Docs-safe comprovado coexistindo com manifesto multiarch; manifesto inválido reprova também no fast path. |
+| tests/unit/memoria-da-org-origem-cabe-no-check.test.ts | Origem literal agent e caminhos POSIX no detector de autoria. | Origem manual/ternária do fork e detecção de origem dinâmica preservadas; caminhos Windows normalizados e controle upstream mantido. |
 
 Não houve escolha ours/theirs em massa. Automerges dos 48 caminhos sobrepostos
 continuam sujeitos aos gates dirigidos. Ajustes adicionais de testes: referência
@@ -95,6 +97,7 @@ mantidos; nenhuma aresta artificial foi criada.
 - Baseline: instalação limpa e reaplicação com ON_ERROR_STOP=1 verdes em PG15/PG17.
 - `NODE_OPTIONS=--max-old-space-size=6144 pnpm typecheck`: verde, incluindo rechecagem final.
 - `pnpm lint`, `pnpm lint:channels`, `pnpm lint:role-rank`: verdes (channels mantém 62 dívidas existentes).
+- `pnpm skills:sync --check`: oito espelhos fiéis, sem divergência ou escrita.
 - Aplicação/MCP: 168 arquivos dirigidos, 2671 testes; 7 falhas iniciais em dois
   arquivos corrigidas (mock admin duplicado e referência 0491 no MANIFEST). Os 14
   testes desses dois arquivos passaram na rechecagem; os demais 166 arquivos
@@ -113,7 +116,7 @@ mantidos; nenhuma aresta artificial foi criada.
   dados preservados, 8 objetos com identidade estável e view antiga migrando.
   Apenas containers efêmeros do harness canônico, nenhum banco operacional.
 
-A auditoria MCP diferencial é a próxima fase, somente depois do merge local.
+A auditoria posterior ao merge está em `DELTA-1.62-1.69-REVIEW.md`: seis gaps A, sem implementação; observabilidade do Jev é o recorte maior.
 RELEASE-AUDIT.json permanece byte-a-byte igual à base (compatibilidade declarada
 somente para 1.57.0, não para 1.62/1.69).
 
