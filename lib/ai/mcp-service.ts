@@ -18,7 +18,7 @@ import { McpToolError } from "@/lib/mcp/errors";
 export const MCP_AGENT_COLUMNS =
   "id, name, description, kind, priority, is_active, published_version_id, paused_at, archived_at, created_at, updated_at";
 export const MCP_VERSION_COLUMNS =
-  "id, agent_id, version_number, system_prompt, provider, model, credential_id, tool_ids, trigger_config, channel_session_id, max_steps, token_budget, cost_budget_cents, history_message_window, history_token_window, handoff_keywords, handoff_tool_enabled, cases_enabled, split_messages, split_max_chars, followup, operator_enabled, operator_model, operator_tool_ids, status, published_at, superseded_at, created_at, pipeline_ids, knowledge_source_ids, provisioning_origin";
+  "id, agent_id, version_number, system_prompt, provider, model, credential_id, tool_ids, trigger_config, channel_session_id, max_steps, token_budget, cost_budget_cents, history_message_window, history_token_window, handoff_keywords, handoff_tool_enabled, cases_enabled, split_messages, split_max_chars, followup, operator_enabled, operator_model, operator_tool_ids, status, published_at, superseded_at, created_at, pipeline_ids, knowledge_source_ids, provisioning_origin, inbound_debounce_ms";
 const MODEL_COLUMNS =
   "id, provider, model_id, display_name, description, context_window, supports_tools, supports_vision, is_default_for_provider, deprecated_at, released_at, input_price_per_million_cents, output_price_per_million_cents";
 const CREDENTIAL_COLUMNS =

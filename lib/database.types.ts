@@ -1,13 +1,1701 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   public: {
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    Functions: {
+      activate_kb_version: {
+        Args: {
+          p_agent_id: string;
+          p_version_id: string;
+        };
+        Returns: undefined;
+      };
+      comando_da_conversa: {
+        Args: {
+          "": Database["public"]["Tables"]["conversations"]["Row"];
+        };
+        Returns: {
+          error: true;
+        } & "the function public.comando_da_conversa with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache";
+      };
+      emit_event: {
+        Args: {
+          p_entity_id: string;
+          p_entity_kind: string;
+          p_event_type: string;
+          p_metadata?: Json;
+          p_organization_id?: string;
+          p_payload?: Json;
+        };
+        Returns: string;
+      };
+      fn_accept_team_invite:
+        | {
+            Args: {
+              p_invited_at: string;
+              p_invited_by: string;
+              p_issued_at: string;
+              p_org: string;
+              p_role: string;
+              p_user: string;
+            };
+            Returns: Json;
+          }
+        | {
+            Args: {
+              p_interface_settings: Json;
+              p_invited_at: string;
+              p_invited_by: string;
+              p_issued_at: string;
+              p_org: string;
+              p_role: string;
+              p_user: string;
+            };
+            Returns: Json;
+          };
+      fn_activity_report: {
+        Args: {
+          p_from: string;
+          p_limit?: number;
+          p_org: string;
+          p_to: string;
+          p_tz?: string;
+        };
+        Returns: Json;
+      };
+      fn_agenda_conexoes_google_do_dono: {
+        Args: {
+          p_org: string;
+          p_owner: string;
+        };
+        Returns: {
+          last_sync_at: string;
+          status: string;
+        }[];
+      };
+      fn_agenda_minutes: {
+        Args: {
+          p_default: number;
+          p_key: string;
+          p_settings: Json;
+        };
+        Returns: number;
+      };
+      fn_agenda_ocupacao_google_do_dono: {
+        Args: {
+          p_ate: string;
+          p_de: string;
+          p_org: string;
+          p_owner: string;
+        };
+        Returns: {
+          connection_status: string;
+          ends_at: string;
+          starts_at: string;
+          status: string;
+          transparency: string;
+        }[];
+      };
+      fn_agenda_settings: {
+        Args: {
+          p_config: Json;
+          p_org: string;
+        };
+        Returns: Json;
+      };
+      fn_agent_legacy_notice: {
+        Args: {
+          p_agent: string;
+          p_body: string;
+          p_code: string;
+          p_org: string;
+          p_title: string;
+        };
+        Returns: boolean;
+      };
+      fn_agent_tool_usage: {
+        Args: {
+          p_agent_id: string;
+          p_organization_id: string;
+          p_since: string;
+        };
+        Returns: {
+          em_teste: number;
+          falhas: number;
+          tool_name: string;
+          total: number;
+          ultima_vez: string;
+        }[];
+      };
+      fn_agora: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
+      fn_aplicar_quadro_do_onboarding: {
+        Args: {
+          p_etapas: Json;
+          p_nome: string;
+          p_organization_id: string;
+          p_pipeline_id: string;
+          p_slug: string;
+        };
+        Returns: Json;
+      };
+      fn_aplicar_travas_de_suporte: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      fn_appointment_change: {
+        Args: {
+          p_id: string;
+          p_org: string;
+          p_patch: Json;
+          p_revision: number;
+        };
+        Returns: Json;
+      };
+      fn_appointment_change_core: {
+        Args: {
+          p_base: Json;
+          p_id: string;
+          p_org: string;
+          p_patch: Json;
+          p_remote: boolean;
+          p_revision: number;
+        };
+        Returns: Json;
+      };
+      fn_appointment_confirmation_sweep: {
+        Args: {
+          p_limit?: number;
+          p_now?: string;
+        };
+        Returns: number;
+      };
+      fn_appointment_enrollment_current: {
+        Args: {
+          p_id: string;
+          p_node?: string;
+          p_org: string;
+        };
+        Returns: boolean;
+      };
+      fn_appointment_recover: {
+        Args: {
+          p_event: string;
+          p_org: string;
+        };
+        Returns: Json;
+      };
+      fn_atrito_jaccard: {
+        Args: {
+          a: string;
+          b: string;
+        };
+        Returns: number;
+      };
+      fn_atrito_metrics: {
+        Args: {
+          p_abandono_horas?: number;
+          p_espera_horas?: number;
+          p_from: string;
+          p_org: string;
+          p_repeticao_min?: number;
+          p_to: string;
+        };
+        Returns: Json;
+      };
+      fn_attendant_metrics: {
+        Args: {
+          p_from: string;
+          p_org: string;
+          p_owner?: string;
+          p_to: string;
+        };
+        Returns: Json;
+      };
+      fn_begin_managed_client_onboarding: {
+        Args: {
+          p_actor: string;
+          p_client_email: string;
+          p_hash: string;
+          p_key: string;
+          p_policy: Json;
+          p_request: Json;
+        };
+        Returns: Json;
+      };
+      fn_buscar_trechos_das_fontes: {
+        Args: {
+          p_embedding: string;
+          p_embedding_model?: string;
+          p_k?: number;
+          p_organization_id: string;
+          p_source_ids: string[];
+          p_threshold?: number;
+        };
+        Returns: {
+          chunk_id: string;
+          content: string;
+          knowledge_source_id: string;
+          metadata: Json;
+          similarity: number;
+          source_name: string;
+        }[];
+      };
+      fn_can_view_conversation: {
+        Args: {
+          p_assigned_to_user_id: string;
+          p_org: string;
+        };
+        Returns: boolean;
+      };
+      fn_can_view_lead: {
+        Args: {
+          p_org: string;
+          p_owner_user_id: string;
+        };
+        Returns: boolean;
+      };
+      fn_channel_routing_claim: {
+        Args: {
+          p_channel: string;
+          p_conversation: string;
+          p_org: string;
+          p_reason?: string;
+          p_schedule?: Json;
+          p_user: string;
+        };
+        Returns: string;
+      };
+      fn_claim_due_followup_enrollments: {
+        Args: {
+          p_lease_seconds: number;
+          p_limit: number;
+        };
+        Returns: {
+          agent_id: string | null;
+          appointment_id: string | null;
+          appointment_revision: number | null;
+          attempts: number;
+          cancel_reason: string | null;
+          claimed_until: string | null;
+          completed_at: string | null;
+          contact_id: string;
+          conversation_id: string | null;
+          current_node_id: string;
+          id: string;
+          last_error: string | null;
+          max_attempts: number;
+          next_eval_at: string | null;
+          organization_id: string;
+          outcome: string | null;
+          pointer_id: string;
+          revision: number;
+          service_boundary: Json | null;
+          started_at: string;
+          status: string;
+          steps_taken: number;
+          timing_plan: Json | null;
+          updated_at: string;
+          version_id: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "followup_enrollments";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      fn_claim_managed_client_invite: {
+        Args: {
+          p_actor: string;
+          p_claim: string;
+          p_key: string;
+        };
+        Returns: Json;
+      };
+      fn_colegas_podem_mexer_na_agenda: {
+        Args: {
+          p_org: string;
+        };
+        Returns: boolean;
+      };
+      fn_comando_da_conversa: {
+        Args: {
+          p_agora: string;
+          p_assigned_to_user_id: string;
+          p_bot_silenced_until: string;
+          p_force_human: boolean;
+          p_is_blocked: boolean;
+          p_is_group?: boolean;
+          p_status: string;
+        };
+        Returns: string;
+      };
+      fn_conferir_modulos_instalados: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      fn_configurar_pre_go_live_canal: {
+        Args: {
+          p_canal: string;
+          p_modo: string;
+          p_numeros: string[];
+          p_org: string;
+        };
+        Returns: number;
+      };
+      fn_contar_mensagem_ignorada: {
+        Args: {
+          p_org: string;
+        };
+        Returns: undefined;
+      };
+      fn_conversation_assign: {
+        Args: {
+          p_conversation_id: string;
+          p_enforce_expected?: boolean;
+          p_expected_assignee?: string;
+          p_organization_id: string;
+          p_reason: string;
+          p_to_user_id: string;
+        };
+        Returns: {
+          active_agent_set_at: string | null;
+          active_ai_agent_id: string | null;
+          active_intent: string | null;
+          assigned_at: string | null;
+          assigned_to_user_id: string | null;
+          assigned_to_user_name: string | null;
+          assignee_kind: string | null;
+          awaiting_since: string | null;
+          bot_silenced_until: string | null;
+          channel: string;
+          channel_session_id: string;
+          contact_id: string;
+          created_at: string;
+          current_demanda_id: string | null;
+          group_chat_id: string | null;
+          id: string;
+          is_group: boolean;
+          last_handoff_at: string | null;
+          last_handoff_reason: string | null;
+          last_inbound_at: string | null;
+          last_message_at: string | null;
+          last_message_preview: string | null;
+          last_outbound_at: string | null;
+          metadata: NonNullable<Json>;
+          organization_id: string;
+          provider_conversation_id: string | null;
+          rag_review_status: string | null;
+          reply_context_revision: number;
+          service_closed_at: string | null;
+          service_revision: number;
+          service_started_at: string | null;
+          snooze_until: string | null;
+          snoozed_at: string | null;
+          snoozed_by_user_id: string | null;
+          status: string;
+          status_changed_at: string;
+          tags: string[];
+          unread_count_for_assignee: number;
+          updated_at: string;
+          usable_for_rag: boolean;
+          usable_for_rag_marked_at: string | null;
+          usable_for_rag_marked_by: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "conversations";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      fn_corpos_de_lembrete_validos: {
+        Args: {
+          p_corpos: Json;
+        };
+        Returns: boolean;
+      };
+      fn_create_tenant_with_owner: {
+        Args: {
+          p_actor: string;
+          p_hash: string;
+          p_key: string;
+          p_request: Json;
+        };
+        Returns: Json;
+      };
+      fn_decrypt_oauth: {
+        Args: {
+          ciphertext: string;
+        };
+        Returns: string;
+      };
+      fn_definir_aviso_de_caso: {
+        Args: {
+          p_channel: string;
+          p_confirma_contato?: boolean;
+          p_ligado: boolean;
+          p_org: string;
+          p_rotulo: string;
+          p_telefone: string;
+        };
+        Returns: Json;
+      };
+      fn_definir_cliente_pela_agenda: {
+        Args: {
+          p_ligado: boolean;
+          p_org: string;
+        };
+        Returns: Json;
+      };
+      fn_definir_colegas_podem_mexer_na_agenda: {
+        Args: {
+          p_ligado: boolean;
+          p_org: string;
+        };
+        Returns: Json;
+      };
+      fn_definir_logo_da_organizacao: {
+        Args: {
+          p_actor: string;
+          p_org: string;
+          p_path: string;
+        };
+        Returns: number;
+      };
+      fn_definir_logo_por_tema_da_organizacao: {
+        Args: {
+          p_actor: string;
+          p_org: string;
+          p_path: string;
+          p_tema: string;
+        };
+        Returns: number;
+      };
+      fn_definir_marca_da_organizacao: {
+        Args: {
+          p_actor: string;
+          p_marca: Json;
+          p_org: string;
+        };
+        Returns: number;
+      };
+      fn_degraus_de_lembrete_validos: {
+        Args: {
+          p_degraus: number[];
+        };
+        Returns: boolean;
+      };
+      fn_demanda_encerrar: {
+        Args: {
+          p_actor: string;
+          p_demanda: string;
+          p_desfecho: string;
+          p_expected: number;
+          p_org: string;
+        };
+        Returns: {
+          aberta_em: string;
+          agent_case_id: string | null;
+          assunto: string | null;
+          contact_id: string;
+          created_at: string;
+          desfecho: string | null;
+          dono_kind: string;
+          dono_user_id: string | null;
+          encerrada_por: string | null;
+          estado: string;
+          fechada_em: string | null;
+          id: string;
+          lead_id: string | null;
+          organization_id: string;
+          origem: string;
+          prazo_em: string | null;
+          proximo_passo: string | null;
+          proximo_passo_em: string | null;
+          revision: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "demandas";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      fn_encerrar_roteiros_vencidos: {
+        Args: {
+          p_limite?: number;
+        };
+        Returns: number;
+      };
+      fn_encrypt_oauth: {
+        Args: {
+          plaintext: string;
+        };
+        Returns: string;
+      };
+      fn_end_support: {
+        Args: {
+          p_actor: string;
+          p_session: string;
+        };
+        Returns: Json;
+      };
+      fn_enfileirar_midia_vencida: {
+        Args: {
+          p_limite?: number;
+        };
+        Returns: Json;
+      };
+      fn_estampar_atribuicao_de_anuncio: {
+        Args: {
+          p_contact: string;
+          p_metadata: Json;
+          p_org: string;
+          p_platform: string;
+        };
+        Returns: undefined;
+      };
+      fn_estornar_comanda: {
+        Args: {
+          p_motivo: string;
+          p_org: string;
+          p_sale: string;
+        };
+        Returns: Json;
+      };
+      fn_event_log_e_registro: {
+        Args: {
+          p_event_type: string;
+        };
+        Returns: boolean;
+      };
+      fn_expurgar_auditoria_vencida: {
+        Args: {
+          p_limite?: number;
+          p_retencao_dias?: number;
+        };
+        Returns: number;
+      };
+      fn_expurgar_avisos_de_caso_vencidos: {
+        Args: {
+          p_limite?: number;
+          p_retencao_dias?: number;
+        };
+        Returns: number;
+      };
+      fn_expurgar_candidatos_do_golden: {
+        Args: {
+          p_limite?: number;
+          p_retencao_dias?: number;
+        };
+        Returns: number;
+      };
+      fn_expurgar_conversa_do_caso_vencida: {
+        Args: {
+          p_limite?: number;
+          p_retencao_dias?: number;
+        };
+        Returns: number;
+      };
+      fn_expurgar_espelho_da_agenda: {
+        Args: {
+          p_limite?: number;
+          p_retencao_dias?: number;
+        };
+        Returns: number;
+      };
+      fn_expurgar_nonces_de_oauth: {
+        Args: {
+          p_limite?: number;
+          p_retencao_dias?: number;
+        };
+        Returns: number;
+      };
+      fn_expurgar_observacoes_do_jev: {
+        Args: {
+          p_limite?: number;
+          p_retencao_dias?: number;
+        };
+        Returns: number;
+      };
+      fn_expurgar_passagens_vencidas: {
+        Args: {
+          p_limite?: number;
+          p_retencao_dias?: number;
+        };
+        Returns: number;
+      };
+      fn_expurgar_prospeccao_vencida: {
+        Args: {
+          p_limite?: number;
+          p_retencao_dias?: number;
+        };
+        Returns: number;
+      };
+      fn_extensions_admit_catalog: {
+        Args: {
+          p_actor: string;
+          p_digest: string;
+          p_operation: string;
+          p_snapshot: Json;
+        };
+        Returns: Json;
+      };
+      fn_extensions_assert_actor: {
+        Args: {
+          p_actor: string;
+          p_organization?: string;
+        };
+        Returns: undefined;
+      };
+      fn_extensions_cancel_install: {
+        Args: {
+          p_actor: string;
+          p_operation: string;
+        };
+        Returns: Json;
+      };
+      fn_extensions_configure: {
+        Args: {
+          p_actor: string;
+          p_configuration: Json;
+          p_enabled: boolean;
+          p_expected_revision: number;
+          p_installation: string;
+          p_operation: string;
+          p_organization: string;
+        };
+        Returns: Json;
+      };
+      fn_extensions_core_update_in_progress: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      fn_extensions_fail_install: {
+        Args: {
+          p_actor: string;
+          p_error_code: string;
+          p_operation: string;
+        };
+        Returns: Json;
+      };
+      fn_extensions_fingerprint: {
+        Args: {
+          p_request: Json;
+        };
+        Returns: string;
+      };
+      fn_extensions_finish_install: {
+        Args: {
+          p_actor: string;
+          p_byte_length: number;
+          p_document: string;
+          p_manifest: Json;
+          p_operation: string;
+          p_sha256: string;
+        };
+        Returns: Json;
+      };
+      fn_extensions_installation_counts: {
+        Args: {
+          p_actor: string;
+        };
+        Returns: {
+          active_organizations: number;
+          awaiting_reactivation: number;
+          installation_id: string;
+        }[];
+      };
+      fn_extensions_permissoes_validas: {
+        Args: {
+          p_permissions: Json;
+        };
+        Returns: boolean;
+      };
+      fn_extensions_prepare_install: {
+        Args: {
+          p_actor: string;
+          p_catalog: string;
+          p_expected_installation_revision: number;
+          p_name: string;
+          p_operation: string;
+          p_publisher: string;
+          p_version: string;
+        };
+        Returns: Json;
+      };
+      fn_extensions_remove_installation: {
+        Args: {
+          p_actor: string;
+          p_expected_installation_revision: number;
+          p_installation: string;
+          p_operation: string;
+        };
+        Returns: Json;
+      };
+      fn_extensions_revert_install: {
+        Args: {
+          p_actor: string;
+          p_expected_installation_revision: number;
+          p_installation: string;
+          p_operation: string;
+        };
+        Returns: Json;
+      };
+      fn_finalizar_comanda: {
+        Args: {
+          p_loyalty_points?: number;
+          p_org: string;
+          p_payment_method: string;
+          p_sale: string;
+        };
+        Returns: Json;
+      };
+      fn_finish_channel_connection: {
+        Args: {
+          p_created?: boolean;
+          p_lease: string;
+          p_org: string;
+          p_reason?: string;
+          p_receipt: string;
+          p_status: string;
+        };
+        Returns: Json;
+      };
+      fn_followup_apply_step: {
+        Args: {
+          p_event: Json;
+          p_id: string;
+          p_org: string;
+          p_patch: Json;
+          p_revision: number;
+        };
+        Returns: number;
+      };
+      fn_followup_claim_current: {
+        Args: {
+          p_acquired_at: string;
+          p_job: string;
+          p_org: string;
+          p_worker: string;
+        };
+        Returns: boolean;
+      };
+      fn_followup_inline_settle: {
+        Args: {
+          p_acquired_at?: string;
+          p_done: boolean;
+          p_error?: string;
+          p_hold?: boolean;
+          p_id: string;
+          p_org: string;
+          p_retry_at?: string;
+          p_worker: string;
+        };
+        Returns: boolean;
+      };
+      fn_followup_job_current: {
+        Args: {
+          p_enrollment: string;
+          p_job: string;
+          p_node: string;
+          p_org: string;
+        };
+        Returns: boolean;
+      };
+      fn_followup_patch: {
+        Args: {
+          p_id: string;
+          p_org: string;
+          p_patch: Json;
+          p_revision: number;
+        };
+        Returns: number;
+      };
+      fn_gasto_de_ia_do_mes: {
+        Args: {
+          p_org: string;
+        };
+        Returns: number;
+      };
+      fn_google_appointment: {
+        Args: {
+          p_action: string;
+          p_args?: Json;
+          p_id: string;
+          p_org: string;
+        };
+        Returns: Json;
+      };
+      fn_google_calendar: {
+        Args: {
+          p_action: string;
+          p_args?: Json;
+          p_id: string;
+          p_org: string;
+        };
+        Returns: Json;
+      };
+      fn_google_calendar_fence: {
+        Args: {
+          p_claim: Json;
+          p_cursor?: Json;
+          p_id: string;
+          p_org: string;
+        };
+        Returns: undefined;
+      };
+      fn_google_catalog: {
+        Args: {
+          p_connection: string;
+          p_items: Json;
+          p_org: string;
+          p_revision: string;
+        };
+        Returns: undefined;
+      };
+      fn_google_counts_for_conflicts: {
+        Args: {
+          p_calendar: string;
+          p_connection: string;
+          p_org: string;
+        };
+        Returns: boolean;
+      };
+      fn_google_coverage: {
+        Args: {
+          p_end: string;
+          p_org: string;
+          p_owner: string;
+          p_start: string;
+        };
+        Returns: boolean;
+      };
+      fn_google_resolve: {
+        Args: {
+          p_choice: string;
+          p_etag: string;
+          p_id: string;
+          p_local_revision: string;
+          p_org: string;
+          p_revision: string;
+        };
+        Returns: undefined;
+      };
+      fn_google_selection: {
+        Args: {
+          p_destination: string;
+          p_org: string;
+          p_revisions: Json;
+          p_sources: string[];
+        };
+        Returns: undefined;
+      };
+      fn_honorarios_parcela_pagar: {
+        Args: {
+          p_account_id: string;
+          p_account_plan_id?: string;
+          p_org: string;
+          p_parcela: string;
+        };
+        Returns: Json;
+      };
+      fn_honorarios_provisionar: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      fn_is_platform_admin: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      fn_lgpd_anonymize_contact: {
+        Args: {
+          p_contact_id: string;
+          p_organization_id: string;
+        };
+        Returns: Json;
+      };
+      fn_lgpd_cascade_redact_contact: {
+        Args: {
+          p_contact_id: string;
+          p_organization_id: string;
+          p_request_id: string;
+        };
+        Returns: Json;
+      };
+      fn_log_event: {
+        Args: {
+          p_event_type: string;
+          p_organization_id: string;
+          p_payload?: Json;
+        };
+        Returns: string;
+      };
+      fn_managed_area_allowed: {
+        Args: {
+          p_area: string;
+          p_org: string;
+        };
+        Returns: boolean;
+      };
+      fn_mark_conversation_message: {
+        Args: {
+          p_at: string;
+          p_conv: string;
+          p_direction: string;
+          p_preview: string;
+        };
+        Returns: undefined;
+      };
+      fn_meet_action: {
+        Args: {
+          p_action: string;
+          p_conversation?: string;
+          p_id: string;
+          p_org: string;
+          p_request: string;
+          p_revision: string;
+        };
+        Returns: boolean;
+      };
+      fn_meet_boundary_current: {
+        Args: {
+          b: Json;
+        };
+        Returns: boolean;
+      };
+      fn_meet_delivery_current: {
+        Args: {
+          p_acquired_at: string;
+          p_job: string;
+          p_org: string;
+          p_worker: string;
+        };
+        Returns: boolean;
+      };
+      fn_meet_delivery_policy: {
+        Args: {
+          p_acquired_at: string;
+          p_job: string;
+          p_org: string;
+          p_worker: string;
+        };
+        Returns: Json;
+      };
+      fn_meet_delivery_settle: {
+        Args: {
+          p_acquired_at: string;
+          p_job: string;
+          p_org: string;
+          p_retry_at?: string;
+          p_state: string;
+          p_worker: string;
+        };
+        Returns: boolean;
+      };
+      fn_meet_notice: {
+        Args: {
+          p_id: string;
+          p_org: string;
+          p_reason: string;
+        };
+        Returns: undefined;
+      };
+      fn_meet_observe: {
+        Args: {
+          p_args: Json;
+          p_id: string;
+          p_org: string;
+        };
+        Returns: undefined;
+      };
+      fn_member_role_in_org: {
+        Args: {
+          p_org: string;
+          p_user: string;
+        };
+        Returns: string;
+      };
+      fn_mesclar_contatos: {
+        Args: {
+          p_contato_principal: string;
+          p_contatos_secundarios: string[];
+          p_organization_id: string;
+        };
+        Returns: Json;
+      };
+      fn_metricas_links_rastreaveis: {
+        Args: {
+          p_org: string;
+        };
+        Returns: {
+          clicks: number;
+          contacts: number;
+          leads: number;
+          link_id: string;
+        }[];
+      };
+      fn_modulo_instalar: {
+        Args: {
+          p_actor: string;
+          p_modulo: string;
+          p_operation: string;
+        };
+        Returns: Json;
+      };
+      fn_mover_leads_em_lote: {
+        Args: {
+          p_lead_ids: string[];
+          p_lost_reason?: string;
+          p_organization_id: string;
+          p_stage_id: string;
+        };
+        Returns: {
+          from_stage_id: string;
+          lead_id: string;
+          pipeline_id: string;
+        }[];
+      };
+      fn_nascer_lead_da_conversa: {
+        Args: {
+          p_contact: string;
+          p_org: string;
+          p_pipeline: string;
+          p_source: string;
+          p_source_metadata?: Json;
+          p_stage: string;
+          p_tags?: string[];
+          p_title: string;
+        };
+        Returns: string;
+      };
+      fn_operational_message_metadata: {
+        Args: {
+          p_metadata: Json;
+        };
+        Returns: Json;
+      };
+      fn_passagem_devolvida: {
+        Args: {
+          p_conversation_id: string;
+          p_organization_id: string;
+        };
+        Returns: number;
+      };
+      fn_pgrst_recusar_replay_do_gateway: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      fn_podar_fila_de_jobs: {
+        Args: {
+          p_limite?: number;
+          p_retencao_dias?: number;
+        };
+        Returns: number;
+      };
+      fn_proposta_aloca_numero: {
+        Args: {
+          p_ano: number;
+          p_org: string;
+        };
+        Returns: number;
+      };
+      fn_proteger_modulo_provisionado: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      fn_proteger_tabelas_de_organizacao: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      fn_proximo_numero_de_comanda: {
+        Args: {
+          p_org: string;
+        };
+        Returns: number;
+      };
+      fn_publish_ai_agent_version:
+        | {
+            Args: {
+              p_agent_id: string;
+              p_org_id: string;
+              p_version_id: string;
+            };
+            Returns: {
+              agent_id: string;
+              previous_version_id: string;
+              published_at: string;
+              version_id: string;
+            }[];
+          }
+        | {
+            Args: {
+              p_agent_id: string;
+              p_org_id: string;
+              p_platform_credential_verified: boolean;
+              p_version_id: string;
+            };
+            Returns: {
+              agent_id: string;
+              previous_version_id: string;
+              published_at: string;
+              version_id: string;
+            }[];
+          }
+        | {
+            Args: {
+              p_agent_id: string;
+              p_expected_provenance: string;
+              p_org_id: string;
+              p_platform_credential_verified: boolean;
+              p_version_id: string;
+            };
+            Returns: {
+              agent_id: string;
+              previous_version_id: string;
+              published_at: string;
+              version_id: string;
+            }[];
+          };
+      fn_publish_followup_flow_version: {
+        Args: {
+          p_created_by: string;
+          p_graph: Json;
+          p_org: string;
+          p_pointer: string;
+        };
+        Returns: string;
+      };
+      fn_reaplicar_modulos_instalados: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      fn_recalcular_cliente_do_contato: {
+        Args: {
+          p_contact: string;
+          p_emitir: boolean;
+          p_org: string;
+        };
+        Returns: string;
+      };
+      fn_registrar_jid_do_aviso: {
+        Args: {
+          p_jid: string;
+          p_org: string;
+        };
+        Returns: undefined;
+      };
+      fn_relatorio_financeiro: {
+        Args: {
+          p_ate: string;
+          p_de: string;
+          p_org: string;
+        };
+        Returns: Json;
+      };
+      fn_replace_knowledge_faq_items: {
+        Args: {
+          p_items: Json;
+          p_knowledge_source_id: string;
+          p_organization_id: string;
+        };
+        Returns: number;
+      };
+      fn_reply_action: {
+        Args: {
+          p_action: string;
+          p_body?: string;
+          p_feedback?: string;
+          p_id: string;
+          p_org: string;
+          p_revision: string;
+        };
+        Returns: string;
+      };
+      fn_reply_begin: {
+        Args: {
+          p_agent: string;
+          p_conversation: string;
+          p_org: string;
+          p_token: string;
+          p_version: string;
+        };
+        Returns: {
+          agent_id: string;
+          agent_version_id: string;
+          approved_at: string | null;
+          approved_body: string | null;
+          approved_by: string | null;
+          approved_support_session_id: string | null;
+          channel_session_id: string;
+          contact_id: string;
+          context_revision: number;
+          conversation_id: string;
+          created_at: string;
+          edited_body: string | null;
+          error_code: string | null;
+          feedback: Json | null;
+          generation_token: string;
+          id: string;
+          message_id: string | null;
+          operation_revision: number;
+          organization_id: string;
+          original_body: string | null;
+          proposals: NonNullable<Json>;
+          revision: number;
+          send_job_id: string | null;
+          service_boundary: NonNullable<Json>;
+          status: string;
+          trace: NonNullable<Json>;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "ai_reply_drafts";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      fn_reply_context_current: {
+        Args: {
+          p_id: string;
+          p_org: string;
+        };
+        Returns: boolean;
+      };
+      fn_reply_delivery_policy: {
+        Args: {
+          p_acquired_at: string;
+          p_job: string;
+          p_org: string;
+          p_worker: string;
+        };
+        Returns: Json;
+      };
+      fn_reply_prepare: {
+        Args: {
+          p_acquired_at: string;
+          p_job: string;
+          p_org: string;
+          p_worker: string;
+        };
+        Returns: boolean;
+      };
+      fn_reply_receipt_policy: {
+        Args: {
+          p_acquired_at: string;
+          p_job: string;
+          p_org: string;
+          p_worker: string;
+        };
+        Returns: Json;
+      };
+      fn_reply_record_receipt: {
+        Args: {
+          p_acquired_at: string;
+          p_echo_ids?: string[];
+          p_external: string;
+          p_job: string;
+          p_message: string;
+          p_org: string;
+          p_worker: string;
+        };
+        Returns: Json;
+      };
+      fn_reply_settle: {
+        Args: {
+          p_acquired_at: string;
+          p_error?: string;
+          p_job: string;
+          p_org: string;
+          p_state: string;
+          p_worker: string;
+        };
+        Returns: boolean;
+      };
+      fn_request_channel_routing: {
+        Args: {
+          p_conversation: string;
+          p_org: string;
+        };
+        Returns: undefined;
+      };
+      fn_reserve_channel_connection: {
+        Args: {
+          p_display_name?: string;
+          p_hash: string;
+          p_key: string;
+          p_onboarding?: boolean;
+          p_org: string;
+        };
+        Returns: Json;
+      };
+      fn_resolve_inbound_number: {
+        Args: {
+          p_number: string;
+        };
+        Returns: {
+          default_ai_agent_id: string;
+          fallback_user_id: string;
+          organization_id: string;
+          routing_mode: string;
+        }[];
+      };
+      fn_role_at_least: {
+        Args: {
+          p_min: string;
+          p_org: string;
+        };
+        Returns: boolean;
+      };
+      fn_routing_unassigned_notice: {
+        Args: {
+          p_conversation: string;
+          p_org: string;
+          p_reason: string;
+        };
+        Returns: undefined;
+      };
+      fn_saldo_de_fidelidade: {
+        Args: {
+          p_contact: string;
+          p_org: string;
+        };
+        Returns: number;
+      };
+      fn_semear_tipos_de_agendamento: {
+        Args: {
+          p_organization_id: string;
+        };
+        Returns: number;
+      };
+      fn_service_begin: {
+        Args: {
+          p_contact: string;
+          p_observed?: Json;
+          p_org: string;
+          p_session?: string;
+        };
+        Returns: Json;
+      };
+      fn_service_boundary: {
+        Args: {
+          p_conversation: string;
+          p_org: string;
+        };
+        Returns: Json;
+      };
+      fn_service_event_origin: {
+        Args: {
+          p_contact: string;
+          p_event: string;
+          p_org: string;
+          p_session?: string;
+        };
+        Returns: Json;
+      };
+      fn_service_inbound: {
+        Args: {
+          p_message: string;
+        };
+        Returns: undefined;
+      };
+      fn_service_lock: {
+        Args: {
+          p_contact: string;
+          p_org: string;
+        };
+        Returns: undefined;
+      };
+      fn_service_observe: {
+        Args: {
+          p_contact: string;
+          p_org: string;
+        };
+        Returns: Json;
+      };
+      fn_service_observe_command: {
+        Args: {
+          p_contact: string;
+          p_org: string;
+        };
+        Returns: Json;
+      };
+      fn_service_status: {
+        Args: {
+          p_conversation: string;
+          p_expected?: number;
+          p_org: string;
+          p_status: string;
+        };
+        Returns: {
+          active_agent_set_at: string | null;
+          active_ai_agent_id: string | null;
+          active_intent: string | null;
+          assigned_at: string | null;
+          assigned_to_user_id: string | null;
+          assigned_to_user_name: string | null;
+          assignee_kind: string | null;
+          awaiting_since: string | null;
+          bot_silenced_until: string | null;
+          channel: string;
+          channel_session_id: string;
+          contact_id: string;
+          created_at: string;
+          current_demanda_id: string | null;
+          group_chat_id: string | null;
+          id: string;
+          is_group: boolean;
+          last_handoff_at: string | null;
+          last_handoff_reason: string | null;
+          last_inbound_at: string | null;
+          last_message_at: string | null;
+          last_message_preview: string | null;
+          last_outbound_at: string | null;
+          metadata: NonNullable<Json>;
+          organization_id: string;
+          provider_conversation_id: string | null;
+          rag_review_status: string | null;
+          reply_context_revision: number;
+          service_closed_at: string | null;
+          service_revision: number;
+          service_started_at: string | null;
+          snooze_until: string | null;
+          snoozed_at: string | null;
+          snoozed_by_user_id: string | null;
+          status: string;
+          status_changed_at: string;
+          tags: string[];
+          unread_count_for_assignee: number;
+          updated_at: string;
+          usable_for_rag: boolean;
+          usable_for_rag_marked_at: string | null;
+          usable_for_rag_marked_by: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "conversations";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      fn_session_mfa_proven: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      fn_set_channel_routing: {
+        Args: {
+          p_channel: string;
+          p_org: string;
+          p_reset?: boolean;
+          p_users: string[];
+        };
+        Returns: Json;
+      };
+      fn_situacao_conta_como_atendimento: {
+        Args: {
+          p_status: string;
+        };
+        Returns: boolean;
+      };
+      fn_solicitar_reenvio_conversao:
+        | {
+            Args: {
+              p_lead: string;
+              p_org: string;
+            };
+            Returns: boolean;
+          }
+        | {
+            Args: {
+              p_event: string;
+              p_lead: string;
+              p_org: string;
+            };
+            Returns: boolean;
+          };
+      fn_start_support: {
+        Args: {
+          p_actor: string;
+          p_mode?: string;
+          p_org: string;
+          p_previous: string;
+          p_session: string;
+          p_ttl?: number;
+        };
+        Returns: string;
+      };
+      fn_support_callback_write_allowed: {
+        Args: {
+          p_actor?: string;
+          p_org: string;
+          p_session?: string;
+        };
+        Returns: boolean;
+      };
+      fn_support_context: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      fn_support_storage_write_allowed: {
+        Args: {
+          p_name: string;
+        };
+        Returns: boolean;
+      };
+      fn_support_write_allowed: {
+        Args: {
+          p_org: string;
+        };
+        Returns: boolean;
+      };
+      fn_tags_de_conversa_em_uso: {
+        Args: {
+          p_org: string;
+        };
+        Returns: {
+          tag: string;
+        }[];
+      };
+      fn_tags_normalizar: {
+        Args: {
+          p_de: string;
+          p_para: string;
+          p_remover: boolean;
+          p_tags: string[];
+        };
+        Returns: string[];
+      };
+      fn_telefone_variantes: {
+        Args: {
+          p_telefone: string;
+        };
+        Returns: string[];
+      };
+      fn_upsert_wa_contact: {
+        Args: {
+          p_chat_id: string;
+          p_kind: string;
+          p_lid: string;
+          p_notify: string;
+          p_org: string;
+          p_phone: string;
+        };
+        Returns: string;
+      };
+      fn_upsert_wa_conversation: {
+        Args: {
+          p_contact: string;
+          p_org: string;
+          p_session: string;
+        };
+        Returns: string;
+      };
+      fn_user_org_ids: {
+        Args: Record<PropertyKey, never>;
+        Returns: string[];
+      };
+      fn_user_role_in: {
+        Args: {
+          p_org: string;
+        };
+        Returns: number;
+      };
+      fn_user_role_in_org: {
+        Args: {
+          p_org: string;
+        };
+        Returns: string;
+      };
+      fn_vocabulario_de_tags: {
+        Args: {
+          p_org: string;
+        };
+        Returns: {
+          cor: string;
+          descricao: string;
+          em_regras: number;
+          no_vocabulario: boolean;
+          tag: string;
+          uso_em_contatos: number;
+          uso_em_conversas: number;
+          uso_em_leads: number;
+        }[];
+      };
+      fn_vocabulario_de_tags_operar: {
+        Args: {
+          p_acao: string;
+          p_cor?: string;
+          p_destino: string;
+          p_org: string;
+          p_tag: string;
+        };
+        Returns: Json;
+      };
+      fn_wake_channel_routing: {
+        Args: {
+          p_channel?: string;
+          p_org: string;
+        };
+        Returns: undefined;
+      };
+      midpoint: {
+        Args: {
+          p_next: number;
+          p_prev: number;
+        };
+        Returns: number;
+      };
+      retrieve_top_k_chunks: {
+        Args: {
+          p_embedding: string;
+          p_k?: number;
+          p_kb_version_id: string;
+          p_organization_id: string;
+          p_threshold?: number;
+        };
+        Returns: {
+          chunk_id: string;
+          content: string;
+          knowledge_source_id: string;
+          metadata: Json;
+          similarity: number;
+        }[];
+      };
+      show_limit: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
+      };
+      show_trgm: {
+        Args: {
+          "": string;
+        };
+        Returns: string[];
+      };
+      social_platform: {
+        Args: {
+          p_channel: Database["public"]["Views"]["operational_channel_sessions"]["Row"];
+        };
+        Returns: string;
+      };
+      tags_do_contato: {
+        Args: {
+          c: Database["public"]["Tables"]["conversations"]["Row"];
+        };
+        Returns: string[];
+      };
+    };
     Tables: {
       account_plans: {
         Row: {
@@ -972,44 +2660,6 @@ export type Database = {
         ];
       };
       ai_agent_versions: {
-        Row: {
-          agent_id: string;
-          cases_enabled: boolean;
-          channel_session_id: string | null;
-          cost_budget_cents: number;
-          created_at: string;
-          created_by: string | null;
-          credential_id: string | null;
-          followup: NonNullable<Json>;
-          handoff_keywords: string[];
-          handoff_tool_enabled: boolean;
-          history_message_window: number;
-          history_token_window: number;
-          id: string;
-          knowledge_source_ids: string[];
-          max_steps: number;
-          model: string;
-          multimodal_input: boolean;
-          operator_enabled: boolean;
-          operator_model: string | null;
-          operator_tool_ids: string[];
-          organization_id: string;
-          pipeline_ids: string[];
-          proposal_ai_draft_enabled: boolean;
-          provider: string;
-          provisioning_origin: string | null;
-          published_at: string | null;
-          split_max_chars: number;
-          split_messages: boolean;
-          status: string;
-          superseded_at: string | null;
-          system_prompt: string;
-          token_budget: number;
-          tool_ids: string[];
-          trigger_config: NonNullable<Json>;
-          version_number: number;
-          video_frames_enabled: boolean;
-        };
         Insert: {
           agent_id: string;
           cases_enabled?: boolean;
@@ -1024,6 +2674,7 @@ export type Database = {
           history_message_window?: number;
           history_token_window?: number;
           id?: string;
+          inbound_debounce_ms?: number | null;
           knowledge_source_ids?: string[];
           max_steps?: number;
           model: string;
@@ -1046,44 +2697,6 @@ export type Database = {
           tool_ids?: string[];
           trigger_config?: NonNullable<Json>;
           version_number: number;
-          video_frames_enabled?: boolean;
-        };
-        Update: {
-          agent_id?: string;
-          cases_enabled?: boolean;
-          channel_session_id?: string | null;
-          cost_budget_cents?: number;
-          created_at?: string;
-          created_by?: string | null;
-          credential_id?: string | null;
-          followup?: NonNullable<Json>;
-          handoff_keywords?: string[];
-          handoff_tool_enabled?: boolean;
-          history_message_window?: number;
-          history_token_window?: number;
-          id?: string;
-          knowledge_source_ids?: string[];
-          max_steps?: number;
-          model?: string;
-          multimodal_input?: boolean;
-          operator_enabled?: boolean;
-          operator_model?: string | null;
-          operator_tool_ids?: string[];
-          organization_id?: string;
-          pipeline_ids?: string[];
-          proposal_ai_draft_enabled?: boolean;
-          provider?: string;
-          provisioning_origin?: string | null;
-          published_at?: string | null;
-          split_max_chars?: number;
-          split_messages?: boolean;
-          status?: string;
-          superseded_at?: string | null;
-          system_prompt?: string;
-          token_budget?: number;
-          tool_ids?: string[];
-          trigger_config?: NonNullable<Json>;
-          version_number?: number;
           video_frames_enabled?: boolean;
         };
         Relationships: [
@@ -1137,6 +2750,84 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+        Row: {
+          agent_id: string;
+          cases_enabled: boolean;
+          channel_session_id: string | null;
+          cost_budget_cents: number;
+          created_at: string;
+          created_by: string | null;
+          credential_id: string | null;
+          followup: NonNullable<Json>;
+          handoff_keywords: string[];
+          handoff_tool_enabled: boolean;
+          history_message_window: number;
+          history_token_window: number;
+          id: string;
+          inbound_debounce_ms: number | null;
+          knowledge_source_ids: string[];
+          max_steps: number;
+          model: string;
+          multimodal_input: boolean;
+          operator_enabled: boolean;
+          operator_model: string | null;
+          operator_tool_ids: string[];
+          organization_id: string;
+          pipeline_ids: string[];
+          proposal_ai_draft_enabled: boolean;
+          provider: string;
+          provisioning_origin: string | null;
+          published_at: string | null;
+          split_max_chars: number;
+          split_messages: boolean;
+          status: string;
+          superseded_at: string | null;
+          system_prompt: string;
+          token_budget: number;
+          tool_ids: string[];
+          trigger_config: NonNullable<Json>;
+          version_number: number;
+          video_frames_enabled: boolean;
+        };
+        Update: {
+          agent_id?: string;
+          cases_enabled?: boolean;
+          channel_session_id?: string | null;
+          cost_budget_cents?: number;
+          created_at?: string;
+          created_by?: string | null;
+          credential_id?: string | null;
+          followup?: NonNullable<Json>;
+          handoff_keywords?: string[];
+          handoff_tool_enabled?: boolean;
+          history_message_window?: number;
+          history_token_window?: number;
+          id?: string;
+          inbound_debounce_ms?: number | null;
+          knowledge_source_ids?: string[];
+          max_steps?: number;
+          model?: string;
+          multimodal_input?: boolean;
+          operator_enabled?: boolean;
+          operator_model?: string | null;
+          operator_tool_ids?: string[];
+          organization_id?: string;
+          pipeline_ids?: string[];
+          proposal_ai_draft_enabled?: boolean;
+          provider?: string;
+          provisioning_origin?: string | null;
+          published_at?: string | null;
+          split_max_chars?: number;
+          split_messages?: boolean;
+          status?: string;
+          superseded_at?: string | null;
+          system_prompt?: string;
+          token_budget?: number;
+          tool_ids?: string[];
+          trigger_config?: NonNullable<Json>;
+          version_number?: number;
+          video_frames_enabled?: boolean;
+        };
       };
       ai_agents: {
         Row: {
@@ -4355,22 +6046,6 @@ export type Database = {
         ];
       };
       channel_knobs: {
-        Row: {
-          allow_sunday: boolean | null;
-          channel_session_id: string;
-          created_at: string;
-          health_knobs: Json | null;
-          jitter_max_ms: number | null;
-          number_activated_at: string;
-          organization_id: string;
-          spinning_knobs: Json | null;
-          throttle_ms: number | null;
-          timezone: string | null;
-          updated_at: string;
-          warmup_daily_caps: Json | null;
-          window_end_hour: number | null;
-          window_start_hour: number | null;
-        };
         Insert: {
           allow_sunday?: boolean | null;
           channel_session_id: string;
@@ -4386,22 +6061,10 @@ export type Database = {
           warmup_daily_caps?: Json | null;
           window_end_hour?: number | null;
           window_start_hour?: number | null;
-        };
-        Update: {
-          allow_sunday?: boolean | null;
-          channel_session_id?: string;
-          created_at?: string;
-          health_knobs?: Json | null;
-          jitter_max_ms?: number | null;
-          number_activated_at?: string;
-          organization_id?: string;
-          spinning_knobs?: Json | null;
-          throttle_ms?: number | null;
-          timezone?: string | null;
-          updated_at?: string;
-          warmup_daily_caps?: Json | null;
-          window_end_hour?: number | null;
-          window_start_hour?: number | null;
+          atraso_notar_ms?: number | null;
+          ms_por_caractere?: number | null;
+          atraso_minimo_ms?: number | null;
+          atraso_maximo_ms?: number | null;
         };
         Relationships: [
           {
@@ -4433,6 +6096,46 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+        Row: {
+          allow_sunday: boolean | null;
+          channel_session_id: string;
+          created_at: string;
+          health_knobs: Json | null;
+          jitter_max_ms: number | null;
+          number_activated_at: string;
+          organization_id: string;
+          spinning_knobs: Json | null;
+          throttle_ms: number | null;
+          timezone: string | null;
+          updated_at: string;
+          warmup_daily_caps: Json | null;
+          window_end_hour: number | null;
+          window_start_hour: number | null;
+          atraso_notar_ms: number | null;
+          ms_por_caractere: number | null;
+          atraso_minimo_ms: number | null;
+          atraso_maximo_ms: number | null;
+        };
+        Update: {
+          allow_sunday?: boolean | null;
+          channel_session_id?: string;
+          created_at?: string;
+          health_knobs?: Json | null;
+          jitter_max_ms?: number | null;
+          number_activated_at?: string;
+          organization_id?: string;
+          spinning_knobs?: Json | null;
+          throttle_ms?: number | null;
+          timezone?: string | null;
+          updated_at?: string;
+          warmup_daily_caps?: Json | null;
+          window_end_hour?: number | null;
+          window_start_hour?: number | null;
+          atraso_notar_ms?: number | null;
+          ms_por_caractere?: number | null;
+          atraso_minimo_ms?: number | null;
+          atraso_maximo_ms?: number | null;
+        };
       };
       channel_routing_policies: {
         Row: {
@@ -15045,1380 +16748,12 @@ export type Database = {
         ];
       };
     };
-    Functions: {
-      activate_kb_version: {
-        Args: { p_agent_id: string; p_version_id: string };
-        Returns: undefined;
-      };
-      comando_da_conversa: {
-        Args: { "": Database["public"]["Tables"]["conversations"]["Row"] };
-        Returns: {
-          error: true;
-        } & "the function public.comando_da_conversa with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache";
-      };
-      emit_event: {
-        Args: {
-          p_entity_id: string;
-          p_entity_kind: string;
-          p_event_type: string;
-          p_metadata?: Json;
-          p_organization_id?: string;
-          p_payload?: Json;
-        };
-        Returns: string;
-      };
-      fn_accept_team_invite:
-        | {
-            Args: {
-              p_invited_at: string;
-              p_invited_by: string;
-              p_issued_at: string;
-              p_org: string;
-              p_role: string;
-              p_user: string;
-            };
-            Returns: Json;
-          }
-        | {
-            Args: {
-              p_interface_settings: Json;
-              p_invited_at: string;
-              p_invited_by: string;
-              p_issued_at: string;
-              p_org: string;
-              p_role: string;
-              p_user: string;
-            };
-            Returns: Json;
-          };
-      fn_activity_report: {
-        Args: {
-          p_from: string;
-          p_limit?: number;
-          p_org: string;
-          p_to: string;
-          p_tz?: string;
-        };
-        Returns: Json;
-      };
-      fn_agenda_conexoes_google_do_dono: {
-        Args: { p_org: string; p_owner: string };
-        Returns: {
-          last_sync_at: string;
-          status: string;
-        }[];
-      };
-      fn_agenda_minutes: {
-        Args: { p_default: number; p_key: string; p_settings: Json };
-        Returns: number;
-      };
-      fn_agenda_ocupacao_google_do_dono: {
-        Args: { p_ate: string; p_de: string; p_org: string; p_owner: string };
-        Returns: {
-          connection_status: string;
-          ends_at: string;
-          starts_at: string;
-          status: string;
-          transparency: string;
-        }[];
-      };
-      fn_agenda_settings: {
-        Args: { p_config: Json; p_org: string };
-        Returns: Json;
-      };
-      fn_agent_legacy_notice: {
-        Args: {
-          p_agent: string;
-          p_body: string;
-          p_code: string;
-          p_org: string;
-          p_title: string;
-        };
-        Returns: boolean;
-      };
-      fn_agent_tool_usage: {
-        Args: {
-          p_agent_id: string;
-          p_organization_id: string;
-          p_since: string;
-        };
-        Returns: {
-          em_teste: number;
-          falhas: number;
-          tool_name: string;
-          total: number;
-          ultima_vez: string;
-        }[];
-      };
-      fn_agora: { Args: Record<PropertyKey, never>; Returns: string };
-      fn_aplicar_quadro_do_onboarding: {
-        Args: {
-          p_etapas: Json;
-          p_nome: string;
-          p_organization_id: string;
-          p_pipeline_id: string;
-          p_slug: string;
-        };
-        Returns: Json;
-      };
-      fn_aplicar_travas_de_suporte: {
-        Args: Record<PropertyKey, never>;
-        Returns: undefined;
-      };
-      fn_appointment_change: {
-        Args: {
-          p_id: string;
-          p_org: string;
-          p_patch: Json;
-          p_revision: number;
-        };
-        Returns: Json;
-      };
-      fn_appointment_change_core: {
-        Args: {
-          p_base: Json;
-          p_id: string;
-          p_org: string;
-          p_patch: Json;
-          p_remote: boolean;
-          p_revision: number;
-        };
-        Returns: Json;
-      };
-      fn_appointment_confirmation_sweep: {
-        Args: { p_limit?: number; p_now?: string };
-        Returns: number;
-      };
-      fn_appointment_enrollment_current: {
-        Args: { p_id: string; p_node?: string; p_org: string };
-        Returns: boolean;
-      };
-      fn_appointment_recover: {
-        Args: { p_event: string; p_org: string };
-        Returns: Json;
-      };
-      fn_atrito_jaccard: { Args: { a: string; b: string }; Returns: number };
-      fn_atrito_metrics: {
-        Args: {
-          p_abandono_horas?: number;
-          p_espera_horas?: number;
-          p_from: string;
-          p_org: string;
-          p_repeticao_min?: number;
-          p_to: string;
-        };
-        Returns: Json;
-      };
-      fn_attendant_metrics: {
-        Args: { p_from: string; p_org: string; p_owner?: string; p_to: string };
-        Returns: Json;
-      };
-      fn_begin_managed_client_onboarding: {
-        Args: {
-          p_actor: string;
-          p_client_email: string;
-          p_hash: string;
-          p_key: string;
-          p_policy: Json;
-          p_request: Json;
-        };
-        Returns: Json;
-      };
-      fn_buscar_trechos_das_fontes: {
-        Args: {
-          p_embedding: string;
-          p_embedding_model?: string;
-          p_k?: number;
-          p_organization_id: string;
-          p_source_ids: string[];
-          p_threshold?: number;
-        };
-        Returns: {
-          chunk_id: string;
-          content: string;
-          knowledge_source_id: string;
-          metadata: Json;
-          similarity: number;
-          source_name: string;
-        }[];
-      };
-      fn_can_view_conversation: {
-        Args: { p_assigned_to_user_id: string; p_org: string };
-        Returns: boolean;
-      };
-      fn_can_view_lead: {
-        Args: { p_org: string; p_owner_user_id: string };
-        Returns: boolean;
-      };
-      fn_channel_routing_claim: {
-        Args: {
-          p_channel: string;
-          p_conversation: string;
-          p_org: string;
-          p_reason?: string;
-          p_schedule?: Json;
-          p_user: string;
-        };
-        Returns: string;
-      };
-      fn_claim_due_followup_enrollments: {
-        Args: { p_lease_seconds: number; p_limit: number };
-        Returns: {
-          agent_id: string | null;
-          appointment_id: string | null;
-          appointment_revision: number | null;
-          attempts: number;
-          cancel_reason: string | null;
-          claimed_until: string | null;
-          completed_at: string | null;
-          contact_id: string;
-          conversation_id: string | null;
-          current_node_id: string;
-          id: string;
-          last_error: string | null;
-          max_attempts: number;
-          next_eval_at: string | null;
-          organization_id: string;
-          outcome: string | null;
-          pointer_id: string;
-          revision: number;
-          service_boundary: Json | null;
-          started_at: string;
-          status: string;
-          steps_taken: number;
-          timing_plan: Json | null;
-          updated_at: string;
-          version_id: string;
-        }[];
-        SetofOptions: {
-          from: "*";
-          to: "followup_enrollments";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
-      };
-      fn_claim_managed_client_invite: {
-        Args: { p_actor: string; p_claim: string; p_key: string };
-        Returns: Json;
-      };
-      fn_colegas_podem_mexer_na_agenda: {
-        Args: { p_org: string };
-        Returns: boolean;
-      };
-      fn_comando_da_conversa: {
-        Args: {
-          p_agora: string;
-          p_assigned_to_user_id: string;
-          p_bot_silenced_until: string;
-          p_force_human: boolean;
-          p_is_blocked: boolean;
-          p_is_group?: boolean;
-          p_status: string;
-        };
-        Returns: string;
-      };
-      fn_conferir_modulos_instalados: {
-        Args: Record<PropertyKey, never>;
-        Returns: undefined;
-      };
-      fn_configurar_pre_go_live_canal: {
-        Args: {
-          p_canal: string;
-          p_modo: string;
-          p_numeros: string[];
-          p_org: string;
-        };
-        Returns: number;
-      };
-      fn_contar_mensagem_ignorada: {
-        Args: { p_org: string };
-        Returns: undefined;
-      };
-      fn_conversation_assign: {
-        Args: {
-          p_conversation_id: string;
-          p_enforce_expected?: boolean;
-          p_expected_assignee?: string;
-          p_organization_id: string;
-          p_reason: string;
-          p_to_user_id: string;
-        };
-        Returns: {
-          active_agent_set_at: string | null;
-          active_ai_agent_id: string | null;
-          active_intent: string | null;
-          assigned_at: string | null;
-          assigned_to_user_id: string | null;
-          assigned_to_user_name: string | null;
-          assignee_kind: string | null;
-          awaiting_since: string | null;
-          bot_silenced_until: string | null;
-          channel: string;
-          channel_session_id: string;
-          contact_id: string;
-          created_at: string;
-          current_demanda_id: string | null;
-          group_chat_id: string | null;
-          id: string;
-          is_group: boolean;
-          last_handoff_at: string | null;
-          last_handoff_reason: string | null;
-          last_inbound_at: string | null;
-          last_message_at: string | null;
-          last_message_preview: string | null;
-          last_outbound_at: string | null;
-          metadata: NonNullable<Json>;
-          organization_id: string;
-          provider_conversation_id: string | null;
-          rag_review_status: string | null;
-          reply_context_revision: number;
-          service_closed_at: string | null;
-          service_revision: number;
-          service_started_at: string | null;
-          snooze_until: string | null;
-          snoozed_at: string | null;
-          snoozed_by_user_id: string | null;
-          status: string;
-          status_changed_at: string;
-          tags: string[];
-          unread_count_for_assignee: number;
-          updated_at: string;
-          usable_for_rag: boolean;
-          usable_for_rag_marked_at: string | null;
-          usable_for_rag_marked_by: string | null;
-        }[];
-        SetofOptions: {
-          from: "*";
-          to: "conversations";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
-      };
-      fn_corpos_de_lembrete_validos: {
-        Args: { p_corpos: Json };
-        Returns: boolean;
-      };
-      fn_create_tenant_with_owner: {
-        Args: {
-          p_actor: string;
-          p_hash: string;
-          p_key: string;
-          p_request: Json;
-        };
-        Returns: Json;
-      };
-      fn_decrypt_oauth: { Args: { ciphertext: string }; Returns: string };
-      fn_definir_aviso_de_caso: {
-        Args: {
-          p_channel: string;
-          p_confirma_contato?: boolean;
-          p_ligado: boolean;
-          p_org: string;
-          p_rotulo: string;
-          p_telefone: string;
-        };
-        Returns: Json;
-      };
-      fn_definir_cliente_pela_agenda: {
-        Args: { p_ligado: boolean; p_org: string };
-        Returns: Json;
-      };
-      fn_definir_colegas_podem_mexer_na_agenda: {
-        Args: { p_ligado: boolean; p_org: string };
-        Returns: Json;
-      };
-      fn_definir_logo_da_organizacao: {
-        Args: { p_actor: string; p_org: string; p_path: string };
-        Returns: number;
-      };
-      fn_definir_logo_por_tema_da_organizacao: {
-        Args: {
-          p_actor: string;
-          p_org: string;
-          p_path: string;
-          p_tema: string;
-        };
-        Returns: number;
-      };
-      fn_definir_marca_da_organizacao: {
-        Args: { p_actor: string; p_marca: Json; p_org: string };
-        Returns: number;
-      };
-      fn_degraus_de_lembrete_validos: {
-        Args: { p_degraus: number[] };
-        Returns: boolean;
-      };
-      fn_demanda_encerrar: {
-        Args: {
-          p_actor: string;
-          p_demanda: string;
-          p_desfecho: string;
-          p_expected: number;
-          p_org: string;
-        };
-        Returns: {
-          aberta_em: string;
-          agent_case_id: string | null;
-          assunto: string | null;
-          contact_id: string;
-          created_at: string;
-          desfecho: string | null;
-          dono_kind: string;
-          dono_user_id: string | null;
-          encerrada_por: string | null;
-          estado: string;
-          fechada_em: string | null;
-          id: string;
-          lead_id: string | null;
-          organization_id: string;
-          origem: string;
-          prazo_em: string | null;
-          proximo_passo: string | null;
-          proximo_passo_em: string | null;
-          revision: number;
-          updated_at: string;
-        };
-        SetofOptions: {
-          from: "*";
-          to: "demandas";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-      fn_encerrar_roteiros_vencidos: {
-        Args: { p_limite?: number };
-        Returns: number;
-      };
-      fn_encrypt_oauth: { Args: { plaintext: string }; Returns: string };
-      fn_end_support: {
-        Args: { p_actor: string; p_session: string };
-        Returns: Json;
-      };
-      fn_enfileirar_midia_vencida: {
-        Args: { p_limite?: number };
-        Returns: Json;
-      };
-      fn_estampar_atribuicao_de_anuncio: {
-        Args: {
-          p_contact: string;
-          p_metadata: Json;
-          p_org: string;
-          p_platform: string;
-        };
-        Returns: undefined;
-      };
-      fn_estornar_comanda: {
-        Args: { p_motivo: string; p_org: string; p_sale: string };
-        Returns: Json;
-      };
-      fn_event_log_e_registro: {
-        Args: { p_event_type: string };
-        Returns: boolean;
-      };
-      fn_expurgar_auditoria_vencida: {
-        Args: { p_limite?: number; p_retencao_dias?: number };
-        Returns: number;
-      };
-      fn_expurgar_avisos_de_caso_vencidos: {
-        Args: { p_limite?: number; p_retencao_dias?: number };
-        Returns: number;
-      };
-      fn_expurgar_candidatos_do_golden: {
-        Args: { p_limite?: number; p_retencao_dias?: number };
-        Returns: number;
-      };
-      fn_expurgar_conversa_do_caso_vencida: {
-        Args: { p_limite?: number; p_retencao_dias?: number };
-        Returns: number;
-      };
-      fn_expurgar_espelho_da_agenda: {
-        Args: { p_limite?: number; p_retencao_dias?: number };
-        Returns: number;
-      };
-      fn_expurgar_nonces_de_oauth: {
-        Args: { p_limite?: number; p_retencao_dias?: number };
-        Returns: number;
-      };
-      fn_expurgar_observacoes_do_jev: {
-        Args: { p_limite?: number; p_retencao_dias?: number };
-        Returns: number;
-      };
-      fn_expurgar_passagens_vencidas: {
-        Args: { p_limite?: number; p_retencao_dias?: number };
-        Returns: number;
-      };
-      fn_expurgar_prospeccao_vencida: {
-        Args: { p_limite?: number; p_retencao_dias?: number };
-        Returns: number;
-      };
-      fn_extensions_admit_catalog: {
-        Args: {
-          p_actor: string;
-          p_digest: string;
-          p_operation: string;
-          p_snapshot: Json;
-        };
-        Returns: Json;
-      };
-      fn_extensions_assert_actor: {
-        Args: { p_actor: string; p_organization?: string };
-        Returns: undefined;
-      };
-      fn_extensions_cancel_install: {
-        Args: { p_actor: string; p_operation: string };
-        Returns: Json;
-      };
-      fn_extensions_configure: {
-        Args: {
-          p_actor: string;
-          p_configuration: Json;
-          p_enabled: boolean;
-          p_expected_revision: number;
-          p_installation: string;
-          p_operation: string;
-          p_organization: string;
-        };
-        Returns: Json;
-      };
-      fn_extensions_core_update_in_progress: {
-        Args: Record<PropertyKey, never>;
-        Returns: boolean;
-      };
-      fn_extensions_fail_install: {
-        Args: { p_actor: string; p_error_code: string; p_operation: string };
-        Returns: Json;
-      };
-      fn_extensions_fingerprint: { Args: { p_request: Json }; Returns: string };
-      fn_extensions_finish_install: {
-        Args: {
-          p_actor: string;
-          p_byte_length: number;
-          p_document: string;
-          p_manifest: Json;
-          p_operation: string;
-          p_sha256: string;
-        };
-        Returns: Json;
-      };
-      fn_extensions_installation_counts: {
-        Args: { p_actor: string };
-        Returns: {
-          active_organizations: number;
-          awaiting_reactivation: number;
-          installation_id: string;
-        }[];
-      };
-      fn_extensions_permissoes_validas: {
-        Args: { p_permissions: Json };
-        Returns: boolean;
-      };
-      fn_extensions_prepare_install: {
-        Args: {
-          p_actor: string;
-          p_catalog: string;
-          p_expected_installation_revision: number;
-          p_name: string;
-          p_operation: string;
-          p_publisher: string;
-          p_version: string;
-        };
-        Returns: Json;
-      };
-      fn_extensions_remove_installation: {
-        Args: {
-          p_actor: string;
-          p_expected_installation_revision: number;
-          p_installation: string;
-          p_operation: string;
-        };
-        Returns: Json;
-      };
-      fn_extensions_revert_install: {
-        Args: {
-          p_actor: string;
-          p_expected_installation_revision: number;
-          p_installation: string;
-          p_operation: string;
-        };
-        Returns: Json;
-      };
-      fn_finalizar_comanda: {
-        Args: {
-          p_loyalty_points?: number;
-          p_org: string;
-          p_payment_method: string;
-          p_sale: string;
-        };
-        Returns: Json;
-      };
-      fn_finish_channel_connection: {
-        Args: {
-          p_created?: boolean;
-          p_lease: string;
-          p_org: string;
-          p_reason?: string;
-          p_receipt: string;
-          p_status: string;
-        };
-        Returns: Json;
-      };
-      fn_followup_apply_step: {
-        Args: {
-          p_event: Json;
-          p_id: string;
-          p_org: string;
-          p_patch: Json;
-          p_revision: number;
-        };
-        Returns: number;
-      };
-      fn_followup_claim_current: {
-        Args: {
-          p_acquired_at: string;
-          p_job: string;
-          p_org: string;
-          p_worker: string;
-        };
-        Returns: boolean;
-      };
-      fn_followup_inline_settle: {
-        Args: {
-          p_acquired_at?: string;
-          p_done: boolean;
-          p_error?: string;
-          p_hold?: boolean;
-          p_id: string;
-          p_org: string;
-          p_retry_at?: string;
-          p_worker: string;
-        };
-        Returns: boolean;
-      };
-      fn_followup_job_current: {
-        Args: {
-          p_enrollment: string;
-          p_job: string;
-          p_node: string;
-          p_org: string;
-        };
-        Returns: boolean;
-      };
-      fn_followup_patch: {
-        Args: {
-          p_id: string;
-          p_org: string;
-          p_patch: Json;
-          p_revision: number;
-        };
-        Returns: number;
-      };
-      fn_gasto_de_ia_do_mes: { Args: { p_org: string }; Returns: number };
-      fn_google_appointment: {
-        Args: { p_action: string; p_args?: Json; p_id: string; p_org: string };
-        Returns: Json;
-      };
-      fn_google_calendar: {
-        Args: { p_action: string; p_args?: Json; p_id: string; p_org: string };
-        Returns: Json;
-      };
-      fn_google_calendar_fence: {
-        Args: { p_claim: Json; p_cursor?: Json; p_id: string; p_org: string };
-        Returns: undefined;
-      };
-      fn_google_catalog: {
-        Args: {
-          p_connection: string;
-          p_items: Json;
-          p_org: string;
-          p_revision: string;
-        };
-        Returns: undefined;
-      };
-      fn_google_counts_for_conflicts: {
-        Args: { p_calendar: string; p_connection: string; p_org: string };
-        Returns: boolean;
-      };
-      fn_google_coverage: {
-        Args: {
-          p_end: string;
-          p_org: string;
-          p_owner: string;
-          p_start: string;
-        };
-        Returns: boolean;
-      };
-      fn_google_resolve: {
-        Args: {
-          p_choice: string;
-          p_etag: string;
-          p_id: string;
-          p_local_revision: string;
-          p_org: string;
-          p_revision: string;
-        };
-        Returns: undefined;
-      };
-      fn_google_selection: {
-        Args: {
-          p_destination: string;
-          p_org: string;
-          p_revisions: Json;
-          p_sources: string[];
-        };
-        Returns: undefined;
-      };
-      fn_honorarios_parcela_pagar: {
-        Args: {
-          p_account_id: string;
-          p_account_plan_id?: string;
-          p_org: string;
-          p_parcela: string;
-        };
-        Returns: Json;
-      };
-      fn_honorarios_provisionar: {
-        Args: Record<PropertyKey, never>;
-        Returns: undefined;
-      };
-      fn_is_platform_admin: {
-        Args: Record<PropertyKey, never>;
-        Returns: boolean;
-      };
-      fn_lgpd_anonymize_contact: {
-        Args: { p_contact_id: string; p_organization_id: string };
-        Returns: Json;
-      };
-      fn_lgpd_cascade_redact_contact: {
-        Args: {
-          p_contact_id: string;
-          p_organization_id: string;
-          p_request_id: string;
-        };
-        Returns: Json;
-      };
-      fn_log_event: {
-        Args: {
-          p_event_type: string;
-          p_organization_id: string;
-          p_payload?: Json;
-        };
-        Returns: string;
-      };
-      fn_managed_area_allowed: {
-        Args: { p_area: string; p_org: string };
-        Returns: boolean;
-      };
-      fn_mark_conversation_message: {
-        Args: {
-          p_at: string;
-          p_conv: string;
-          p_direction: string;
-          p_preview: string;
-        };
-        Returns: undefined;
-      };
-      fn_meet_action: {
-        Args: {
-          p_action: string;
-          p_conversation?: string;
-          p_id: string;
-          p_org: string;
-          p_request: string;
-          p_revision: string;
-        };
-        Returns: boolean;
-      };
-      fn_meet_boundary_current: { Args: { b: Json }; Returns: boolean };
-      fn_meet_delivery_current: {
-        Args: {
-          p_acquired_at: string;
-          p_job: string;
-          p_org: string;
-          p_worker: string;
-        };
-        Returns: boolean;
-      };
-      fn_meet_delivery_policy: {
-        Args: {
-          p_acquired_at: string;
-          p_job: string;
-          p_org: string;
-          p_worker: string;
-        };
-        Returns: Json;
-      };
-      fn_meet_delivery_settle: {
-        Args: {
-          p_acquired_at: string;
-          p_job: string;
-          p_org: string;
-          p_retry_at?: string;
-          p_state: string;
-          p_worker: string;
-        };
-        Returns: boolean;
-      };
-      fn_meet_notice: {
-        Args: { p_id: string; p_org: string; p_reason: string };
-        Returns: undefined;
-      };
-      fn_meet_observe: {
-        Args: { p_args: Json; p_id: string; p_org: string };
-        Returns: undefined;
-      };
-      fn_member_role_in_org: {
-        Args: { p_org: string; p_user: string };
-        Returns: string;
-      };
-      fn_mesclar_contatos: {
-        Args: {
-          p_contato_principal: string;
-          p_contatos_secundarios: string[];
-          p_organization_id: string;
-        };
-        Returns: Json;
-      };
-      fn_metricas_links_rastreaveis: {
-        Args: { p_org: string };
-        Returns: {
-          clicks: number;
-          contacts: number;
-          leads: number;
-          link_id: string;
-        }[];
-      };
-      fn_modulo_instalar: {
-        Args: { p_actor: string; p_modulo: string; p_operation: string };
-        Returns: Json;
-      };
-      fn_mover_leads_em_lote: {
-        Args: {
-          p_lead_ids: string[];
-          p_lost_reason?: string;
-          p_organization_id: string;
-          p_stage_id: string;
-        };
-        Returns: {
-          from_stage_id: string;
-          lead_id: string;
-          pipeline_id: string;
-        }[];
-      };
-      fn_nascer_lead_da_conversa: {
-        Args: {
-          p_contact: string;
-          p_org: string;
-          p_pipeline: string;
-          p_source: string;
-          p_source_metadata?: Json;
-          p_stage: string;
-          p_tags?: string[];
-          p_title: string;
-        };
-        Returns: string;
-      };
-      fn_operational_message_metadata: {
-        Args: { p_metadata: Json };
-        Returns: Json;
-      };
-      fn_passagem_devolvida: {
-        Args: { p_conversation_id: string; p_organization_id: string };
-        Returns: number;
-      };
-      fn_pgrst_recusar_replay_do_gateway: {
-        Args: Record<PropertyKey, never>;
-        Returns: undefined;
-      };
-      fn_podar_fila_de_jobs: {
-        Args: { p_limite?: number; p_retencao_dias?: number };
-        Returns: number;
-      };
-      fn_proposta_aloca_numero: {
-        Args: { p_ano: number; p_org: string };
-        Returns: number;
-      };
-      fn_proteger_modulo_provisionado: {
-        Args: Record<PropertyKey, never>;
-        Returns: undefined;
-      };
-      fn_proteger_tabelas_de_organizacao: {
-        Args: Record<PropertyKey, never>;
-        Returns: undefined;
-      };
-      fn_proximo_numero_de_comanda: {
-        Args: { p_org: string };
-        Returns: number;
-      };
-      fn_publish_ai_agent_version:
-        | {
-            Args: {
-              p_agent_id: string;
-              p_org_id: string;
-              p_version_id: string;
-            };
-            Returns: {
-              agent_id: string;
-              previous_version_id: string;
-              published_at: string;
-              version_id: string;
-            }[];
-          }
-        | {
-            Args: {
-              p_agent_id: string;
-              p_org_id: string;
-              p_platform_credential_verified: boolean;
-              p_version_id: string;
-            };
-            Returns: {
-              agent_id: string;
-              previous_version_id: string;
-              published_at: string;
-              version_id: string;
-            }[];
-          }
-        | {
-            Args: {
-              p_agent_id: string;
-              p_expected_provenance: string;
-              p_org_id: string;
-              p_platform_credential_verified: boolean;
-              p_version_id: string;
-            };
-            Returns: {
-              agent_id: string;
-              previous_version_id: string;
-              published_at: string;
-              version_id: string;
-            }[];
-          };
-      fn_publish_followup_flow_version: {
-        Args: {
-          p_created_by: string;
-          p_graph: Json;
-          p_org: string;
-          p_pointer: string;
-        };
-        Returns: string;
-      };
-      fn_reaplicar_modulos_instalados: {
-        Args: Record<PropertyKey, never>;
-        Returns: undefined;
-      };
-      fn_recalcular_cliente_do_contato: {
-        Args: { p_contact: string; p_emitir: boolean; p_org: string };
-        Returns: string;
-      };
-      fn_registrar_jid_do_aviso: {
-        Args: { p_jid: string; p_org: string };
-        Returns: undefined;
-      };
-      fn_relatorio_financeiro: {
-        Args: { p_ate: string; p_de: string; p_org: string };
-        Returns: Json;
-      };
-      fn_replace_knowledge_faq_items: {
-        Args: {
-          p_items: Json;
-          p_knowledge_source_id: string;
-          p_organization_id: string;
-        };
-        Returns: number;
-      };
-      fn_reply_action: {
-        Args: {
-          p_action: string;
-          p_body?: string;
-          p_feedback?: string;
-          p_id: string;
-          p_org: string;
-          p_revision: string;
-        };
-        Returns: string;
-      };
-      fn_reply_begin: {
-        Args: {
-          p_agent: string;
-          p_conversation: string;
-          p_org: string;
-          p_token: string;
-          p_version: string;
-        };
-        Returns: {
-          agent_id: string;
-          agent_version_id: string;
-          approved_at: string | null;
-          approved_body: string | null;
-          approved_by: string | null;
-          approved_support_session_id: string | null;
-          channel_session_id: string;
-          contact_id: string;
-          context_revision: number;
-          conversation_id: string;
-          created_at: string;
-          edited_body: string | null;
-          error_code: string | null;
-          feedback: Json | null;
-          generation_token: string;
-          id: string;
-          message_id: string | null;
-          operation_revision: number;
-          organization_id: string;
-          original_body: string | null;
-          proposals: NonNullable<Json>;
-          revision: number;
-          send_job_id: string | null;
-          service_boundary: NonNullable<Json>;
-          status: string;
-          trace: NonNullable<Json>;
-          updated_at: string;
-        };
-        SetofOptions: {
-          from: "*";
-          to: "ai_reply_drafts";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-      fn_reply_context_current: {
-        Args: { p_id: string; p_org: string };
-        Returns: boolean;
-      };
-      fn_reply_delivery_policy: {
-        Args: {
-          p_acquired_at: string;
-          p_job: string;
-          p_org: string;
-          p_worker: string;
-        };
-        Returns: Json;
-      };
-      fn_reply_prepare: {
-        Args: {
-          p_acquired_at: string;
-          p_job: string;
-          p_org: string;
-          p_worker: string;
-        };
-        Returns: boolean;
-      };
-      fn_reply_receipt_policy: {
-        Args: {
-          p_acquired_at: string;
-          p_job: string;
-          p_org: string;
-          p_worker: string;
-        };
-        Returns: Json;
-      };
-      fn_reply_record_receipt: {
-        Args: {
-          p_acquired_at: string;
-          p_echo_ids?: string[];
-          p_external: string;
-          p_job: string;
-          p_message: string;
-          p_org: string;
-          p_worker: string;
-        };
-        Returns: Json;
-      };
-      fn_reply_settle: {
-        Args: {
-          p_acquired_at: string;
-          p_error?: string;
-          p_job: string;
-          p_org: string;
-          p_state: string;
-          p_worker: string;
-        };
-        Returns: boolean;
-      };
-      fn_request_channel_routing: {
-        Args: { p_conversation: string; p_org: string };
-        Returns: undefined;
-      };
-      fn_reserve_channel_connection: {
-        Args: {
-          p_display_name?: string;
-          p_hash: string;
-          p_key: string;
-          p_onboarding?: boolean;
-          p_org: string;
-        };
-        Returns: Json;
-      };
-      fn_resolve_inbound_number: {
-        Args: { p_number: string };
-        Returns: {
-          default_ai_agent_id: string;
-          fallback_user_id: string;
-          organization_id: string;
-          routing_mode: string;
-        }[];
-      };
-      fn_role_at_least: {
-        Args: { p_min: string; p_org: string };
-        Returns: boolean;
-      };
-      fn_routing_unassigned_notice: {
-        Args: { p_conversation: string; p_org: string; p_reason: string };
-        Returns: undefined;
-      };
-      fn_saldo_de_fidelidade: {
-        Args: { p_contact: string; p_org: string };
-        Returns: number;
-      };
-      fn_semear_tipos_de_agendamento: {
-        Args: { p_organization_id: string };
-        Returns: number;
-      };
-      fn_service_begin: {
-        Args: {
-          p_contact: string;
-          p_observed?: Json;
-          p_org: string;
-          p_session?: string;
-        };
-        Returns: Json;
-      };
-      fn_service_boundary: {
-        Args: { p_conversation: string; p_org: string };
-        Returns: Json;
-      };
-      fn_service_event_origin: {
-        Args: {
-          p_contact: string;
-          p_event: string;
-          p_org: string;
-          p_session?: string;
-        };
-        Returns: Json;
-      };
-      fn_service_inbound: { Args: { p_message: string }; Returns: undefined };
-      fn_service_lock: {
-        Args: { p_contact: string; p_org: string };
-        Returns: undefined;
-      };
-      fn_service_observe: {
-        Args: { p_contact: string; p_org: string };
-        Returns: Json;
-      };
-      fn_service_observe_command: {
-        Args: { p_contact: string; p_org: string };
-        Returns: Json;
-      };
-      fn_service_status: {
-        Args: {
-          p_conversation: string;
-          p_expected?: number;
-          p_org: string;
-          p_status: string;
-        };
-        Returns: {
-          active_agent_set_at: string | null;
-          active_ai_agent_id: string | null;
-          active_intent: string | null;
-          assigned_at: string | null;
-          assigned_to_user_id: string | null;
-          assigned_to_user_name: string | null;
-          assignee_kind: string | null;
-          awaiting_since: string | null;
-          bot_silenced_until: string | null;
-          channel: string;
-          channel_session_id: string;
-          contact_id: string;
-          created_at: string;
-          current_demanda_id: string | null;
-          group_chat_id: string | null;
-          id: string;
-          is_group: boolean;
-          last_handoff_at: string | null;
-          last_handoff_reason: string | null;
-          last_inbound_at: string | null;
-          last_message_at: string | null;
-          last_message_preview: string | null;
-          last_outbound_at: string | null;
-          metadata: NonNullable<Json>;
-          organization_id: string;
-          provider_conversation_id: string | null;
-          rag_review_status: string | null;
-          reply_context_revision: number;
-          service_closed_at: string | null;
-          service_revision: number;
-          service_started_at: string | null;
-          snooze_until: string | null;
-          snoozed_at: string | null;
-          snoozed_by_user_id: string | null;
-          status: string;
-          status_changed_at: string;
-          tags: string[];
-          unread_count_for_assignee: number;
-          updated_at: string;
-          usable_for_rag: boolean;
-          usable_for_rag_marked_at: string | null;
-          usable_for_rag_marked_by: string | null;
-        };
-        SetofOptions: {
-          from: "*";
-          to: "conversations";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-      fn_session_mfa_proven: {
-        Args: Record<PropertyKey, never>;
-        Returns: boolean;
-      };
-      fn_set_channel_routing: {
-        Args: {
-          p_channel: string;
-          p_org: string;
-          p_reset?: boolean;
-          p_users: string[];
-        };
-        Returns: Json;
-      };
-      fn_situacao_conta_como_atendimento: {
-        Args: { p_status: string };
-        Returns: boolean;
-      };
-      fn_solicitar_reenvio_conversao:
-        | { Args: { p_lead: string; p_org: string }; Returns: boolean }
-        | {
-            Args: { p_event: string; p_lead: string; p_org: string };
-            Returns: boolean;
-          };
-      fn_start_support: {
-        Args: {
-          p_actor: string;
-          p_mode?: string;
-          p_org: string;
-          p_previous: string;
-          p_session: string;
-          p_ttl?: number;
-        };
-        Returns: string;
-      };
-      fn_support_callback_write_allowed: {
-        Args: { p_actor?: string; p_org: string; p_session?: string };
-        Returns: boolean;
-      };
-      fn_support_context: { Args: Record<PropertyKey, never>; Returns: Json };
-      fn_support_storage_write_allowed: {
-        Args: { p_name: string };
-        Returns: boolean;
-      };
-      fn_support_write_allowed: { Args: { p_org: string }; Returns: boolean };
-      fn_tags_de_conversa_em_uso: {
-        Args: { p_org: string };
-        Returns: {
-          tag: string;
-        }[];
-      };
-      fn_tags_normalizar: {
-        Args: {
-          p_de: string;
-          p_para: string;
-          p_remover: boolean;
-          p_tags: string[];
-        };
-        Returns: string[];
-      };
-      fn_telefone_variantes: {
-        Args: { p_telefone: string };
-        Returns: string[];
-      };
-      fn_upsert_wa_contact: {
-        Args: {
-          p_chat_id: string;
-          p_kind: string;
-          p_lid: string;
-          p_notify: string;
-          p_org: string;
-          p_phone: string;
-        };
-        Returns: string;
-      };
-      fn_upsert_wa_conversation: {
-        Args: { p_contact: string; p_org: string; p_session: string };
-        Returns: string;
-      };
-      fn_user_org_ids: { Args: Record<PropertyKey, never>; Returns: string[] };
-      fn_user_role_in: { Args: { p_org: string }; Returns: number };
-      fn_user_role_in_org: { Args: { p_org: string }; Returns: string };
-      fn_vocabulario_de_tags: {
-        Args: { p_org: string };
-        Returns: {
-          cor: string;
-          descricao: string;
-          em_regras: number;
-          no_vocabulario: boolean;
-          tag: string;
-          uso_em_contatos: number;
-          uso_em_conversas: number;
-          uso_em_leads: number;
-        }[];
-      };
-      fn_vocabulario_de_tags_operar: {
-        Args: {
-          p_acao: string;
-          p_cor?: string;
-          p_destino: string;
-          p_org: string;
-          p_tag: string;
-        };
-        Returns: Json;
-      };
-      fn_wake_channel_routing: {
-        Args: { p_channel?: string; p_org: string };
-        Returns: undefined;
-      };
-      midpoint: { Args: { p_next: number; p_prev: number }; Returns: number };
-      retrieve_top_k_chunks: {
-        Args: {
-          p_embedding: string;
-          p_k?: number;
-          p_kb_version_id: string;
-          p_organization_id: string;
-          p_threshold?: number;
-        };
-        Returns: {
-          chunk_id: string;
-          content: string;
-          knowledge_source_id: string;
-          metadata: Json;
-          similarity: number;
-        }[];
-      };
-      show_limit: { Args: Record<PropertyKey, never>; Returns: number };
-      show_trgm: { Args: { "": string }; Returns: string[] };
-      social_platform: {
-        Args: {
-          p_channel: Database["public"]["Views"]["operational_channel_sessions"]["Row"];
-        };
-        Returns: string;
-      };
-      tags_do_contato: {
-        Args: { c: Database["public"]["Tables"]["conversations"]["Row"] };
-        Returns: string[];
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
   };
 };
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<
-  keyof Database,
-  "public"
->];
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
@@ -16439,10 +16774,8 @@ export type Tables<
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R;
       }
       ? R
@@ -16515,8 +16848,7 @@ export type Enums<
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }

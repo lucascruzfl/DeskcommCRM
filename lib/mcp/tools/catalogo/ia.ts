@@ -5,6 +5,7 @@ type Entrada = Pick<McpToolCatalogEntry, "name" | "category" | "rotulo" | "expli
 };
 
 const entradas: Entrada[] = [
+  { name: "crm_get_jev_status", category: "read", rotulo: "Consultar as observações do Jev", explicacao: "Mostra o estado das tarefas, os impedimentos e as métricas agregadas do Jev sem mudar o atendimento nem revelar mensagens.", oQueToca: "Observações do Jev" },
   { name: "crm_list_ai_providers", category: "read", rotulo: "Ver empresas de inteligência disponíveis", explicacao: "Mostra as empresas de inteligência que esta instalação sabe usar e se cada uma está pronta para atender.", oQueToca: "Inteligência artificial" },
   { name: "crm_get_ai_provider", category: "read", rotulo: "Consultar empresa de inteligência", explicacao: "Explica como uma empresa de inteligência está configurada e quais recursos ela oferece nesta instalação.", oQueToca: "Inteligência artificial" },
   { name: "crm_list_ai_models", category: "read", rotulo: "Ver modelos de inteligência", explicacao: "Mostra os modelos realmente disponíveis, os que usam ferramentas e os que conseguem entender imagens.", oQueToca: "Modelos de inteligência" },

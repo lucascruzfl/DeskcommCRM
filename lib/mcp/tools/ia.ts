@@ -29,6 +29,11 @@ import {
 import { McpToolError } from "@/lib/mcp/errors";
 import type { McpToolDefinition } from "@/lib/mcp/types";
 
+// v1.69: debounce é observável. Escrita HTTP não concede nova autoridade MCP.
+const mcpVersionCreateSchema = versionCreateSchema.omit({ inbound_debounce_ms: true });
+const mcpVersionPatchSchema = versionPatchSchema.omit({ inbound_debounce_ms: true });
+const mcpAgentCreateSchema = agentMcpCreateSchema.extend({ version: mcpVersionCreateSchema });
+
 const uuid = z.string().uuid();
 const agentId = { agent_id: uuid };
 const versionId = { agent_id: uuid, version_id: uuid };
@@ -86,7 +91,7 @@ const getAgent = read({
   handler: async (input, ctx) => { const { data, error } = await ctx.supabase.from("ai_agents").select(MCP_AGENT_COLUMNS).eq("organization_id", ctx.organizationId).eq("id", input.agent_id).eq("kind", "mcp_agent").maybeSingle(); if (error) throw new Error(error.message); if (!data) throw new McpToolError("not_found", "agent_not_found"); return data; },
 });
 const createAgent = write({
-  name: "crm_create_ai_agent", description: "Cria um agente de IA com a primeira versão em rascunho depois de validar todas as referências.", inputSchema: agentMcpCreateSchema.shape,
+  name: "crm_create_ai_agent", description: "Cria um agente de IA com a primeira versão em rascunho depois de validar todas as referências.", inputSchema: mcpAgentCreateSchema.shape,
   handler: async (input, ctx) => createAiAgent(ctx.supabase, ctx.organizationId, ctx.provisionedByUserId ?? ctx.actor.id, input),
   auditResource: (_input, result) => ({ type: "ai_agent", id: (result as { agent?: { id?: string } })?.agent?.id }),
 });
@@ -129,11 +134,11 @@ const getPublishedVersion = read({
   handler: async (input, ctx) => { const { data: agent } = await ctx.supabase.from("ai_agents").select("published_version_id").eq("organization_id", ctx.organizationId).eq("id", input.agent_id).maybeSingle(); if (!agent) throw new McpToolError("not_found", "agent_not_found"); if (!agent.published_version_id) return { published: false, version: null }; const { data } = await ctx.supabase.from("ai_agent_versions").select(MCP_VERSION_COLUMNS).eq("organization_id", ctx.organizationId).eq("agent_id", input.agent_id).eq("id", agent.published_version_id).single(); return { published: true, version: data }; },
 });
 const createVersion = write({
-  name: "crm_create_ai_agent_version", description: "Cria uma nova versão em rascunho depois de validar modelo, credencial, funis e materiais.", inputSchema: { ...agentId, version: versionCreateSchema },
+  name: "crm_create_ai_agent_version", description: "Cria uma nova versão em rascunho depois de validar modelo, credencial, funis e materiais.", inputSchema: { ...agentId, version: mcpVersionCreateSchema },
   handler: async (input, ctx) => createAiAgentVersion(ctx.supabase, ctx.organizationId, ctx.provisionedByUserId ?? ctx.actor.id, input.agent_id, input.version), auditResource: (_input, result) => ({ type: "ai_agent_version", id: (result as { id?: string })?.id }),
 });
 const updateVersion = write({
-  name: "crm_update_ai_agent_version", description: "Edita somente uma versão em rascunho e revalida referências antes de persistir a configuração.", inputSchema: { ...versionId, patch: versionPatchSchema },
+  name: "crm_update_ai_agent_version", description: "Edita somente uma versão em rascunho e revalida referências antes de persistir a configuração.", inputSchema: { ...versionId, patch: mcpVersionPatchSchema },
   handler: async (input, ctx) => updateAiAgentVersion(ctx.supabase, ctx.organizationId, input.agent_id, input.version_id, input.patch), auditResource: (input) => ({ type: "ai_agent_version", id: input.version_id }),
 });
 const preflightVersion = read({

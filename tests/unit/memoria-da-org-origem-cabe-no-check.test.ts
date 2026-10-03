@@ -19,11 +19,25 @@
  * leva esta comparação ao Postgres aplicado.
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, win32 } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 const RAIZ = process.cwd();
+
+/**
+ * O caminho que a varredura entrega AO COMPARAR, sempre com `/`.
+ *
+ * `join`/`readdirSync` devolvem o caminho no dialeto do SO: no Linux é
+ * `lib/mcp/tools/evolucao.ts`, no Windows é `lib\mcp\tools\evolucao.ts`. Os
+ * literais deste arquivo são escritos com `/`, então o recorte cru só casa por
+ * acaso no Linux — na Windows o `expect.arrayContaining` esvazia e o caso
+ * reprova sem dizer por quê. Normalizar é consertar a COMPARAÇÃO, não a
+ * allowlist: os literais continuam sendo o que a leitora espera ler.
+ */
+function separadorPosix(relativo: string): string {
+  return relativo.replaceAll("\\", "/");
+}
 
 /** O conjunto do CHECK na ÚLTIMA definição nomeada do baseline — a que o banco instala. */
 function valoresDoCheckNoBaseline(): string[] {
@@ -65,11 +79,13 @@ function origensGravadas(): Array<{ arquivo: string; valor: string }> {
       )) {
         const trecho = m[1]!;
         const diretas = [...trecho.matchAll(/\bsource:\s*["']([^"']+)["']/g)].map((s) => s[1]!);
-        const condicionais = [...trecho.matchAll(/\bsource:\s*[^?\n]*\?\s*["']([^"']+)["']\s*:\s*["']([^"']+)["']/g)]
-          .flatMap((s) => [s[1]!, s[2]!]);
+        const condicionais = [
+          ...trecho.matchAll(/\bsource:\s*[^?\n]*\?\s*["']([^"']+)["']\s*:\s*["']([^"']+)["']/g),
+        ].flatMap((s) => [s[1]!, s[2]!]);
         const valores = [...diretas, ...condicionais];
         if (valores.length === 0) throw new Error(`origem dinâmica não aferida: ${arquivo}`);
-        for (const valor of valores) achados.push({ arquivo: arquivo.slice(RAIZ.length + 1), valor });
+        for (const valor of valores)
+          achados.push({ arquivo: separadorPosix(arquivo.slice(RAIZ.length + 1)), valor });
       }
     }
   }
@@ -77,6 +93,31 @@ function origensGravadas(): Array<{ arquivo: string; valor: string }> {
 }
 
 describe("org_memory_entries.source — o que o código grava cabe no CHECK", () => {
+  it("CONTROLE DE PLATAFORMA: o recorte de caminho é o mesmo no Windows e no Linux", () => {
+    // Este caso é o que FAZ o defeito aparecer no CI do Linux. `win32.join`
+    // monta aqui o caminho no dialeto do Windows, e `join` monta o do Linux — o
+    // mesmo recorte, os dois formatos, lado a lado, sem depender da máquina em
+    // que a suíte roda. A última asserção é o NEGATIVO: sem normalizar, o
+    // recorte cru devolve `lib\mcp\tools\evolucao.ts` e não casa com o literal,
+    // que é exatamente o `expect.arrayContaining` vazio que reprovava na
+    // Windows. Se alguém tirar o `.replaceAll`, este caso fica vermelho.
+    const raizWindows = "C:\\deskcomm";
+    const caminhoWindows = win32.join(raizWindows, "lib", "mcp", "tools", "evolucao.ts");
+    const caminhoLinux = join("/srv/deskcomm", "lib", "mcp", "tools", "evolucao.ts");
+
+    expect(separadorPosix(caminhoWindows.slice(raizWindows.length + 1))).toBe(
+      "lib/mcp/tools/evolucao.ts",
+    );
+    expect(separadorPosix(caminhoLinux.slice("/srv/deskcomm".length + 1))).toBe(
+      "lib/mcp/tools/evolucao.ts",
+    );
+    // NEGATIVO: o recorte sem normalizar é justamente o que reprovava na Windows.
+    expect(
+      caminhoWindows.slice(raizWindows.length + 1),
+      "controle negativo: se isto casasse, a normalização seria inútil e o defeito voltaria",
+    ).not.toBe("lib/mcp/tools/evolucao.ts");
+  });
+
   it("a ferramenta MCP grava manual e o CHECK do baseline aceita", () => {
     const gravadas = origensGravadas();
     // Controle positivo: os três gravadores conhecidos têm de ser achados. Sem
@@ -100,7 +141,10 @@ describe("org_memory_entries.source — o que o código grava cabe no CHECK", ()
   it("o tipo da tela fala o mesmo vocabulário do CHECK", () => {
     const fonte = readFileSync(join(RAIZ, "hooks", "ai", "useOrgMemory.ts"), "utf8");
     const decl = /type\s+OrigemDaMemoria\s*=([^;]*);/.exec(fonte);
-    expect(decl, "não achei `type OrigemDaMemoria = ...;` em hooks/ai/useOrgMemory.ts").not.toBeNull();
+    expect(
+      decl,
+      "não achei `type OrigemDaMemoria = ...;` em hooks/ai/useOrgMemory.ts",
+    ).not.toBeNull();
     const doTipo = [...decl![1]!.matchAll(/["']([^"']+)["']/g)].map((m) => m[1]!).sort();
     expect(doTipo).toEqual(valoresDoCheckNoBaseline());
   });

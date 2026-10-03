@@ -1,5 +1,5 @@
 {
-  "scope": "Todas as funções de public, excluindo extensões; catálogo medido no baseline v1.62.0 integrado em PostgreSQL descartável. Funções novas e redefinidas revisadas quanto a EXECUTE, SECURITY DEFINER, organização e alcance managed. Não substitui provas de comportamento e UI.",
+  "scope": "Todas as funções de public, excluindo extensões; catálogo medido no baseline upstream v1.69.0 + MCP/managed em PostgreSQL descartável pelo harness canônico. Cinco funções novas e quatro redefinidas revisadas quanto a EXECUTE, SECURITY DEFINER, organização e alcance managed. Não declara paridade MCP 1.69 nem substitui provas de comportamento e UI.",
   "functions": [
     {
       "signature": "activate_kb_version(uuid,uuid)",
@@ -190,6 +190,16 @@
       "body_sha256": "b842df3817f54bf23512de7e1e54c3ecd0916bf2410a4dbc2ad5fce7dcbe4939",
       "status": "NOT-REACHABLE-BY-CLIENT",
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+    },
+    {
+      "signature": "fn_apagar_contato_com_historico(uuid,uuid)",
+      "name": "fn_apagar_contato_com_historico",
+      "security_definer": false,
+      "authenticated_execute": true,
+      "anonymous_execute": false,
+      "body_sha256": "d18643832d345b6fb5c4553ff51ff7754437b42d40550d22e11e51d11d46efae",
+      "status": "SAFE",
+      "reason": "SECURITY INVOKER: mantém a RLS de contacts, conversations e messages; organização explicitamente filtrada nos três DELETEs, transação atômica e rollback com RESTRICT. EXECUTE anon/PUBLIC revogado. Ação humana já existente, sem tool MCP nova. Gates contato-com-turno-de-followup-sai-inteiro e contato-delete."
     },
     {
       "signature": "fn_apagar_rascunhos_do_contato_anonimizado()",
@@ -1152,6 +1162,26 @@
       "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
     },
     {
+      "signature": "fn_fechar_aviso_do_jev_ao_bloquear()",
+      "name": "fn_fechar_aviso_do_jev_ao_bloquear",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "e732099733ea9977be3e50a1553e048196e91febb7d79cc3ff0732a6731d2f02",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Gatilho SECURITY DEFINER revogado de PUBLIC, anon e authenticated; só resolve aviso após bloqueio já realizado, filtrando organização no aviso e na conversa. Não bloqueia contato nem realiza handoff. Gate jev-aviso-fecha-sozinho-e-e-unico."
+    },
+    {
+      "signature": "fn_fechar_avisos_do_jev_da_conversa()",
+      "name": "fn_fechar_avisos_do_jev_da_conversa",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "06cd8504ad083478b15856e53e71227d269e7113a50d404fe0c105e24c01b6a3",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Gatilho SECURITY DEFINER revogado de PUBLIC, anon e authenticated; só resolve avisos correspondentes à conversa e organização, após encerramento ou passagem humana já realizada. Não decide passagem ou opt-out. Gate jev-aviso-fecha-sozinho-e-e-unico."
+    },
+    {
       "signature": "fn_finalizar_comanda(uuid,uuid,uuid,integer)",
       "name": "fn_finalizar_comanda",
       "security_definer": true,
@@ -1197,9 +1227,9 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "f8f69c39e6495528229c5ec834f3d6f8f16ee45375f19418956a13779ef47390",
+      "body_sha256": "dc713cf1ad96aaa98ed3753390914203788b11f30c06d7857ba1f375d4053b84",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+      "reason": "Gatilho SECURITY DEFINER sem EXECUTE de cliente. DELETE interno em cascata passa por profundidade >1; DELETE direto com auth.uid permanece proibido. Identidade e origem de follow-up permanecem imutáveis. Gate contato-com-turno-de-followup-sai-inteiro."
     },
     {
       "signature": "fn_followup_inline_settle(uuid,uuid,text,boolean,text,timestamp with time zone,boolean,timestamp with time zone)",
@@ -1367,9 +1397,9 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "626c3df4b2f014f2f2ac9fa4f3b91ca30da60eeb5797162371f47d9869c983c5",
+      "body_sha256": "83773d6f61cc2335987527164f16a06eecc694a715cfdcedf1ce87d66398ca25",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "Provisionadora SECURITY DEFINER sem EXECUTE para anon/authenticated; acionada pelo fluxo administrativo de instalação do módulo e instala RLS managed."
+      "reason": "Provisionadora SECURITY DEFINER sem EXECUTE anon/authenticated. União mantém RLS managed/restrictiva e adota formatação upstream de policies compatível com update antigo; sem alteração de semântica managed. Gates ADR-0002 e managed-area-rls."
     },
     {
       "signature": "fn_import_rows_same_org()",
@@ -1437,9 +1467,29 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "666347510d94cc850457c0bde26fc67beeae782fe71f503d6e8224d8ae559f14",
+      "body_sha256": "0dad3a50f54c91cf8f7f744650cefa4c0ed722ab14f03cb40ecb426604c1e962",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+      "reason": "RPC SECURITY DEFINER sem EXECUTE de cliente, sob ingresso de serviço revisado e fn_service_lock. WHEREs de organização/contato preservados; redige fontes adicionais de IA e mídia. Gates LGPD e managed-rpc-audit; não cria delegação MCP."
+    },
+    {
+      "signature": "fn_lgpd_redigir_secoes_de_modulo()",
+      "name": "fn_lgpd_redigir_secoes_de_modulo",
+      "security_definer": true,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "3eb0fc26d63ceb3c3b9a9296c316c108803b21857953da451d82ac305098cf95",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Gatilho SECURITY DEFINER sem EXECUTE PUBLIC/anon/authenticated; registro de SQL dinâmico fechado inclusive para service_role. Identificadores escapados, valores org/contato por USING, módulo ausente pulado e declaração inválida aborta. Gates ADR-0002 D8 e adr-0002-d8-registro-fechado-ao-service-role."
+    },
+    {
+      "signature": "fn_lgpd_redigir_tool_calls(jsonb)",
+      "name": "fn_lgpd_redigir_tool_calls",
+      "security_definer": false,
+      "authenticated_execute": false,
+      "anonymous_execute": false,
+      "body_sha256": "342fc67ed15fe7e4c3bbe7cb9e275491ed3999fbf1ed0166d71ba03e3c0d8804",
+      "status": "NOT-REACHABLE-BY-CLIENT",
+      "reason": "Função SQL SECURITY INVOKER de transformação JSON sem acesso a tabelas; EXECUTE PUBLIC/anon/authenticated revogado. Descarta PII e argumentos, mantendo só nomes de ferramentas e metadados estruturais. Gates lgpd-cascata-do-banco-alcanca-notas-itens e lgpd-redact-unificado-alcanca-pelo-catalogo."
     },
     {
       "signature": "fn_liberar_leads_do_agente()",
@@ -1917,9 +1967,9 @@
       "security_definer": true,
       "authenticated_execute": false,
       "anonymous_execute": false,
-      "body_sha256": "9b96a3865182e8ce7f52bbe6c452e4272550d612061d42ef0e64113adec5737c",
+      "body_sha256": "f7582cff4c1f61c67143952160b6b72b524660dafb3fc5a9248fed1ad5469e1d",
       "status": "NOT-REACHABLE-BY-CLIENT",
-      "reason": "EXECUTE não concedido ao papel authenticated nem via PUBLIC; chamadas internas dependem dos ingressos auditados."
+      "reason": "Gatilho SECURITY DEFINER sem EXECUTE de cliente; filtros organização/contato preservados na cascata. Alcança notas, tool_calls, lead_state/social_identity e transcrição; sem liberar exportação ou anonimização por MCP. Gates LGPD de permanência, cascata e transcrição."
     },
     {
       "signature": "fn_redigir_exclusoes_do_contato_anonimizado()",
