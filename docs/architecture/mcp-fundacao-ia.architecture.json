@@ -238,6 +238,34 @@
       "col": 4,
       "type": "backend",
       "label": "lib/grupos/servico.ts e lib/ai/knowledge/consulta-administrativa.ts: leitura canônica, tenant, teto de consultas e telemetria sem texto"
+    },
+    {
+      "id": "httpparity169",
+      "lane": "cliente",
+      "col": 0,
+      "type": "frontend",
+      "label": "Conexões, versões de agente, Skills e CartaoDoJev: consumidores HTTP v1.69"
+    },
+    {
+      "id": "pacing169",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "lib/ai/pacing-service.ts: ritmo e janelas canônicos HTTP/MCP; aquecimento somente humano"
+    },
+    {
+      "id": "jevstatus169",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "lib/ai/decisao/status.ts: read-model único HTTP/MCP; seis tarefas e agregados seguros"
+    },
+    {
+      "id": "skills169",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "Skills: compararSkill + temVersaoNovaNoCatalogo + insertSkillVersion/setSkillPointer preservam origem adotada"
     }
   ],
   "edges": [
@@ -540,6 +568,51 @@
       "from": "servicedelta162",
       "to": "tenantdb",
       "label": "queries explícitas por tenant"
+    },
+    {
+      "from": "httpparity169",
+      "to": "pacing169",
+      "label": "GET/PUT pacing usam knobsView e persistência canônica"
+    },
+    {
+      "from": "toolsadmin",
+      "to": "pacing169",
+      "label": "crm_get_channel_admin e crm_update_channel_pacing: manager, sem risco B"
+    },
+    {
+      "from": "pacing169",
+      "to": "tenantdb",
+      "label": "organization_id explícito; nenhum envio ou AI access"
+    },
+    {
+      "from": "httpparity169",
+      "to": "jevstatus169",
+      "label": "GET Jev devolve o read-model ao cartão"
+    },
+    {
+      "from": "toolsia",
+      "to": "jevstatus169",
+      "label": "crm_get_jev_status usa projeção sem PII, somente leitura"
+    },
+    {
+      "from": "jevstatus169",
+      "to": "tenantdb",
+      "label": "Configuração e métricas por tenant, sem conteúdo de cliente"
+    },
+    {
+      "from": "httpparity169",
+      "to": "skills169",
+      "label": "Editor e catálogo usam comparador e versionamento oficiais"
+    },
+    {
+      "from": "toolsia",
+      "to": "skills169",
+      "label": "get/save preservam proveniência, consulta nunca adota"
+    },
+    {
+      "from": "skills169",
+      "to": "tenantdb",
+      "label": "Versões imutáveis locais e catálogo somente organization_id NULL"
     }
   ]
 }

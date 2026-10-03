@@ -101,6 +101,7 @@ import {
   crmCloseDemand,
   crmProposeReactivation,
 } from "./retencao";
+import { crmGetJevStatus } from "./jev";
 import { AI_MCP_TOOLS } from "./ia";
 import { CRM_TASK_TOOLS } from "./tarefas";
 import { CRM_TAG_TOOLS } from "./tags";
@@ -129,6 +130,7 @@ import { PARITY_162_MCP_TOOLS } from "./parity-162";
 // nivel do array — o server core ja recebe args como `Record<string,
 // unknown>` e cada handler valida no Zod do registerTool.
 export const allTools: ReadonlyArray<McpToolDefinition> = [
+  crmGetJevStatus,
   ...B2B_MCP_TOOLS,
   ...PARITY_162_MCP_TOOLS,
   ...MANAGED_CLIENT_TOOLS,

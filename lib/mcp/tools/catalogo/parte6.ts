@@ -1,14 +1,16 @@
 import { declararTools, type McpToolCatalogEntry } from "./tipos";
 
-type Base = Pick<McpToolCatalogEntry, "name" | "category" | "rotulo" | "oQueToca">;
+type Base = Pick<McpToolCatalogEntry, "name" | "category" | "rotulo" | "oQueToca"> &
+  Partial<Pick<McpToolCatalogEntry, "explicacao">>;
 function entradas(itens: readonly Base[]): ReadonlyArray<McpToolCatalogEntry> {
   return declararTools(
     itens.map((item) => ({
       ...item,
       explicacao:
-        item.category === "read"
+        item.explicacao ??
+        (item.category === "read"
           ? `Mostra ${item.oQueToca.toLowerCase()} com segurança, sem revelar credenciais nem alterar a operação.`
-          : `Altera ${item.oQueToca.toLowerCase()} com isolamento da empresa, validação e registro da mudança.`,
+          : `Altera ${item.oQueToca.toLowerCase()} com isolamento da empresa, validação e registro da mudança.`),
       risco: item.category === "read" ? "seguro" : "atencao",
       pacotes: item.oQueToca.includes("Conhecimento")
         ? ["evoluir"]
@@ -174,8 +176,16 @@ export const TOOLS_PARTE6 = entradas([
   {
     name: "crm_get_channel_admin",
     category: "read",
-    rotulo: "Consultar a saúde de um canal",
+    rotulo: "Consultar a saúde e o ritmo de um canal",
     oQueToca: "Canais de atendimento",
+  },
+  {
+    name: "crm_update_channel_pacing",
+    category: "write",
+    rotulo: "Configurar o ritmo de uma conexão",
+    explicacao:
+      "Ajusta intervalos, janelas e atrasos da conexão dentro dos limites do produto, mantendo o aquecimento sob decisão humana.",
+    oQueToca: "Ritmo dos canais de atendimento",
   },
   {
     name: "crm_update_channel_ai_access",

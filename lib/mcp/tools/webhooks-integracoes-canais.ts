@@ -5,6 +5,10 @@ import {
   lerNumerosDeTeste,
   aiAccessUpdateSchema,
 } from "@/lib/ai/elegibilidade/pre-go-live";
+import { pacingKnobsUpdateSchema } from "@/lib/ai/pacing-knobs";
+import { lerPacingDaConexao, salvarPacingDaConexao, PacingError } from "@/lib/ai/pacing-service";
+import { PROVIDERS_DE_MENSAGEM } from "@/lib/channels/capabilities";
+import { audit } from "@/lib/audit";
 import { McpToolError } from "@/lib/mcp/errors";
 import { humanAction } from "@/lib/mcp/human-action";
 import type { McpContext, McpToolDefinition } from "@/lib/mcp/types";
@@ -245,18 +249,98 @@ export const crmGetChannelAdmin: McpToolDefinition<{ channel_id: typeof uuid }> 
   requiresRole: "manager",
   requiresScope: "mcp:read",
   domain: "channels",
+  redigirParaAuditoria: (args) => ({ channel_id_present: Boolean(args.channel_id) }),
+  redigirErroParaAuditoria: () => "channel_read_failed",
   handler: async (i, c) => {
     const channel = await canalDaOrg(c, i.channel_id);
     const { metadata, ...safe } = channel;
+    const pacing = PROVIDERS_DE_MENSAGEM.includes(channel.provider as never)
+      ? await pacingMcp(() => lerPacingDaConexao(c.supabase, c.organizationId, i.channel_id))
+      : null;
     return {
       canal: {
         ...safe,
+        pacing,
         ai_access: {
           mode: lerModoDeAcessoDaIa(metadata),
           test_phone_numbers: lerNumerosDeTeste(metadata),
         },
       },
     };
+  },
+};
+
+/** Omitir é deliberado: declarar idade/pular aquecimento continua decisão humana/B. */
+const pacingMcpSchema = pacingKnobsUpdateSchema
+  .omit({
+    channel_session_id: true,
+    number_activated_at: true,
+    skip_warmup: true,
+  })
+  .extend({ channel_id: uuid })
+  .strict();
+
+async function pacingMcp<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof PacingError)
+      throw new McpToolError(
+        error.status === 404
+          ? "not_found"
+          : error.status === 422
+            ? "validation_error"
+            : "not_allowed",
+        error.message,
+      );
+    throw new McpToolError("not_allowed", "pacing_operation_failed");
+  }
+}
+
+export const crmUpdateChannelPacing: McpToolDefinition<typeof pacingMcpSchema.shape> = {
+  name: "crm_update_channel_pacing",
+  description:
+    "Edita ritmo, janelas de disparo/resposta, atrasos e teto diário de uma conexão. Não declara idade nem pula aquecimento; não envia, reconecta ou altera acesso da IA.",
+  inputSchema: pacingMcpSchema.shape,
+  category: "write",
+  requiresRole: "manager",
+  requiresScope: "mcp:write",
+  domain: "channels",
+  auditResource: (i) => ({ type: "channel_knobs", id: i.channel_id }),
+  redigirParaAuditoria: (args) => ({
+    channel_id_present: Boolean(args.channel_id),
+    fields_changed: Object.keys(args).filter(
+      (field) => field !== "channel_id" && field in pacingMcpSchema.shape,
+    ),
+    operation_kind: "pacing_update",
+  }),
+  redigirErroParaAuditoria: () => "pacing_operation_failed",
+  handler: async (raw, ctx) => {
+    const parsed = pacingMcpSchema.safeParse(raw);
+    if (!parsed.success) throw new McpToolError("validation_error", "Campos de pacing inválidos.");
+    const { channel_id, ...fields } = parsed.data;
+    if (Object.keys(fields).length === 0)
+      throw new McpToolError("validation_error", "Informe ao menos um campo de ritmo.");
+    const channel = await canalDaOrg(ctx, channel_id);
+    if (!PROVIDERS_DE_MENSAGEM.includes(channel.provider as never))
+      throw new McpToolError("not_allowed", "pacing_requires_messaging_channel");
+    const result = await pacingMcp(() =>
+      salvarPacingDaConexao(ctx.supabase, ctx.organizationId, {
+        channel_session_id: channel_id,
+        ...fields,
+      }),
+    );
+    await audit({
+      action: "ai.pacing_knobs_updated",
+      actorUserId: null,
+      actorApiTokenId: ctx.apiTokenId,
+      organizationId: ctx.organizationId,
+      resourceType: "channel_knobs",
+      resourceId: channel_id,
+      requestId: ctx.requestId,
+      metadata: { fields_changed: Object.keys(fields), via: "mcp" },
+    });
+    return result;
   },
 };
 
@@ -333,6 +417,7 @@ export const WEBHOOKS_INTEGRACOES_CANAIS_MCP_TOOLS = [
   crmDiscoverIntegrations,
   crmPrepareIntegrationAction,
   crmGetChannelAdmin,
+  crmUpdateChannelPacing,
   crmUpdateChannelAiAccess,
   crmPrepareChannelAction,
 ] as const;

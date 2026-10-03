@@ -8,7 +8,11 @@ import { VALID_TOOL_IDS } from "./tools/catalog";
 import { TOOLS_B2B } from "./tools/catalogo/b2b";
 import { TOOLS_PARITY_162 } from "./tools/catalogo/parity-162";
 
-const PARITY_TOOL_NAMES = new Set([...TOOLS_B2B, ...TOOLS_PARITY_162].map((entry) => entry.name));
+const PARITY_TOOL_NAMES = new Set(
+  [...TOOLS_B2B, ...TOOLS_PARITY_162]
+    .map((entry) => entry.name)
+    .concat(["crm_get_jev_status", "crm_update_channel_pacing"]),
+);
 
 /** Preset completo emitido antes desta paridade: conserva acesso às novas tools
  * sem converter uma allowlist parcial em autorização ampla. */
@@ -160,6 +164,9 @@ export function managedAreaOfTool(tool: McpToolDefinition): NavDestinationId | n
     crm_list_ai_models: "/app/ai/providers",
     crm_get_ai_provider: "/app/ai/providers",
     crm_list_ai_providers: "/app/ai/providers",
+    crm_get_jev_status: "/app/ai/atendimento",
+    crm_update_channel_pacing: "/app/connections",
+    crm_get_channel_admin: "/app/connections",
     crm_get_ai_skill: "/app/ai/skills",
     crm_save_ai_skill: "/app/ai/skills",
     crm_get_ai_skill_import_instructions: "/app/ai/skills",
