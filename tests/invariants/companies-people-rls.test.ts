@@ -33,6 +33,7 @@ const ORG_B = "b2b00000-0000-4000-8000-00000000000b";
 const USER_B = "b2b00000-1111-4000-8000-00000000000b";
 
 const EMPRESA = "b2b00000-2222-4000-8000-000000000001";
+const EMPRESA_B = "b2b00000-2222-4000-8000-00000000000b";
 const PESSOA = "b2b00000-3333-4000-8000-000000000001";
 const PESSOA_B = "b2b00000-3333-4000-8000-00000000000b";
 const CONTATO_1 = "b2b00000-4444-4000-8000-000000000001";
@@ -50,6 +51,8 @@ beforeAll(() => {
 
     insert into public.companies (id, organization_id, trade_name, legal_name, normalized_cnpj, cnpj, email)
       values ('${EMPRESA}', '${GOV_ORG}', 'Globo', 'Globo LTDA', '55666777000199', '55.666.777/0001-99', 'contato@globo.invariant.test');
+    insert into public.companies (id, organization_id, trade_name)
+      values ('${EMPRESA_B}', '${ORG_B}', 'Outra Empresa');
     insert into public.people (id, organization_id, full_name, normalized_name, email, notes)
       values ('${PESSOA}', '${GOV_ORG}', 'José Decisor', 'jose decisor', 'jose@invariant.test', 'prefere ligação à tarde');
     insert into public.people (id, organization_id, full_name)
@@ -94,6 +97,24 @@ describe("isolamento entre organizações", () => {
     expect(() =>
       sql(`update public.contacts set person_id = '${PESSOA_B}' where id = '${CONTATO_1}';`),
     ).toThrow(/organization_id deve coincidir/);
+  });
+
+  it("service role não consegue vincular empresa de A à pessoa de B", () => {
+    expect(() => sql(`insert into public.company_people (organization_id, company_id, person_id)
+      values ('${GOV_ORG}', '${EMPRESA}', '${PESSOA_B}');`))
+      .toThrow(/organization_id deve coincidir/);
+  });
+
+  it("service role não consegue vincular empresa de B à pessoa de A", () => {
+    expect(() => sql(`insert into public.company_people (organization_id, company_id, person_id)
+      values ('${GOV_ORG}', '${EMPRESA_B}', '${PESSOA}');`))
+      .toThrow(/organization_id deve coincidir/);
+  });
+
+  it("vínculo repetido recebe conflito único, sem duplicar relação", () => {
+    expect(() => sql(`insert into public.company_people (organization_id, company_id, person_id)
+      values ('${GOV_ORG}', '${EMPRESA}', '${PESSOA}');`))
+      .toThrow(/company_people_company_person_uidx/);
   });
 
   it("mesmo CNPJ na mesma organização é recusado (único parcial)", () => {

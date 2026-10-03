@@ -1,3 +1,10 @@
+import {
+  GATILHO_SILENCIO,
+  GATILHO_ETAPA_PARADA,
+  DIRECOES_DO_SILENCIO,
+  DIAS_MIN,
+  DIAS_MAX,
+} from "@/lib/automation/gatilhos-de-tempo";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
@@ -80,7 +87,20 @@ export const crmDiscoverAutomationTriggers: McpToolDefinition = {
       trigger_config:
         name === GATILHO_DE_DATA_DO_FUNIL
           ? { required: ["pipeline_id", "campo", "dias"], dias: { min: -3650, max: 3650 } }
-          : { required: [] },
+          : name === GATILHO_SILENCIO
+            ? {
+                required: ["dias", "direcao"],
+                dias: { min: DIAS_MIN, max: DIAS_MAX },
+                direcao: DIRECOES_DO_SILENCIO,
+                optional: ["pipeline_id", "proteger_pela_agenda"],
+              }
+            : name === GATILHO_ETAPA_PARADA
+              ? {
+                  required: ["dias"],
+                  dias: { min: DIAS_MIN, max: DIAS_MAX },
+                  optional: ["pipeline_id", "stage_id", "proteger_pela_agenda"],
+                }
+              : { required: [] },
     })),
   }),
 };

@@ -1,8 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { crmGetHonorariosContrato, crmListHonorariosParcelas } from "./honorarios";
 import type { McpContext } from "../types";
 
+const moduleState = vi.hoisted(() => ({ enabled: true }));
+vi.mock("@/lib/instalacao/modulos", () => ({ moduloLigado: async () => moduleState.enabled }));
+beforeEach(() => {
+  moduleState.enabled = true;
+});
 const ORG_ID = "22222222-2222-4222-8222-222222222222";
 
 function ctxDe(
@@ -62,10 +67,7 @@ describe("crm_get_honorarios_contrato", () => {
     const ctx = ctxDe({ data: null, error: { code: "42P01", message: "relation does not exist" } });
 
     await expect(
-      crmGetHonorariosContrato.handler(
-        { lead_id: "11111111-1111-4111-8111-111111111111" },
-        ctx,
-      ),
+      crmGetHonorariosContrato.handler({ lead_id: "11111111-1111-4111-8111-111111111111" }, ctx),
     ).rejects.toThrow(/módulo de honorários não está instalado/);
   });
 });
@@ -79,10 +81,9 @@ describe("crm_list_honorarios_parcelas", () => {
     ];
     const ctx = ctxDe({ data: parcelas, error: null }, filtros);
 
-    const resultado = (await crmListHonorariosParcelas.handler(
-      { contrato_id: "c1" },
-      ctx,
-    )) as { parcelas: unknown[] };
+    const resultado = (await crmListHonorariosParcelas.handler({ contrato_id: "c1" }, ctx)) as {
+      parcelas: unknown[];
+    };
 
     expect(resultado.parcelas).toEqual(parcelas);
     expect(filtros).toEqual([
@@ -94,8 +95,19 @@ describe("crm_list_honorarios_parcelas", () => {
   it("lança com uma mensagem clara quando o módulo não está instalado (42P01)", async () => {
     const ctx = ctxDe({ data: null, error: { code: "42P01", message: "relation does not exist" } });
 
-    await expect(
-      crmListHonorariosParcelas.handler({ contrato_id: "c1" }, ctx),
-    ).rejects.toThrow(/módulo de honorários não está instalado/);
+    await expect(crmListHonorariosParcelas.handler({ contrato_id: "c1" }, ctx)).rejects.toThrow(
+      /módulo de honorários não está instalado/,
+    );
   });
+});
+
+it("as duas leituras recusam módulo desligado mesmo com tabelas existentes e service role", async () => {
+  moduleState.enabled = false;
+  const ctx = ctxDe({ data: [{ id: "registro existente" }], error: null });
+  await expect(
+    crmGetHonorariosContrato.handler({ lead_id: "11111111-1111-4111-8111-111111111111" }, ctx),
+  ).rejects.toThrow("honorarios_module_disabled");
+  await expect(crmListHonorariosParcelas.handler({ contrato_id: "c1" }, ctx)).rejects.toThrow(
+    "honorarios_module_disabled",
+  );
 });

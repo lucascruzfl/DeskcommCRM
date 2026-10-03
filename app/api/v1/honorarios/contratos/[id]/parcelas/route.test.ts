@@ -53,6 +53,7 @@ function fakeSupabase(resultado: { data: unknown; error: { code?: string } | nul
     eq: () => builder,
     insert: () => builder,
     single: () => Promise.resolve(resultado),
+    maybeSingle: () => Promise.resolve({ data: { id: CONTRATO_ID }, error: null }),
   };
   return { from: () => builder };
 }

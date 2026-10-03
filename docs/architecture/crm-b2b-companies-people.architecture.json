@@ -168,6 +168,30 @@
       "type": "service",
       "label": "lib/lgpd/export-collector",
       "sublabel": "b2b no pedido de acesso"
+    },
+    {
+      "id": "mcp_b2b",
+      "lane": "api",
+      "col": 0,
+      "type": "tool",
+      "label": "MCP B2B (13 tools)",
+      "sublabel": "crm_b2b ligado, contacts scope, área managed exata"
+    },
+    {
+      "id": "b2b_handlers",
+      "lane": "api",
+      "col": 1,
+      "type": "service",
+      "label": "lib/crm-b2b/*-handler",
+      "sublabel": "organização do contexto; enrichment MCP desativado"
+    },
+    {
+      "id": "mcp_audit",
+      "lane": "humano",
+      "col": 5,
+      "type": "frontend",
+      "label": "/app/audit",
+      "sublabel": "chamada MCP com argumentos redigidos"
     }
   ],
   "edges": [
@@ -321,6 +345,48 @@
       "from": "people",
       "to": "export",
       "label": "entregue ao titular"
+    },
+    {
+      "id": "e26",
+      "from": "modulo",
+      "to": "mcp_b2b",
+      "label": "desligado = tool ausente"
+    },
+    {
+      "id": "e27",
+      "from": "mcp_b2b",
+      "to": "b2b_handlers",
+      "label": "entrada validada e org do token"
+    },
+    {
+      "id": "e28",
+      "from": "b2b_handlers",
+      "to": "companies",
+      "label": "CRUD sem BrasilAPI surpresa"
+    },
+    {
+      "id": "e29",
+      "from": "b2b_handlers",
+      "to": "people",
+      "label": "CRUD e vínculos"
+    },
+    {
+      "id": "e30",
+      "from": "b2b_handlers",
+      "to": "import_batches",
+      "label": "somente leitura de lotes"
+    },
+    {
+      "id": "e31",
+      "from": "mcp_b2b",
+      "to": "mcp_audit",
+      "label": "metadata sem PII"
+    },
+    {
+      "id": "e32",
+      "from": "mcp_audit",
+      "to": "ui_empresas",
+      "label": "operador revisa e corrige"
     }
   ]
 }

@@ -120,6 +120,8 @@ import { crmGetNotificationSounds, crmResetNotificationSound } from "./sons";
 import { MANAGED_CLIENT_TOOLS } from "./managed-clients";
 import { crmGetAiRouter, crmTestAiRouter } from "./router-preview";
 import { crmDraftProposal, crmPrepararProposta } from "./propostas";
+import { B2B_MCP_TOOLS } from "./b2b";
+import { PARITY_162_MCP_TOOLS } from "./parity-162";
 
 // Cast via `unknown` porque McpToolDefinition<TInput> nao e covariante
 // em TInput (handler usa TInput em posicao contravariante). Coletar
@@ -127,6 +129,8 @@ import { crmDraftProposal, crmPrepararProposta } from "./propostas";
 // nivel do array — o server core ja recebe args como `Record<string,
 // unknown>` e cada handler valida no Zod do registerTool.
 export const allTools: ReadonlyArray<McpToolDefinition> = [
+  ...B2B_MCP_TOOLS,
+  ...PARITY_162_MCP_TOOLS,
   ...MANAGED_CLIENT_TOOLS,
   crmGetAiRouter,
   crmTestAiRouter,

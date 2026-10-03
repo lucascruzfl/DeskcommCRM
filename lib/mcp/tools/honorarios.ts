@@ -9,6 +9,7 @@
  * Service role bypassa RLS: TODA query filtra `organization_id` manualmente.
  */
 import { z } from "zod";
+import { moduloLigado } from "@/lib/instalacao/modulos";
 
 import type { McpToolDefinition } from "../types";
 
@@ -40,7 +41,14 @@ export const crmGetHonorariosContrato: McpToolDefinition<typeof contratoInputSha
   category: "read",
   requiresRole: "agent",
   requiresScope: "mcp:read",
+  redigirParaAuditoria: (args) => ({
+    lead_id_present: !!args.lead_id,
+    contrato_id_present: !!args.contrato_id,
+  }),
+  redigirErroParaAuditoria: () => "honorarios_tool_error",
   handler: async (input, ctx) => {
+    if (!(await moduloLigado(ctx.supabase, "honorarios")))
+      throw new Error("honorarios_module_disabled");
     const { data, error } = await ctx.supabase
       .from("honorarios_contratos")
       .select("id, modelo, valor_fixo_cents, percentual_exito, repasse_advogado_pct")
@@ -77,7 +85,14 @@ export const crmListHonorariosParcelas: McpToolDefinition<typeof parcelasInputSh
   category: "read",
   requiresRole: "agent",
   requiresScope: "mcp:read",
+  redigirParaAuditoria: (args) => ({
+    lead_id_present: !!args.lead_id,
+    contrato_id_present: !!args.contrato_id,
+  }),
+  redigirErroParaAuditoria: () => "honorarios_tool_error",
   handler: async (input, ctx) => {
+    if (!(await moduloLigado(ctx.supabase, "honorarios")))
+      throw new Error("honorarios_module_disabled");
     const { data, error } = await ctx.supabase
       .from("honorarios_parcelas")
       .select("id, numero, vencimento, valor_cents, status")

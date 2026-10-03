@@ -123,7 +123,11 @@ export function createMcpServer(
 
           return {
             content: [{ type: "text", text: JSON.stringify(safeResult) }],
-            structuredContent: safeResult as Record<string, unknown>,
+            // MCP exige objeto em structuredContent. Listas continuam no
+            // conteúdo JSON canônico; um cast não transforma array em record.
+            ...(safeResult !== null && typeof safeResult === "object" && !Array.isArray(safeResult)
+              ? { structuredContent: safeResult as Record<string, unknown> }
+              : {}),
           };
         } catch (err) {
           const exposedError = mcpErrorPayload(err);
@@ -136,7 +140,7 @@ export function createMcpServer(
             args: argsAudit,
             durationMs,
             success: false,
-            errorMessage: message,
+            errorMessage: tool.redigirErroParaAuditoria?.(message) ?? message,
             errorCode: err instanceof McpToolError ? err.code : undefined,
             resourceType: tool.auditResource?.(args as never)?.type,
             resourceId: tool.auditResource?.(args as never)?.id,

@@ -91,8 +91,12 @@ const draftProposalInputShape = {
 };
 
 /** Ator do ctx → o que a auditoria grava. Mesmo padrão de retencao.ts/escalacao.ts. */
-function actorAudit(actor: Actor): { actorUserId: string | null; metadataActor: Record<string, unknown> } {
-  if (actor.type === "user") return { actorUserId: actor.id, metadataActor: { actor_type: "user" } };
+function actorAudit(actor: Actor): {
+  actorUserId: string | null;
+  metadataActor: Record<string, unknown>;
+} {
+  if (actor.type === "user")
+    return { actorUserId: actor.id, metadataActor: { actor_type: "user" } };
   return { actorUserId: null, metadataActor: { actor_type: actor.type, actor_id: actor.id } };
 }
 
@@ -165,6 +169,17 @@ async function loteDoTurnoAtual(
   return { pendente: textos.some((t) => t.trim().length === 0), textos };
 }
 
+/** Propostas carregam conteúdo comercial; metadata universal guarda só presença e contagem. */
+function proposalAuditMetadata(args: Record<string, unknown>) {
+  return {
+    lead_id_present: !!args.lead_id,
+    conversation_id_present: !!args.conversation_id,
+    template_slug_present: !!args.template_slug,
+    item_count: Array.isArray(args.itens) ? args.itens.length : 0,
+    briefing_present: !!args.briefing,
+  };
+}
+
 export const crmDraftProposal: McpToolDefinition<typeof draftProposalInputShape> = {
   name: "crm_draft_proposal",
   category: "write",
@@ -175,6 +190,8 @@ export const crmDraftProposal: McpToolDefinition<typeof draftProposalInputShape>
     "rascunho para uma pessoa revisar e enviar depois. Use quando o cliente pedir orçamento ou " +
     "proposta e você já souber o que oferecer. Um negócio só pode ter UM rascunho aberto por vez.",
   inputSchema: draftProposalInputShape,
+  redigirParaAuditoria: proposalAuditMetadata,
+  redigirErroParaAuditoria: () => "proposal_tool_error",
   handler: async (input, ctx: McpContext) => {
     if (!(await capacidadesDaOrganizacao(ctx.supabase, ctx.organizationId)).includes("propostas")) {
       return { error: "Propostas estão desligadas nesta organização." };
@@ -200,7 +217,8 @@ export const crmDraftProposal: McpToolDefinition<typeof draftProposalInputShape>
       .maybeSingle();
     if (rascunhoExistente) {
       return {
-        error: "Este negócio já tem um rascunho de proposta aberto — retome-o em vez de criar outro.",
+        error:
+          "Este negócio já tem um rascunho de proposta aberto — retome-o em vez de criar outro.",
         motivo: "rascunho_aberto_existe",
         rascunho_id: rascunhoExistente.id,
       };
@@ -248,7 +266,8 @@ export const crmDraftProposal: McpToolDefinition<typeof draftProposalInputShape>
     const lote = await loteDoTurnoAtual(ctx, input.conversation_id);
     if (lote.pendente) {
       return {
-        error: "A mensagem do cliente ainda está sendo transcrita; responda e tente no próximo turno.",
+        error:
+          "A mensagem do cliente ainda está sendo transcrita; responda e tente no próximo turno.",
         motivo: "transcricao_pendente",
       };
     }
@@ -290,12 +309,16 @@ export const crmDraftProposal: McpToolDefinition<typeof draftProposalInputShape>
       }
       const naoEncontrado = codigosParaResolver.find((c) => !produtoIdPorCodigo.has(c));
       if (naoEncontrado) {
-        return { error: `Produto com código "${naoEncontrado}" não encontrado no catálogo desta organização.` };
+        return {
+          error: `Produto com código "${naoEncontrado}" não encontrado no catálogo desta organização.`,
+        };
       }
     }
 
     const itensNormalizados = input.itens.map((it, i) => ({
-      product_id: it.product_id ?? (it.produto_codigo ? (produtoIdPorCodigo.get(it.produto_codigo) ?? null) : null),
+      product_id:
+        it.product_id ??
+        (it.produto_codigo ? (produtoIdPorCodigo.get(it.produto_codigo) ?? null) : null),
       descricao: it.descricao,
       quantidade: it.quantidade,
       preco_unitario_cents: it.preco_unitario_cents ?? null,
@@ -305,7 +328,12 @@ export const crmDraftProposal: McpToolDefinition<typeof draftProposalInputShape>
     // D11 — a proposta nasce na moeda da organização; item de catálogo em
     // moeda diferente é recusado dentro do resolvedor, nunca convertido.
     const moeda = await moedaDaOrganizacao(ctx.supabase, ctx.organizationId);
-    const resolvido = await resolverItensDaProposta(ctx.supabase, ctx.organizationId, itensNormalizados, moeda);
+    const resolvido = await resolverItensDaProposta(
+      ctx.supabase,
+      ctx.organizationId,
+      itensNormalizados,
+      moeda,
+    );
     if (!resolvido.ok) return { error: resolvido.motivo };
 
     const padroes = await buscarPadroesDaOrganizacao(ctx.supabase, ctx.organizationId);
@@ -339,21 +367,32 @@ export const crmDraftProposal: McpToolDefinition<typeof draftProposalInputShape>
       .single();
     if (error) {
       if ((error as { code?: string }).code === "23505") {
-        return { error: "Este negócio já tem um rascunho de proposta aberto.", motivo: "rascunho_aberto_existe" };
+        return {
+          error: "Este negócio já tem um rascunho de proposta aberto.",
+          motivo: "rascunho_aberto_existe",
+        };
       }
       return { error: "Não foi possível criar o rascunho agora." };
     }
     if (!proposta) return { error: "Não foi possível criar o rascunho agora." };
 
     const { error: itensErr } = await ctx.supabase.from("crm_proposal_items").insert(
-      resolvido.itens.map((it) => ({ organization_id: ctx.organizationId, proposal_id: proposta.id, ...it })),
+      resolvido.itens.map((it) => ({
+        organization_id: ctx.organizationId,
+        proposal_id: proposta.id,
+        ...it,
+      })),
     );
     if (itensErr) {
       // Sem isto, o rascunho ficava vazio e — depois da C3 — continuava
       // ocupando a trava de "um rascunho por negócio" (§5.3): a IA tentaria
       // de novo e receberia rascunho_aberto_existe apontando pra um rascunho
       // sem item nenhum, sem jeito óbvio de sair dali pela ferramenta.
-      await ctx.supabase.from("crm_proposals").delete().eq("organization_id", ctx.organizationId).eq("id", proposta.id);
+      await ctx.supabase
+        .from("crm_proposals")
+        .delete()
+        .eq("organization_id", ctx.organizationId)
+        .eq("id", proposta.id);
       return { error: "Não foi possível criar o rascunho agora." };
     }
 
@@ -384,7 +423,11 @@ export const crmDraftProposal: McpToolDefinition<typeof draftProposalInputShape>
       metadata: { ...a.metadataActor, via: "mcp" },
     });
 
-    return { proposal_id: proposta.id, total_cents: resolvido.totalCents, pricing_status: resolvido.pricingStatus };
+    return {
+      proposal_id: proposta.id,
+      total_cents: resolvido.totalCents,
+      pricing_status: resolvido.pricingStatus,
+    };
   },
 };
 
@@ -429,6 +472,8 @@ export const crmPrepararProposta: McpToolDefinition<typeof prepararPropostaInput
     "perguntar ao cliente (as 7 categorias do briefing) e — com um modelo — quais campos ele " +
     "pede. Chame antes de rascunhar; nunca cria nada.",
   inputSchema: prepararPropostaInputShape,
+  redigirParaAuditoria: proposalAuditMetadata,
+  redigirErroParaAuditoria: () => "proposal_tool_error",
   handler: async (input, ctx: McpContext) => {
     if (!(await capacidadesDaOrganizacao(ctx.supabase, ctx.organizationId)).includes("propostas")) {
       return { error: "Propostas estão desligadas nesta organização." };
@@ -436,7 +481,11 @@ export const crmPrepararProposta: McpToolDefinition<typeof prepararPropostaInput
     const ativos = await listarModelosAtivos(ctx.supabase, ctx.organizationId);
     const resposta = {
       modelos: ativos.map((m) => ({ slug: m.slug, nome: m.nome, origem: m.origem })),
-      categorias: CATEGORIAS_DO_BRIEFING.map((c) => ({ chave: c.chave, rotulo: c.rotulo, orientacao: c.orientacao })),
+      categorias: CATEGORIAS_DO_BRIEFING.map((c) => ({
+        chave: c.chave,
+        rotulo: c.rotulo,
+        orientacao: c.orientacao,
+      })),
       instrucao:
         "Pergunte ao cliente, com as suas palavras e no contexto do pedido, o que faltar destas " +
         "categorias; 'cliente não sabe' e 'não se aplica' são respostas válidas. Antes de rascunhar, " +

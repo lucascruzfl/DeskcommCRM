@@ -19,7 +19,9 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: mocks.createAdminCli
 vi.mock("@/lib/audit", () => ({ audit: mocks.audit }));
 vi.mock("@/lib/i18n/dicionario", () => ({ traduzir: mocks.traduzir }));
 vi.mock("@/lib/propostas/modelos/resolver", () => ({ resolverModelo: mocks.resolverModelo }));
-vi.mock("@/lib/propostas/aviso-de-revisao", () => ({ resolverAvisoDeRevisaoSeProntaOuEncerrada: mocks.resolverAviso }));
+vi.mock("@/lib/propostas/aviso-de-revisao", () => ({
+  resolverAvisoDeRevisaoSeProntaOuEncerrada: mocks.resolverAviso,
+}));
 
 import { GET, PATCH } from "./route";
 
@@ -43,7 +45,12 @@ function montarMundo(opts: MundoOpts = {}) {
   mocks.requireRole.mockImplementation(async (minRole: keyof typeof ROLE_RANK) => {
     const minRank = ROLE_RANK[minRole] ?? 0;
     return rank < minRank
-      ? { ok: false, response: new Response(JSON.stringify({ error: { code: "forbidden_role" } }), { status: 403 }) }
+      ? {
+          ok: false,
+          response: new Response(JSON.stringify({ error: { code: "forbidden_role" } }), {
+            status: 403,
+          }),
+        }
       : { ok: true, user: { id: "u1", idioma: "pt-BR" }, org: { orgId: ORG_ID } };
   });
   mocks.requireSupportWrite.mockResolvedValue(null);
@@ -84,13 +91,23 @@ function montarMundo(opts: MundoOpts = {}) {
             if ("secoes_editadas" in payload) {
               secoesEditadasCapturadas = payload.secoes_editadas as Record<string, unknown>;
             }
-            if ("briefing_json" in payload) briefingCapturado = payload.briefing_json as Record<string, unknown>;
-            return { eq: () => ({ eq: () => Promise.resolve({ error: null }) }) };
+            if ("briefing_json" in payload)
+              briefingCapturado = payload.briefing_json as Record<string, unknown>;
+            const q = {
+              eq: vi.fn(() => q),
+              select: vi.fn(() => q),
+              maybeSingle: async () => ({ data: { id: PROPOSTA_ID }, error: null }),
+            };
+            return q;
           },
         };
       }
       if (tabela === "crm_proposal_items") {
-        return { select: () => ({ eq: () => ({ eq: () => Promise.resolve({ data: [{ preco_unitario_cents: 1000 }] }) }) }) };
+        return {
+          select: () => ({
+            eq: () => ({ eq: () => Promise.resolve({ data: [{ preco_unitario_cents: 1000 }] }) }),
+          }),
+        };
       }
       if (tabela === "contacts") {
         return {
@@ -114,7 +131,17 @@ function montarMundo(opts: MundoOpts = {}) {
       slug,
       version: 1,
       sectionOrder: ["resumo"],
-      sections: [{ id: "resumo", title: "Resumo", titleEs: null, body: "Projeto: {{project.name}}", bodyEs: null, required: true, conditional: false }],
+      sections: [
+        {
+          id: "resumo",
+          title: "Resumo",
+          titleEs: null,
+          body: "Projeto: {{project.name}}",
+          bodyEs: null,
+          required: true,
+          conditional: false,
+        },
+      ],
       origem: "base",
     };
   });
@@ -130,15 +157,22 @@ describe("GET /api/v1/proposals/[id]/documento", () => {
 
   it("proposta sem template_slug devolve secoes vazias, sem lançar (Review Focus)", async () => {
     montarMundo({ templateSlug: null });
-    const res = await GET(new Request("http://x") as never, { params: Promise.resolve({ id: PROPOSTA_ID }) });
+    const res = await GET(new Request("http://x") as never, {
+      params: Promise.resolve({ id: PROPOSTA_ID }),
+    });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.secoes).toEqual([]);
   });
 
   it("com modelo resolvido, renderiza a seção com o dado do briefing", async () => {
-    montarMundo({ templateSlug: "site_institucional", briefingJson: { project: { name: "Site Catálogo" } } });
-    const res = await GET(new Request("http://x") as never, { params: Promise.resolve({ id: PROPOSTA_ID }) });
+    montarMundo({
+      templateSlug: "site_institucional",
+      briefingJson: { project: { name: "Site Catálogo" } },
+    });
+    const res = await GET(new Request("http://x") as never, {
+      params: Promise.resolve({ id: PROPOSTA_ID }),
+    });
     const body = await res.json();
     expect(body.data.secoes[0]).toMatchObject({ id: "resumo", body: "Projeto: Site Catálogo" });
   });
@@ -149,7 +183,9 @@ describe("GET /api/v1/proposals/[id]/documento", () => {
       briefingJson: {},
       secoesEditadas: { resumo: "Texto final escrito à mão." },
     });
-    const res = await GET(new Request("http://x") as never, { params: Promise.resolve({ id: PROPOSTA_ID }) });
+    const res = await GET(new Request("http://x") as never, {
+      params: Promise.resolve({ id: PROPOSTA_ID }),
+    });
     const body = await res.json();
     expect(body.data.secoes[0].body).toBe("Texto final escrito à mão.");
     expect(body.data.variaveisFaltando).toEqual([]);
@@ -157,7 +193,9 @@ describe("GET /api/v1/proposals/[id]/documento", () => {
 
   it("devolve modeloSlugSugerido quando a proposta tem sugestão pendente", async () => {
     montarMundo({ templateSlug: null, sugestao: "ecommerce" });
-    const res = await GET(new Request("http://x") as never, { params: Promise.resolve({ id: PROPOSTA_ID }) });
+    const res = await GET(new Request("http://x") as never, {
+      params: Promise.resolve({ id: PROPOSTA_ID }),
+    });
     const body = await res.json();
     expect(body.data.modeloSlugSugerido).toBe("ecommerce");
   });
@@ -168,7 +206,10 @@ describe("PATCH /api/v1/proposals/[id]/documento", () => {
 
   it("manager grava a sobrescrita da seção", async () => {
     const { capturedSecoesEditadas } = montarMundo({ papel: "manager" });
-    const req = new Request("http://x", { method: "PATCH", body: JSON.stringify({ secaoId: "resumo", texto: "Novo texto" }) });
+    const req = new Request("http://x", {
+      method: "PATCH",
+      body: JSON.stringify({ secaoId: "resumo", texto: "Novo texto" }),
+    });
     const res = await PATCH(req as never, { params: Promise.resolve({ id: PROPOSTA_ID }) });
     expect(res.status).toBe(200);
     expect(capturedSecoesEditadas()).toMatchObject({ resumo: "Novo texto" });
@@ -176,21 +217,30 @@ describe("PATCH /api/v1/proposals/[id]/documento", () => {
 
   it("agent é barrado (403) — só manager+ edita seção (Global Constraint)", async () => {
     montarMundo({ papel: "agent" });
-    const req = new Request("http://x", { method: "PATCH", body: JSON.stringify({ secaoId: "resumo", texto: "x" }) });
+    const req = new Request("http://x", {
+      method: "PATCH",
+      body: JSON.stringify({ secaoId: "resumo", texto: "x" }),
+    });
     const res = await PATCH(req as never, { params: Promise.resolve({ id: PROPOSTA_ID }) });
     expect(res.status).toBe(403);
   });
 
   it("secaoId vazio é recusado com 422 (Review Focus)", async () => {
     montarMundo({ papel: "manager" });
-    const req = new Request("http://x", { method: "PATCH", body: JSON.stringify({ secaoId: "", texto: "x" }) });
+    const req = new Request("http://x", {
+      method: "PATCH",
+      body: JSON.stringify({ secaoId: "", texto: "x" }),
+    });
     const res = await PATCH(req as never, { params: Promise.resolve({ id: PROPOSTA_ID }) });
     expect(res.status).toBe(422);
   });
 
   it("texto ausente é recusado com 422", async () => {
     montarMundo({ papel: "manager" });
-    const req = new Request("http://x", { method: "PATCH", body: JSON.stringify({ secaoId: "resumo" }) });
+    const req = new Request("http://x", {
+      method: "PATCH",
+      body: JSON.stringify({ secaoId: "resumo" }),
+    });
     const res = await PATCH(req as never, { params: Promise.resolve({ id: PROPOSTA_ID }) });
     expect(res.status).toBe(422);
   });
@@ -200,9 +250,12 @@ describe("PATCH /documento — P1 (spec de 26/09)", () => {
   beforeEach(() => vi.clearAllMocks());
 
   function patch(body: unknown) {
-    return PATCH(new Request("http://x", { method: "PATCH", body: JSON.stringify(body) }) as never, {
-      params: Promise.resolve({ id: PROPOSTA_ID }),
-    });
+    return PATCH(
+      new Request("http://x", { method: "PATCH", body: JSON.stringify(body) }) as never,
+      {
+        params: Promise.resolve({ id: PROPOSTA_ID }),
+      },
+    );
   }
 
   it("proposta enviada: salvar seção devolve 409 e não grava", async () => {
@@ -220,14 +273,20 @@ describe("PATCH /documento — P1 (spec de 26/09)", () => {
   });
 
   it("texto null tira a reescrita (volta ao texto do modelo) e preserva as outras", async () => {
-    const mundo = montarMundo({ templateSlug: "site_institucional", secoesEditadas: { resumo: "A", outra: "B" } });
+    const mundo = montarMundo({
+      templateSlug: "site_institucional",
+      secoesEditadas: { resumo: "A", outra: "B" },
+    });
     const res = await patch({ secaoId: "resumo", texto: null });
     expect(res.status).toBe(200);
     expect(mundo.capturedSecoesEditadas()).toEqual({ outra: "B" });
   });
 
   it("voltar ao modelo na última reescrita grava null, não objeto vazio", async () => {
-    const mundo = montarMundo({ templateSlug: "site_institucional", secoesEditadas: { resumo: "A" } });
+    const mundo = montarMundo({
+      templateSlug: "site_institucional",
+      secoesEditadas: { resumo: "A" },
+    });
     await patch({ secaoId: "resumo", texto: null });
     expect(mundo.capturedSecoesEditadas()).toBeNull();
   });
@@ -238,12 +297,21 @@ describe("PATCH /documento — P1 (spec de 26/09)", () => {
   });
 
   it("preencher campo grava no briefing, preservando o que já havia", async () => {
-    const mundo = montarMundo({ templateSlug: "site_institucional", briefingJson: { client: { company: "X" } } });
+    const mundo = montarMundo({
+      templateSlug: "site_institucional",
+      briefingJson: { client: { company: "X" } },
+    });
     const res = await patch({ campo: "project.name", valor: "  Site da imobiliária  " });
     expect(res.status).toBe(200);
-    expect(mundo.capturedBriefing()).toEqual({ client: { company: "X" }, project: { name: "Site da imobiliária" } });
+    expect(mundo.capturedBriefing()).toEqual({
+      client: { company: "X" },
+      project: { name: "Site da imobiliária" },
+    });
     expect(mocks.audit).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "proposal.documento_campo_preenchido", metadata: { campo: "project.name" } }),
+      expect.objectContaining({
+        action: "proposal.documento_campo_preenchido",
+        metadata: { fields_changed: ["briefing_json"] },
+      }),
     );
   });
 
@@ -255,8 +323,21 @@ describe("PATCH /documento — P1 (spec de 26/09)", () => {
 
   it("campo calculado pelo sistema é recusado (422) mesmo que o modelo o use", async () => {
     mocks.resolverModelo.mockImplementationOnce(async () => ({
-      slug: "x", version: 1, sectionOrder: ["a"], origem: "base",
-      sections: [{ id: "a", title: "A", titleEs: null, body: "{{investment.total_formatted}}", bodyEs: null, required: true, conditional: false }],
+      slug: "x",
+      version: 1,
+      sectionOrder: ["a"],
+      origem: "base",
+      sections: [
+        {
+          id: "a",
+          title: "A",
+          titleEs: null,
+          body: "{{investment.total_formatted}}",
+          bodyEs: null,
+          required: true,
+          conditional: false,
+        },
+      ],
     }));
     montarMundo({ templateSlug: "site_institucional" });
     expect((await patch({ campo: "investment.total_formatted", valor: "R$ 1" })).status).toBe(422);
@@ -283,8 +364,14 @@ describe("GET /documento — P1", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("devolve status, camposFaltando com nome legível e temSecaoEditada", async () => {
-    montarMundo({ templateSlug: "site_institucional", briefingJson: {}, secoesEditadas: { outra: "x" } });
-    const res = await GET(new Request("http://x") as never, { params: Promise.resolve({ id: PROPOSTA_ID }) });
+    montarMundo({
+      templateSlug: "site_institucional",
+      briefingJson: {},
+      secoesEditadas: { outra: "x" },
+    });
+    const res = await GET(new Request("http://x") as never, {
+      params: Promise.resolve({ id: PROPOSTA_ID }),
+    });
     const body = await res.json();
     expect(body.data.status).toBe("rascunho");
     expect(body.data.temSecaoEditada).toBe(true);

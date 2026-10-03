@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ApiError } from "@/lib/api/types";
 import type { HandlerCtx } from "@/lib/api/handlers/types";
 import { audit } from "@/lib/audit";
+import { b2bAuditActor } from "@/lib/crm-b2b/audit-actor";
 import { enrichCompanyFromBrasilApi } from "@/lib/crm-b2b/enrich";
 import { formatCnpj, normalizeCnpj } from "@/lib/crm-b2b/normalize";
 import {
@@ -134,7 +135,7 @@ export async function createCompanyHandler(
 
   await audit({
     organizationId: ctx.organization_id,
-    actorUserId,
+    ...b2bAuditActor(ctx, actorUserId),
     action: "companies.created",
     resourceType: "companies",
     resourceId: data.id,
@@ -184,7 +185,7 @@ export async function patchCompanyHandler(
 
   await audit({
     organizationId: ctx.organization_id,
-    actorUserId,
+    ...b2bAuditActor(ctx, actorUserId),
     action: "companies.updated",
     resourceType: "companies",
     resourceId: id,
@@ -214,7 +215,7 @@ export async function enrichCompanyHandler(
   });
   await audit({
     organizationId: ctx.organization_id,
-    actorUserId,
+    ...b2bAuditActor(ctx, actorUserId),
     action: "companies.enriched",
     resourceType: "companies",
     resourceId: id,
