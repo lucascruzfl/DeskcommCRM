@@ -76,19 +76,23 @@ case "$release" in
      exit 1 ;;
 esac
 
-# O arquivo de cada release. No CI o checkout é raso e sem tags: busca só a tag,
-# rasa também. Numa árvore completa, busca sem --depth — com ele o git marcaria o
-# repositório de quem roda como raso.
+# O arquivo de cada release. No CI o checkout é raso e sem tags: busca só a ref,
+# rasa também, lendo FETCH_HEAD sem criar tag local. Numa árvore completa, busca
+# sem --depth — com ele o git marcaria o repositório de quem roda como raso.
+# A release corrente pertence ao origin deste clone; a referência histórica
+# v1.63.0 pertence ao produto oficial e pode não existir no origin de um fork.
 ANTES_DO_FILTRO="v1.63.0"
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/deskcomm-update-sh.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
-update_sh_da() {  # update_sh_da <tag> — caminho de uma cópia do update.sh da tag
+update_sh_da() {  # update_sh_da <tag> [remoto] — cópia do update.sh da tag
+  local ref="$1" remoto="${2:-origin}"
   if ! git -C "$ROOT" rev-parse -q --verify "refs/tags/$1^{commit}" >/dev/null; then
     local profundidade=""
     [ "$(git -C "$ROOT" rev-parse --is-shallow-repository)" = true ] && profundidade="--depth=1"
-    git -C "$ROOT" fetch -q --no-tags $profundidade origin "+refs/tags/$1:refs/tags/$1"
+    git -C "$ROOT" fetch -q --no-tags $profundidade "$remoto" "refs/tags/$1" || return 1
+    ref=FETCH_HEAD
   fi
-  git -C "$ROOT" show "$1:hostgator-setup-kit/update.sh" > "$TMP/$1"
+  git -C "$ROOT" show "$ref:hostgator-setup-kit/update.sh" > "$TMP/$1" || return 1
   printf '%s' "$TMP/$1"
 }
 
@@ -141,6 +145,6 @@ falhas=0
 conferir "update.sh deste checkout" "$KIT/update.sh" || falhas=$((falhas + 1))
 conferir "update.sh da última release ($release)" "$(update_sh_da "$release")" || falhas=$((falhas + 1))
 if [ "$release" != "$ANTES_DO_FILTRO" ]; then
-  conferir "update.sh da $ANTES_DO_FILTRO (sem filtro por tabela)" "$(update_sh_da "$ANTES_DO_FILTRO")" || falhas=$((falhas + 1))
+  conferir "update.sh da $ANTES_DO_FILTRO (sem filtro por tabela)" "$(update_sh_da "$ANTES_DO_FILTRO" https://github.com/melgarafael/DeskcommCRM.git)" || falhas=$((falhas + 1))
 fi
 [ "$falhas" -eq 0 ] || exit 1
