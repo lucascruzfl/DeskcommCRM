@@ -34,16 +34,27 @@ vi.mock("next/navigation", () => ({
     throw new Error("redirect");
   },
 }));
+/** A organização do acompanhamento administrativo, lida por id (sem membership). */
+const orgDoSuporte: { data: unknown } = {
+  data: { timezone: "Europe/Lisbon", currency: "EUR", country: "PT" },
+};
+// Um único dublê atende os três caminhos do cliente administrativo: memberships
+// oficiais, dados da organização acompanhada e policy managed da organização ativa.
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
-    from: () => {
+    from: (tabela: string) => {
+      const resultado = () => tabela === "user_organizations"
+        ? consultas.memberships
+        : tabela === "organizations"
+          ? orgDoSuporte
+          : { data: null, error: null };
       const chain = {
         select: () => chain,
         eq: () => chain,
         is: () => chain,
         order: () => chain,
-        then: (resolve: (value: unknown) => unknown) =>
-          Promise.resolve(consultas.memberships).then(resolve),
+        maybeSingle: async () => resultado(),
+        then: (resolve: (value: unknown) => unknown) => Promise.resolve(resultado()).then(resolve),
       };
       return chain;
     },
@@ -84,7 +95,7 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-const { loadAuthUser } = await import("@/lib/auth/server");
+const { loadAuthUser, resolveActiveOrg } = await import("@/lib/auth/server");
 
 beforeEach(() => {
   consultas.platformAdmins = { data: null, error: null };
@@ -146,8 +157,59 @@ describe("loadAuthUser — falha de permissão não vira 'sem organização'", (
         role: "admin",
         locale: null,
         timezone: null,
+        // Mesma carona, mesmo contrato: quando a consulta não traz, chega
+        // `null`, e não um padrão inventado no meio do caminho.
+        currency: null,
+        country: null,
         interface_settings: { preset: "completa" },
       },
     ]);
+  });
+
+  /**
+   * O FIO ATÉ A TELA. `ActiveOrg` é o que o cliente enxerga (`useActiveOrg`), e
+   * é de lá que o rótulo do valor e o documento do contato saem. Sem estas duas
+   * colunas atravessando, as telas caem no padrão e voltam a dizer `R$` e `CPF`
+   * dentro de uma empresa em euro — sem nada ficar vermelho.
+   */
+  it("a organização ATIVA leva a moeda e o país até o cliente", async () => {
+    consultas.memberships = {
+      data: [
+        {
+          organization_id: "o1",
+          role: "admin",
+          organizations: {
+            display_name: "Stolia",
+            locale: "pt-BR",
+            timezone: "Europe/Lisbon",
+            currency: "EUR",
+            country: "PT",
+          },
+        },
+      ],
+      error: null,
+    };
+    const u = await loadAuthUser();
+    const ativa = await resolveActiveOrg(u!);
+    expect(ativa).toMatchObject({ orgId: "o1", currency: "EUR", country: "PT" });
+  });
+
+  /**
+   * Acompanhamento administrativo não tem membership, e este caminho devolvia a
+   * organização PELADA — sem fuso, sem moeda e sem país. Quem entra para apoiar
+   * uma empresa em euro via `R$` na tela do negócio.
+   */
+  it("no acompanhamento administrativo a organização também chega completa", async () => {
+    const ativa = await resolveActiveOrg({
+      id: "u1",
+      support: { status: "active", organization_id: "o9", name: "Stolia", access_mode: "full" },
+    } as never);
+    expect(ativa).toMatchObject({
+      orgId: "o9",
+      role: "admin",
+      timezone: "Europe/Lisbon",
+      currency: "EUR",
+      country: "PT",
+    });
   });
 });

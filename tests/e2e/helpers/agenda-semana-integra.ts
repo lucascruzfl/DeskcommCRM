@@ -409,10 +409,12 @@ async function mesVisivelNoPainel(page: Page): Promise<string> {
 async function avancarMesNoPainel(page: Page): Promise<string> {
   const anterior = await mesVisivelNoPainel(page);
   await page.getByTestId("mes-seguinte").click();
-  await expect.poll(() => mesVisivelNoPainel(page), {
-    timeout: 10_000,
-    message: `o painel não avançou de ${anterior} após o clique em mes-seguinte`,
-  }).not.toBe(anterior);
+  await expect
+    .poll(() => mesVisivelNoPainel(page), {
+      timeout: 10_000,
+      message: `o painel não avançou de ${anterior} após o clique em mes-seguinte`,
+    })
+    .not.toBe(anterior);
   return mesVisivelNoPainel(page);
 }
 
