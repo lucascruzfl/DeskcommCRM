@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ApiError } from "@/lib/api/types";
 import type { HandlerCtx } from "@/lib/api/handlers/types";
 import { audit } from "@/lib/audit";
+import { b2bAuditActor } from "@/lib/crm-b2b/audit-actor";
 import { normalizePersonName } from "@/lib/crm-b2b/normalize";
 import {
   companyPersonCreateSchema,
@@ -113,7 +114,7 @@ export async function createPersonHandler(
 
   await audit({
     organizationId: ctx.organization_id,
-    actorUserId,
+    ...b2bAuditActor(ctx, actorUserId),
     action: "people.created",
     resourceType: "people",
     resourceId: data.id,
@@ -151,7 +152,7 @@ export async function patchPersonHandler(
 
   await audit({
     organizationId: ctx.organization_id,
-    actorUserId,
+    ...b2bAuditActor(ctx, actorUserId),
     action: "people.updated",
     resourceType: "people",
     resourceId: id,
@@ -189,7 +190,7 @@ export async function linkCompanyPersonHandler(
 
   await audit({
     organizationId: ctx.organization_id,
-    actorUserId,
+    ...b2bAuditActor(ctx, actorUserId),
     action: "company_people.linked",
     resourceType: "company_people",
     resourceId: data.id,
@@ -218,7 +219,7 @@ export async function patchCompanyPersonHandler(
 
   await audit({
     organizationId: ctx.organization_id,
-    actorUserId,
+    ...b2bAuditActor(ctx, actorUserId),
     action: "company_people.updated",
     resourceType: "company_people",
     resourceId: id,
@@ -257,7 +258,7 @@ export async function linkContactToPersonHandler(
 
   await audit({
     organizationId: ctx.organization_id,
-    actorUserId,
+    ...b2bAuditActor(ctx, actorUserId),
     action: "contacts.person_linked",
     resourceType: "contacts",
     resourceId: contactId,

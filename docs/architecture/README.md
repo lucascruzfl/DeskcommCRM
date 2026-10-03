@@ -16,10 +16,11 @@ ser fonte sem ninguém decidir isso.
 
 | arquivo | escopo |
 |---|---|
+| `crm-b2b-companies-people.architecture.json` | CRM B2B opcional: UI, API, handlers compartilhados com 13 tools MCP, banco, auditoria e limites de BrasilAPI/upload |
 | `managed-isp-operational-package.architecture.json` | preflight e aplicação idempotente do funil e tags ISP na 7B; aponta para configuração IA explícita |
 | `managed-isp-ai-human.architecture.json` | 7C/7D ISP — drafts de agentes, prévia MCP do router inativo, follow-ups com prazos informados, casos, handoff e devolução humana |
 | `managed-client-onboarding.architecture.json` | criação transacional de cliente gerenciado por platform admin full, convite agent retomável, membership do gestor, preflight MCP e auditoria |
-| `mcp-fundacao-ia.architecture.json` | fundação do MCP e administração de IA — registry único, autorização de manager por domínio/tool/capability, isolamento por organização, catálogo real de provider/model/credencial e auditoria sem segredos |
+| `mcp-fundacao-ia.architecture.json` | fundação do MCP, administração de IA e paridade v1.62 — registry único, autorização por domínio/tool/capability, handlers HTTP/MCP de Propostas/modelos/defaults, leitura de grupos/acervo, isolamento por organização e auditoria redigida |
 | `conversoes-de-anuncios.architecture.json` | venda, entrega, protocolo assíncrono, pendências e reprocessamento |
 | `prospeccao-nativa.architecture.json` | busca comercial, fila gradual, configuração conversacional persistente, sandbox e assistente de voz opcional |
 | `pre-go-live-whatsapp.architecture.json` | modo de teste por canal (issue #573): configuração administrativa, gate compartilhado, releitura no envio e validação pelo Inbox |

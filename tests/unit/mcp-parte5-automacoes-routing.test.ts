@@ -148,6 +148,25 @@ describe("MCP Parte 5 — automações", () => {
         entity_kind: "calendar_appointment",
       }),
     );
+    expect(triggers.triggers).toContainEqual(
+      expect.objectContaining({
+        name: "lead.silent_for",
+        trigger_config: expect.objectContaining({
+          required: ["dias", "direcao"],
+          dias: { min: 1, max: 3650 },
+          direcao: ["da_equipe", "do_cliente", "qualquer"],
+        }),
+      }),
+    );
+    expect(triggers.triggers).toContainEqual(
+      expect.objectContaining({
+        name: "lead.stage_stale",
+        trigger_config: expect.objectContaining({
+          required: ["dias"],
+          optional: ["pipeline_id", "stage_id", "proteger_pela_agenda"],
+        }),
+      }),
+    );
     expect(actions.actions).toContainEqual(
       expect.objectContaining({ name: "call_webhook", effect: "external_webhook" }),
     );

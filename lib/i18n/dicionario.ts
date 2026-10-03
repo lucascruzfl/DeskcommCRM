@@ -37,6 +37,33 @@ import type { Idioma } from "./idiomas";
 type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>>>;
 
 export const DICIONARIO: Traducoes = {
+  // Erros canônicos de propostas compartilhados entre HTTP e MCP.
+  "Falha ao carregar a proposta.": { es: "No se pudo cargar la propuesta." },
+  "Proposta não encontrada.": { es: "Propuesta no encontrada." },
+  "Falha ao carregar os itens.": { es: "No se pudieron cargar los elementos." },
+  "A proposta mudou (ou não está mais em rascunho). Recarregue antes de editar.": {
+    es: "La propuesta cambió (o ya no es un borrador). Vuelve a cargar antes de editar.",
+  },
+  "Falha ao editar a proposta.": { es: "No se pudo editar la propuesta." },
+  "Falha ao remover os itens anteriores.": {
+    es: "No se pudieron quitar los elementos anteriores.",
+  },
+  "Falha ao gravar os itens.": { es: "No se pudieron guardar los elementos." },
+  "Falha ao descartar a proposta.": { es: "No se pudo descartar la propuesta." },
+  "Só é possível descartar uma proposta em rascunho.": {
+    es: "Solo se puede descartar una propuesta en borrador.",
+  },
+  "Modelo desconhecido.": { es: "Modelo desconocido." },
+  "Falha ao salvar.": { es: "No se pudo guardar." },
+  "Esta proposta não pode ser revisada neste estado.": {
+    es: "Esta propuesta no se puede revisar en este estado.",
+  },
+  "Este negócio já tem um rascunho de proposta aberto.": {
+    es: "Este negocio ya tiene un borrador de propuesta abierto.",
+  },
+  "Falha ao criar a revisão.": { es: "No se pudo crear la revisión." },
+  "Falha ao copiar os itens da revisão.": { es: "No se pudieron copiar los elementos de la revisión." },
+
   // ─── EMPRESAS, PESSOAS E IMPORTAÇÃO (metade B2B do #1621, de @renatofortal) ───
   "Arquivo": {"es": "Archivo"},
   "Atualizado": {"es": "Actualizado"},

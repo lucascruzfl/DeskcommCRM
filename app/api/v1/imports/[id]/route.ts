@@ -1,8 +1,9 @@
 import { type NextRequest } from "next/server";
 
 import { requireRole } from "@/lib/auth/require-role";
+import { getImportBatchHandler } from "@/lib/crm-b2b/import-handlers";
 import {
-  fail,
+  ctxFromAuthz,
   handleRouteError,
   ok,
   requestIdOf,
@@ -24,30 +25,11 @@ export async function GET(req: NextRequest, { params }: Ctx): Promise<Response> 
 
   try {
     const supabase = await createClient();
-    const { data: batch, error } = await supabase
-      .from("import_batches")
-      .select("*")
-      .eq("organization_id", authz.org.orgId)
-      .eq("id", id)
-      .maybeSingle();
-    if (error) return fail("internal_error", error.message, 500, { requestId });
-    if (!batch) return fail("not_found", "Importação não encontrada.", 404, { requestId });
-
-    const statusFilter = req.nextUrl.searchParams.get("status");
-    let rowsQ = supabase
-      .from("import_rows")
-      .select(
-        "id, row_number, status, error, company_id, person_id, contact_id, raw_data, normalized_data, created_at",
-      )
-      .eq("organization_id", authz.org.orgId)
-      .eq("batch_id", id)
-      .order("row_number", { ascending: true })
-      .limit(500);
-
-    if (statusFilter) rowsQ = rowsQ.eq("status", statusFilter);
-
-    const { data: rows } = await rowsQ;
-    return ok({ batch, rows: rows ?? [] }, { requestId });
+    const result = await getImportBatchHandler(
+      supabase, ctxFromAuthz(authz, requestId), id,
+      req.nextUrl.searchParams.get("status") ?? undefined,
+    );
+    return ok(result, { requestId });
   } catch (e) {
     return handleRouteError(e, requestId);
   }

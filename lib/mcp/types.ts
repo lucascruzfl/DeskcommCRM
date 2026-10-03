@@ -103,6 +103,8 @@ export interface McpToolDefinition<TInput extends z.ZodRawShape = z.ZodRawShape>
    * é o dado do cliente, e log é lugar de metadado, não de conteúdo.
    */
   redigirParaAuditoria?: (args: Record<string, unknown>) => Record<string, unknown>;
+  /** Remove valores sensíveis de mensagens de erro antes do log universal. */
+  redigirErroParaAuditoria?: (message: string) => string;
   /**
    * O que a tool DECLARA quando a resposta é um vazio que NÃO é sucesso.
    *

@@ -8,10 +8,22 @@
     "quality_profile": "standard"
   },
   "lanes": [
-    { "id": "cliente", "label": "Cliente MCP" },
-    { "id": "mcp", "label": "Servidor MCP" },
-    { "id": "dominio", "label": "Domínios de IA e CRM" },
-    { "id": "dados", "label": "Dados e auditoria" }
+    {
+      "id": "cliente",
+      "label": "Cliente MCP"
+    },
+    {
+      "id": "mcp",
+      "label": "Servidor MCP"
+    },
+    {
+      "id": "dominio",
+      "label": "Domínios de IA e CRM"
+    },
+    {
+      "id": "dados",
+      "label": "Dados e auditoria"
+    }
   ],
   "mainPath": [
     "token",
@@ -184,19 +196,101 @@
       "col": 4,
       "type": "database",
       "label": "Auditoria com recurso, resultado, request e redação recursiva"
+    },
+    {
+      "id": "toolsparity162",
+      "lane": "mcp",
+      "col": 3,
+      "type": "backend",
+      "label": "Tags + honorários internos + listar/obter/editar rascunho de proposta"
+    },
+    {
+      "id": "servicetags",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "lib/reports/tags.ts: janela, paginação, agregação por etiqueta"
+    },
+    {
+      "id": "servicehonorarios",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "lib/honorarios/handlers.ts: cadastro interno, referências no tenant"
+    },
+    {
+      "id": "httpparity162",
+      "lane": "cliente",
+      "col": 0,
+      "type": "frontend",
+      "label": "HTTP e telas de propostas/modelos/configuração, honorários, reports, grupos e consulta do acervo"
+    },
+    {
+      "id": "serviceproposals",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "lib/propostas: administração, documento, revisão, modelos e defaults HTTP/MCP; capacidade organizacional obrigatória"
+    },
+    {
+      "id": "servicedelta162",
+      "lane": "dominio",
+      "col": 4,
+      "type": "backend",
+      "label": "lib/grupos/servico.ts e lib/ai/knowledge/consulta-administrativa.ts: leitura canônica, tenant, teto de consultas e telemetria sem texto"
     }
   ],
   "edges": [
-    { "from": "preset", "to": "token", "label": "Seleção humana explícita" },
-    { "from": "token", "to": "ratelimit", "label": "Usa somente IDs resolvidos" },
-    { "from": "ratelimit", "to": "registry", "label": "Autoriza orçamento da requisição" },
-    { "from": "ratelimit", "to": "audit", "label": "Recusa tipada e correlacionada por request" },
-    { "from": "registry", "to": "policy", "label": "Filtra perfil público" },
-    { "from": "policy", "to": "toolsia", "label": "Autoriza antes do handler" },
-    { "from": "policy", "to": "errors", "label": "Recusas tipadas" },
-    { "from": "toolsia", "to": "serviceia", "label": "Delega regra de negócio" },
-    { "from": "policy", "to": "toolscrm", "label": "Autoriza domínio e risco" },
-    { "from": "toolscrm", "to": "servicecrm", "label": "Delega regra de negócio" },
+    {
+      "from": "preset",
+      "to": "token",
+      "label": "Seleção humana explícita"
+    },
+    {
+      "from": "token",
+      "to": "ratelimit",
+      "label": "Usa somente IDs resolvidos"
+    },
+    {
+      "from": "ratelimit",
+      "to": "registry",
+      "label": "Autoriza orçamento da requisição"
+    },
+    {
+      "from": "ratelimit",
+      "to": "audit",
+      "label": "Recusa tipada e correlacionada por request"
+    },
+    {
+      "from": "registry",
+      "to": "policy",
+      "label": "Filtra perfil público"
+    },
+    {
+      "from": "policy",
+      "to": "toolsia",
+      "label": "Autoriza antes do handler"
+    },
+    {
+      "from": "policy",
+      "to": "errors",
+      "label": "Recusas tipadas"
+    },
+    {
+      "from": "toolsia",
+      "to": "serviceia",
+      "label": "Delega regra de negócio"
+    },
+    {
+      "from": "policy",
+      "to": "toolscrm",
+      "label": "Autoriza domínio e risco"
+    },
+    {
+      "from": "toolscrm",
+      "to": "servicecrm",
+      "label": "Delega regra de negócio"
+    },
     {
       "from": "policy",
       "to": "toolsatendimento",
@@ -282,8 +376,16 @@
       "to": "serviceatendimento",
       "label": "Workers entregam efeitos somente pelo canal oficial"
     },
-    { "from": "serviceatendimento", "to": "canal", "label": "Envia somente pelo adapter oficial" },
-    { "from": "canal", "to": "serviceatendimento", "label": "Entrega status, erro e recibos" },
+    {
+      "from": "serviceatendimento",
+      "to": "canal",
+      "label": "Envia somente pelo adapter oficial"
+    },
+    {
+      "from": "canal",
+      "to": "serviceatendimento",
+      "label": "Entrega status, erro e recibos"
+    },
     {
       "from": "serviceatendimento",
       "to": "tenantdb",
@@ -294,17 +396,150 @@
       "to": "audit",
       "label": "Registra envio, transferência, estado e handoff"
     },
-    { "from": "toolsatendimento", "to": "humano", "label": "Sinaliza human_action_required" },
-    { "from": "humano", "to": "serviceatendimento", "label": "Conclui conexão e continuidade" },
-    { "from": "servicecrm", "to": "tenantdb", "label": "Filtra ids e referências por organização" },
-    { "from": "servicecrm", "to": "audit", "label": "Registra mutação e ator técnico" },
-    { "from": "tenantdb", "to": "toolscrm", "label": "Retorna histórico e estado paginados" },
-    { "from": "serviceia", "to": "platformkey", "label": "Consulta apenas disponibilidade" },
-    { "from": "serviceia", "to": "tenantdb", "label": "Filtra toda referência por organização" },
-    { "from": "toolsia", "to": "audit", "label": "Declara recurso mutado" },
-    { "from": "errors", "to": "audit", "label": "Registra código sem segredo" },
-    { "from": "audit", "to": "token", "label": "Atribui ator técnico" },
-    { "from": "tenantdb", "to": "toolsia", "label": "Retorna somente campos permitidos" },
-    { "from": "platformkey", "to": "registry", "label": "Sem expor valor no catálogo" }
+    {
+      "from": "toolsatendimento",
+      "to": "humano",
+      "label": "Sinaliza human_action_required"
+    },
+    {
+      "from": "humano",
+      "to": "serviceatendimento",
+      "label": "Conclui conexão e continuidade"
+    },
+    {
+      "from": "servicecrm",
+      "to": "tenantdb",
+      "label": "Filtra ids e referências por organização"
+    },
+    {
+      "from": "servicecrm",
+      "to": "audit",
+      "label": "Registra mutação e ator técnico"
+    },
+    {
+      "from": "tenantdb",
+      "to": "toolscrm",
+      "label": "Retorna histórico e estado paginados"
+    },
+    {
+      "from": "serviceia",
+      "to": "platformkey",
+      "label": "Consulta apenas disponibilidade"
+    },
+    {
+      "from": "serviceia",
+      "to": "tenantdb",
+      "label": "Filtra toda referência por organização"
+    },
+    {
+      "from": "toolsia",
+      "to": "audit",
+      "label": "Declara recurso mutado"
+    },
+    {
+      "from": "errors",
+      "to": "audit",
+      "label": "Registra código sem segredo"
+    },
+    {
+      "from": "audit",
+      "to": "token",
+      "label": "Atribui ator técnico"
+    },
+    {
+      "from": "tenantdb",
+      "to": "toolsia",
+      "label": "Retorna somente campos permitidos"
+    },
+    {
+      "from": "platformkey",
+      "to": "registry",
+      "label": "Sem expor valor no catálogo"
+    },
+    {
+      "from": "policy",
+      "to": "toolsparity162",
+      "label": "Manager, conversations:read / operations:write; módulo e managed area"
+    },
+    {
+      "from": "toolsparity162",
+      "to": "servicetags",
+      "label": "Consulta agregado org-scoped sem filtro sensível no audit"
+    },
+    {
+      "from": "toolsparity162",
+      "to": "servicehonorarios",
+      "label": "Cria registro interno sem cobrança nem pagamento externo"
+    },
+    {
+      "from": "httpparity162",
+      "to": "servicetags",
+      "label": "Mesma consulta com client da sessão e RLS"
+    },
+    {
+      "from": "httpparity162",
+      "to": "servicehonorarios",
+      "label": "Mesmo handler de cadastro; papel manager no HTTP"
+    },
+    {
+      "from": "servicetags",
+      "to": "tenantdb",
+      "label": "RPC de etiquetas e conversas paginadas por organization_id"
+    },
+    {
+      "from": "servicehonorarios",
+      "to": "tenantdb",
+      "label": "Confere lead/contrato antes de insert com org do contexto"
+    },
+    {
+      "from": "servicehonorarios",
+      "to": "audit",
+      "label": "Ator explícito, metadados sem valores financeiros"
+    },
+    {
+      "from": "toolsparity162",
+      "to": "audit",
+      "label": "Auditoria universal com valores redigidos"
+    },
+    {
+      "from": "tenantdb",
+      "to": "toolsparity162",
+      "label": "Retorna relatório e registros internos"
+    },
+    {
+      "from": "toolsparity162",
+      "to": "serviceproposals",
+      "label": "Manager, operations:read/write, capacidade propostas e tenant confiável"
+    },
+    {
+      "from": "httpparity162",
+      "to": "serviceproposals",
+      "label": "Mesmos handlers; guards HTTP e client de sessão"
+    },
+    {
+      "from": "serviceproposals",
+      "to": "tenantdb",
+      "label": "Moeda preservada, preços canônicos, UPDATE com tenant/revision/rascunho"
+    },
+    {
+      "from": "serviceproposals",
+      "to": "audit",
+      "label": "proposal.edited com ator real, sem conteúdo comercial"
+    },
+    {
+      "from": "httpparity162",
+      "to": "servicedelta162",
+      "label": "HTTP canônico"
+    },
+    {
+      "from": "registry",
+      "to": "servicedelta162",
+      "label": "MCP administrativo"
+    },
+    {
+      "from": "servicedelta162",
+      "to": "tenantdb",
+      "label": "queries explícitas por tenant"
+    }
   ]
 }

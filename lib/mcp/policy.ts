@@ -3,6 +3,30 @@ import { McpAuthError } from "./auth";
 import type { McpCapability, McpToolDefinition, McpToolDomain } from "./types";
 import { canAccessManagedArea } from "@/lib/managed-clients/policy";
 import type { NavDestinationId } from "@/lib/navigation/catalogo";
+import { MCP_CAPABILITIES, MCP_DOMAINS } from "./scopes";
+import { VALID_TOOL_IDS } from "./tools/catalog";
+import { TOOLS_B2B } from "./tools/catalogo/b2b";
+import { TOOLS_PARITY_162 } from "./tools/catalogo/parity-162";
+
+const PARITY_TOOL_NAMES = new Set([...TOOLS_B2B, ...TOOLS_PARITY_162].map((entry) => entry.name));
+
+/** Preset completo emitido antes desta paridade: conserva acesso às novas tools
+ * sem converter uma allowlist parcial em autorização ampla. */
+function legacyFullPresetForParity(scopes: readonly string[]): boolean {
+  const present = new Set(scopes);
+  return (
+    present.has("role:manager") &&
+    present.has("mcp:read") &&
+    present.has("mcp:write") &&
+    MCP_DOMAINS.every(
+      (domain) => present.has(`${domain}:read`) && present.has(`${domain}:write`),
+    ) &&
+    MCP_CAPABILITIES.every((capability) => present.has(`capability:${capability}`)) &&
+    VALID_TOOL_IDS.filter((name) => !PARITY_TOOL_NAMES.has(name)).every((name) =>
+      present.has(`tool:${name}`),
+    )
+  );
+}
 
 const DOMAIN_PREFIXES: ReadonlyArray<[RegExp, McpToolDomain]> = [
   [/appointment|event_type|free_slot/, "appointments"],
@@ -48,17 +72,38 @@ export function domainScope(tool: McpToolDefinition): string {
 }
 
 export function authorizeTool(auth: McpAuthResult, tool: McpToolDefinition): void {
-  if ([
-    "crm_create_managed_client",
-    "crm_configure_managed_internet_provider",
-    "crm_configure_managed_internet_provider_ai",
-  ].includes(tool.name) && !auth.platformAdminFull) {
+  if (
+    [
+      "crm_create_managed_client",
+      "crm_configure_managed_internet_provider",
+      "crm_configure_managed_internet_provider_ai",
+    ].includes(tool.name) &&
+    !auth.platformAdminFull
+  ) {
     throw new McpAuthError(-32002, 403, "platform_admin_full_required");
   }
   if (auth.managedPolicy) {
+    const managedPolicy = auth.managedPolicy;
     const area = managedAreaOfTool(tool);
     // A managed tenant grants only tools with an audited area, for every role.
-    if (!area || !canAccessManagedArea(auth.managedPolicy, auth.role, area)) {
+    if (!area || !canAccessManagedArea(managedPolicy, auth.role, area)) {
+      throw new McpAuthError(-32002, 403, `managed_area_denied:${tool.name}`);
+    }
+    // Os detalhes B2B agregam entidades de várias áreas. Uma área liberada
+    // isoladamente não pode dar leitura ou escrita indireta nas demais.
+    const additionalB2bAreas: Partial<Record<string, NavDestinationId[]>> = {
+      crm_get_company: ["/app/people", "/app/contacts"],
+      crm_get_person: ["/app/companies", "/app/contacts"],
+      crm_link_company_person: ["/app/companies"],
+      crm_update_company_person: ["/app/companies"],
+      crm_link_contact_person: ["/app/contacts"],
+      crm_get_import_batch: ["/app/companies", "/app/people", "/app/contacts"],
+    };
+    if (
+      additionalB2bAreas[tool.name]?.some(
+        (required) => !canAccessManagedArea(managedPolicy, auth.role, required),
+      )
+    ) {
       throw new McpAuthError(-32002, 403, `managed_area_denied:${tool.name}`);
     }
   }
@@ -67,7 +112,10 @@ export function authorizeTool(auth: McpAuthResult, tool: McpToolDefinition): voi
   }
 
   const granular = auth.scopes.some(
-    (scope) => /^[a-z_]+:(read|write)$/.test(scope) && !scope.startsWith("mcp:") && !scope.startsWith("audit:"),
+    (scope) =>
+      /^[a-z_]+:(read|write)$/.test(scope) &&
+      !scope.startsWith("mcp:") &&
+      !scope.startsWith("audit:"),
   );
   const requiredDomainScope = domainScope(tool);
   if (granular && !auth.scopes.includes(requiredDomainScope)) {
@@ -75,13 +123,21 @@ export function authorizeTool(auth: McpAuthResult, tool: McpToolDefinition): voi
   }
 
   const allowlisted = auth.scopes.filter((scope) => scope.startsWith("tool:"));
-  if (allowlisted.length > 0 && !auth.scopes.includes(`tool:${tool.name}`)) {
+  if (
+    allowlisted.length > 0 &&
+    !auth.scopes.includes(`tool:${tool.name}`) &&
+    !(PARITY_TOOL_NAMES.has(tool.name) && legacyFullPresetForParity(auth.scopes))
+  ) {
     throw new McpAuthError(-32002, 403, `not_allowed:${tool.name}`);
   }
 
   for (const scope of capabilityScopes(tool)) {
     if (!auth.scopes.includes(scope)) {
-      throw new McpAuthError(-32002, 403, `capability_missing:${scope.slice("capability:".length)}`);
+      throw new McpAuthError(
+        -32002,
+        403,
+        `capability_missing:${scope.slice("capability:".length)}`,
+      );
     }
   }
 }
@@ -129,10 +185,46 @@ export function managedAreaOfTool(tool: McpToolDefinition): NavDestinationId | n
     crm_assign_conversation: "/app/inbox",
     crm_list_messaging_channels: "/app/inbox",
     crm_get_lead_import_instructions: "/app/contacts",
+    crm_list_honorarios_contratos: "/app/honorarios",
+    crm_list_channel_groups: "/app/connections",
+    crm_search_organization_knowledge: "/app/ai/knowledge/sources",
+    crm_get_proposal_document: "/app/proposals",
+    crm_update_proposal_document_field: "/app/proposals",
+    crm_update_proposal_document_section: "/app/proposals",
+    crm_create_proposal_revision: "/app/proposals",
+    crm_discard_draft_proposal: "/app/proposals",
+    crm_list_proposal_templates: "/app/settings/tenant/proposals/modelos",
+    crm_get_proposal_template: "/app/settings/tenant/proposals/modelos",
+    crm_create_proposal_template: "/app/settings/tenant/proposals/modelos",
+    crm_customize_proposal_template: "/app/settings/tenant/proposals/modelos",
+    crm_set_proposal_template_visibility: "/app/settings/tenant/proposals/modelos",
+    crm_update_proposal_template: "/app/settings/tenant/proposals/modelos",
+    crm_deactivate_proposal_template: "/app/settings/tenant/proposals/modelos",
+    crm_get_proposal_settings: "/app/settings/tenant/proposals",
+    crm_update_proposal_defaults: "/app/settings/tenant/proposals",
+    crm_list_proposals: "/app/proposals",
+    crm_get_proposal: "/app/proposals",
+    crm_update_draft_proposal: "/app/proposals",
     crm_get_honorarios_contrato: "/app/honorarios",
     crm_list_honorarios_parcelas: "/app/honorarios",
+    crm_create_honorarios_contrato: "/app/honorarios",
+    crm_create_honorarios_parcela: "/app/honorarios",
+    crm_get_tags_report: "/app/inbox",
     crm_preparar_proposta: "/app/proposals",
     crm_draft_proposal: "/app/proposals",
+    crm_list_companies: "/app/companies",
+    crm_get_company: "/app/companies",
+    crm_create_company: "/app/companies",
+    crm_update_company: "/app/companies",
+    crm_list_people: "/app/people",
+    crm_get_person: "/app/people",
+    crm_create_person: "/app/people",
+    crm_update_person: "/app/people",
+    crm_link_company_person: "/app/people",
+    crm_update_company_person: "/app/people",
+    crm_link_contact_person: "/app/people",
+    crm_list_import_batches: "/app/imports",
+    crm_get_import_batch: "/app/imports",
   };
   const exact = exactToolArea[tool.name];
   if (exact) return exact;

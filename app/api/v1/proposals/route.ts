@@ -9,6 +9,8 @@ import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/wrappers";
+import { ApiError } from "@/lib/api/types";
+import { listProposalsHandler } from "@/lib/propostas/administracao";
 import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
 import { emitLeadActivity } from "@/lib/leads/activity-emitter";
@@ -34,20 +36,20 @@ export async function GET(req: NextRequest): Promise<Response> {
   const supabase = await createClient();
   const status = req.nextUrl.searchParams.get("status");
   const leadId = req.nextUrl.searchParams.get("lead_id");
-  let q = supabase
-    .from("crm_proposals")
-    .select("id, lead_id, titulo, status, total_cents, moeda, numero, ano, versao, valid_until, created_at, drafted_by_agent_id")
-    .eq("organization_id", authz.org.orgId)
-    .order("created_at", { ascending: false })
-    .limit(500);
-  if (status) q = q.eq("status", status);
-  // D10: a tela de excluir negócio consulta este filtro para avisar quando
-  // há proposta enviada antes de apagar (KanbanCardActions / BulkActionBar).
-  if (leadId) q = q.eq("lead_id", leadId);
-
-  const { data, error } = await q;
-  if (error) return fail("internal_error", "Falha ao listar propostas.", 500, { requestId });
-  return ok(data ?? [], { requestId });
+  try {
+    return ok(
+      await listProposalsHandler(
+        supabase,
+        { organization_id: authz.org.orgId, actor: { type: "user", id: authz.user.id }, requestId },
+        { status, lead_id: leadId },
+      ),
+      { requestId },
+    );
+  } catch (error) {
+    if (error instanceof ApiError)
+      return fail(error.code, error.message, error.status, { requestId });
+    throw error;
+  }
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
@@ -67,7 +69,10 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   const parsed = propostaCreateSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return fail("validation_failed", t("Campos inválidos."), 422, { requestId, details: parsed.error.flatten() });
+    return fail("validation_failed", t("Campos inválidos."), 422, {
+      requestId,
+      details: parsed.error.flatten(),
+    });
   }
   const input = parsed.data;
   const supabase = await createClient();
@@ -81,7 +86,8 @@ export async function POST(req: NextRequest): Promise<Response> {
     .eq("organization_id", authz.org.orgId)
     .eq("id", input.lead_id)
     .maybeSingle();
-  if (!lead) return fail("not_found", t("Negócio não encontrado nesta organização."), 404, { requestId });
+  if (!lead)
+    return fail("not_found", t("Negócio não encontrado nesta organização."), 404, { requestId });
 
   // crm_proposals.contact_id é NOT NULL (baseline.sql), e crm_leads.contact_id
   // é opcional — um negócio sem contato vinculado quebraria o INSERT com um
@@ -122,7 +128,11 @@ export async function POST(req: NextRequest): Promise<Response> {
     return fail("validation_failed", t(resolvido.motivo), 422, { requestId });
   }
 
-  const { data: org } = await supabase.from("organizations").select("settings").eq("id", authz.org.orgId).single();
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("settings")
+    .eq("id", authz.org.orgId)
+    .single();
   const padroes = resolverPadroesDaProposta((org as { settings?: unknown } | null)?.settings);
 
   let validUntil = input.valid_until;
@@ -152,7 +162,12 @@ export async function POST(req: NextRequest): Promise<Response> {
     // 23505 = a corrida que a pré-checagem acima não pegou (dois cliques
     // quase simultâneos) — o índice único do banco é quem decide de verdade.
     if ((propErr as { code?: string }).code === "23505") {
-      return fail("validation_failed", t("Este negócio já tem um rascunho de proposta aberto."), 409, { requestId });
+      return fail(
+        "validation_failed",
+        t("Este negócio já tem um rascunho de proposta aberto."),
+        409,
+        { requestId },
+      );
     }
     return fail("internal_error", t("Falha ao criar a proposta."), 500, { requestId });
   }
@@ -180,7 +195,11 @@ export async function POST(req: NextRequest): Promise<Response> {
       // proposta (descartar é de `manager`, e enviada ninguém apaga — 0464).
       // Seguro com service role porque o alvo é a linha que ESTA requisição
       // acabou de criar, na organização da sessão.
-      await createAdminClient().from("crm_proposals").delete().eq("organization_id", authz.org.orgId).eq("id", proposta.id);
+      await createAdminClient()
+        .from("crm_proposals")
+        .delete()
+        .eq("organization_id", authz.org.orgId)
+        .eq("id", proposta.id);
       return fail("internal_error", t("Falha ao gravar os itens."), 500, { requestId });
     }
   }

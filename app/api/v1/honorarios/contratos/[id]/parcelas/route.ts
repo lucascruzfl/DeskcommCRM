@@ -7,10 +7,11 @@
 import { randomUUID } from "node:crypto";
 
 import type { NextRequest } from "next/server";
-import { z } from "zod";
+import { ZodError } from "zod";
+import { ApiError } from "@/lib/api/types";
+import { createHonorariosParcelaHandler } from "@/lib/honorarios/handlers";
 
 import { ok, fail } from "@/lib/api/wrappers";
-import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
 import { requireSupportWrite } from "@/lib/impersonate/support";
 import { createClient } from "@/lib/supabase/server";
@@ -24,12 +25,6 @@ const MODULO_NAO_INSTALADO =
 function moduloNaoInstalado(error: { code?: string } | null): boolean {
   return error?.code === "42P01";
 }
-
-const criarSchema = z.object({
-  numero: z.number().int().min(1),
-  vencimento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida."),
-  valor_cents: z.number().int().min(1),
-});
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -63,54 +58,26 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
 
   const authz = await requireRole("manager", { requestId, resource: "honorarios_parcelas" });
   if (!authz.ok) return authz.response;
-  const { id: contratoId } = await ctx.params;
 
-  const lido = criarSchema.safeParse(await req.json().catch(() => ({})));
-  if (!lido.success) {
-    return fail("validation_failed", lido.error.issues[0]?.message ?? "corpo inválido", 422, {
-      requestId,
-    });
-  }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("honorarios_parcelas")
-    .insert({
-      organization_id: authz.org.orgId,
-      contrato_id: contratoId,
-      numero: lido.data.numero,
-      vencimento: lido.data.vencimento,
-      valor_cents: lido.data.valor_cents,
-    })
-    .select("id, contrato_id, numero, vencimento, valor_cents, status")
-    .single();
-
-  if (error) {
-    if (moduloNaoInstalado(error)) {
-      return fail("module_not_installed", MODULO_NAO_INSTALADO, 409, { requestId });
-    }
-    // 23503: o contrato não existe. 42501: existe, mas é de outra organização — a RLS da
-    // migration 0480 recusa a parcela que aponta para ele (o `manager` já foi cobrado acima).
-    if (error.code === "23503" || error.code === "42501") {
-      return fail("validation_failed", "Contrato inválido para esta organização.", 422, {
+  try {
+    const result = await createHonorariosParcelaHandler(
+      await createClient(),
+      {
+        organization_id: authz.org.orgId,
+        actor: { type: "user", id: authz.user.id, role: authz.org.role },
+        requestId,
+      },
+      (await ctx.params).id,
+      await req.json().catch(() => ({})),
+    );
+    return ok(result, { requestId });
+  } catch (error) {
+    if (error instanceof ZodError)
+      return fail("validation_failed", error.issues[0]?.message ?? "corpo inválido", 422, {
         requestId,
       });
-    }
-    if (error.code === "23505") {
-      return fail("validation_failed", "Já existe uma parcela com este número.", 422, {
-        requestId,
-      });
-    }
-    return fail("internal_error", error.message, 500, { requestId });
+    if (error instanceof ApiError)
+      return fail(error.code, error.message, error.status, { requestId });
+    return fail("internal_error", "Não consegui registrar os honorários.", 500, { requestId });
   }
-
-  await audit({
-    action: "honorarios.parcela_criada",
-    resourceType: "honorarios_parcela",
-    resourceId: data.id,
-    requestId,
-    metadata: { contrato_id: contratoId, numero: data.numero, valor_cents: data.valor_cents },
-  });
-
-  return ok(data, { requestId });
 }

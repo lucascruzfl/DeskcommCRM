@@ -13,7 +13,11 @@ vi.mock("@/lib/managed-clients/server", () => ({ managedAreaAllowedForActor: moc
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: mocks.admin }));
 vi.mock("@/lib/instalacao/modulos", () => ({ modulosLigados: mocks.modules }));
 vi.mock("@/lib/mcp/tools", () => ({ allTools: [] }));
-vi.mock("@/lib/mcp/tools/catalog", () => ({ TOOL_CATALOG: [], deModuloDesligado: () => false }));
+vi.mock("@/lib/mcp/tools/catalog", () => ({
+  TOOL_CATALOG: [],
+  VALID_TOOL_IDS: [],
+  deModuloDesligado: () => false,
+}));
 
 import { GET } from "./route";
 

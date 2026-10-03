@@ -11,39 +11,19 @@
 import { randomUUID } from "node:crypto";
 
 import type { NextRequest } from "next/server";
-import { z } from "zod";
+import { ZodError } from "zod";
+import { ApiError } from "@/lib/api/types";
+import {
+  createHonorariosContratoHandler,
+  listHonorariosContratosHandler,
+} from "@/lib/honorarios/handlers";
 
 import { ok, fail } from "@/lib/api/wrappers";
-import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
 import { requireSupportWrite } from "@/lib/impersonate/support";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-
-const MODULO_NAO_INSTALADO =
-  "O módulo de honorários não está instalado nesta instalação. Peça ao administrador para " +
-  "instalar em Configurações da instalação › Módulos.";
-
-function moduloNaoInstalado(error: { code?: string } | null): boolean {
-  return error?.code === "42P01";
-}
-
-const criarSchema = z
-  .object({
-    lead_id: z.string().uuid().nullish(),
-    modelo: z.enum(["fixo", "exito", "misto"]),
-    valor_fixo_cents: z.number().int().min(1).nullish(),
-    percentual_exito: z.number().min(0.01).max(100).nullish(),
-    repasse_advogado_pct: z.number().min(0).max(100).nullish(),
-  })
-  .refine(
-    (v) =>
-      (v.modelo === "fixo" && v.valor_fixo_cents != null) ||
-      (v.modelo === "exito" && v.percentual_exito != null) ||
-      (v.modelo === "misto" && v.valor_fixo_cents != null && v.percentual_exito != null),
-    { message: "O modelo escolhido exige o valor/percentual correspondente." },
-  );
 
 export async function GET(req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
@@ -54,24 +34,20 @@ export async function GET(req: NextRequest): Promise<Response> {
   const leadId = url.searchParams.get("lead_id");
 
   const supabase = await createClient();
-  let q = supabase
-    .from("honorarios_contratos")
-    .select(
-      "id, lead_id, modelo, valor_fixo_cents, percentual_exito, repasse_advogado_pct, created_at",
-    )
-    .order("created_at", { ascending: false })
-    .limit(200);
-  if (leadId) q = q.eq("lead_id", leadId);
-
-  const { data, error } = await q;
-  if (error) {
-    if (moduloNaoInstalado(error)) {
-      return fail("module_not_installed", MODULO_NAO_INSTALADO, 409, { requestId });
-    }
-    return fail("internal_error", error.message, 500, { requestId });
+  try {
+    return ok(
+      await listHonorariosContratosHandler(
+        supabase,
+        { organization_id: authz.org.orgId, actor: { type: "user", id: authz.user.id }, requestId },
+        leadId,
+      ),
+      { requestId },
+    );
+  } catch (error) {
+    if (error instanceof ApiError)
+      return fail(error.code, error.message, error.status, { requestId });
+    throw error;
   }
-
-  return ok(data ?? [], { requestId });
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
@@ -82,64 +58,24 @@ export async function POST(req: NextRequest): Promise<Response> {
   const authz = await requireRole("manager", { requestId, resource: "honorarios_contratos" });
   if (!authz.ok) return authz.response;
 
-  const lido = criarSchema.safeParse(await req.json().catch(() => ({})));
-  if (!lido.success) {
-    return fail("validation_failed", lido.error.issues[0]?.message ?? "corpo inválido", 422, {
-      requestId,
-    });
-  }
-
-  const supabase = await createClient();
-
-  // A FK de `lead_id` é conferida pelo dono da tabela, por cima da RLS: sem esta
-  // leitura (com a sessão, recortada pela RLS) o contrato aceitaria o lead de
-  // outra organização.
-  if (lido.data.lead_id) {
-    const { data: lead } = await supabase
-      .from("crm_leads")
-      .select("id")
-      .eq("id", lido.data.lead_id)
-      .eq("organization_id", authz.org.orgId)
-      .maybeSingle();
-    if (!lead) {
-      return fail("validation_failed", "Lead inválido para esta organização.", 422, {
+  try {
+    const result = await createHonorariosContratoHandler(
+      await createClient(),
+      {
+        organization_id: authz.org.orgId,
+        actor: { type: "user", id: authz.user.id, role: authz.org.role },
+        requestId,
+      },
+      await req.json().catch(() => ({})),
+    );
+    return ok(result, { requestId });
+  } catch (error) {
+    if (error instanceof ZodError)
+      return fail("validation_failed", error.issues[0]?.message ?? "corpo inválido", 422, {
         requestId,
       });
-    }
+    if (error instanceof ApiError)
+      return fail(error.code, error.message, error.status, { requestId });
+    return fail("internal_error", "Não consegui registrar os honorários.", 500, { requestId });
   }
-
-  const { data, error } = await supabase
-    .from("honorarios_contratos")
-    .insert({
-      organization_id: authz.org.orgId,
-      lead_id: lido.data.lead_id ?? null,
-      modelo: lido.data.modelo,
-      valor_fixo_cents: lido.data.valor_fixo_cents ?? null,
-      percentual_exito: lido.data.percentual_exito ?? null,
-      repasse_advogado_pct: lido.data.repasse_advogado_pct ?? null,
-    })
-    .select("id, lead_id, modelo, valor_fixo_cents, percentual_exito, repasse_advogado_pct")
-    .single();
-
-  if (error) {
-    if (moduloNaoInstalado(error)) {
-      return fail("module_not_installed", MODULO_NAO_INSTALADO, 409, { requestId });
-    }
-    if (error.code === "23503") {
-      return fail("validation_failed", "Lead inválido para esta organização.", 422, {
-        requestId,
-      });
-    }
-    return fail("internal_error", error.message, 500, { requestId });
-  }
-
-  await audit({
-    action: "honorarios.contrato_criado",
-    resourceType: "honorarios_contrato",
-    resourceId: data.id,
-    requestId,
-    metadata: { modelo: data.modelo, lead_id: data.lead_id },
-  });
-
-  return ok(data, { requestId });
 }

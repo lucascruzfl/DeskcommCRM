@@ -6,8 +6,12 @@ import { avisarQuePropostaPrecisaDeRevisao } from "@/lib/propostas/aviso-de-revi
 import { audit } from "@/lib/audit";
 import type { McpContext } from "../types";
 
-vi.mock("@/lib/leads/activity-emitter", () => ({ emitLeadActivity: vi.fn(async () => ({ ok: true })) }));
-vi.mock("@/lib/propostas/aviso-de-revisao", () => ({ avisarQuePropostaPrecisaDeRevisao: vi.fn(async () => undefined) }));
+vi.mock("@/lib/leads/activity-emitter", () => ({
+  emitLeadActivity: vi.fn(async () => ({ ok: true })),
+}));
+vi.mock("@/lib/propostas/aviso-de-revisao", () => ({
+  avisarQuePropostaPrecisaDeRevisao: vi.fn(async () => undefined),
+}));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => undefined) }));
 
 interface MensagemMock {
@@ -94,10 +98,24 @@ function montarMundoDeFerramenta(opts?: MundoOpts) {
     from: vi.fn(function (this: any, table: string) {
       // Doc 79: a capacidade da empresa só vale com o módulo da INSTALAÇÃO ligado.
       if (table === "platform_config") {
-        return { select: () => ({ in: async () => ({ data: [{ chave: "MODULO_PROPOSTAS", valor: "ligado" }], error: null }) }) };
+        return {
+          select: () => ({
+            in: async () => ({
+              data: [{ chave: "MODULO_PROPOSTAS", valor: "ligado" }],
+              error: null,
+            }),
+          }),
+        };
       }
       if (table === "organizations") {
-        const resposta = { data: { settings, timezone: opts?.fusoDaOrganizacao ?? null, currency: opts?.moedaDaOrganizacao ?? "BRL" }, error: null };
+        const resposta = {
+          data: {
+            settings,
+            timezone: opts?.fusoDaOrganizacao ?? null,
+            currency: opts?.moedaDaOrganizacao ?? "BRL",
+          },
+          error: null,
+        };
         return {
           select: vi.fn(function (this: any) {
             return this;
@@ -113,7 +131,10 @@ function montarMundoDeFerramenta(opts?: MundoOpts) {
         return {
           select: () => ({
             eq: () => ({
-              maybeSingle: async () => ({ data: { currency: opts?.moedaDaOrganizacao ?? "BRL" }, error: null }),
+              maybeSingle: async () => ({
+                data: { currency: opts?.moedaDaOrganizacao ?? "BRL" },
+                error: null,
+              }),
             }),
           }),
         };
@@ -170,7 +191,9 @@ function montarMundoDeFerramenta(opts?: MundoOpts) {
         return chain;
       }
       if (table === "catalog_products") {
-        const porCodigo: Record<string, string> = opts?.produtosPorCodigo ?? { "SITE-BASICO": productId };
+        const porCodigo: Record<string, string> = opts?.produtosPorCodigo ?? {
+          "SITE-BASICO": productId,
+        };
         return {
           select: () => ({
             eq: () => ({
@@ -180,12 +203,17 @@ function montarMundoDeFerramenta(opts?: MundoOpts) {
                     const preco = opts?.precoDoCatalogo === undefined ? 5000 : opts.precoDoCatalogo;
                     return preco === null
                       ? { data: null, error: null }
-                      : { data: { preco_cents: preco, moeda: opts?.moedaDoCatalogo ?? "BRL" }, error: null };
+                      : {
+                          data: { preco_cents: preco, moeda: opts?.moedaDoCatalogo ?? "BRL" },
+                          error: null,
+                        };
                   },
                 }),
               }),
               in: async (_coluna: string, codigos: string[]) => ({
-                data: codigos.filter((c) => porCodigo[c]).map((c) => ({ id: porCodigo[c], codigo: c })),
+                data: codigos
+                  .filter((c) => porCodigo[c])
+                  .map((c) => ({ id: porCodigo[c], codigo: c })),
                 error: null,
               }),
             }),
@@ -290,7 +318,12 @@ function montarMundoDeFerramenta(opts?: MundoOpts) {
   };
 
   return {
-    leadId, organizationId, agentId, conversationId, productId, ctx,
+    leadId,
+    organizationId,
+    agentId,
+    conversationId,
+    productId,
+    ctx,
     get propostaCriada() {
       return propostaCriada;
     },
@@ -370,8 +403,17 @@ describe("crm_draft_proposal", () => {
     const mundo = montarMundoDeFerramenta({ precoDoCatalogo: 5000 });
     const r = await crmDraftProposal.handler(
       {
-        lead_id: mundo.leadId, titulo: "Com catálogo", conversation_id: mundo.conversationId,
-        itens: [{ product_id: mundo.productId, descricao: "Ignorado", quantidade: 1, preco_unitario_cents: 999999 }],
+        lead_id: mundo.leadId,
+        titulo: "Com catálogo",
+        conversation_id: mundo.conversationId,
+        itens: [
+          {
+            product_id: mundo.productId,
+            descricao: "Ignorado",
+            quantidade: 1,
+            preco_unitario_cents: 999999,
+          },
+        ],
         briefing: briefingCompleto(),
       },
       mundo.ctx,
@@ -384,7 +426,13 @@ describe("crm_draft_proposal", () => {
   it("item sem product_id e sem preco_unitario_cents: cria como 'a definir' (missing)", async () => {
     const mundo = montarMundoDeFerramenta();
     const r = await crmDraftProposal.handler(
-      { lead_id: mundo.leadId, titulo: "A definir", conversation_id: mundo.conversationId, itens: [{ descricao: "x", quantidade: 1 }], briefing: briefingCompleto() },
+      {
+        lead_id: mundo.leadId,
+        titulo: "A definir",
+        conversation_id: mundo.conversationId,
+        itens: [{ descricao: "x", quantidade: 1 }],
+        briefing: briefingCompleto(),
+      },
       mundo.ctx,
     );
     expect((r as { error?: string }).error).toBeUndefined();
@@ -394,7 +442,12 @@ describe("crm_draft_proposal", () => {
   it("negócio já tem rascunho aberto: devolve o id do rascunho existente, não cria outro (§5.3)", async () => {
     const mundo = montarMundoDeFerramenta({ rascunhoJaExiste: true });
     const r = await crmDraftProposal.handler(
-      { lead_id: mundo.leadId, titulo: "Duplicado", conversation_id: mundo.conversationId, itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }] },
+      {
+        lead_id: mundo.leadId,
+        titulo: "Duplicado",
+        conversation_id: mundo.conversationId,
+        itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }],
+      },
       mundo.ctx,
     );
     const res = r as { error?: string; motivo?: string; rascunho_id?: string };
@@ -405,9 +458,18 @@ describe("crm_draft_proposal", () => {
   });
 
   it("grava conversation_id, valid_until (default da org) e condicoes (default da org) — D7 + D5", async () => {
-    const mundo = montarMundoDeFerramenta({ defaultValidDays: 10, defaultConditions: "Pagamento à vista." });
+    const mundo = montarMundoDeFerramenta({
+      defaultValidDays: 10,
+      defaultConditions: "Pagamento à vista.",
+    });
     await crmDraftProposal.handler(
-      { lead_id: mundo.leadId, titulo: "x", conversation_id: mundo.conversationId, itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }], briefing: briefingCompleto() },
+      {
+        lead_id: mundo.leadId,
+        titulo: "x",
+        conversation_id: mundo.conversationId,
+        itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }],
+        briefing: briefingCompleto(),
+      },
       mundo.ctx,
     );
     expect(mundo.propostaCriada?.conversation_id).toBe(mundo.conversationId);
@@ -418,7 +480,13 @@ describe("crm_draft_proposal", () => {
   it("emite atividade na timeline E auditoria ao criar o rascunho (D5 — hoje não emite nada)", async () => {
     const mundo = montarMundoDeFerramenta();
     await crmDraftProposal.handler(
-      { lead_id: mundo.leadId, titulo: "x", conversation_id: mundo.conversationId, itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }], briefing: briefingCompleto() },
+      {
+        lead_id: mundo.leadId,
+        titulo: "x",
+        conversation_id: mundo.conversationId,
+        itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }],
+        briefing: briefingCompleto(),
+      },
       mundo.ctx,
     );
     expect(mundo.atividadesEmitidas.length).toBe(1);
@@ -430,7 +498,12 @@ describe("crm_draft_proposal", () => {
   it("conversation_id que NÃO pertence ao contato do lead (ou é de outra organização): recusado, nada é gravado (revisão C3)", async () => {
     const mundo = montarMundoDeFerramenta({ conversaNaoPertenceAoContato: true });
     const r = await crmDraftProposal.handler(
-      { lead_id: mundo.leadId, titulo: "x", conversation_id: mundo.conversationId, itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }] },
+      {
+        lead_id: mundo.leadId,
+        titulo: "x",
+        conversation_id: mundo.conversationId,
+        itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }],
+      },
       mundo.ctx,
     );
     expect((r as { error?: string }).error).toBeDefined();
@@ -440,7 +513,13 @@ describe("crm_draft_proposal", () => {
   it("corrida: pré-checagem não pega, mas o índice único (23505) do INSERT devolve erro ensinável, não exceção (revisão C3, I4)", async () => {
     const mundo = montarMundoDeFerramenta({ insercaoColide23505: true });
     const r = await crmDraftProposal.handler(
-      { lead_id: mundo.leadId, titulo: "x", conversation_id: mundo.conversationId, itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }], briefing: briefingCompleto() },
+      {
+        lead_id: mundo.leadId,
+        titulo: "x",
+        conversation_id: mundo.conversationId,
+        itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }],
+        briefing: briefingCompleto(),
+      },
       mundo.ctx,
     );
     const res = r as { error?: string; motivo?: string };
@@ -451,7 +530,13 @@ describe("crm_draft_proposal", () => {
   it("falha ao gravar os itens: a proposta recém-criada é APAGADA, não fica rascunho vazio travando o negócio (revisão C3, I2)", async () => {
     const mundo = montarMundoDeFerramenta({ itensFalham: true });
     const r = await crmDraftProposal.handler(
-      { lead_id: mundo.leadId, titulo: "x", conversation_id: mundo.conversationId, itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }], briefing: briefingCompleto() },
+      {
+        lead_id: mundo.leadId,
+        titulo: "x",
+        conversation_id: mundo.conversationId,
+        itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }],
+        briefing: briefingCompleto(),
+      },
       mundo.ctx,
     );
     expect((r as { error?: string }).error).toBeDefined();
@@ -461,7 +546,13 @@ describe("crm_draft_proposal", () => {
   it("grava a MOEDA DA ORGANIZAÇÃO na proposta, não sempre BRL (D11)", async () => {
     const mundo = montarMundoDeFerramenta({ moedaDaOrganizacao: "USD" });
     const r = await crmDraftProposal.handler(
-      { lead_id: mundo.leadId, titulo: "x", conversation_id: mundo.conversationId, itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }], briefing: briefingCompleto() },
+      {
+        lead_id: mundo.leadId,
+        titulo: "x",
+        conversation_id: mundo.conversationId,
+        itens: [{ descricao: "x", quantidade: 1, preco_unitario_cents: 100 }],
+        briefing: briefingCompleto(),
+      },
       mundo.ctx,
     );
     expect((r as { error?: string }).error).toBeUndefined();
@@ -469,9 +560,19 @@ describe("crm_draft_proposal", () => {
   });
 
   it("item de catálogo em moeda diferente da organização: erro devolvido ao modelo, nada é gravado (D11)", async () => {
-    const mundo = montarMundoDeFerramenta({ moedaDaOrganizacao: "BRL", moedaDoCatalogo: "USD", precoDoCatalogo: 5000 });
+    const mundo = montarMundoDeFerramenta({
+      moedaDaOrganizacao: "BRL",
+      moedaDoCatalogo: "USD",
+      precoDoCatalogo: 5000,
+    });
     const r = await crmDraftProposal.handler(
-      { lead_id: mundo.leadId, titulo: "x", conversation_id: mundo.conversationId, itens: [{ product_id: mundo.productId, descricao: "x", quantidade: 1 }], briefing: briefingCompleto() },
+      {
+        lead_id: mundo.leadId,
+        titulo: "x",
+        conversation_id: mundo.conversationId,
+        itens: [{ product_id: mundo.productId, descricao: "x", quantidade: 1 }],
+        briefing: briefingCompleto(),
+      },
       mundo.ctx,
     );
     expect((r as { error?: string }).error).toContain("moeda");
@@ -481,7 +582,13 @@ describe("crm_draft_proposal", () => {
   it("product_id que não existe na organização: erro devolvido ao modelo, nada é gravado", async () => {
     const mundo = montarMundoDeFerramenta({ precoDoCatalogo: null });
     const r = await crmDraftProposal.handler(
-      { lead_id: mundo.leadId, titulo: "x", conversation_id: mundo.conversationId, itens: [{ product_id: mundo.productId, descricao: "x", quantidade: 1 }], briefing: briefingCompleto() },
+      {
+        lead_id: mundo.leadId,
+        titulo: "x",
+        conversation_id: mundo.conversationId,
+        itens: [{ product_id: mundo.productId, descricao: "x", quantidade: 1 }],
+        briefing: briefingCompleto(),
+      },
       mundo.ctx,
     );
     expect((r as { error?: string }).error).toBeDefined();
@@ -618,7 +725,14 @@ describe("crm_draft_proposal", () => {
         lead_id: mundo.leadId,
         conversation_id: mundo.conversationId,
         titulo: "Proposta",
-        itens: [{ descricao: "Site institucional", quantidade: 1, product_id: mundo.productId, produto_codigo: "OUTRO-CODIGO" }],
+        itens: [
+          {
+            descricao: "Site institucional",
+            quantidade: 1,
+            product_id: mundo.productId,
+            produto_codigo: "OUTRO-CODIGO",
+          },
+        ],
         briefing: briefingCompleto(),
       } as never,
       mundo.ctx,
@@ -678,7 +792,9 @@ describe("crm_draft_proposal", () => {
       mundo.ctx,
     )) as { error?: string; motivo?: string; faltando?: string[] };
     expect(r.motivo).toBe("briefing_incompleto");
-    expect(r.error).toMatch(/Faltam categorias do briefing: .* Pergunte ao cliente antes de rascunhar\./);
+    expect(r.error).toMatch(
+      /Faltam categorias do briefing: .* Pergunte ao cliente antes de rascunhar\./,
+    );
     expect(r.faltando).toHaveLength(7);
     expect(mundo.propostaCriada).toBeNull();
   });
@@ -887,27 +1003,27 @@ describe("crm_draft_proposal — prazo do briefing", () => {
     return mundo.propostaCriada;
   }
 
-  it("\"até 30 dias\" grava prazo_dias_uteis: 30", async () => {
+  it('"até 30 dias" grava prazo_dias_uteis: 30', async () => {
     const criada = await rascunhoComPrazo("até 30 dias");
     expect(criada?.prazo_dias_uteis).toBe(30);
   });
 
-  it("\"15 dias úteis\" também conta — o número é o que vale, não o resto da frase", async () => {
+  it('"15 dias úteis" também conta — o número é o que vale, não o resto da frase', async () => {
     const criada = await rascunhoComPrazo("Prazo de 15 dias úteis, com entrega em duas etapas");
     expect(criada?.prazo_dias_uteis).toBe(15);
   });
 
-  it("\"quando der\" grava NULO: sem número no texto, não há prazo a inventar", async () => {
+  it('"quando der" grava NULO: sem número no texto, não há prazo a inventar', async () => {
     const criada = await rascunhoComPrazo("quando der");
     expect(criada?.prazo_dias_uteis).toBeNull();
   });
 
-  it("as respostas da trava do briefing também ficam nulas (\"cliente_nao_sabe\")", async () => {
+  it('as respostas da trava do briefing também ficam nulas ("cliente_nao_sabe")', async () => {
     const criada = await rascunhoComPrazo("cliente_nao_sabe");
     expect(criada?.prazo_dias_uteis).toBeNull();
   });
 
-  it("faixa (\"2-3 dias\") fica nula: escolher um dos dois seria chutar campo que vai para o documento", async () => {
+  it('faixa ("2-3 dias") fica nula: escolher um dos dois seria chutar campo que vai para o documento', async () => {
     const criada = await rascunhoComPrazo("2-3 dias");
     expect(criada?.prazo_dias_uteis).toBeNull();
   });
@@ -931,7 +1047,11 @@ describe("crm_preparar_proposta", () => {
       instrucao?: string;
     };
     expect(r.modelos).toHaveLength(8);
-    expect(r.modelos?.[0]).toEqual({ slug: "site_institucional", nome: "Site institucional", origem: "plataforma" });
+    expect(r.modelos?.[0]).toEqual({
+      slug: "site_institucional",
+      nome: "Site institucional",
+      origem: "plataforma",
+    });
     expect(r.categorias?.map((c) => c.chave)).toEqual([
       "objetivo",
       "entregas",
@@ -960,12 +1080,21 @@ describe("crm_preparar_proposta", () => {
 
   it("com template_slug válido e ativo devolve campos_do_modelo legíveis, sem os calculados", async () => {
     const mundo = montarMundoDeFerramenta();
-    const r = (await crmPrepararProposta.handler({ template_slug: "site_institucional" }, mundo.ctx)) as {
+    const r = (await crmPrepararProposta.handler(
+      { template_slug: "site_institucional" },
+      mundo.ctx,
+    )) as {
       campos_do_modelo?: string[];
     };
     expect(r.campos_do_modelo).toContain("Lista de páginas");
     expect(r.campos_do_modelo).toContain("Objetivo do projeto");
-    for (const calculado of ["Investimento total", "Validade da proposta (dias)", "Data da aprovação", "Nome do cliente", "Empresa ou nome do cliente"]) {
+    for (const calculado of [
+      "Investimento total",
+      "Validade da proposta (dias)",
+      "Data da aprovação",
+      "Nome do cliente",
+      "Empresa ou nome do cliente",
+    ]) {
       expect(r.campos_do_modelo).not.toContain(calculado);
     }
     expect(new Set(r.campos_do_modelo).size).toBe(r.campos_do_modelo?.length);
@@ -989,7 +1118,14 @@ describe("crm_preparar_proposta", () => {
       from: (tabela: string) => {
         if (tabela === "organizations") {
           return {
-            select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { settings: { proposals: { enabled: false } } }, error: null }) }) }),
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({
+                  data: { settings: { proposals: { enabled: false } } },
+                  error: null,
+                }),
+              }),
+            }),
           };
         }
         throw new Error(`não devia ler ${tabela} com a capacidade desligada`);
@@ -999,4 +1135,23 @@ describe("crm_preparar_proposta", () => {
     const r = await crmPrepararProposta.handler({}, { ...mundo.ctx, supabase });
     expect(r).toEqual({ error: "Propostas estão desligadas nesta organização." });
   });
+});
+
+it("draft e preparo não gravam texto comercial, briefing ou slug livre na auditoria universal", () => {
+  for (const tool of [crmDraftProposal, crmPrepararProposta]) {
+    const sensitive = "TEXTO_COMERCIAL_PRIVADO";
+    expect(
+      JSON.stringify(
+        tool.redigirParaAuditoria?.({
+          titulo: sensitive,
+          condicoes: sensitive,
+          pagamento: sensitive,
+          briefing: { company: sensitive },
+          template_slug: sensitive,
+          itens: [{ descricao: sensitive }],
+        }),
+      ),
+    ).not.toContain(sensitive);
+    expect(tool.redigirErroParaAuditoria?.(sensitive)).not.toContain(sensitive);
+  }
 });

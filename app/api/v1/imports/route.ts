@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { requireSupportWrite } from "@/lib/impersonate/support";
 import { audit } from "@/lib/audit";
 import { processCompaniesPeopleImport } from "@/lib/crm-b2b/import-process";
+import { listImportBatchesHandler } from "@/lib/crm-b2b/import-handlers";
 import { importColumnMappingSchema } from "@/lib/crm-b2b/schemas";
 import {
   IMPORT_MAX_BYTES,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/crm-b2b/spreadsheet";
 import {
   fail,
+  ctxFromAuthz,
   handleRouteError,
   ok,
   requestIdOf,
@@ -39,16 +41,8 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("import_batches")
-      .select(
-        "id, filename, status, kind, total_rows, processed_rows, successful_rows, failed_rows, conflict_rows, created_by, created_at, completed_at",
-      )
-      .eq("organization_id", authz.org.orgId)
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (error) return fail("internal_error", error.message, 500, { requestId });
-    return ok(data ?? [], { requestId });
+    const result = await listImportBatchesHandler(supabase, ctxFromAuthz(authz, requestId));
+    return ok(result.batches, { requestId });
   } catch (e) {
     return handleRouteError(e, requestId);
   }

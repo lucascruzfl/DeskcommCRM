@@ -390,7 +390,7 @@ function wrapMcpTool(
           args: argsAudit,
           durationMs: Date.now() - startedAt,
           success: false,
-          errorMessage: message,
+          errorMessage: def.redigirErroParaAuditoria?.(message) ?? message,
         });
         // Recusa por papel/scope NAO e erro de execucao — e defeito de
         // configuracao: o humano ligou a capacidade na tela e ela nao existe na
